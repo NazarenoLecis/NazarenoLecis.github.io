@@ -2,6 +2,11 @@
   var DATA_URL = "../../data/almalaurea/almalaurea_dashboard_data.json";
   var TIMESERIES_URL = "../../data/almalaurea/almalaurea_timeseries_data.json";
   var WILDCARD = "*";
+  var queryParams = new URLSearchParams(window.location.search);
+  var embedMode = queryParams.get("embed") === "1";
+  if (embedMode) {
+    document.documentElement.classList.add("embed-mode");
+  }
 
   var chartIds = {
     scatter: {
@@ -240,6 +245,14 @@
     }
   }
 
+  function setSelectFromQuery(id, names) {
+    names.some(function (name) {
+      if (!queryParams.has(name)) return false;
+      setSelect(id, queryParams.get(name));
+      return true;
+    });
+  }
+
   function firstOptionValue(id) {
     var select = byId(id);
     return select && select.options.length ? select.options[0].value : "";
@@ -330,6 +343,76 @@
     setDetailedDefaults("box");
     setTimeDefaults();
     updateTimeModeUi();
+  }
+
+  function applyDetailedQuery(chart) {
+    var ids = chartIds[chart];
+    setSelectFromQuery(ids.survey_year, [chart + "_survey", "survey"]);
+    setSelectFromQuery(ids.years_after_degree, [chart + "_years", "years"]);
+    setSelectFromQuery(ids.graduation_year, [chart + "_cohort", "cohort"]);
+    setSelectFromQuery(ids.employment_definition, [chart + "_definition", "definition"]);
+    setSelectFromQuery(ids.university, [chart + "_university", "university"]);
+    setSelectFromQuery(ids.disciplinary_group, [chart + "_group", "group"]);
+    setSelectFromQuery(ids.course_type, [chart + "_course", "course"]);
+    if (ids.degree_class) setSelectFromQuery(ids.degree_class, [chart + "_degree", "degree"]);
+    if (ids.point_dimension) setSelectFromQuery(ids.point_dimension, [chart + "_dimension", "dimension"]);
+    if (ids.split_dimension) setSelectFromQuery(ids.split_dimension, [chart + "_split", "split"]);
+    if (!queryParams.has(chart + "_cohort") && !queryParams.has("cohort")) {
+      syncGraduationYear(chart);
+    }
+    if (chart === "scatter") avoidSinglePointScatter();
+  }
+
+  function applyTimeQuery() {
+    var ids = chartIds.time;
+    setSelectFromQuery(ids.mode, ["time_mode", "mode"]);
+    setSelectFromQuery(ids.start_year, ["time_start", "start"]);
+    setSelectFromQuery(ids.end_year, ["time_end", "end"]);
+    setSelectFromQuery(ids.years_after_degree, ["time_years", "years"]);
+    setSelectFromQuery(ids.graduation_year, ["time_cohort", "cohort"]);
+    setSelectFromQuery(ids.employment_definition, ["time_definition", "definition"]);
+    setSelectFromQuery(ids.university, ["time_university", "university"]);
+    setSelectFromQuery(ids.disciplinary_group, ["time_group", "group"]);
+    setSelectFromQuery(ids.course_type, ["time_course", "course"]);
+    setSelectFromQuery(ids.point_dimension, ["time_dimension", "dimension"]);
+    setSelectFromQuery(ids.metric, ["time_metric", "metric"]);
+  }
+
+  function applyQueryParams() {
+    if (!queryParams.toString()) return;
+    applyDetailedQuery("scatter");
+    applyDetailedQuery("box");
+    applyTimeQuery();
+    updateTimeModeUi();
+  }
+
+  function focusQueryChart() {
+    if (embedMode) return;
+    var chart = queryParams.get("chart");
+    var sectionIds = {
+      scatter: "scatterSection",
+      box: "boxSection",
+      time: "timeSection",
+    };
+    var section = byId(sectionIds[chart]);
+    if (!section) return;
+    window.setTimeout(function () {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  }
+
+  function applyEmbedMode() {
+    if (!embedMode) return;
+    var sectionIds = {
+      scatter: "scatterSection",
+      box: "boxSection",
+      time: "timeSection",
+    };
+    var chart = sectionIds[queryParams.get("chart")] ? queryParams.get("chart") : "scatter";
+    Object.keys(sectionIds).forEach(function (key) {
+      var section = byId(sectionIds[key]);
+      if (section) section.classList.toggle("embed-active", key === chart);
+    });
   }
 
   function setTimeFieldVisibility(id, hidden) {
@@ -1221,9 +1304,12 @@
         populateTimeYearSelects();
         populateTimeCohortSelect();
         setDefaults();
+        applyQueryParams();
+        applyEmbedMode();
         updateSourceAndNotes();
         bindEvents();
         updateAll();
+        focusQueryChart();
       })
       .catch(function (error) {
         renderFatal("Non riesco a caricare i dati AlmaLaurea: " + error.message);

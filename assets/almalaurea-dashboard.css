@@ -67,6 +67,13 @@
   font-size: .94rem;
 }
 
+.related-link {
+  display: inline-flex;
+  margin-top: 10px;
+  color: var(--orange);
+  font-weight: 800;
+}
+
 .filters-panel {
   margin-top: 24px;
   padding: 18px;
@@ -361,6 +368,54 @@
   color: var(--muted);
   text-align: center;
   padding: 28px;
+}
+
+.embed-mode body {
+  background: var(--bg);
+}
+
+.embed-mode .site-header,
+.embed-mode .footer,
+.embed-mode .dash-head,
+.embed-mode .workflow-grid,
+.embed-mode .section-head,
+.embed-mode .chart-filter-panel,
+.embed-mode .kpi-grid,
+.embed-mode .commentary-panel,
+.embed-mode .notes-panel {
+  display: none;
+}
+
+.embed-mode .alm-dashboard {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.embed-mode .dashboard-section {
+  display: none;
+  margin: 0;
+}
+
+.embed-mode .dashboard-section.embed-active {
+  display: block;
+}
+
+.embed-mode .chart-panel {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.embed-mode .panel-title {
+  margin: 0;
+  padding: 12px 16px 4px;
+}
+
+.embed-mode .chart,
+.embed-mode .main-chart .chart {
+  min-height: 520px;
 }
 
 @media (max-width: 1180px) {
