@@ -176,10 +176,11 @@
     syncGraduationYear();
     setSelect("filterDefinition", "broad");
     setSelect("filterUniversity", WILDCARD);
-    setSelect("filterGroup", WILDCARD);
+    setSelect("filterGroup", "Scientifico");
     setSelect("filterCourse", WILDCARD);
     setSelect("filterDegree", WILDCARD);
-    setSelect("pointDimension", "disciplinary_group");
+    setSelect("pointDimension", "degree_class");
+    avoidSinglePointView();
   }
 
   function syncGraduationYear() {
@@ -196,6 +197,16 @@
     if (!Number.isFinite(surveyYear) || !Number.isFinite(graduationYear)) return;
     var expected = surveyYear - graduationYear;
     setSelect("filterYearsAfter", expected);
+  }
+
+  function avoidSinglePointView() {
+    if (byId("filterGroup").value === WILDCARD) return;
+    if (byId("pointDimension").value !== "disciplinary_group") return;
+    if (byId("filterDegree").value === WILDCARD) {
+      setSelect("pointDimension", "degree_class");
+      return;
+    }
+    setSelect("pointDimension", "university");
   }
 
   function fixedMatch(record, filters) {
@@ -843,10 +854,14 @@
         if (field.key === "graduation_year") {
           syncYearsAfterFromGraduationYear();
         }
+        avoidSinglePointView();
         update();
       });
     });
-    byId("pointDimension").addEventListener("change", update);
+    byId("pointDimension").addEventListener("change", function () {
+      avoidSinglePointView();
+      update();
+    });
     byId("timeMetric").addEventListener("change", update);
     byId("resetFilters").addEventListener("click", resetFilters);
     byId("downloadFiltered").addEventListener("click", downloadCsv);
