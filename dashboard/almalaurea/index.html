@@ -73,90 +73,6 @@
       </div>
     </section>
 
-    <section class="filters-panel" aria-label="Filtri dashboard">
-      <div class="section-head compact">
-        <div>
-          <span class="eyebrow">Filtri</span>
-          <h2>Perimetro della dashboard</h2>
-        </div>
-        <p>
-          Il caricamento iniziale mostra l'ultimo anno disponibile, a 1 anno dalla laurea,
-          con tutti i gruppi disciplinari: una vista comparabile, non un punto isolato.
-          Il pannello dettagliato e' limitato agli ultimi 10 anni disponibili.
-        </p>
-      </div>
-      <div class="filter-grid">
-        <label>
-          <span>Anno indagine</span>
-          <select id="filterSurveyYear"></select>
-        </label>
-        <label>
-          <span>Anni dalla laurea</span>
-          <select id="filterYearsAfter"></select>
-        </label>
-        <label>
-          <span>Coorte</span>
-          <select id="filterGraduationYear"></select>
-        </label>
-        <label>
-          <span>Definizione occupazione</span>
-          <select id="filterDefinition"></select>
-        </label>
-        <label>
-          <span>Ateneo</span>
-          <select id="filterUniversity"></select>
-        </label>
-        <label>
-          <span>Gruppo disciplinare</span>
-          <select id="filterGroup"></select>
-        </label>
-        <label>
-          <span>Tipo corso</span>
-          <select id="filterCourse"></select>
-        </label>
-        <label>
-          <span>Classe di laurea</span>
-          <select id="filterDegree"></select>
-        </label>
-        <label>
-          <span>Punti e serie</span>
-          <select id="pointDimension">
-            <option value="disciplinary_group">Gruppi disciplinari</option>
-            <option value="university">Atenei</option>
-            <option value="degree_class">Classi di laurea</option>
-          </select>
-        </label>
-      </div>
-      <div class="filter-actions">
-        <button class="button compact" id="resetFilters" type="button">Reset filtri</button>
-        <button class="button compact primary" id="downloadFiltered" type="button">Scarica CSV filtrato</button>
-      </div>
-    </section>
-
-    <section class="kpi-grid" aria-label="Indicatori principali">
-      <div class="kpi">
-        <span>Laureati</span>
-        <strong id="kpiGraduates">-</strong>
-      </div>
-      <div class="kpi">
-        <span>Tasso occupazione</span>
-        <strong id="kpiEmployment">-</strong>
-      </div>
-      <div class="kpi">
-        <span>Retribuzione netta</span>
-        <strong id="kpiSalary">-</strong>
-      </div>
-      <div class="kpi">
-        <span id="kpiExtraLabel">Punti visualizzati</span>
-        <strong id="kpiExtra">-</strong>
-      </div>
-    </section>
-
-    <section class="commentary-panel">
-      <h2>Lettura della selezione</h2>
-      <p id="selectionComment">Seleziona i filtri per leggere i dati disponibili.</p>
-    </section>
-
     <section class="dashboard-section">
       <div class="section-head">
         <div>
@@ -169,6 +85,84 @@
           se visualizzare gruppi disciplinari, atenei o classi.
         </p>
       </div>
+      <div class="chart-filter-panel" aria-label="Filtri scatterplot">
+        <div class="filter-intro">
+          <h3>Filtri scatterplot</h3>
+          <p>
+            Vista iniziale: ultimo anno disponibile, 1 anno dalla laurea,
+            tutti i gruppi disciplinari. Cambia "punti" solo quando vuoi
+            passare dal confronto tra gruppi a quello tra atenei o classi.
+          </p>
+        </div>
+        <div class="filter-grid chart-filter-grid">
+          <label>
+            <span>Anno indagine</span>
+            <select id="scatterSurveyYear"></select>
+          </label>
+          <label>
+            <span>Anni dalla laurea</span>
+            <select id="scatterYearsAfter"></select>
+          </label>
+          <label>
+            <span>Coorte</span>
+            <select id="scatterGraduationYear"></select>
+          </label>
+          <label>
+            <span>Definizione occupazione</span>
+            <select id="scatterDefinition"></select>
+          </label>
+          <label>
+            <span>Ateneo</span>
+            <select id="scatterUniversity"></select>
+          </label>
+          <label>
+            <span>Gruppo disciplinare</span>
+            <select id="scatterGroup"></select>
+          </label>
+          <label>
+            <span>Tipo corso</span>
+            <select id="scatterCourse"></select>
+          </label>
+          <label>
+            <span>Classe di laurea</span>
+            <select id="scatterDegree"></select>
+          </label>
+          <label>
+            <span>Punti</span>
+            <select id="scatterPointDimension">
+              <option value="disciplinary_group">Gruppi disciplinari</option>
+              <option value="university">Atenei</option>
+              <option value="degree_class">Classi di laurea</option>
+            </select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetScatterFilters" type="button">Reset scatter</button>
+          <button class="button compact primary" id="downloadScatter" type="button">Scarica CSV scatter</button>
+        </div>
+      </div>
+      <section class="kpi-grid" aria-label="Indicatori principali scatterplot">
+        <div class="kpi">
+          <span>Laureati</span>
+          <strong id="kpiGraduates">-</strong>
+        </div>
+        <div class="kpi">
+          <span>Tasso occupazione</span>
+          <strong id="kpiEmployment">-</strong>
+        </div>
+        <div class="kpi">
+          <span>Retribuzione netta</span>
+          <strong id="kpiSalary">-</strong>
+        </div>
+        <div class="kpi">
+          <span id="kpiExtraLabel">Punti visualizzati</span>
+          <strong id="kpiExtra">-</strong>
+        </div>
+      </section>
+      <section class="commentary-panel">
+        <h2>Lettura dello scatterplot</h2>
+        <p id="selectionComment">Seleziona i filtri per leggere i dati disponibili.</p>
+      </section>
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2>Occupazione e retribuzione</h2>
@@ -188,6 +182,56 @@
           Il boxplot usa gli atenei disponibili per mostrare dispersione della
           retribuzione entro il perimetro selezionato.
         </p>
+      </div>
+      <div class="chart-filter-panel" aria-label="Filtri boxplot">
+        <div class="filter-intro">
+          <h3>Filtri boxplot</h3>
+          <p>
+            Qui il punto non e' la singola classe, ma la dispersione tra atenei:
+            l'asse orizzontale separa gruppi disciplinari oppure tipi di corso,
+            mentre l'asse verticale mostra la retribuzione mensile netta.
+          </p>
+        </div>
+        <div class="filter-grid chart-filter-grid">
+          <label>
+            <span>Anno indagine</span>
+            <select id="boxSurveyYear"></select>
+          </label>
+          <label>
+            <span>Anni dalla laurea</span>
+            <select id="boxYearsAfter"></select>
+          </label>
+          <label>
+            <span>Coorte</span>
+            <select id="boxGraduationYear"></select>
+          </label>
+          <label>
+            <span>Definizione occupazione</span>
+            <select id="boxDefinition"></select>
+          </label>
+          <label>
+            <span>Ateneo</span>
+            <select id="boxUniversity"></select>
+          </label>
+          <label>
+            <span>Gruppo disciplinare</span>
+            <select id="boxGroup"></select>
+          </label>
+          <label>
+            <span>Tipo corso</span>
+            <select id="boxCourse"></select>
+          </label>
+          <label>
+            <span>Suddivisione</span>
+            <select id="boxSplitDimension">
+              <option value="disciplinary_group">Gruppi disciplinari</option>
+              <option value="course_type">Tipi di corso</option>
+            </select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetBoxFilters" type="button">Reset boxplot</button>
+        </div>
       </div>
       <div class="chart-panel">
         <div class="panel-title">
@@ -211,10 +255,53 @@
           usa dati aggregati e non il dettaglio per classe di laurea.
         </p>
       </div>
-      <div class="chart-panel">
-        <div class="panel-title">
-          <h2>Trend occupazione/retribuzione</h2>
-          <label class="inline-control">
+      <div class="chart-filter-panel" aria-label="Filtri serie storica">
+        <div class="filter-intro">
+          <h3>Filtri serie storica</h3>
+          <p>
+            Questa vista serve a leggere l'evoluzione nel tempo. Per questo non
+            usa la classe di laurea: lavora su aggregazioni piu' stabili per
+            gruppo disciplinare o ateneo e arriva fino al 2008 quando il dato e'
+            disponibile.
+          </p>
+        </div>
+        <div class="filter-grid chart-filter-grid">
+          <label>
+            <span>Da anno</span>
+            <select id="timeStartYear"></select>
+          </label>
+          <label>
+            <span>A anno</span>
+            <select id="timeEndYear"></select>
+          </label>
+          <label>
+            <span>Anni dalla laurea</span>
+            <select id="timeYearsAfter"></select>
+          </label>
+          <label>
+            <span>Definizione occupazione</span>
+            <select id="timeDefinition"></select>
+          </label>
+          <label>
+            <span>Ateneo</span>
+            <select id="timeUniversity"></select>
+          </label>
+          <label>
+            <span>Gruppo disciplinare</span>
+            <select id="timeGroup"></select>
+          </label>
+          <label>
+            <span>Tipo corso</span>
+            <select id="timeCourse"></select>
+          </label>
+          <label>
+            <span>Serie</span>
+            <select id="timePointDimension">
+              <option value="disciplinary_group">Gruppi disciplinari</option>
+              <option value="university">Atenei</option>
+            </select>
+          </label>
+          <label>
             <span>Indicatore</span>
             <select id="timeMetric">
               <option value="employment_rate">Tasso di occupazione</option>
@@ -222,6 +309,15 @@
               <option value="second_level_enrollment_rate">Iscritti a magistrale</option>
             </select>
           </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetTimeFilters" type="button">Reset serie storica</button>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="panel-title">
+          <h2>Trend occupazione/retribuzione</h2>
+          <span>linee: serie selezionate</span>
         </div>
         <div id="timeSeriesChart" class="chart"></div>
       </div>

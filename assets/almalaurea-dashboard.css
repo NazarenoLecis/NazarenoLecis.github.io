@@ -27,6 +27,7 @@
 
 .source-panel,
 .filters-panel,
+.chart-filter-panel,
 .commentary-panel,
 .chart-panel,
 .workflow-step,
@@ -69,6 +70,31 @@
 .filters-panel {
   margin-top: 24px;
   padding: 18px;
+}
+
+.chart-filter-panel {
+  margin: 0 0 16px;
+  padding: 16px;
+}
+
+.filter-intro {
+  display: grid;
+  grid-template-columns: minmax(200px, .45fr) minmax(280px, 1fr);
+  gap: 22px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.filter-intro h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+
+.filter-intro p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .workflow-grid {
@@ -138,6 +164,10 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(160px, 1fr));
   gap: 14px;
+}
+
+.chart-filter-grid {
+  grid-template-columns: repeat(4, minmax(155px, 1fr));
 }
 
 .filter-grid label {
@@ -333,8 +363,13 @@
     grid-template-columns: repeat(3, minmax(160px, 1fr));
   }
 
+  .chart-filter-grid {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
   .workflow-grid,
-  .section-head {
+  .section-head,
+  .filter-intro {
     grid-template-columns: 1fr;
   }
 
@@ -346,6 +381,7 @@
   }
 
   .filter-grid,
+  .chart-filter-grid,
   .workflow-grid,
   .kpi-grid,
   .notes-panel {

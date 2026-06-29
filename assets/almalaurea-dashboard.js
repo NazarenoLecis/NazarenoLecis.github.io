@@ -3,16 +3,69 @@
   var TIMESERIES_URL = "../../data/almalaurea/almalaurea_timeseries_data.json";
   var WILDCARD = "*";
 
-  var fields = [
-    { key: "survey_year", id: "filterSurveyYear", wildcard: false },
-    { key: "years_after_degree", id: "filterYearsAfter", wildcard: false },
-    { key: "graduation_year", id: "filterGraduationYear", wildcard: false },
-    { key: "employment_definition", id: "filterDefinition", wildcard: false },
-    { key: "university", id: "filterUniversity", wildcard: true, allLabel: "Tutti gli atenei" },
-    { key: "disciplinary_group", id: "filterGroup", wildcard: true, allLabel: "Tutti i gruppi" },
-    { key: "course_type", id: "filterCourse", wildcard: true, allLabel: "Tutti i tipi di corso" },
-    { key: "degree_class", id: "filterDegree", wildcard: true, allLabel: "Tutte le classi di laurea" },
-  ];
+  var chartIds = {
+    scatter: {
+      survey_year: "scatterSurveyYear",
+      years_after_degree: "scatterYearsAfter",
+      graduation_year: "scatterGraduationYear",
+      employment_definition: "scatterDefinition",
+      university: "scatterUniversity",
+      disciplinary_group: "scatterGroup",
+      course_type: "scatterCourse",
+      degree_class: "scatterDegree",
+      point_dimension: "scatterPointDimension",
+    },
+    box: {
+      survey_year: "boxSurveyYear",
+      years_after_degree: "boxYearsAfter",
+      graduation_year: "boxGraduationYear",
+      employment_definition: "boxDefinition",
+      university: "boxUniversity",
+      disciplinary_group: "boxGroup",
+      course_type: "boxCourse",
+      split_dimension: "boxSplitDimension",
+    },
+    time: {
+      start_year: "timeStartYear",
+      end_year: "timeEndYear",
+      years_after_degree: "timeYearsAfter",
+      employment_definition: "timeDefinition",
+      university: "timeUniversity",
+      disciplinary_group: "timeGroup",
+      course_type: "timeCourse",
+      point_dimension: "timePointDimension",
+      metric: "timeMetric",
+    },
+  };
+
+  var fieldSets = {
+    scatter: [
+      { key: "survey_year", id: "scatterSurveyYear", wildcard: false },
+      { key: "years_after_degree", id: "scatterYearsAfter", wildcard: false },
+      { key: "graduation_year", id: "scatterGraduationYear", wildcard: false },
+      { key: "employment_definition", id: "scatterDefinition", wildcard: false },
+      { key: "university", id: "scatterUniversity", wildcard: true, allLabel: "Tutti gli atenei" },
+      { key: "disciplinary_group", id: "scatterGroup", wildcard: true, allLabel: "Tutti i gruppi" },
+      { key: "course_type", id: "scatterCourse", wildcard: true, allLabel: "Tutti i tipi di corso" },
+      { key: "degree_class", id: "scatterDegree", wildcard: true, allLabel: "Tutte le classi di laurea" },
+    ],
+    box: [
+      { key: "survey_year", id: "boxSurveyYear", wildcard: false },
+      { key: "years_after_degree", id: "boxYearsAfter", wildcard: false },
+      { key: "graduation_year", id: "boxGraduationYear", wildcard: false },
+      { key: "employment_definition", id: "boxDefinition", wildcard: false },
+      { key: "university", id: "boxUniversity", wildcard: true, allLabel: "Tutti gli atenei" },
+      { key: "disciplinary_group", id: "boxGroup", wildcard: true, allLabel: "Tutti i gruppi" },
+      { key: "course_type", id: "boxCourse", wildcard: true, allLabel: "Tutti i tipi di corso" },
+    ],
+    time: [
+      { key: "years_after_degree", id: "timeYearsAfter", wildcard: false },
+      { key: "employment_definition", id: "timeDefinition", wildcard: false },
+      { key: "university", id: "timeUniversity", wildcard: true, allLabel: "Tutti gli atenei" },
+      { key: "disciplinary_group", id: "timeGroup", wildcard: true, allLabel: "Tutti i gruppi" },
+      { key: "course_type", id: "timeCourse", wildcard: true, allLabel: "Tutti i tipi di corso" },
+    ],
+  };
 
   var palette = [
     "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
@@ -123,12 +176,16 @@
 
   function optionLabel(field, option) {
     if (field.wildcard && asText(option.value) === WILDCARD) return field.allLabel;
-    if (field.key === "employment_definition") return option.label;
     return option.label;
+  }
+
+  function allFieldDefinitions() {
+    return fieldSets.scatter.concat(fieldSets.box, fieldSets.time);
   }
 
   function populateSelect(field) {
     var select = byId(field.id);
+    if (!select) return;
     var options = metadataOptions(field.key);
     var star = options.find(function (item) { return asText(item.value) === WILDCARD; });
     var regular = options.filter(function (item) { return asText(item.value) !== WILDCARD; });
@@ -144,6 +201,17 @@
     }).join("");
   }
 
+  function populateTimeYearSelects() {
+    var years = state.metadata.timeseries_years || [];
+    ["timeStartYear", "timeEndYear"].forEach(function (id) {
+      var select = byId(id);
+      if (!select) return;
+      select.innerHTML = years.map(function (year) {
+        return "<option value=\"" + year + "\">" + year + "</option>";
+      }).join("");
+    });
+  }
+
   function hasOption(select, value) {
     return Array.from(select.options).some(function (option) {
       return option.value === asText(value);
@@ -157,59 +225,118 @@
     }
   }
 
-  function getFilters() {
+  function firstOptionValue(id) {
+    var select = byId(id);
+    return select && select.options.length ? select.options[0].value : "";
+  }
+
+  function latestDetailedYear() {
+    return state.metadata.latest_survey_year;
+  }
+
+  function defaultYearsAfter() {
+    return metadataOptions("years_after_degree").some(function (item) {
+      return Number(item.value) === 1;
+    }) ? 1 : metadataOptions("years_after_degree")[0].value;
+  }
+
+  function getDetailedFilters(chart) {
+    var ids = chartIds[chart];
     return {
-      survey_year: toNumber(byId("filterSurveyYear").value),
-      years_after_degree: toNumber(byId("filterYearsAfter").value),
-      graduation_year: toNumber(byId("filterGraduationYear").value),
-      employment_definition: byId("filterDefinition").value,
-      university: byId("filterUniversity").value,
-      disciplinary_group: byId("filterGroup").value,
-      course_type: byId("filterCourse").value,
-      degree_class: byId("filterDegree").value,
-      point_dimension: byId("pointDimension").value,
+      survey_year: toNumber(byId(ids.survey_year).value),
+      years_after_degree: toNumber(byId(ids.years_after_degree).value),
+      graduation_year: toNumber(byId(ids.graduation_year).value),
+      employment_definition: byId(ids.employment_definition).value,
+      university: byId(ids.university).value,
+      disciplinary_group: byId(ids.disciplinary_group).value,
+      course_type: byId(ids.course_type).value,
+      degree_class: ids.degree_class ? byId(ids.degree_class).value : WILDCARD,
+      point_dimension: ids.point_dimension ? byId(ids.point_dimension).value : "disciplinary_group",
+      split_dimension: ids.split_dimension ? byId(ids.split_dimension).value : "disciplinary_group",
     };
   }
 
+  function getTimeFilters() {
+    var ids = chartIds.time;
+    var startYear = toNumber(byId(ids.start_year).value);
+    var endYear = toNumber(byId(ids.end_year).value);
+    if (Number.isFinite(startYear) && Number.isFinite(endYear) && startYear > endYear) {
+      var swap = startYear;
+      startYear = endYear;
+      endYear = swap;
+    }
+    return {
+      start_year: startYear,
+      end_year: endYear,
+      years_after_degree: toNumber(byId(ids.years_after_degree).value),
+      employment_definition: byId(ids.employment_definition).value,
+      university: byId(ids.university).value,
+      disciplinary_group: byId(ids.disciplinary_group).value,
+      course_type: byId(ids.course_type).value,
+      point_dimension: byId(ids.point_dimension).value,
+      metric: byId(ids.metric).value,
+    };
+  }
+
+  function setDetailedDefaults(chart) {
+    var ids = chartIds[chart];
+    setSelect(ids.survey_year, latestDetailedYear());
+    setSelect(ids.years_after_degree, defaultYearsAfter());
+    syncGraduationYear(chart);
+    setSelect(ids.employment_definition, "broad");
+    setSelect(ids.university, WILDCARD);
+    setSelect(ids.disciplinary_group, WILDCARD);
+    setSelect(ids.course_type, WILDCARD);
+    if (ids.degree_class) setSelect(ids.degree_class, WILDCARD);
+    if (ids.point_dimension) setSelect(ids.point_dimension, "disciplinary_group");
+    if (ids.split_dimension) setSelect(ids.split_dimension, "disciplinary_group");
+  }
+
+  function setTimeDefaults() {
+    var ids = chartIds.time;
+    var years = state.metadata.timeseries_years || [];
+    setSelect(ids.start_year, years.length ? years[0] : firstOptionValue(ids.start_year));
+    setSelect(ids.end_year, years.length ? years[years.length - 1] : firstOptionValue(ids.end_year));
+    setSelect(ids.years_after_degree, defaultYearsAfter());
+    setSelect(ids.employment_definition, "restrictive");
+    setSelect(ids.university, WILDCARD);
+    setSelect(ids.disciplinary_group, WILDCARD);
+    setSelect(ids.course_type, WILDCARD);
+    setSelect(ids.point_dimension, "disciplinary_group");
+    setSelect(ids.metric, "employment_rate");
+  }
+
   function setDefaults() {
-    setSelect("filterSurveyYear", state.metadata.latest_survey_year);
-    setSelect("filterYearsAfter", metadataOptions("years_after_degree").some(function (item) {
-      return Number(item.value) === 1;
-    }) ? 1 : metadataOptions("years_after_degree")[0].value);
-    syncGraduationYear();
-    setSelect("filterDefinition", "broad");
-    setSelect("filterUniversity", WILDCARD);
-    setSelect("filterGroup", WILDCARD);
-    setSelect("filterCourse", WILDCARD);
-    setSelect("filterDegree", WILDCARD);
-    setSelect("pointDimension", "disciplinary_group");
-    avoidSinglePointView();
+    setDetailedDefaults("scatter");
+    setDetailedDefaults("box");
+    setTimeDefaults();
   }
 
-  function syncGraduationYear() {
-    var surveyYear = toNumber(byId("filterSurveyYear").value);
-    var yearsAfter = toNumber(byId("filterYearsAfter").value);
+  function syncGraduationYear(chart) {
+    var ids = chartIds[chart];
+    var surveyYear = toNumber(byId(ids.survey_year).value);
+    var yearsAfter = toNumber(byId(ids.years_after_degree).value);
     if (!Number.isFinite(surveyYear) || !Number.isFinite(yearsAfter)) return;
-    var expected = surveyYear - yearsAfter;
-    setSelect("filterGraduationYear", expected);
+    setSelect(ids.graduation_year, surveyYear - yearsAfter);
   }
 
-  function syncYearsAfterFromGraduationYear() {
-    var surveyYear = toNumber(byId("filterSurveyYear").value);
-    var graduationYear = toNumber(byId("filterGraduationYear").value);
+  function syncYearsAfterFromGraduationYear(chart) {
+    var ids = chartIds[chart];
+    var surveyYear = toNumber(byId(ids.survey_year).value);
+    var graduationYear = toNumber(byId(ids.graduation_year).value);
     if (!Number.isFinite(surveyYear) || !Number.isFinite(graduationYear)) return;
-    var expected = surveyYear - graduationYear;
-    setSelect("filterYearsAfter", expected);
+    setSelect(ids.years_after_degree, surveyYear - graduationYear);
   }
 
-  function avoidSinglePointView() {
-    if (byId("filterGroup").value === WILDCARD) return;
-    if (byId("pointDimension").value !== "disciplinary_group") return;
-    if (byId("filterDegree").value === WILDCARD) {
-      setSelect("pointDimension", "degree_class");
+  function avoidSinglePointScatter() {
+    var ids = chartIds.scatter;
+    if (byId(ids.disciplinary_group).value === WILDCARD) return;
+    if (byId(ids.point_dimension).value !== "disciplinary_group") return;
+    if (byId(ids.degree_class).value === WILDCARD) {
+      setSelect(ids.point_dimension, "degree_class");
       return;
     }
-    setSelect("pointDimension", "university");
+    setSelect(ids.point_dimension, "university");
   }
 
   function fixedMatch(record, filters) {
@@ -226,9 +353,7 @@
       Number.isFinite(record.second_level_enrollment_rate);
   }
 
-  function candidateRows(dimension) {
-    var filters = getFilters();
-
+  function candidateRows(filters, dimension) {
     return state.records.filter(function (record) {
       if (!fixedMatch(record, filters)) return false;
       if (!hasMeasures(record)) return false;
@@ -266,24 +391,35 @@
     });
   }
 
-  function distributionRows() {
-    var filters = getFilters();
-    var splitByCourseType = filters.disciplinary_group !== WILDCARD &&
-      filters.course_type === WILDCARD &&
-      filters.degree_class === WILDCARD;
-
+  function distributionRows(filters) {
     return state.records.filter(function (record) {
       if (!fixedMatch(record, filters)) return false;
-      if (!hasMeasures(record)) return false;
-      if (filters.course_type !== WILDCARD && record.course_type !== filters.course_type) return false;
-      if (filters.course_type === WILDCARD && splitByCourseType && record.course_type === WILDCARD) return false;
-      if (filters.course_type === WILDCARD && !splitByCourseType && record.course_type !== WILDCARD) return false;
-      if (filters.degree_class !== WILDCARD && record.degree_class !== filters.degree_class) return false;
-      if (filters.degree_class === WILDCARD && record.degree_class !== WILDCARD) return false;
-      if (filters.disciplinary_group !== WILDCARD &&
-          record.disciplinary_group !== filters.disciplinary_group) return false;
-      if (filters.university !== WILDCARD && record.university !== filters.university) return false;
-      if (filters.university === WILDCARD && record.university === WILDCARD) return false;
+      if (!Number.isFinite(record.net_monthly_salary)) return false;
+
+      if (filters.course_type !== WILDCARD) {
+        if (record.course_type !== filters.course_type) return false;
+      } else if (filters.split_dimension === "course_type") {
+        if (record.course_type === WILDCARD) return false;
+      } else if (record.course_type !== WILDCARD) {
+        return false;
+      }
+
+      if (record.degree_class !== WILDCARD) return false;
+
+      if (filters.disciplinary_group !== WILDCARD) {
+        if (record.disciplinary_group !== filters.disciplinary_group) return false;
+      } else if (filters.split_dimension === "disciplinary_group") {
+        if (record.disciplinary_group === WILDCARD) return false;
+      } else if (record.disciplinary_group !== WILDCARD) {
+        return false;
+      }
+
+      if (filters.university !== WILDCARD) {
+        if (record.university !== filters.university) return false;
+      } else if (record.university === WILDCARD) {
+        return false;
+      }
+
       return true;
     });
   }
@@ -494,7 +630,12 @@
     );
   }
 
-  function renderBox(rows) {
+  function boxGroupKey(record, filters) {
+    if (filters.split_dimension === "course_type") return record.course_type_label;
+    return record.disciplinary_group_label;
+  }
+
+  function renderBox(rows, filters) {
     if (!plotlyAvailable()) {
       renderMessage("boxChart", "Plotly non e' disponibile.");
       return;
@@ -504,13 +645,9 @@
       return;
     }
 
-    var filters = getFilters();
-    var splitByCourseType = filters.disciplinary_group !== WILDCARD &&
-      filters.course_type === WILDCARD &&
-      filters.degree_class === WILDCARD;
     var byGroup = new Map();
     rows.forEach(function (record) {
-      var key = splitByCourseType ? record.course_type_label : record.disciplinary_group_label;
+      var key = boxGroupKey(record, filters);
       if (!byGroup.has(key)) byGroup.set(key, []);
       byGroup.get(key).push(record);
     });
@@ -526,7 +663,11 @@
         y: groupRows.map(function (record) { return record.net_monthly_salary; }),
         text: groupRows.map(function (record) { return record.university_label; }),
         customdata: groupRows.map(function (record) {
-          return [record.disciplinary_group_label, record.course_type_label, formatPercent(record.second_level_enrollment_rate)];
+          return [
+            record.disciplinary_group_label,
+            record.course_type_label,
+            formatPercent(record.second_level_enrollment_rate),
+          ];
         }),
         boxpoints: "all",
         jitter: .32,
@@ -554,7 +695,7 @@
       traces,
       plotLayout({
         showlegend: false,
-        margin: { l: 72, r: 26, t: 14, b: 120 },
+        margin: { l: 72, r: 26, t: 14, b: 126 },
         yaxis: {
           gridcolor: plotTheme().line,
           zerolinecolor: plotTheme().line,
@@ -563,34 +704,42 @@
         xaxis: {
           tickangle: -35,
           gridcolor: "rgba(0,0,0,0)",
-          title: { text: splitByCourseType ? "Tipo corso" : "Gruppo disciplinare" },
+          title: {
+            text: filters.split_dimension === "course_type" ?
+              "Tipo corso" :
+              "Gruppo disciplinare",
+          },
         },
       }),
       { responsive: true, displayModeBar: false }
     );
   }
 
-  function timeseriesRows() {
-    var filters = getFilters();
-    var dimension = filters.point_dimension;
-
+  function timeseriesRows(filters) {
     return state.timeseriesRecords.filter(function (record) {
+      if (Number.isFinite(filters.start_year) && record.survey_year < filters.start_year) return false;
+      if (Number.isFinite(filters.end_year) && record.survey_year > filters.end_year) return false;
       if (record.years_after_degree !== filters.years_after_degree) return false;
       if (record.employment_definition !== filters.employment_definition) return false;
-      if (filters.course_type !== WILDCARD && record.course_type !== filters.course_type) return false;
-      if (filters.course_type === WILDCARD && record.course_type !== WILDCARD) return false;
-      if (filters.degree_class !== WILDCARD) return false;
+
+      if (filters.course_type !== WILDCARD) {
+        if (record.course_type !== filters.course_type) return false;
+      } else if (record.course_type !== WILDCARD) {
+        return false;
+      }
+
       if (filters.university !== WILDCARD && record.university !== filters.university) return false;
       if (filters.disciplinary_group !== WILDCARD &&
           record.disciplinary_group !== filters.disciplinary_group) return false;
 
-      if (dimension === "university") {
+      if (filters.point_dimension === "university") {
         if (record.university === WILDCARD) return false;
-        if (filters.disciplinary_group === WILDCARD && record.disciplinary_group === WILDCARD) return false;
+        if (filters.disciplinary_group === WILDCARD && record.disciplinary_group !== WILDCARD) return false;
       } else {
-        if (filters.university === WILDCARD && record.university !== WILDCARD) return false;
         if (record.disciplinary_group === WILDCARD) return false;
+        if (filters.university === WILDCARD && record.university !== WILDCARD) return false;
       }
+
       return true;
     });
   }
@@ -598,6 +747,11 @@
   function timeseriesTraceKey(record, filters) {
     if (filters.point_dimension === "university") return record.university;
     return record.disciplinary_group;
+  }
+
+  function timeseriesTraceLabel(record, filters) {
+    if (filters.point_dimension === "university") return record.university_label;
+    return record.disciplinary_group_label;
   }
 
   function aggregateTimeseriesRows(rows, filters) {
@@ -610,6 +764,7 @@
       if (!buckets.has(bucketKey)) {
         buckets.set(bucketKey, {
           key: key,
+          label: timeseriesTraceLabel(record, filters),
           survey_year: record.survey_year,
           graduation_year: record.graduation_year,
           rows: [],
@@ -624,6 +779,7 @@
       }, 0);
       return {
         key: bucket.key,
+        label: bucket.label,
         survey_year: bucket.survey_year,
         graduation_year: bucket.graduation_year,
         graduates: graduates,
@@ -634,24 +790,15 @@
     });
   }
 
-  function renderTimeSeries(rows) {
+  function renderTimeSeries(rows, filters) {
     if (!plotlyAvailable()) {
       renderMessage("timeSeriesChart", "Plotly non e' disponibile.");
       return;
     }
 
-    var filters = getFilters();
-    var metric = byId("timeMetric").value;
+    var metric = filters.metric;
     var label = metricLabel(metric);
     var suffix = metricSuffix(metric);
-
-    if (filters.degree_class !== WILDCARD) {
-      renderMessage(
-        "timeSeriesChart",
-        "La serie storica lunga non include il dettaglio per classe di laurea. Rimuovi il filtro classe per confrontare gli anni."
-      );
-      return;
-    }
 
     if (!rows.length) {
       renderMessage("timeSeriesChart", "Nessuna serie storica disponibile per questa combinazione di filtri.");
@@ -660,10 +807,9 @@
 
     var byKey = new Map();
     aggregateTimeseriesRows(rows, filters).forEach(function (record) {
-      var key = record.key;
-      if (!key || key === WILDCARD || !Number.isFinite(record[metric])) return;
-      if (!byKey.has(key)) byKey.set(key, []);
-      byKey.get(key).push(record);
+      if (!record.key || record.key === WILDCARD || !Number.isFinite(record[metric])) return;
+      if (!byKey.has(record.key)) byKey.set(record.key, []);
+      byKey.get(record.key).push(record);
     });
 
     var traces = Array.from(byKey.entries()).map(function (entry) {
@@ -671,18 +817,19 @@
       var traceRows = entry[1].sort(function (a, b) {
         return a.survey_year - b.survey_year;
       });
+      var traceLabel = traceRows.length ? traceRows[0].label : key;
       return {
         type: "scatter",
         mode: "lines+markers",
-        name: shortText(key, 28),
+        name: shortText(traceLabel, 28),
         x: traceRows.map(function (record) { return record.survey_year; }),
         y: traceRows.map(function (record) { return record[metric]; }),
-        marker: { color: colorFor(key), size: 8 },
-        line: { color: colorFor(key), width: 2 },
+        marker: { color: colorFor(traceLabel), size: 8 },
+        line: { color: colorFor(traceLabel), width: 2 },
         customdata: traceRows.map(function (record) {
-          return [record.graduation_year, record.graduates, record.disciplinary_group, record.university];
+          return [record.graduation_year, record.graduates, traceLabel];
         }),
-        hovertemplate: "<b>" + escapeHtml(shortText(key, 36)) + "</b><br>" +
+        hovertemplate: "<b>%{customdata[2]}</b><br>" +
           "Anno indagine: %{x}<br>" +
           "Coorte: %{customdata[0]}<br>" +
           label + ": %{y:.1f}" + suffix + "<br>" +
@@ -739,7 +886,7 @@
     }
   }
 
-  function filterDescription(filters) {
+  function detailedFilterDescription(filters) {
     var parts = [];
     var definition = metadataOptions("employment_definition").find(function (item) {
       return item.value === filters.employment_definition;
@@ -755,8 +902,7 @@
     return parts.join(" | ");
   }
 
-  function updateComment(points) {
-    var filters = getFilters();
+  function updateComment(points, filters) {
     var dimensionLabel = {
       disciplinary_group: "gruppi disciplinari",
       university: "atenei",
@@ -765,7 +911,7 @@
 
     if (!points.length) {
       byId("selectionComment").textContent =
-        "Nessun dato disponibile per " + filterDescription(filters) +
+        "Nessun dato disponibile per " + detailedFilterDescription(filters) +
         ". In AlmaLaurea alcune combinazioni non sono pubblicate o non sono coerenti tra loro.";
       return;
     }
@@ -787,7 +933,7 @@
 
     byId("selectionComment").textContent =
       "La vista mostra " + points.length + " " + dimensionLabel + " per " +
-      filterDescription(filters) + ". Retribuzione piu' alta: " +
+      detailedFilterDescription(filters) + ". Retribuzione piu' alta: " +
       bestSalary.label + " (" + formatEuro(bestSalary.net_monthly_salary) +
       "). Occupazione piu' alta: " + bestEmployment.label + " (" +
       formatPercent(bestEmployment.employment_rate) + ")." + caveat;
@@ -813,20 +959,35 @@
     }).join("");
   }
 
-  function update() {
-    var dimension = byId("pointDimension").value;
-    var rows = candidateRows(dimension);
+  function updateScatter() {
+    var filters = getDetailedFilters("scatter");
+    var dimension = filters.point_dimension;
+    var rows = candidateRows(filters, dimension);
     var points = aggregateRows(rows, dimension);
     state.lastPoints = points;
 
     updateKpis(points);
-    updateComment(points);
+    updateComment(points, filters);
     renderScatter(points);
-    renderBox(distributionRows());
-    renderTimeSeries(timeseriesRows());
   }
 
-  function downloadCsv() {
+  function updateBox() {
+    var filters = getDetailedFilters("box");
+    renderBox(distributionRows(filters), filters);
+  }
+
+  function updateTimeSeries() {
+    var filters = getTimeFilters();
+    renderTimeSeries(timeseriesRows(filters), filters);
+  }
+
+  function updateAll() {
+    updateScatter();
+    updateBox();
+    updateTimeSeries();
+  }
+
+  function downloadScatterCsv() {
     var points = state.lastPoints || [];
     if (!points.length) return;
 
@@ -846,9 +1007,9 @@
     var blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     var url = URL.createObjectURL(blob);
     var link = document.createElement("a");
-    var filters = getFilters();
+    var filters = getDetailedFilters("scatter");
     link.href = url;
-    link.download = "almalaurea_" + filters.survey_year + "_" +
+    link.download = "almalaurea_scatter_" + filters.survey_year + "_" +
       filters.graduation_year + "_" + filters.years_after_degree + "anni.csv";
     document.body.appendChild(link);
     link.click();
@@ -856,34 +1017,60 @@
     URL.revokeObjectURL(url);
   }
 
-  function resetFilters() {
-    setDefaults();
-    update();
+  function resetScatterFilters() {
+    setDetailedDefaults("scatter");
+    updateScatter();
+  }
+
+  function resetBoxFilters() {
+    setDetailedDefaults("box");
+    updateBox();
+  }
+
+  function resetTimeFilters() {
+    setTimeDefaults();
+    updateTimeSeries();
+  }
+
+  function bindDetailedEvents(chart, updateFn) {
+    fieldSets[chart].forEach(function (field) {
+      byId(field.id).addEventListener("change", function () {
+        if (field.key === "survey_year" || field.key === "years_after_degree") {
+          syncGraduationYear(chart);
+        }
+        if (field.key === "graduation_year") {
+          syncYearsAfterFromGraduationYear(chart);
+        }
+        if (chart === "scatter") avoidSinglePointScatter();
+        updateFn();
+      });
+    });
   }
 
   function bindEvents() {
-    fields.forEach(function (field) {
-      byId(field.id).addEventListener("change", function () {
-        if (field.key === "survey_year" || field.key === "years_after_degree") {
-          syncGraduationYear();
-        }
-        if (field.key === "graduation_year") {
-          syncYearsAfterFromGraduationYear();
-        }
-        avoidSinglePointView();
-        update();
-      });
+    bindDetailedEvents("scatter", updateScatter);
+    bindDetailedEvents("box", updateBox);
+
+    byId("scatterPointDimension").addEventListener("change", function () {
+      avoidSinglePointScatter();
+      updateScatter();
     });
-    byId("pointDimension").addEventListener("change", function () {
-      avoidSinglePointView();
-      update();
+    byId("boxSplitDimension").addEventListener("change", updateBox);
+
+    fieldSets.time.forEach(function (field) {
+      byId(field.id).addEventListener("change", updateTimeSeries);
     });
-    byId("timeMetric").addEventListener("change", update);
-    byId("resetFilters").addEventListener("click", resetFilters);
-    byId("downloadFiltered").addEventListener("click", downloadCsv);
+    ["timeStartYear", "timeEndYear", "timePointDimension", "timeMetric"].forEach(function (id) {
+      byId(id).addEventListener("change", updateTimeSeries);
+    });
+
+    byId("resetScatterFilters").addEventListener("click", resetScatterFilters);
+    byId("downloadScatter").addEventListener("click", downloadScatterCsv);
+    byId("resetBoxFilters").addEventListener("click", resetBoxFilters);
+    byId("resetTimeFilters").addEventListener("click", resetTimeFilters);
 
     new MutationObserver(function () {
-      update();
+      updateAll();
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
 
@@ -912,6 +1099,9 @@
     record.survey_year = toNumber(record.survey_year);
     record.years_after_degree = toNumber(record.years_after_degree);
     record.graduation_year = toNumber(record.graduation_year);
+    record.university_label = record.university_label || displayLabel(record.university);
+    record.disciplinary_group_label = record.disciplinary_group_label || displayLabel(record.disciplinary_group);
+    record.course_type_label = record.course_type_label || displayLabel(record.course_type);
     return record;
   }
 
@@ -943,11 +1133,12 @@
         state.metadata = payload.metadata;
         state.records = payload.records.map(normalizeRecord);
         state.timeseriesRecords = (timeseriesPayload.records || []).map(normalizeTimeseriesRecord);
-        fields.forEach(populateSelect);
+        allFieldDefinitions().forEach(populateSelect);
+        populateTimeYearSelects();
         setDefaults();
         updateSourceAndNotes();
         bindEvents();
-        update();
+        updateAll();
       })
       .catch(function (error) {
         renderFatal("Non riesco a caricare i dati AlmaLaurea: " + error.message);
