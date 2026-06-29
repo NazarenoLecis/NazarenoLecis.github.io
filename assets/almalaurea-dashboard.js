@@ -132,6 +132,9 @@
     var options = metadataOptions(field.key);
     var star = options.find(function (item) { return asText(item.value) === WILDCARD; });
     var regular = options.filter(function (item) { return asText(item.value) !== WILDCARD; });
+    if (field.wildcard && !star) {
+      star = { value: WILDCARD, label: field.allLabel };
+    }
     var ordered = field.wildcard && star ? [star].concat(regular) : regular;
 
     select.innerHTML = ordered.map(function (option) {
