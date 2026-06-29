@@ -97,6 +97,19 @@
   line-height: 1.45;
 }
 
+.mode-note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--orange);
+  background: color-mix(in srgb, var(--orange) 10%, transparent);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
 .workflow-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -249,23 +249,30 @@
           <h2>Evoluzione nel tempo</h2>
         </div>
         <p>
-          Confronta anni di indagine diversi mantenendo fissa la distanza dalla laurea.
-          Se selezioni un ateneo o un gruppo, la serie storica segue quel perimetro.
-          Il menu "punti e serie" decide se tracciare gruppi o atenei; questa sezione
-          usa dati aggregati e non il dettaglio per classe di laurea.
+          Puoi leggere il tempo in due modi diversi: confrontando coorti diverse
+          sempre alla stessa distanza dalla laurea, oppure seguendo la stessa
+          coorte negli orizzonti disponibili. Questa sezione usa dati aggregati
+          e non il dettaglio per classe di laurea.
         </p>
       </div>
       <div class="chart-filter-panel" aria-label="Filtri serie storica">
         <div class="filter-intro">
           <h3>Filtri serie storica</h3>
           <p>
-            Questa vista serve a leggere l'evoluzione nel tempo. Per questo non
-            usa la classe di laurea: lavora su aggregazioni piu' stabili per
-            gruppo disciplinare o ateneo e arriva fino al 2008 quando il dato e'
-            disponibile.
+            "Trend a distanza fissa" confronta anni di indagine diversi, per
+            esempio sempre a 1 anno dalla laurea. "Percorso coorte" segue invece
+            una sola coorte e mostra gli orizzonti disponibili, oggi 1 e 5 anni.
           </p>
         </div>
+        <p class="mode-note" id="timeModeNote"></p>
         <div class="filter-grid chart-filter-grid">
+          <label>
+            <span>Lettura</span>
+            <select id="timeMode">
+              <option value="fixed_horizon">Trend a distanza fissa</option>
+              <option value="cohort_path">Percorso della stessa coorte</option>
+            </select>
+          </label>
           <label>
             <span>Da anno</span>
             <select id="timeStartYear"></select>
@@ -277,6 +284,10 @@
           <label>
             <span>Anni dalla laurea</span>
             <select id="timeYearsAfter"></select>
+          </label>
+          <label>
+            <span>Coorte</span>
+            <select id="timeCohort"></select>
           </label>
           <label>
             <span>Definizione occupazione</span>
@@ -316,7 +327,7 @@
       </div>
       <div class="chart-panel">
         <div class="panel-title">
-          <h2>Trend occupazione/retribuzione</h2>
+          <h2 id="timeSeriesTitle">Trend occupazione/retribuzione</h2>
           <span>linee: serie selezionate</span>
         </div>
         <div id="timeSeriesChart" class="chart"></div>

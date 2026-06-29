@@ -26,9 +26,11 @@
       split_dimension: "boxSplitDimension",
     },
     time: {
+      mode: "timeMode",
       start_year: "timeStartYear",
       end_year: "timeEndYear",
       years_after_degree: "timeYearsAfter",
+      graduation_year: "timeCohort",
       employment_definition: "timeDefinition",
       university: "timeUniversity",
       disciplinary_group: "timeGroup",
@@ -212,6 +214,19 @@
     });
   }
 
+  function populateTimeCohortSelect() {
+    var select = byId("timeCohort");
+    if (!select) return;
+    var years = Array.from(new Set(state.timeseriesRecords.map(function (record) {
+      return record.graduation_year;
+    }))).filter(Number.isFinite).sort(function (a, b) {
+      return a - b;
+    });
+    select.innerHTML = years.map(function (year) {
+      return "<option value=\"" + year + "\">" + year + "</option>";
+    }).join("");
+  }
+
   function hasOption(select, value) {
     return Array.from(select.options).some(function (option) {
       return option.value === asText(value);
@@ -266,9 +281,11 @@
       endYear = swap;
     }
     return {
+      mode: byId(ids.mode).value,
       start_year: startYear,
       end_year: endYear,
       years_after_degree: toNumber(byId(ids.years_after_degree).value),
+      graduation_year: toNumber(byId(ids.graduation_year).value),
       employment_definition: byId(ids.employment_definition).value,
       university: byId(ids.university).value,
       disciplinary_group: byId(ids.disciplinary_group).value,
@@ -295,9 +312,11 @@
   function setTimeDefaults() {
     var ids = chartIds.time;
     var years = state.metadata.timeseries_years || [];
+    setSelect(ids.mode, "fixed_horizon");
     setSelect(ids.start_year, years.length ? years[0] : firstOptionValue(ids.start_year));
     setSelect(ids.end_year, years.length ? years[years.length - 1] : firstOptionValue(ids.end_year));
     setSelect(ids.years_after_degree, defaultYearsAfter());
+    setSelect(ids.graduation_year, state.metadata.latest_survey_year - 5);
     setSelect(ids.employment_definition, "restrictive");
     setSelect(ids.university, WILDCARD);
     setSelect(ids.disciplinary_group, WILDCARD);
@@ -310,6 +329,32 @@
     setDetailedDefaults("scatter");
     setDetailedDefaults("box");
     setTimeDefaults();
+    updateTimeModeUi();
+  }
+
+  function setTimeFieldVisibility(id, hidden) {
+    var element = byId(id);
+    if (!element) return;
+    var label = element.closest("label");
+    if (label) label.classList.toggle("is-hidden", hidden);
+  }
+
+  function updateTimeModeUi() {
+    var ids = chartIds.time;
+    var mode = byId(ids.mode).value;
+    var cohortMode = mode === "cohort_path";
+
+    setTimeFieldVisibility(ids.start_year, cohortMode);
+    setTimeFieldVisibility(ids.end_year, cohortMode);
+    setTimeFieldVisibility(ids.years_after_degree, cohortMode);
+    setTimeFieldVisibility(ids.graduation_year, !cohortMode);
+
+    byId("timeSeriesTitle").textContent = cohortMode ?
+      "Percorso della coorte selezionata" :
+      "Trend a distanza fissa dalla laurea";
+    byId("timeModeNote").textContent = cohortMode ?
+      "Questa lettura segue la stessa coorte di laurea e confronta gli orizzonti disponibili: nel dataset attuale sono 1 e 5 anni dalla laurea." :
+      "Questa lettura non segue la stessa coorte: confronta anni di indagine diversi mantenendo fissa la distanza dalla laurea, ad esempio sempre 1 anno.";
   }
 
   function syncGraduationYear(chart) {
@@ -717,9 +762,13 @@
 
   function timeseriesRows(filters) {
     return state.timeseriesRecords.filter(function (record) {
-      if (Number.isFinite(filters.start_year) && record.survey_year < filters.start_year) return false;
-      if (Number.isFinite(filters.end_year) && record.survey_year > filters.end_year) return false;
-      if (record.years_after_degree !== filters.years_after_degree) return false;
+      if (filters.mode === "cohort_path") {
+        if (record.graduation_year !== filters.graduation_year) return false;
+      } else {
+        if (Number.isFinite(filters.start_year) && record.survey_year < filters.start_year) return false;
+        if (Number.isFinite(filters.end_year) && record.survey_year > filters.end_year) return false;
+        if (record.years_after_degree !== filters.years_after_degree) return false;
+      }
       if (record.employment_definition !== filters.employment_definition) return false;
 
       if (filters.course_type !== WILDCARD) {
@@ -754,19 +803,27 @@
     return record.disciplinary_group_label;
   }
 
+  function timeseriesAxisValue(record, filters) {
+    if (filters.mode === "cohort_path") return record.years_after_degree;
+    return record.survey_year;
+  }
+
   function aggregateTimeseriesRows(rows, filters) {
     var buckets = new Map();
 
     rows.forEach(function (record) {
       var key = timeseriesTraceKey(record, filters);
       if (!key || key === WILDCARD) return;
-      var bucketKey = key + "||" + record.survey_year;
+      var xValue = timeseriesAxisValue(record, filters);
+      var bucketKey = key + "||" + xValue;
       if (!buckets.has(bucketKey)) {
         buckets.set(bucketKey, {
           key: key,
           label: timeseriesTraceLabel(record, filters),
+          x_value: xValue,
           survey_year: record.survey_year,
           graduation_year: record.graduation_year,
+          years_after_degree: record.years_after_degree,
           rows: [],
         });
       }
@@ -780,8 +837,10 @@
       return {
         key: bucket.key,
         label: bucket.label,
+        x_value: bucket.x_value,
         survey_year: bucket.survey_year,
         graduation_year: bucket.graduation_year,
+        years_after_degree: bucket.years_after_degree,
         graduates: graduates,
         employment_rate: weightedAverage(bucket.rows, "employment_rate"),
         net_monthly_salary: weightedAverage(bucket.rows, "net_monthly_salary"),
@@ -799,6 +858,7 @@
     var metric = filters.metric;
     var label = metricLabel(metric);
     var suffix = metricSuffix(metric);
+    var cohortMode = filters.mode === "cohort_path";
 
     if (!rows.length) {
       renderMessage("timeSeriesChart", "Nessuna serie storica disponibile per questa combinazione di filtri.");
@@ -815,25 +875,38 @@
     var traces = Array.from(byKey.entries()).map(function (entry) {
       var key = entry[0];
       var traceRows = entry[1].sort(function (a, b) {
-        return a.survey_year - b.survey_year;
+        return a.x_value - b.x_value;
       });
       var traceLabel = traceRows.length ? traceRows[0].label : key;
       return {
         type: "scatter",
         mode: "lines+markers",
         name: shortText(traceLabel, 28),
-        x: traceRows.map(function (record) { return record.survey_year; }),
+        x: traceRows.map(function (record) { return record.x_value; }),
         y: traceRows.map(function (record) { return record[metric]; }),
         marker: { color: colorFor(traceLabel), size: 8 },
         line: { color: colorFor(traceLabel), width: 2 },
         customdata: traceRows.map(function (record) {
-          return [record.graduation_year, record.graduates, traceLabel];
+          return [
+            record.survey_year,
+            record.graduation_year,
+            record.years_after_degree,
+            record.graduates,
+            traceLabel,
+          ];
         }),
-        hovertemplate: "<b>%{customdata[2]}</b><br>" +
-          "Anno indagine: %{x}<br>" +
-          "Coorte: %{customdata[0]}<br>" +
+        hovertemplate: cohortMode ?
+          "<b>%{customdata[4]}</b><br>" +
+          "Anni dalla laurea: %{x}<br>" +
+          "Anno indagine: %{customdata[0]}<br>" +
+          "Coorte: %{customdata[1]}<br>" +
           label + ": %{y:.1f}" + suffix + "<br>" +
-          "Laureati: %{customdata[1]:,.0f}<extra></extra>",
+          "Laureati: %{customdata[3]:,.0f}<extra></extra>" :
+          "<b>%{customdata[4]}</b><br>" +
+          "Anno indagine: %{x}<br>" +
+          "Coorte: %{customdata[1]}<br>" +
+          label + ": %{y:.1f}" + suffix + "<br>" +
+          "Laureati: %{customdata[3]:,.0f}<extra></extra>",
       };
     }).filter(function (trace) {
       return trace.x.length > 0;
@@ -844,17 +917,27 @@
       return;
     }
 
+    var xaxis = {
+      gridcolor: plotTheme().line,
+      zerolinecolor: plotTheme().line,
+      title: { text: cohortMode ? "Anni dalla laurea" : "Anno indagine" },
+      dtick: 1,
+    };
+    if (cohortMode) {
+      xaxis.tickmode = "array";
+      xaxis.tickvals = Array.from(new Set(traces.reduce(function (values, trace) {
+        return values.concat(trace.x);
+      }, []))).sort(function (a, b) {
+        return a - b;
+      });
+    }
+
     window.Plotly.react(
       "timeSeriesChart",
       traces,
       plotLayout({
         margin: { l: 78, r: 210, t: 16, b: 64 },
-        xaxis: {
-          gridcolor: plotTheme().line,
-          zerolinecolor: plotTheme().line,
-          title: { text: "Anno indagine" },
-          dtick: 1,
-        },
+        xaxis: xaxis,
         yaxis: {
           gridcolor: plotTheme().line,
           zerolinecolor: plotTheme().line,
@@ -977,6 +1060,7 @@
   }
 
   function updateTimeSeries() {
+    updateTimeModeUi();
     var filters = getTimeFilters();
     renderTimeSeries(timeseriesRows(filters), filters);
   }
@@ -1060,7 +1144,7 @@
     fieldSets.time.forEach(function (field) {
       byId(field.id).addEventListener("change", updateTimeSeries);
     });
-    ["timeStartYear", "timeEndYear", "timePointDimension", "timeMetric"].forEach(function (id) {
+    ["timeMode", "timeStartYear", "timeEndYear", "timeCohort", "timePointDimension", "timeMetric"].forEach(function (id) {
       byId(id).addEventListener("change", updateTimeSeries);
     });
 
@@ -1135,6 +1219,7 @@
         state.timeseriesRecords = (timeseriesPayload.records || []).map(normalizeTimeseriesRecord);
         allFieldDefinitions().forEach(populateSelect);
         populateTimeYearSelects();
+        populateTimeCohortSelect();
         setDefaults();
         updateSourceAndNotes();
         bindEvents();
