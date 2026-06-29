@@ -26,6 +26,8 @@
     .note,.method{border-left:3px solid var(--orange);padding:15px 0 15px 18px;margin:28px 0;color:var(--muted)}
     .note p,.method p{color:var(--muted);font-size:1rem;margin:0 0 10px;line-height:1.6}
     .note p:last-child,.method p:last-child{margin-bottom:0}
+    .note ul{margin:10px 0 18px 20px;padding:0;color:var(--muted)}
+    .note li{font-size:1rem;line-height:1.6;margin:0 0 8px;color:var(--muted)}
     .data-table{width:100%;border-collapse:collapse;margin:26px 0 36px;font-size:.98rem}
     .data-table th,.data-table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
     .data-table th{color:var(--orange);font-weight:800}
@@ -125,9 +127,16 @@
 
 <h2>Note di lettura</h2>
 <div class="note">
-  <p><strong>Il gruppo Scientifico non include ingegneria.</strong> Nella classificazione usata da AlmaLaurea, basata sulla classificazione MUR delle classi di laurea e coerente con ISCED-F 2013, ingegneria è separata in gruppi distinti. Nel grafico compaiono infatti “Architettura e Ingegneria civile” e “Ingegneria industriale e dell’informazione”. Anche “Informatica e Tecnologie ICT” è un gruppo autonomo.</p>
-  <p>Quando si legge il punto “Scientifico”, quindi, non si stanno osservando ingegneria e ICT. Il gruppo Scientifico raccoglie corsi come matematica, fisica, chimica, biologia, geologia, statistica e altri percorsi affini. Questo chiarimento è importante perché nel linguaggio comune molti usano “scientifico” o “STEM” come contenitore unico, mentre nei dati i gruppi sono distinti e hanno esiti diversi.</p>
-  <p><strong>Medico-sanitario non significa solo medicina.</strong> Include anche farmacia e molte professioni sanitarie. I valori elevati di occupazione riflettono quindi un gruppo ampio, con percorsi professionalizzanti e domanda strutturale di lavoro sanitario.</p>
+  <p><strong>Composizione dei gruppi disciplinari principali.</strong> I gruppi usati da AlmaLaurea seguono la classificazione MUR delle classi di laurea. Non coincidono sempre con le categorie usate nel linguaggio comune.</p>
+  <ul>
+    <li><strong>Scientifico:</strong> matematica, fisica, chimica, biologia, geologia, statistica e altri percorsi affini. Non include ingegneria e non include ICT.</li>
+    <li><strong>Ingegneria industriale e dell’informazione:</strong> ingegneria industriale, ingegneria dell’informazione e percorsi collegati.</li>
+    <li><strong>Architettura e Ingegneria civile:</strong> architettura, ingegneria civile, edilizia, urbanistica e percorsi affini.</li>
+    <li><strong>Informatica e Tecnologie ICT:</strong> informatica, sicurezza informatica, tecniche e metodi per la società dell’informazione e percorsi affini.</li>
+    <li><strong>Medico-sanitario e farmaceutico:</strong> medicina, farmacia, professioni sanitarie e percorsi collegati. Non significa solo medicina.</li>
+    <li><strong>Economico:</strong> economia, gestione aziendale, finanza, turismo e percorsi collegati.</li>
+    <li><strong>Giuridico:</strong> giurisprudenza, scienze giuridiche e percorsi collegati.</li>
+  </ul>
   <p><strong>I risultati per ateneo non misurano solo l’ateneo.</strong> Possono riflettere mercato del lavoro locale, composizione dei corsi, luogo in cui i laureati lavorano, dimensione del campione e selezione iniziale degli studenti. Un ateneo con pochi laureati può mostrare valori molto alti o molto bassi per ragioni poco generalizzabili.</p>
   <p><strong>I dati a 5 anni non hanno lo stesso perimetro del totale a 1 anno.</strong> Le schede a 5 anni riguardano il secondo livello. Il totale a 1 anno include anche le lauree di primo livello. Per confronti più puliti bisogna confrontare lo stesso tipo di corso.</p>
   <p><strong>Le retribuzioni sono nette mensili e dichiarate in fasce.</strong> Non sono importi amministrativi verificati tramite busta paga o dichiarazione fiscale. La media è calcolata usando valori centrali delle fasce e regole specifiche indicate da AlmaLaurea nelle note metodologiche.</p>
