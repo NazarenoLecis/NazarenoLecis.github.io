@@ -40,8 +40,10 @@
         <span class="eyebrow">Dati AlmaLaurea</span>
         <h1>Occupazione e retribuzione dei laureati</h1>
         <p class="lead">
-          Esplora i dati AlmaLaurea per anno, coorte, ateneo, gruppo disciplinare,
-          tipo di corso e classe di laurea.
+          Parti da anno e coorte, poi restringi il perimetro per ateneo,
+          gruppo disciplinare, tipo di corso e classe di laurea. La vista
+          dettagliata usa gli anni recenti; le serie storiche usano dati
+          piu' aggregati e vanno piu' indietro nel tempo.
         </p>
       </div>
       <div class="source-panel">
@@ -53,7 +55,36 @@
       </div>
     </section>
 
+    <section class="workflow-grid" aria-label="Guida alla lettura">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Scegli il perimetro</h2>
+        <p>Anno di indagine, anni dalla laurea e coorte identificano il gruppo osservato.</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Confronta la selezione</h2>
+        <p>Scatter e boxplot usano i filtri dove sono coerenti con i dati disponibili.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Guarda l'evoluzione</h2>
+        <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea.</p>
+      </div>
+    </section>
+
     <section class="filters-panel" aria-label="Filtri dashboard">
+      <div class="section-head compact">
+        <div>
+          <span class="eyebrow">Filtri</span>
+          <h2>Perimetro della dashboard</h2>
+        </div>
+        <p>
+          Il caricamento iniziale mostra l'ultimo anno disponibile, a 1 anno dalla laurea,
+          con tutti i gruppi disciplinari: una vista comparabile, non un punto isolato.
+          Il pannello dettagliato e' limitato agli ultimi 10 anni disponibili.
+        </p>
+      </div>
       <div class="filter-grid">
         <label>
           <span>Anno indagine</span>
@@ -88,7 +119,7 @@
           <select id="filterDegree"></select>
         </label>
         <label>
-          <span>Punti dello scatter</span>
+          <span>Punti e serie</span>
           <select id="pointDimension">
             <option value="disciplinary_group">Gruppi disciplinari</option>
             <option value="university">Atenei</option>
@@ -116,8 +147,8 @@
         <strong id="kpiSalary">-</strong>
       </div>
       <div class="kpi">
-        <span>Punti visualizzati</span>
-        <strong id="kpiPoints">-</strong>
+        <span id="kpiExtraLabel">Punti visualizzati</span>
+        <strong id="kpiExtra">-</strong>
       </div>
     </section>
 
@@ -126,13 +157,37 @@
       <p id="selectionComment">Seleziona i filtri per leggere i dati disponibili.</p>
     </section>
 
-    <section class="chart-grid">
+    <section class="dashboard-section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Confronto</span>
+          <h2>Mappa della coorte selezionata</h2>
+        </div>
+        <p>
+          Lo scatter confronta occupazione e retribuzione. La dimensione della bolla
+          indica il numero di laureati, mentre il menu "punti e serie" decide
+          se visualizzare gruppi disciplinari, atenei o classi.
+        </p>
+      </div>
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2>Occupazione e retribuzione</h2>
           <span>dimensione bolla: numero laureati</span>
         </div>
         <div id="scatterChart" class="chart"></div>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Distribuzione</span>
+          <h2>Distribuzione della retribuzione</h2>
+        </div>
+        <p>
+          Il boxplot usa gli atenei disponibili per mostrare dispersione della
+          retribuzione entro il perimetro selezionato.
+        </p>
       </div>
       <div class="chart-panel">
         <div class="panel-title">
@@ -141,32 +196,34 @@
         </div>
         <div id="boxChart" class="chart"></div>
       </div>
-      <div class="chart-panel">
-        <div class="panel-title">
-          <h2>Ranking retribuzione</h2>
-          <span>media ponderata sui laureati</span>
+    </section>
+
+    <section class="dashboard-section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Serie storica</span>
+          <h2>Evoluzione nel tempo</h2>
         </div>
-        <div id="barChart" class="chart"></div>
+        <p>
+          Confronta anni di indagine diversi mantenendo fissa la distanza dalla laurea.
+          Se selezioni un ateneo o un gruppo, la serie storica segue quel perimetro.
+          Il menu "punti e serie" decide se tracciare gruppi o atenei; questa sezione
+          usa dati aggregati e non il dettaglio per classe di laurea.
+        </p>
       </div>
       <div class="chart-panel">
         <div class="panel-title">
-          <h2>Tabella dati</h2>
-          <span id="tableCount">-</span>
+          <h2>Trend occupazione/retribuzione</h2>
+          <label class="inline-control">
+            <span>Indicatore</span>
+            <select id="timeMetric">
+              <option value="employment_rate">Tasso di occupazione</option>
+              <option value="net_monthly_salary">Retribuzione mensile netta</option>
+              <option value="second_level_enrollment_rate">Iscritti a magistrale</option>
+            </select>
+          </label>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Voce</th>
-                <th>Gruppo</th>
-                <th>Laureati</th>
-                <th>Occupazione</th>
-                <th>Retribuzione</th>
-              </tr>
-            </thead>
-            <tbody id="dataTable"></tbody>
-          </table>
-        </div>
+        <div id="timeSeriesChart" class="chart"></div>
       </div>
     </section>
 
@@ -185,6 +242,12 @@
           "Occupati incl. formazione retribuita" include anche chi svolge
           attivita' di formazione retribuita; "occupati escl. formazione
           retribuita" la esclude.
+        </p>
+        <p>
+          Per le lauree di primo livello, la quota di iscritti a un corso di
+          secondo livello aiuta a leggere il tasso di occupazione a 1 anno,
+          evitando di confondere prosecuzione degli studi e mancato inserimento
+          lavorativo.
         </p>
         <p>
           Se una combinazione di filtri non compare, significa che non e' pubblicata

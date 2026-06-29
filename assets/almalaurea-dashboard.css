@@ -29,6 +29,7 @@
 .filters-panel,
 .commentary-panel,
 .chart-panel,
+.workflow-step,
 .notes-panel,
 .kpi {
   border: 1px solid var(--line);
@@ -68,6 +69,69 @@
 .filters-panel {
   margin-top: 24px;
   padding: 18px;
+}
+
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.workflow-step {
+  padding: 18px;
+}
+
+.workflow-step span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--orange);
+  border-radius: 999px;
+  color: var(--orange);
+  font-weight: 850;
+}
+
+.workflow-step h2 {
+  margin: 14px 0 0;
+  font-size: 1.08rem;
+  letter-spacing: 0;
+}
+
+.workflow-step p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.section-head {
+  display: grid;
+  grid-template-columns: minmax(260px, .8fr) minmax(300px, 1.2fr);
+  gap: 28px;
+  align-items: end;
+  margin: 0 0 16px;
+}
+
+.section-head.compact {
+  margin-bottom: 18px;
+}
+
+.section-head .eyebrow {
+  margin-bottom: 8px;
+}
+
+.section-head h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.6vw, 2.25rem);
+  line-height: 1.06;
+  letter-spacing: -.035em;
+}
+
+.section-head p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .filter-grid {
@@ -174,11 +238,8 @@
   max-width: 1120px;
 }
 
-.chart-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
-  gap: 18px;
-  margin-top: 18px;
+.dashboard-section {
+  margin-top: 26px;
 }
 
 .chart-panel {
@@ -203,6 +264,29 @@
   text-align: right;
 }
 
+.inline-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: .94rem;
+  font-weight: 750;
+}
+
+.inline-control span {
+  color: var(--muted);
+}
+
+.inline-control select {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+}
+
 .chart {
   width: 100%;
   min-height: 465px;
@@ -210,46 +294,6 @@
 
 .main-chart .chart {
   min-height: 560px;
-}
-
-.table-wrap {
-  max-height: 465px;
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: .92rem;
-}
-
-th,
-td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-  vertical-align: top;
-}
-
-th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--panel);
-  color: var(--orange);
-  font-weight: 850;
-}
-
-td {
-  color: var(--text);
-}
-
-td.num {
-  white-space: nowrap;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 .notes-panel {
@@ -289,9 +333,11 @@ td.num {
     grid-template-columns: repeat(3, minmax(160px, 1fr));
   }
 
-  .chart-grid {
+  .workflow-grid,
+  .section-head {
     grid-template-columns: 1fr;
   }
+
 }
 
 @media (max-width: 760px) {
@@ -300,6 +346,7 @@ td.num {
   }
 
   .filter-grid,
+  .workflow-grid,
   .kpi-grid,
   .notes-panel {
     grid-template-columns: 1fr;
