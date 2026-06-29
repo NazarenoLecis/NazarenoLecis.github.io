@@ -176,10 +176,10 @@
     syncGraduationYear();
     setSelect("filterDefinition", "broad");
     setSelect("filterUniversity", WILDCARD);
-    setSelect("filterGroup", "Scientifico");
+    setSelect("filterGroup", WILDCARD);
     setSelect("filterCourse", WILDCARD);
     setSelect("filterDegree", WILDCARD);
-    setSelect("pointDimension", "degree_class");
+    setSelect("pointDimension", "disciplinary_group");
     avoidSinglePointView();
   }
 
@@ -232,6 +232,8 @@
 
       if (filters.course_type !== WILDCARD) {
         if (record.course_type !== filters.course_type) return false;
+      } else if (dimension === "degree_class") {
+        if (record.course_type === WILDCARD) return false;
       } else if (record.course_type !== WILDCARD) {
         return false;
       }
@@ -263,12 +265,16 @@
 
   function distributionRows() {
     var filters = getFilters();
+    var splitByCourseType = filters.disciplinary_group !== WILDCARD &&
+      filters.course_type === WILDCARD &&
+      filters.degree_class === WILDCARD;
 
     return state.records.filter(function (record) {
       if (!fixedMatch(record, filters)) return false;
       if (!hasMeasures(record)) return false;
       if (filters.course_type !== WILDCARD && record.course_type !== filters.course_type) return false;
-      if (filters.course_type === WILDCARD && record.course_type !== WILDCARD) return false;
+      if (filters.course_type === WILDCARD && splitByCourseType && record.course_type === WILDCARD) return false;
+      if (filters.course_type === WILDCARD && !splitByCourseType && record.course_type !== WILDCARD) return false;
       if (filters.degree_class !== WILDCARD && record.degree_class !== filters.degree_class) return false;
       if (filters.degree_class === WILDCARD && record.degree_class !== WILDCARD) return false;
       if (filters.disciplinary_group !== WILDCARD &&
@@ -297,7 +303,13 @@
 
   function colorKeyForBucket(records, dimension) {
     if (dimension === "disciplinary_group") return records[0].disciplinary_group_label;
-    if (dimension === "degree_class") return records[0].disciplinary_group_label;
+    if (dimension === "degree_class") {
+      var degreeGroups = Array.from(new Set(records.map(function (record) {
+        return record.disciplinary_group_label;
+      })));
+      if (degreeGroups.length === 1) return records[0].course_type_label;
+      return records[0].disciplinary_group_label;
+    }
 
     var groups = Array.from(new Set(records.map(function (record) {
       return record.disciplinary_group_label;
@@ -351,6 +363,7 @@
         display_label: pointDisplayLabel(first, dimension),
         disciplinary_group: first.disciplinary_group,
         group_label: first.disciplinary_group_label,
+        course_type_label: first.course_type_label,
         color_key: colorKeyForBucket(bucketRows, dimension),
         graduates: graduates,
         employment_rate: weightedAverage(bucketRows, "employment_rate"),
@@ -453,16 +466,18 @@
           return [
             point.label,
             point.group_label,
+            point.course_type_label,
             point.graduates,
             formatPercent(point.second_level_enrollment_rate),
           ];
         }),
         hovertemplate: "<b>%{customdata[0]}</b><br>" +
           "Gruppo: %{customdata[1]}<br>" +
+          "Tipo corso: %{customdata[2]}<br>" +
           "Retribuzione: %{x:.0f} euro<br>" +
           "Occupazione: %{y:.1f}%<br>" +
-          "Iscritti a magistrale: %{customdata[3]}<br>" +
-          "Laureati: %{customdata[2]:,.0f}<extra></extra>",
+          "Iscritti a magistrale: %{customdata[4]}<br>" +
+          "Laureati: %{customdata[3]:,.0f}<extra></extra>",
       };
     });
 
@@ -486,9 +501,13 @@
       return;
     }
 
+    var filters = getFilters();
+    var splitByCourseType = filters.disciplinary_group !== WILDCARD &&
+      filters.course_type === WILDCARD &&
+      filters.degree_class === WILDCARD;
     var byGroup = new Map();
     rows.forEach(function (record) {
-      var key = record.disciplinary_group_label;
+      var key = splitByCourseType ? record.course_type_label : record.disciplinary_group_label;
       if (!byGroup.has(key)) byGroup.set(key, []);
       byGroup.get(key).push(record);
     });
@@ -504,7 +523,7 @@
         y: groupRows.map(function (record) { return record.net_monthly_salary; }),
         text: groupRows.map(function (record) { return record.university_label; }),
         customdata: groupRows.map(function (record) {
-          return [formatPercent(record.second_level_enrollment_rate)];
+          return [record.disciplinary_group_label, record.course_type_label, formatPercent(record.second_level_enrollment_rate)];
         }),
         boxpoints: "all",
         jitter: .32,
@@ -513,9 +532,10 @@
         line: { color: colorFor(group) },
         fillcolor: "rgba(160,160,160,.18)",
         hovertemplate: "<b>%{text}</b><br>" +
-          group + "<br>" +
+          "Gruppo: %{customdata[0]}<br>" +
+          "Tipo corso: %{customdata[1]}<br>" +
           "Retribuzione: %{y:.0f} euro<br>" +
-          "Iscritti a magistrale: %{customdata[0]}<extra></extra>",
+          "Iscritti a magistrale: %{customdata[2]}<extra></extra>",
       };
     }).filter(function (trace) {
       return trace.y.length > 0;
@@ -540,6 +560,7 @@
         xaxis: {
           tickangle: -35,
           gridcolor: "rgba(0,0,0,0)",
+          title: { text: splitByCourseType ? "Tipo corso" : "Gruppo disciplinare" },
         },
       }),
       { responsive: true, displayModeBar: false }
@@ -625,14 +646,6 @@
       renderMessage(
         "timeSeriesChart",
         "La serie storica lunga non include il dettaglio per classe di laurea. Rimuovi il filtro classe per confrontare gli anni."
-      );
-      return;
-    }
-
-    if (filters.point_dimension === "degree_class") {
-      renderMessage(
-        "timeSeriesChart",
-        "La serie storica lunga e' disponibile per gruppi disciplinari o atenei, non per classi di laurea."
       );
       return;
     }
