@@ -42,6 +42,69 @@
     return value.toLocaleString("it-IT", { maximumFractionDigits: 0 }) + " euro";
   }
 
+  function hasOption(id, value) {
+    var select = byId(id);
+    if (!select) return false;
+    return Array.from(select.options).some(function (option) {
+      return option.value === asText(value);
+    });
+  }
+
+  function setSelect(id, value) {
+    var select = byId(id);
+    if (!select || !hasOption(id, value)) return false;
+    if (select.value === asText(value)) return true;
+    select.value = asText(value);
+    return true;
+  }
+
+  function dispatchChanges(ids) {
+    ids.forEach(function (id) {
+      var element = byId(id);
+      if (element) element.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+  }
+
+  function applyUsefulDefault() {
+    if (window.location.search) return;
+    if (document.documentElement.dataset.almUsefulDefault === "1") return;
+    document.documentElement.dataset.almUsefulDefault = "1";
+
+    var latest = toNumber(metadata.latest_survey_year) || 2025;
+    var cohort = latest - 5;
+    var ids = [
+      "scatterSurveyYear", "scatterYearsAfter", "scatterGraduationYear", "scatterDefinition",
+      "boxSurveyYear", "boxYearsAfter", "boxGraduationYear", "boxDefinition"
+    ];
+
+    setSelect("scatterSurveyYear", latest);
+    setSelect("scatterYearsAfter", 5);
+    setSelect("scatterGraduationYear", cohort);
+    setSelect("scatterDefinition", "broad");
+    setSelect("scatterUniversity", WILDCARD);
+    setSelect("scatterGroup", WILDCARD);
+    setSelect("scatterCourse", WILDCARD);
+    setSelect("scatterDegree", WILDCARD);
+    setSelect("scatterPointDimension", "disciplinary_group");
+
+    setSelect("boxSurveyYear", latest);
+    setSelect("boxYearsAfter", 5);
+    setSelect("boxGraduationYear", cohort);
+    setSelect("boxDefinition", "broad");
+    setSelect("boxUniversity", WILDCARD);
+    setSelect("boxGroup", WILDCARD);
+    setSelect("boxCourse", WILDCARD);
+    setSelect("boxSplitDimension", "disciplinary_group");
+
+    var intro = document.querySelector("#scatterSection .filter-intro p");
+    if (intro) {
+      intro.textContent = "Vista iniziale: ultima indagine disponibile, coorte osservata a 5 anni dalla laurea, tutti i gruppi disciplinari. Cambia i filtri quando vuoi restringere il perimetro.";
+    }
+
+    window.setTimeout(function () { dispatchChanges(ids); }, 0);
+    window.setTimeout(function () { dispatchChanges(ids); }, 300);
+  }
+
   function normalizeRecord(record) {
     record.graduates = toNumber(record.graduates);
     record.employment_rate = toNumber(record.employment_rate);
@@ -261,6 +324,7 @@
   }
 
   function bind() {
+    applyUsefulDefault();
     [
       "scatterSurveyYear", "scatterYearsAfter", "scatterGraduationYear", "scatterDefinition",
       "scatterUniversity", "scatterGroup", "scatterCourse", "scatterDegree", "resetScatterFilters"
