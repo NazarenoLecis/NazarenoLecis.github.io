@@ -206,6 +206,17 @@
       "<span>" + formatEuro(result.value.net_monthly_salary) + " · " + formatInt(result.value.graduates) + " laureati</span>";
   }
 
+  function ensureKpiScope() {
+    if (byId("kpiScopeNote")) return;
+    var kpis = document.querySelector("#scatterSection .kpi-grid");
+    if (!kpis) return;
+    var note = document.createElement("section");
+    note.id = "kpiScopeNote";
+    note.className = "kpi-scope";
+    note.innerHTML = "<h2>Indicatori della selezione corrente</h2><p>Questi numeri sono calcolati sui punti mostrati nello scatterplot e cambiano con i filtri sopra. La tabella sotto usa la stessa coorte e gli stessi filtri per separare i dati per tipo di corso.</p>";
+    kpis.insertAdjacentElement("beforebegin", note);
+  }
+
   function ensurePanel() {
     var existing = byId("courseTypeSummaryPanel");
     if (existing) return existing;
@@ -220,6 +231,7 @@
   }
 
   function render() {
+    ensureKpiScope();
     var panel = ensurePanel();
     var target = byId("courseTypeSummary");
     if (!panel || !target || !metadata) return;
