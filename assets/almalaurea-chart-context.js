@@ -117,13 +117,17 @@
     var mode = selectValue("timeMode");
     var metric = metricLabel(selectValue("timeMetric"));
     var title = mode === "cohort_path" ?
-      "Evoluzione della coorte selezionata — " + metric :
-      "Serie storica a distanza fissa — " + metric;
-    setPanelTitle("timeSeriesChart", title, "Linee: serie selezionate");
+      "Percorso della stessa coorte — " + metric :
+      "Trend a distanza fissa — " + metric;
+    var subtitle = mode === "cohort_path" ?
+      "Asse orizzontale: anni dalla laurea" :
+      "Asse orizzontale: anno di indagine";
+    setPanelTitle("timeSeriesChart", title, subtitle);
     var note = ensureNote("timeSeriesChart");
     if (!note) return;
     note.querySelector("strong").textContent = title;
     var parts = mode === "cohort_path" ? [
+      "Lettura: stessa coorte, orizzonti diversi",
       shortFilter("coorte", selectLabel("timeCohort")),
       shortFilter("occupazione", selectLabel("timeDefinition")),
       shortFilter("serie", selectLabel("timePointDimension")),
@@ -131,6 +135,7 @@
       shortFilter("gruppo", selectLabel("timeGroup")),
       shortFilter("tipo corso", selectLabel("timeCourse"))
     ] : [
+      "Lettura: stessa distanza dalla laurea, coorti diverse",
       shortFilter("anni", selectLabel("timeStartYear") + "-" + selectLabel("timeEndYear")),
       shortFilter("distanza", selectLabel("timeYearsAfter")),
       shortFilter("occupazione", selectLabel("timeDefinition")),
