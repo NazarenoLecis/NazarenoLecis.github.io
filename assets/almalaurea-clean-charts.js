@@ -34,6 +34,41 @@
     }
   }
 
+  function hasOption(id, value) {
+    var select = byId(id);
+    if (!select) return false;
+    return Array.from(select.options).some(function (option) { return option.value === value; });
+  }
+
+  function setSelect(id, value) {
+    var select = byId(id);
+    if (!select || !hasOption(id, value)) return false;
+    select.value = value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }
+
+  function ensureClassCourseButton() {
+    if (byId("showDegreeClassScatter")) return;
+    var actions = document.querySelector("#scatterSection .filter-actions");
+    if (!actions) return;
+
+    var button = document.createElement("button");
+    button.id = "showDegreeClassScatter";
+    button.type = "button";
+    button.className = "button compact";
+    button.textContent = "Mostra classi/corsi";
+    button.addEventListener("click", function () {
+      setSelect("scatterDegree", "*");
+      setSelect("scatterPointDimension", "degree_class");
+      window.setTimeout(function () {
+        var chart = byId("scatterChart");
+        if (chart) chart.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    });
+    actions.insertBefore(button, actions.firstChild);
+  }
+
   function cleanTemplate(template) {
     if (!template) return template;
     return template
@@ -96,6 +131,7 @@
   function refresh() {
     removeSecondLevelMetric();
     updateCourseLabels();
+    ensureClassCourseButton();
     patchPlotly();
     cleanChart("scatterChart");
     cleanChart("boxChart");
