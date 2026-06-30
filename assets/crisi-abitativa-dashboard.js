@@ -1,5 +1,6 @@
-﻿(function () {
+(function () {
   var EUROPE_DATA_BASE = "../../data/crisi-abitativa/eurostat/";
+  var EUROPE_INDEX_URL = EUROPE_DATA_BASE + "index.json";
   var LOCAL_INDEX_URL = "../../data/crisi-abitativa/local_index.json";
   var LOCAL_REGION_BASE = "../../data/crisi-abitativa/regions/";
   var ITALY = "IT";
@@ -9,108 +10,8 @@
     "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "EU27_2020"
   ];
 
-  var indicators = [
-    {
-      id: "housing_overburden",
-      label: "Sovraccarico dei costi abitativi",
-      shortLabel: "Costi abitativi oltre il 40% del reddito",
-      dataset: "ilc_lvho07a",
-      params: { freq: "A", unit: "PC", rskpovth: "TOTAL", age: "TOTAL", sex: "T" },
-      unit: "%",
-      source: "Eurostat ilc_lvho07a",
-      note: "Quota di popolazione in famiglie in cui i costi abitativi totali superano il 40% del reddito disponibile. E' l'indicatore piu' diretto di stress economico legato alla casa."
-    },
-    {
-      id: "housing_cost_burden_median",
-      label: "Peso mediano dei costi abitativi sul reddito",
-      shortLabel: "Peso mediano dei costi abitativi",
-      dataset: "ilc_lvho08a",
-      params: { freq: "A", unit: "PC", rskpovth: "TOTAL", age: "TOTAL", sex: "T" },
-      unit: "% del reddito",
-      source: "Eurostat ilc_lvho08a",
-      note: "Misura la mediana della quota di reddito disponibile assorbita dai costi abitativi. Non dice quante famiglie superano una soglia critica, ma mostra il peso tipico della casa sul bilancio familiare."
-    },
-    {
-      id: "overcrowding",
-      label: "Tasso di sovraffollamento abitativo",
-      shortLabel: "Sovraffollamento abitativo",
-      dataset: "ilc_lvho05a",
-      params: { freq: "A", unit: "PC", age: "TOTAL", sex: "T" },
-      unit: "%",
-      source: "Eurostat ilc_lvho05a",
-      note: "Quota di popolazione che vive in abitazioni con meno stanze di quelle richieste dagli standard Eurostat rispetto alla composizione del nucleo familiare."
-    },
-    {
-      id: "severe_deprivation",
-      label: "Grave deprivazione abitativa",
-      shortLabel: "Grave deprivazione abitativa",
-      dataset: "ilc_mdho06a",
-      params: { freq: "A", unit: "PC", rskpovth: "TOTAL", sex: "T", age: "TOTAL" },
-      unit: "%",
-      source: "Eurostat ilc_mdho06a",
-      note: "Combina sovraffollamento e almeno un problema abitativo grave, per esempio perdite, umidita', assenza di servizi essenziali o abitazione troppo buia."
-    },
-    {
-      id: "arrears",
-      label: "Arretrati su mutuo, affitto o bollette",
-      shortLabel: "Arretrati abitativi e bollette",
-      dataset: "ilc_mdes05",
-      params: { freq: "A", hhcomp: "TOTAL", rskpovth: "TOTAL", unit: "PC" },
-      unit: "%",
-      source: "Eurostat ilc_mdes05",
-      note: "Quota di popolazione in famiglie che dichiarano arretrati nei pagamenti collegati a mutuo, affitto, bollette o acquisti rateali. E' una misura di difficolta' finanziaria gia' materializzata."
-    },
-    {
-      id: "inability_warm",
-      label: "Impossibilita' di riscaldare adeguatamente la casa",
-      shortLabel: "Casa non riscaldata adeguatamente",
-      dataset: "ilc_mdes01",
-      params: { freq: "A", hhcomp: "TOTAL", rskpovth: "TOTAL", unit: "PC" },
-      unit: "%",
-      source: "Eurostat ilc_mdes01",
-      note: "Quota di popolazione che dichiara di non potersi permettere di mantenere la casa adeguatamente calda. Va letto anche come proxy di poverta' energetica."
-    },
-    {
-      id: "young_parents",
-      label: "Persone 25-34 anni che vivono con i genitori",
-      shortLabel: "25-34 anni in casa con i genitori",
-      dataset: "ilc_lvps08",
-      params: { freq: "A", age: "Y25-34", sex: "T", unit: "PC" },
-      unit: "%",
-      source: "Eurostat ilc_lvps08",
-      note: "Quota di giovani adulti che vivono ancora con i genitori. Non misura solo prezzi e affitti, ma segnala anche domanda abitativa compressa o ritardata."
-    },
-    {
-      id: "leaving_home_age",
-      label: "Eta' media di uscita dalla casa dei genitori",
-      shortLabel: "Eta' di uscita dalla casa dei genitori",
-      dataset: "yth_demo_030",
-      params: { freq: "A", unit: "AVG", sex: "T" },
-      unit: "anni",
-      source: "Eurostat yth_demo_030",
-      note: "Eta' media stimata alla quale i giovani lasciano la casa dei genitori. Utile per leggere la domanda abitativa latente, ma influenzata anche da cultura familiare, lavoro e welfare."
-    },
-    {
-      id: "permits",
-      label: "Permessi edilizi per nuove abitazioni",
-      shortLabel: "Permessi edilizi residenziali",
-      dataset: "sts_cobp_a",
-      params: { freq: "A", indic_bt: "BPRM_DW", cpa2_1: "CPA_F41001_X_410014", s_adj: "NSA", unit: "THS" },
-      unit: "migliaia",
-      source: "Eurostat sts_cobp_a",
-      note: "Misura le autorizzazioni rilasciate per nuove abitazioni. E' un indicatore anticipatore dell'offerta, non il numero di case effettivamente completate."
-    },
-    {
-      id: "gfcf_dwellings",
-      label: "Investimenti in abitazioni sul PIL",
-      shortLabel: "Investimenti in abitazioni",
-      dataset: "nama_10_an6",
-      params: { freq: "A", unit: "PC_GDP", asset10: "N111G" },
-      unit: "% PIL",
-      source: "Eurostat nama_10_an6",
-      note: "Quota di PIL investita in abitazioni. Puo' crescere per maggiore attivita' edilizia, ma anche per aumento dei costi dei lavori."
-    }
-  ];
+  var indicators = [];
+  var defaultEuropeIndicatorId = null;
 
   var localMetrics = {
     rent_mean: { label: "Affitto medio OMI", unit: "euro/mq/mese", description: "media semplice delle zone OMI residenziali disponibili nel comune" },
@@ -145,7 +46,7 @@
   }
 
   function staticEuropeUrl(indicator) {
-    return EUROPE_DATA_BASE + indicator.id + ".json";
+    return EUROPE_DATA_BASE + (indicator.file || (indicator.id + ".json"));
   }
 
   function escapeHtml(value) {
@@ -269,7 +170,8 @@
       y: rows.map(function (record) { return record.value; }),
       line: { color: color, width: width || 2 },
       marker: { color: color, size: width > 2 ? 7 : 5 },
-      hovertemplate: "<b>%{fullData.name}</b><br>Anno: %{x}<br>Valore: %{y:.1f}<extra></extra>"
+      customdata: rows.map(function (record) { return record.period || record.year; }),
+      hovertemplate: "<b>%{fullData.name}</b><br>Periodo: %{customdata}<br>Valore: %{y:.1f}<extra></extra>"
     };
   }
 
@@ -336,7 +238,7 @@
       byId("kpiItalyLabel").textContent = "Italia ultimo dato";
       byId("kpiItaly").textContent = formatValue(latestItaly.value, indicator.unit);
       byId("kpiRange").textContent = formatValue(Math.min.apply(null, latestValues), indicator.unit) + " - " + formatValue(Math.max.apply(null, latestValues), indicator.unit);
-      byId("kpiYear").textContent = latestItaly.year;
+      byId("kpiYear").textContent = latestItaly.period || latestItaly.year;
       byId("europeComment").innerHTML = "<strong>Come leggere:</strong> " + escapeHtml(indicator.note) + " La banda arancione indica il range min-max tra paesi disponibili: non e' una media europea e non misura la distribuzione interna ai singoli paesi.";
     }
 
@@ -345,10 +247,28 @@
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
       margin: { l: 72, r: 180, t: 14, b: 64 },
-      xaxis: { title: { text: "Anno" }, gridcolor: theme.line, fixedrange: true, dtick: 1 },
+      xaxis: { title: { text: "Periodo" }, gridcolor: theme.line, fixedrange: true, dtick: 1 },
       yaxis: { title: { text: indicator.label + (indicator.unit ? " (" + indicator.unit + ")" : "") }, gridcolor: theme.line, fixedrange: true },
       legend: { orientation: "v", x: 1.02, y: 1, xanchor: "left" }
     }, { responsive: true, displayModeBar: false });
+  }
+
+  function loadEuropeIndex() {
+    return fetchJson(EUROPE_INDEX_URL).then(function (payload) {
+      indicators = payload.indicators || [];
+      defaultEuropeIndicatorId = payload.default_indicator || (indicators[0] && indicators[0].id) || null;
+      if (!indicators.length) throw new Error("indice Eurostat vuoto");
+    });
+  }
+
+
+  function prefetchEuropeIndicators() {
+    indicators.forEach(function (indicator) {
+      if (!indicator || !indicator.id || state.europeCache[indicator.id]) return;
+      fetchJson(staticEuropeUrl(indicator)).then(function (payload) {
+        state.europeCache[indicator.id] = payload.records || [];
+      }).catch(function () {});
+    });
   }
 
   function loadEuropeIndicator(indicatorId) {
@@ -361,8 +281,8 @@
       return Promise.resolve();
     }
     if (state.europeHasRendered) {
-      renderMessage("europeChart", "Caricamento export Eurostat statico...", true);
-      byId("europeComment").textContent = "Sto caricando il JSON statico per " + indicator.label.toLowerCase() + ".";
+      renderMessage("europeChart", "Caricamento...", true);
+      byId("europeComment").textContent = "Caricamento in corso.";
     }
     return fetchJson(staticEuropeUrl(indicator)).then(function (payload) {
       state.europeCache[indicator.id] = payload.records || [];
@@ -490,7 +410,7 @@
     var region = (state.localIndex.regions || []).find(function (item) { return item.file === select.value; });
     var label = region ? region.label : select.value;
     var url = LOCAL_REGION_BASE + select.value;
-    if (state.localHasRendered) renderMessage("localChart", "Caricamento dati locali...", true);
+    if (state.localHasRendered) renderMessage("localChart", "Caricamento...", true);
     var promise = state.localCache[url] || fetchJson(url);
     state.localCache[url] = promise;
     promise.then(function (payload) {
@@ -501,11 +421,28 @@
     });
   }
 
+
+  function prefetchLocalRegions() {
+    if (!state.localIndex || !(state.localIndex.regions || []).length) return;
+    (state.localIndex.regions || []).forEach(function (region) {
+      if (!region || !region.file) return;
+      var url = LOCAL_REGION_BASE + region.file;
+      if (state.localCache[url]) return;
+      state.localCache[url] = fetchJson(url).catch(function (error) {
+        delete state.localCache[url];
+        throw error;
+      });
+    });
+  }
+
   function loadLocalIndex() {
     return fetchJson(LOCAL_INDEX_URL).then(function (index) {
       state.localIndex = index;
       populateLocalControls(index);
-      if ((index.regions || []).length) loadLocalRegion();
+      if ((index.regions || []).length) {
+        loadLocalRegion();
+        prefetchLocalRegions();
+      }
       else renderLocalUnavailable(index);
       byId("methodologyList").innerHTML = (index.methodology || []).map(function (item) {
         return "<li>" + escapeHtml(item) + "</li>";
@@ -538,9 +475,14 @@
       renderMessage("localChart", "Plotly non e' disponibile.");
       return;
     }
-    populateEuropeIndicatorControl();
     bindEvents();
-    loadEuropeIndicator(indicators[0].id);
+    loadEuropeIndex().then(function () {
+      populateEuropeIndicatorControl();
+      if (defaultEuropeIndicatorId) byId("europeIndicator").value = defaultEuropeIndicatorId;
+      loadEuropeIndicator(byId("europeIndicator").value || defaultEuropeIndicatorId).then(prefetchEuropeIndicators);
+    }).catch(function (error) {
+      renderMessage("europeChart", "Non riesco a caricare l'indice Eurostat statico: " + error.message);
+    });
     loadLocalIndex();
   }
 
