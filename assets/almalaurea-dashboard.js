@@ -1,11 +1,15 @@
 (function () {
   var DATA_URL = "../../data/almalaurea/almalaurea_dashboard_data.json";
-  var TIMESERIES_URL = "../../data/almalaurea/almalaurea_timeseries_data.json";
+  var TIMESERIES_AGG_URL = "../../data/almalaurea/almalaurea_timeseries_aggregated_data.json";
+  var TIMESERIES_DETAIL_URL = "../../data/almalaurea/almalaurea_timeseries_university_data.json";
+  var ARTICLE_DATA_URL = "../../data/almalaurea/almalaurea_article_data.json";
+  var ARTICLE_TIMESERIES_URL = "../../data/almalaurea/almalaurea_article_timeseries_data.json";
   var WILDCARD = "*";
   var sharedData = window.AlmaLaureaData = window.AlmaLaureaData || {};
   sharedData.cache = sharedData.cache || {};
   var queryParams = new URLSearchParams(window.location.search);
   var embedMode = queryParams.get("embed") === "1";
+  var liteMode = queryParams.get("lite") === "1";
   if (embedMode) {
     document.documentElement.classList.add("embed-mode");
   }
@@ -87,6 +91,8 @@
     metadata: null,
     records: [],
     timeseriesRecords: [],
+    timeseriesDetailLoaded: false,
+    timeseriesDetailPromise: null,
     colorMap: new Map(),
     lastPoints: [],
   };
@@ -937,7 +943,6 @@
 
       if (filters.point_dimension === "university") {
         if (record.university === WILDCARD) return false;
-        if (filters.disciplinary_group === WILDCARD && record.disciplinary_group !== WILDCARD) return false;
       } else {
         if (record.disciplinary_group === WILDCARD) return false;
         if (filters.university === WILDCARD && record.university !== WILDCARD) return false;
@@ -945,6 +950,10 @@
 
       return true;
     });
+  }
+
+  function timeFiltersNeedDetail(filters) {
+    return filters.point_dimension === "university" || filters.university !== WILDCARD;
   }
 
   function timeseriesTraceKey(record, filters) {
@@ -1220,6 +1229,15 @@
   function updateTimeSeries() {
     updateTimeModeUi();
     var filters = getTimeFilters();
+    if (timeFiltersNeedDetail(filters) && !state.timeseriesDetailLoaded && !liteMode) {
+      renderMessage("timeSeriesChart", "Caricamento dettaglio storico per ateneo...");
+      loadTimeseriesDetailRecords()
+        .then(updateTimeSeries)
+        .catch(function (error) {
+          renderMessage("timeSeriesChart", "Non riesco a caricare il dettaglio storico per ateneo: " + error.message);
+        });
+      return;
+    }
     renderTimeSeries(timeseriesRows(filters), filters);
   }
 
@@ -1369,10 +1387,14 @@
   }
 
   sharedData.dashboard = sharedData.dashboard || function (optional) {
-    return fetchJson(DATA_URL, optional);
+    return fetchJson(liteMode ? ARTICLE_DATA_URL : DATA_URL, optional);
   };
   sharedData.timeseries = sharedData.timeseries || function (optional) {
-    return fetchJson(TIMESERIES_URL, optional);
+    return fetchJson(liteMode ? ARTICLE_TIMESERIES_URL : TIMESERIES_AGG_URL, optional);
+  };
+  sharedData.timeseriesDetail = sharedData.timeseriesDetail || function (optional) {
+    if (liteMode) return Promise.resolve({ records: [] });
+    return fetchJson(TIMESERIES_DETAIL_URL, optional);
   };
 
   function loadTimeseriesRecords() {
@@ -1380,6 +1402,8 @@
       .then(function (timeseriesPayload) {
         sharedData.timeseriesPayload = timeseriesPayload;
         state.timeseriesRecords = (timeseriesPayload.records || []).map(normalizeTimeseriesRecord);
+        state.timeseriesDetailLoaded = false;
+        state.timeseriesDetailPromise = null;
         populateTimeCohortSelect();
         if (!byId("timeCohort").value) {
           setSelect("timeCohort", state.metadata.latest_survey_year - 5);
@@ -1392,6 +1416,23 @@
       .catch(function (error) {
         renderMessage("timeSeriesChart", "Non riesco a caricare la serie storica AlmaLaurea: " + error.message);
       });
+  }
+
+  function loadTimeseriesDetailRecords() {
+    if (state.timeseriesDetailLoaded) return Promise.resolve();
+    if (state.timeseriesDetailPromise) return state.timeseriesDetailPromise;
+    state.timeseriesDetailPromise = sharedData.timeseriesDetail(false)
+      .then(function (timeseriesPayload) {
+        var detailRecords = (timeseriesPayload.records || []).map(normalizeTimeseriesRecord);
+        state.timeseriesRecords = state.timeseriesRecords.concat(detailRecords);
+        state.timeseriesDetailLoaded = true;
+        sharedData.timeseriesDetailPayload = timeseriesPayload;
+      })
+      .catch(function (error) {
+        state.timeseriesDetailPromise = null;
+        throw error;
+      });
+    return state.timeseriesDetailPromise;
   }
 
   function init() {
@@ -1409,8 +1450,13 @@
         prepareResponsiveFilters();
         updateSourceAndNotes();
         bindEvents();
-        updateScatter();
-        updateBox();
+        var initialChart = requestedEmbedChart();
+        if (!embedMode || initialChart === "scatter") {
+          updateScatter();
+        }
+        if (!embedMode || initialChart === "box") {
+          updateBox();
+        }
         if (shouldLoadTimeseriesOnInit()) {
           renderMessage("timeSeriesChart", "Caricamento serie storica AlmaLaurea...");
         }
