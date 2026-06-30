@@ -1,5 +1,5 @@
 (function () {
-  var DATA_URL = "/data/almalaurea/almalaurea_dashboard_data.json";
+  var DATA_URL = "/data/almalaurea/almalaurea_metadata.json";
   var WILDCARD = "*";
   var records = [];
   var metadata = null;
@@ -303,6 +303,28 @@
       return;
     }
     var filters = readFilters();
+    var shared = window.AlmaLaureaData || {};
+    if (shared.loadDetailedRecordsFor && shared.hasDetailedRecordsFor && Number.isFinite(filters.graduation_year)) {
+      var missing = [1, 5].map(function (horizon) {
+        return { horizon: horizon, survey_year: filters.graduation_year + horizon };
+      }).filter(function (item) {
+        return availableSurveyYears().indexOf(item.survey_year) >= 0 &&
+          !shared.hasDetailedRecordsFor(item.survey_year, item.horizon);
+      });
+      if (missing.length) {
+        target.innerHTML = "<div class=\"empty-state\">Caricamento indicatori per tipo di corso...</div>";
+        Promise.all(missing.map(function (item) {
+          return shared.loadDetailedRecordsFor(item.survey_year, item.horizon);
+        })).then(function () {
+          records = shared.records || records;
+          render();
+        }).catch(function () {
+          target.innerHTML = "<div class=\"empty-state\">Non riesco a caricare gli indicatori per tipo di corso.</div>";
+        });
+        return;
+      }
+      records = shared.records || records;
+    }
     var visibleCategories = categories.filter(function (category) {
       return filters.course_type === WILDCARD || filters.course_type === category.option.value;
     });
@@ -350,7 +372,9 @@
     if (location.pathname.indexOf("/dashboard/almalaurea/") < 0) return;
     var loader = window.AlmaLaureaData && window.AlmaLaureaData.dashboard ?
       window.AlmaLaureaData.dashboard(false) :
-      fetch(DATA_URL).then(function (response) { return response.json(); });
+      fetch(DATA_URL).then(function (response) { return response.json(); }).then(function (metadata) {
+        return { metadata: metadata, records: [] };
+      });
     loader
       .then(function (payload) {
         metadata = payload.metadata || {};

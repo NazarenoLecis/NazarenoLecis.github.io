@@ -1,5 +1,6 @@
 (function () {
-  var DATA_URL = "../../data/almalaurea/almalaurea_dashboard_data.json";
+  var METADATA_URL = "../../data/almalaurea/almalaurea_metadata.json";
+  var DASHBOARD_CHUNK_BASE = "../../data/almalaurea/dashboard_chunks/";
   var TIMESERIES_AGG_URL = "../../data/almalaurea/almalaurea_timeseries_aggregated_data.json";
   var TIMESERIES_DETAIL_URL = "../../data/almalaurea/almalaurea_timeseries_university_data.json";
   var ARTICLE_DATA_URL = "../../data/almalaurea/almalaurea_article_data.json";
@@ -90,11 +91,15 @@
   var state = {
     metadata: null,
     records: [],
+    loadedRecordChunks: new Set(),
+    recordChunkPromises: {},
     timeseriesRecords: [],
     timeseriesDetailLoaded: false,
     timeseriesDetailPromise: null,
     colorMap: new Map(),
     lastPoints: [],
+    scatterRequest: 0,
+    boxRequest: 0,
   };
 
   function byId(id) {
@@ -538,6 +543,14 @@
       record.years_after_degree === filters.years_after_degree &&
       record.graduation_year === filters.graduation_year &&
       record.employment_definition === filters.employment_definition;
+  }
+
+  function detailedChunkKey(surveyYear, yearsAfter) {
+    return "s" + surveyYear + "_a" + yearsAfter;
+  }
+
+  function detailedChunkUrl(surveyYear, yearsAfter) {
+    return DASHBOARD_CHUNK_BASE + "almalaurea_dashboard_s" + surveyYear + "_a" + yearsAfter + ".json";
   }
 
   function hasMeasures(record) {
@@ -1212,18 +1225,38 @@
   function updateScatter() {
     var filters = getDetailedFilters("scatter");
     var dimension = filters.point_dimension;
-    var rows = candidateRows(filters, dimension);
-    var points = aggregateRows(rows, dimension);
-    state.lastPoints = points;
+    var requestId = state.scatterRequest += 1;
+    renderMessage("scatterChart", "Caricamento dati AlmaLaurea...");
+    return loadDetailedRecordsFor(filters.survey_year, filters.years_after_degree)
+      .then(function () {
+        if (requestId !== state.scatterRequest) return;
+        var rows = candidateRows(filters, dimension);
+        var points = aggregateRows(rows, dimension);
+        state.lastPoints = points;
 
-    updateKpis(points);
-    updateComment(points, filters);
-    renderScatter(points);
+        updateKpis(points);
+        updateComment(points, filters);
+        renderScatter(points);
+      })
+      .catch(function (error) {
+        if (requestId !== state.scatterRequest) return;
+        renderMessage("scatterChart", "Non riesco a caricare i dati AlmaLaurea: " + error.message);
+      });
   }
 
   function updateBox() {
     var filters = getDetailedFilters("box");
-    renderBox(distributionRows(filters), filters);
+    var requestId = state.boxRequest += 1;
+    renderMessage("boxChart", "Caricamento dati AlmaLaurea...");
+    return loadDetailedRecordsFor(filters.survey_year, filters.years_after_degree)
+      .then(function () {
+        if (requestId !== state.boxRequest) return;
+        renderBox(distributionRows(filters), filters);
+      })
+      .catch(function (error) {
+        if (requestId !== state.boxRequest) return;
+        renderMessage("boxChart", "Non riesco a caricare i dati AlmaLaurea: " + error.message);
+      });
   }
 
   function updateTimeSeries() {
@@ -1386,8 +1419,40 @@
     });
   }
 
+  function loadDetailedRecordsFor(surveyYear, yearsAfter) {
+    surveyYear = toNumber(surveyYear);
+    yearsAfter = toNumber(yearsAfter);
+    if (liteMode || !Number.isFinite(surveyYear) || !Number.isFinite(yearsAfter)) {
+      return Promise.resolve();
+    }
+    var key = detailedChunkKey(surveyYear, yearsAfter);
+    if (state.loadedRecordChunks.has(key)) return Promise.resolve();
+    if (state.recordChunkPromises[key]) return state.recordChunkPromises[key];
+
+    state.recordChunkPromises[key] = fetchJson(detailedChunkUrl(surveyYear, yearsAfter), false)
+      .then(function (payload) {
+        var rows = (payload.records || []).map(normalizeRecord);
+        state.records = state.records.concat(rows);
+        sharedData.records = state.records;
+        state.loadedRecordChunks.add(key);
+      })
+      .catch(function (error) {
+        delete state.recordChunkPromises[key];
+        throw error;
+      });
+    return state.recordChunkPromises[key];
+  }
+
   sharedData.dashboard = sharedData.dashboard || function (optional) {
-    return fetchJson(liteMode ? ARTICLE_DATA_URL : DATA_URL, optional);
+    if (liteMode) return fetchJson(ARTICLE_DATA_URL, optional);
+    return fetchJson(METADATA_URL, optional).then(function (metadata) {
+      return { metadata: metadata, records: [] };
+    });
+  };
+  sharedData.loadDetailedRecordsFor = loadDetailedRecordsFor;
+  sharedData.hasDetailedRecordsFor = function (surveyYear, yearsAfter) {
+    if (liteMode) return true;
+    return state.loadedRecordChunks.has(detailedChunkKey(toNumber(surveyYear), toNumber(yearsAfter)));
   };
   sharedData.timeseries = sharedData.timeseries || function (optional) {
     return fetchJson(liteMode ? ARTICLE_TIMESERIES_URL : TIMESERIES_AGG_URL, optional);
@@ -1440,6 +1505,8 @@
       .then(function (payload) {
         state.metadata = payload.metadata;
         state.records = payload.records.map(normalizeRecord);
+        sharedData.metadata = state.metadata;
+        sharedData.records = state.records;
         state.timeseriesRecords = [];
         allFieldDefinitions().forEach(populateSelect);
         populateTimeYearSelects();
