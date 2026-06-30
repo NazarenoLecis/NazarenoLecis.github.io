@@ -26,6 +26,10 @@
     return location.pathname.indexOf("/articoli/occupazione-salari-laureati-almalaurea") >= 0;
   }
 
+  function isHeatDashboard() {
+    return location.pathname.indexOf("/dashboard/ciclo-unico-caldo") >= 0;
+  }
+
   function removeTopGithubLink() {
     document.querySelectorAll(".site-header .nav a").forEach(function (link) {
       var href = link.getAttribute("href") || "";
@@ -83,6 +87,10 @@
     if (isAlmaArticle()) {
       patchAlmaArticleDataFetch();
       loadScript("/assets/almalaurea-article-static.js", "almArticleStatic");
+    }
+
+    if (isHeatDashboard()) {
+      loadScript("/assets/ciclo-unico-caldo-note.js", "heatDashboardNotes");
     }
 
     document.addEventListener("click", function (event) {
