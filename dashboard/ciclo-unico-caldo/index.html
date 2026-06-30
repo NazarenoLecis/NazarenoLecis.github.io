@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scuole, caldo e climatizzazione</title>
+  <style>
+    :root {
+      --bg: #111417;
+      --panel: #191f24;
+      --panel-2: #202830;
+      --text: #f4f0e8;
+      --muted: #b7c0c7;
+      --line: #33404b;
+      --accent: #ff6b35;
+      --accent-2: #46c2a8;
+      --danger: #e84d3d;
+      --warning: #f1b84b;
+      --shadow: rgba(0, 0, 0, .24);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 44px; }
+    header { display: grid; gap: 12px; margin-bottom: 22px; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 4.4rem); line-height: .95; letter-spacing: 0; max-width: 920px; }
+    h2 { margin: 0; font-size: 1.1rem; }
+    p { margin: 0; }
+    .lede { color: var(--muted); font-size: 1.05rem; max-width: 880px; }
+    .toolbar {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 14px;
+      margin: 24px 0;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 16px 36px var(--shadow);
+    }
+    label { display: grid; gap: 7px; color: var(--muted); font-size: .9rem; }
+    select {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0 12px;
+      font: inherit;
+    }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .kpi {
+      min-height: 116px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .kpi span { display: block; color: var(--muted); font-size: .86rem; }
+    .kpi strong { display: block; margin-top: 8px; font-size: clamp(1.5rem, 3vw, 2.3rem); line-height: 1; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 16px 36px var(--shadow);
+    }
+    .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 16px 16px 0; }
+    .panel-note { color: var(--muted); font-size: .9rem; }
+    .chart-wrap { overflow-x: auto; padding: 8px 12px 14px; }
+    #barChart { display: block; min-width: 980px; width: 100%; height: 520px; }
+    .axis text, .bar-label { fill: var(--muted); font-size: 12px; }
+    .value-label { fill: var(--text); font-size: 12px; font-weight: 700; }
+    .grid-line { stroke: rgba(255,255,255,.08); stroke-width: 1; }
+    .bar { fill: var(--accent); }
+    .bar.warning { fill: var(--warning); }
+    .bar.danger { fill: var(--danger); }
+    .bar.good { fill: var(--accent-2); }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { padding: 10px 12px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--muted); font-weight: 700; }
+    .table-wrap { overflow-x: auto; padding: 0 0 8px; }
+    .notes { display: grid; gap: 10px; margin-top: 18px; color: var(--muted); font-size: .94rem; }
+    .notes strong { color: var(--text); }
+    @media (max-width: 760px) {
+      main { width: min(100% - 20px, 1180px); padding-top: 20px; }
+      .toolbar, .kpis { grid-template-columns: 1fr; }
+      .panel-head { display: grid; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Scuole, caldo e climatizzazione</h1>
+      <p class="lede">Dashboard dal repository Ciclo unico scolastico sui dati MIM degli impianti di riscaldamento e condizionamento. Il grafico principale mostra quante righe scuola-edificio dichiarano condizionamento o ventilazione, per regione e grado.</p>
+    </header>
+
+    <section class="toolbar" aria-label="Filtri">
+      <label>
+        Grado scolastico
+        <select id="gradeSelect"></select>
+      </label>
+      <label>
+        Metrica
+        <select id="metricSelect"></select>
+      </label>
+    </section>
+
+    <section class="kpis" aria-label="Indicatori sintetici">
+      <div class="kpi"><span>Righe MIM nel perimetro</span><strong id="kpiSites">-</strong></div>
+      <div class="kpi"><span>A/C dichiarata</span><strong id="kpiAcData">-</strong></div>
+      <div class="kpi"><span>Mitigazione termica media/alta</span><strong id="kpiMitigation">-</strong></div>
+      <div class="kpi"><span>Rischio caldo alto</span><strong id="kpiRisk">-</strong></div>
+    </section>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 id="chartTitle">Barplot per regione</h2>
+          <p class="panel-note" id="chartNote"></p>
+        </div>
+        <div class="chart-wrap">
+          <svg id="barChart" role="img" aria-labelledby="chartTitle"></svg>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Tabella regioni</h2>
+          <p class="panel-note">Valori ordinati come nel grafico.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Regione</th>
+                <th>Righe MIM</th>
+                <th>A/C dichiarata</th>
+                <th>A/C non definita</th>
+                <th>Mitigazione media/alta</th>
+                <th>Nessun indicatore termico</th>
+                <th>Rischio alto</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="notes">
+      <p><strong>Come leggere:</strong> le unita sono righe scuola-edificio del dataset MIM. La quota A/C dichiarata usa come denominatore tutte le righe, inclusi i NON DEFINITO, per restare confrontabile con l'articolo.</p>
+      <p><strong>Campo diretto:</strong> `CONDIZIONAMENTOVENTILAZIONE` vale SI, NO o NON DEFINITO nel dataset MIM sugli impianti.</p>
+      <p><strong>Proxy termico:</strong> rischio caldo e mitigazione termica arrivano dallo scenario del repo: zonizzazione dell'impianto termico, vetri doppi, isolamento coperture, isolamento pareti, consumi energetici, posizione comunale e studenti esposti.</p>
+    </section>
+  </main>
+
+  <script>
+    var state = { data: null };
+    var metrics = {
+      quota_aria_condizionata_si: {
+        label: "Quota scuole-edifici con A/C dichiarata",
+        suffix: "%",
+        color: "warning",
+        note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, su tutte le righe comprese quelle NON DEFINITO."
+      },
+      quota_aria_condizionata_si_su_definiti: {
+        label: "Quota A/C sui soli SI/NO",
+        suffix: "%",
+        color: "warning",
+        note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, escludendo le righe NON DEFINITO dal denominatore."
+      },
+      quota_aria_condizionata_non_definito: {
+        label: "Quota A/C non definita",
+        suffix: "%",
+        color: "danger",
+        note: "Righe MIM in cui il campo CONDIZIONAMENTOVENTILAZIONE e' NON DEFINITO o non compilato."
+      },
+      quota_mitigazione_media_alta: {
+        label: "Quota con mitigazione termica media o alta",
+        suffix: "%",
+        color: "good",
+        note: "Proxy: almeno una combinazione robusta di indicatori energetici/termici MIM."
+      },
+      quota_nessun_indicatore_termico: {
+        label: "Quota senza indicatori termici MIM",
+        suffix: "%",
+        color: "danger",
+        note: "Sedi senza segnali MIM di mitigazione termica tra quelli disponibili."
+      },
+      quota_rischio_caldo_alto: {
+        label: "Quota in rischio caldo alto",
+        suffix: "%",
+        color: "danger",
+        note: "Indice di scenario: latitudine, fragilita termica dell'edificio e studenti esposti."
+      },
+      quota_rischio_caldo_alto_medio: {
+        label: "Quota in rischio caldo medio/alto",
+        suffix: "%",
+        color: "warning",
+        note: "Perimetro ampio di priorita potenziale prima di estendere il calendario nei mesi caldi."
+      }
+    };
+
+    function byId(id) { return document.getElementById(id); }
+
+    function formatNumber(value) {
+      return Number(value || 0).toLocaleString("it-IT", { maximumFractionDigits: 0 });
+    }
+
+    function formatPercent(value) {
+      return Number(value || 0).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function rowsForGrade(grade) {
+      return state.data.records.filter(function (row) { return row.grado === grade; });
+    }
+
+    function totalsForGrade(grade) {
+      var rows = rowsForGrade(grade);
+      return rows.reduce(function (acc, row) {
+        Object.keys(acc).forEach(function (key) { acc[key] += Number(row[key] || 0); });
+        return acc;
+      }, {
+        righe_mim: 0,
+        aria_condizionata_si: 0,
+        aria_condizionata_no: 0,
+        aria_condizionata_non_definito: 0,
+        mitigazione_alta: 0,
+        mitigazione_media: 0,
+        nessun_indicatore_termico: 0,
+        rischio_caldo_alto: 0
+      });
+    }
+
+    function updateKpis(grade) {
+      var totals = totalsForGrade(grade);
+      var righeMim = totals.righe_mim || 1;
+      var datoAc = totals.aria_condizionata_si / righeMim * 100;
+      var mitigazione = (totals.mitigazione_alta + totals.mitigazione_media) / righeMim * 100;
+      var rischio = totals.rischio_caldo_alto / righeMim * 100;
+      byId("kpiSites").textContent = formatNumber(totals.righe_mim);
+      byId("kpiAcData").textContent = formatPercent(datoAc);
+      byId("kpiMitigation").textContent = formatPercent(mitigazione);
+      byId("kpiRisk").textContent = formatPercent(rischio);
+    }
+
+    function drawChart(rows, metricId) {
+      var svg = byId("barChart");
+      var metric = metrics[metricId];
+      var width = Math.max(980, svg.parentElement.clientWidth || 980);
+      var height = 520;
+      var margin = { top: 28, right: 16, bottom: 112, left: 54 };
+      var chartWidth = width - margin.left - margin.right;
+      var chartHeight = height - margin.top - margin.bottom;
+      var sorted = rows.slice().sort(function (a, b) { return Number(b[metricId]) - Number(a[metricId]); });
+      var maxValue = Math.max.apply(null, sorted.map(function (row) { return Number(row[metricId] || 0); }).concat([1]));
+      var barGap = 7;
+      var barWidth = Math.max(20, (chartWidth - barGap * (sorted.length - 1)) / sorted.length);
+      var html = "";
+
+      [0, 25, 50, 75, 100].forEach(function (tick) {
+        var y = margin.top + chartHeight - (tick / Math.max(100, maxValue)) * chartHeight;
+        html += "<line class=\"grid-line\" x1=\"" + margin.left + "\" x2=\"" + (width - margin.right) + "\" y1=\"" + y + "\" y2=\"" + y + "\"></line>";
+        html += "<text class=\"bar-label\" x=\"10\" y=\"" + (y + 4) + "\">" + tick + "%</text>";
+      });
+
+      sorted.forEach(function (row, index) {
+        var value = Number(row[metricId] || 0);
+        var barHeight = value / Math.max(100, maxValue) * chartHeight;
+        var x = margin.left + index * (barWidth + barGap);
+        var y = margin.top + chartHeight - barHeight;
+        var label = row.regione.length > 16 ? row.regione.slice(0, 15) + "." : row.regione;
+        html += "<rect class=\"bar " + metric.color + "\" x=\"" + x + "\" y=\"" + y + "\" width=\"" + barWidth + "\" height=\"" + barHeight + "\"></rect>";
+        html += "<text class=\"value-label\" text-anchor=\"middle\" x=\"" + (x + barWidth / 2) + "\" y=\"" + (y - 6) + "\">" + formatPercent(value) + "</text>";
+        html += "<text class=\"bar-label\" text-anchor=\"end\" transform=\"translate(" + (x + barWidth / 2 + 4) + "," + (height - margin.bottom + 18) + ") rotate(-55)\">" + escapeHtml(label) + "</text>";
+      });
+
+      svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+      svg.innerHTML = html;
+      byId("chartNote").textContent = metric.note;
+      byId("chartTitle").textContent = metric.label + " per regione";
+      return sorted;
+    }
+
+    function updateTable(rows, metricId) {
+      var body = byId("tableBody");
+      body.innerHTML = rows.map(function (row) {
+        return "<tr>" +
+          "<td>" + escapeHtml(row.regione) + "</td>" +
+          "<td>" + formatNumber(row.righe_mim) + "</td>" +
+          "<td>" + formatPercent(row.quota_aria_condizionata_si) + "</td>" +
+          "<td>" + formatPercent(row.quota_aria_condizionata_non_definito) + "</td>" +
+          "<td>" + formatPercent(row.quota_mitigazione_media_alta) + "</td>" +
+          "<td>" + formatPercent(row.quota_nessun_indicatore_termico) + "</td>" +
+          "<td>" + formatPercent(row.quota_rischio_caldo_alto) + "</td>" +
+          "</tr>";
+      }).join("");
+    }
+
+    function render() {
+      var grade = byId("gradeSelect").value;
+      var metricId = byId("metricSelect").value;
+      var rows = rowsForGrade(grade);
+      updateKpis(grade);
+      var sorted = drawChart(rows, metricId);
+      updateTable(sorted, metricId);
+    }
+
+    function populateControls() {
+      byId("gradeSelect").innerHTML = state.data.metadata.grades.map(function (grade) {
+        return "<option value=\"" + escapeHtml(grade) + "\">" + escapeHtml(grade) + "</option>";
+      }).join("");
+      byId("metricSelect").innerHTML = Object.keys(metrics).map(function (id) {
+        return "<option value=\"" + escapeHtml(id) + "\">" + escapeHtml(metrics[id].label) + "</option>";
+      }).join("");
+      byId("metricSelect").value = "quota_aria_condizionata_si";
+      byId("gradeSelect").addEventListener("change", render);
+      byId("metricSelect").addEventListener("change", render);
+      window.addEventListener("resize", render);
+    }
+
+    fetch("dashboard_caldo.json")
+      .then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      })
+      .then(function (payload) {
+        state.data = payload;
+        populateControls();
+        render();
+      })
+      .catch(function (error) {
+        byId("chartTitle").textContent = "Errore nel caricamento dei dati";
+        byId("chartNote").textContent = error.message;
+      });
+  </script>
+</body>
+</html>
