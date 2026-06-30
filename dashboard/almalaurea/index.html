@@ -11,6 +11,7 @@
   <script defer src="../../assets/theme.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-dashboard.js"></script>
+  <script defer src="../../assets/almalaurea-timeseries-guard.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -83,27 +84,17 @@
 
     <section class="dashboard-section" id="scatterSection">
       <div class="section-head">
-        <div>
-          <span class="eyebrow">Confronto</span>
-          <h2>Mappa della coorte selezionata</h2>
-        </div>
-        <p>
-          Lo scatter confronta occupazione e retribuzione. La dimensione della bolla
-          indica il numero di laureati, mentre il menu "punti e serie" decide
-          se visualizzare gruppi disciplinari, atenei o classi.
-        </p>
+        <span class="eyebrow">Confronto</span>
+        <h2>Mappa della coorte selezionata</h2>
+        <p>Lo scatter confronta occupazione e retribuzione. La dimensione della bolla indica il numero di laureati, mentre il menu "punti e serie" decide se visualizzare gruppi disciplinari, atenei o classi.</p>
       </div>
-      <details class="chart-filter-panel filter-details" aria-label="Filtri scatterplot" open>
-        <summary class="filter-summary">Filtri scatterplot</summary>
+      <details class="chart-filter-panel" open aria-label="Filtri scatterplot">
+        <summary>Filtri scatterplot</summary>
         <div class="filter-intro">
           <h3>Filtri scatterplot</h3>
-          <p>
-            Vista iniziale: ultimo anno disponibile, 1 anno dalla laurea,
-            tutti i gruppi disciplinari. Cambia "punti" solo quando vuoi
-            passare dal confronto tra gruppi a quello tra atenei o classi.
-          </p>
+          <p>Vista iniziale: ultimo anno disponibile, 1 anno dalla laurea, tutti i gruppi disciplinari. Cambia "punti" solo quando vuoi passare dal confronto tra gruppi a quello tra atenei o classi.</p>
         </div>
-        <div class="filter-grid chart-filter-grid">
+        <div class="filter-grid">
           <label>
             <span>Anno indagine</span>
             <select id="scatterSurveyYear"></select>
@@ -147,62 +138,38 @@
         </div>
         <div class="filter-actions">
           <button class="button compact" id="resetScatterFilters" type="button">Reset scatter</button>
-          <button class="button compact primary" id="downloadScatter" type="button">Scarica CSV scatter</button>
+          <button class="button compact primary" id="downloadScatterCsv" type="button">Scarica CSV scatter</button>
         </div>
       </details>
-      <section class="kpi-grid" aria-label="Indicatori principali scatterplot">
-        <div class="kpi">
-          <span>Laureati</span>
-          <strong id="kpiGraduates">-</strong>
-        </div>
-        <div class="kpi">
-          <span>Tasso occupazione</span>
-          <strong id="kpiEmployment">-</strong>
-        </div>
-        <div class="kpi">
-          <span>Retribuzione netta</span>
-          <strong id="kpiSalary">-</strong>
-        </div>
-        <div class="kpi">
-          <span id="kpiExtraLabel">Punti visualizzati</span>
-          <strong id="kpiExtra">-</strong>
-        </div>
-      </section>
-      <section class="commentary-panel">
-        <h2>Lettura dello scatterplot</h2>
-        <p id="selectionComment">Seleziona i filtri per leggere i dati disponibili.</p>
-      </section>
+      <div class="kpi-grid">
+        <div class="kpi"><span>Laureati</span><strong id="kpiGraduates">-</strong></div>
+        <div class="kpi"><span>Tasso occupazione</span><strong id="kpiEmployment">-</strong></div>
+        <div class="kpi"><span>Retribuzione netta</span><strong id="kpiSalary">-</strong></div>
+        <div class="kpi"><span id="kpiExtraLabel">Punti visualizzati</span><strong id="kpiExtra">-</strong></div>
+      </div>
       <div class="chart-panel main-chart">
         <div class="panel-title">
-          <h2>Occupazione e retribuzione</h2>
-          <span>dimensione bolla: numero laureati</span>
+          <h2 id="scatterTitle">Occupazione e retribuzione</h2>
+          <span>dimensione bolla: numero di laureati</span>
         </div>
         <div id="scatterChart" class="chart"></div>
       </div>
+      <div class="selection-comment" id="selectionComment"></div>
     </section>
 
     <section class="dashboard-section" id="boxSection">
       <div class="section-head">
-        <div>
-          <span class="eyebrow">Distribuzione</span>
-          <h2>Distribuzione della retribuzione</h2>
-        </div>
-        <p>
-          Il boxplot usa gli atenei disponibili per mostrare dispersione della
-          retribuzione entro il perimetro selezionato.
-        </p>
+        <span class="eyebrow">Distribuzione</span>
+        <h2>Distribuzione della retribuzione</h2>
+        <p>Il boxplot mostra la dispersione della retribuzione tra atenei per gruppo disciplinare o tipo di corso.</p>
       </div>
-      <details class="chart-filter-panel filter-details" aria-label="Filtri boxplot" open>
-        <summary class="filter-summary">Filtri boxplot</summary>
+      <details class="chart-filter-panel" open aria-label="Filtri boxplot">
+        <summary>Filtri boxplot</summary>
         <div class="filter-intro">
           <h3>Filtri boxplot</h3>
-          <p>
-            Qui il punto non e' la singola classe, ma la dispersione tra atenei:
-            l'asse orizzontale separa gruppi disciplinari oppure tipi di corso,
-            mentre l'asse verticale mostra la retribuzione mensile netta.
-          </p>
+          <p>Ogni punto rappresenta un ateneo disponibile per il perimetro selezionato. Il grafico non misura la distribuzione individuale dei laureati.</p>
         </div>
-        <div class="filter-grid chart-filter-grid">
+        <div class="filter-grid">
           <label>
             <span>Anno indagine</span>
             <select id="boxSurveyYear"></select>
@@ -232,10 +199,10 @@
             <select id="boxCourse"></select>
           </label>
           <label>
-            <span>Suddivisione</span>
+            <span>Raggruppa per</span>
             <select id="boxSplitDimension">
               <option value="disciplinary_group">Gruppi disciplinari</option>
-              <option value="course_type">Tipi di corso</option>
+              <option value="course_type">Tipo corso</option>
             </select>
           </label>
         </div>
@@ -245,8 +212,8 @@
       </details>
       <div class="chart-panel">
         <div class="panel-title">
-          <h2>Distribuzione retribuzione</h2>
-          <span>punti: atenei disponibili</span>
+          <h2 id="boxTitle">Distribuzione retribuzione</h2>
+          <span>punti: atenei</span>
         </div>
         <div id="boxChart" class="chart"></div>
       </div>
@@ -254,66 +221,45 @@
 
     <section class="dashboard-section" id="timeSection">
       <div class="section-head">
-        <div>
-          <span class="eyebrow">Serie storica</span>
-          <h2>Evoluzione nel tempo</h2>
-        </div>
-        <p>
-          Puoi leggere il tempo in due modi diversi: confrontando coorti diverse
-          sempre alla stessa distanza dalla laurea, oppure seguendo la stessa
-          coorte negli orizzonti disponibili. Questa sezione usa dati aggregati
-          e non il dettaglio per classe di laurea.
-        </p>
+        <span class="eyebrow">Tempo</span>
+        <h2>Serie storiche</h2>
+        <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea.</p>
       </div>
-      <div class="time-method-panel" aria-label="Metodo di lettura delle serie storiche">
+      <div class="time-method-panel">
         <div>
           <h3>Trend a distanza fissa</h3>
-          <p>
-            Confronta anni di indagine diversi mantenendo fissi gli anni dalla
-            laurea, per esempio sempre a 1 anno. In questo caso le coorti cambiano.
-          </p>
+          <p>Confronta coorti diverse mantenendo costante la distanza dalla laurea, per esempio sempre a 1 anno.</p>
         </div>
         <div>
-          <h3>Percorso della stessa coorte</h3>
-          <p>
-            Fissa l'anno di laurea e osserva la stessa coorte negli orizzonti
-            disponibili. Nei dati caricati il percorso tipico confronta 1 e 5 anni.
-          </p>
+          <h3>Percorso della coorte</h3>
+          <p>Segue la stessa coorte su piu' anni dalla laurea, quando il dato e' disponibile.</p>
         </div>
         <div>
-          <h3>Perimetro dei dati</h3>
-          <p>
-            Le serie storiche sono piu' aggregate dei grafici di dettaglio. Alcune
-            combinazioni possono mancare per soglie minime, oscuramenti o perimetri
-            diversi tra 1 e 5 anni.
-          </p>
+          <h3>Perimetro</h3>
+          <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea.</p>
         </div>
       </div>
-      <details class="chart-filter-panel filter-details" aria-label="Filtri serie storica" open>
-        <summary class="filter-summary">Filtri serie storica</summary>
+      <details class="chart-filter-panel" open aria-label="Filtri serie storica">
+        <summary>Filtri serie storica</summary>
         <div class="filter-intro">
           <h3>Filtri serie storica</h3>
-          <p>
-            "Trend a distanza fissa" confronta anni di indagine diversi, per
-            esempio sempre a 1 anno dalla laurea. "Percorso coorte" segue invece
-            una sola coorte e mostra gli orizzonti disponibili, oggi 1 e 5 anni.
-          </p>
+          <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea.</p>
         </div>
-        <p class="mode-note" id="timeModeNote"></p>
-        <div class="filter-grid chart-filter-grid">
+        <div id="timeModeNote" class="time-mode-note"></div>
+        <div class="filter-grid">
           <label>
-            <span>Lettura</span>
+            <span>Modalita'</span>
             <select id="timeMode">
               <option value="fixed_horizon">Trend a distanza fissa</option>
-              <option value="cohort_path">Percorso della stessa coorte</option>
+              <option value="cohort_path">Percorso della coorte</option>
             </select>
           </label>
           <label>
-            <span>Da anno</span>
+            <span>Da anno indagine</span>
             <select id="timeStartYear"></select>
           </label>
           <label>
-            <span>A anno</span>
+            <span>A anno indagine</span>
             <select id="timeEndYear"></select>
           </label>
           <label>
