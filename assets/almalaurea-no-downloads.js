@@ -30,22 +30,9 @@
     });
   }
 
-  function cleanArticleDataLinks() {
-    if (location.pathname.indexOf("/articoli/occupazione-salari-laureati-almalaurea") < 0) return;
-    document.querySelectorAll('a[href*="analisi_almalaurea"], a[href*=".csv"]').forEach(function (link) {
-      var parent = link.closest("p");
-      if (parent) {
-        parent.textContent = "I grafici dell’articolo sono elaborazioni costruite dai JSON leggeri pubblicati sul sito e caricati solo per la visualizzazione delle figure.";
-      } else {
-        link.remove();
-      }
-    });
-  }
-
   function apply() {
     ensureHiddenDownloadTarget();
     removeCsvControls();
-    cleanArticleDataLinks();
   }
 
   function observe() {
