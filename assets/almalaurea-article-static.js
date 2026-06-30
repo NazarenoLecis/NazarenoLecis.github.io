@@ -1,6 +1,6 @@
 (function () {
   var DATA_URL = "/data/almalaurea/almalaurea_dashboard_data.json";
-  var TIMESERIES_URL = "/data/almalaurea/almalaurea_timeseries_data.json";
+  var TIMESERIES_URL = "/data/almalaurea/almalaurea_article_timeseries_data.json";
   var WILDCARD = "*";
   var records = [];
   var timeRecords = [];
