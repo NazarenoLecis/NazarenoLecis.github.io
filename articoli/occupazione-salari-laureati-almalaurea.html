@@ -20,6 +20,7 @@
     .article a{color:var(--orange);font-weight:750}
     .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;color:var(--muted);font-size:.95rem}
     .pill{border:1px solid var(--line);border-radius:999px;padding:7px 11px;background:var(--panel)}
+    .header-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
     .chart{margin:34px 0 42px;border:1px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
     .chart img{display:block;width:100%;height:auto;background:#fff}
     .chart iframe{display:block;width:100%;height:640px;border:0;background:var(--bg)}
@@ -38,7 +39,7 @@
     .data-table th{color:var(--orange);font-weight:800}
     .data-table td:last-child,.data-table th:last-child{text-align:right}
     .back{display:inline-flex;margin-bottom:22px;color:var(--orange);font-weight:750}
-    @media(max-width:760px){.article{padding:32px 0 52px}.article p{font-size:1rem;line-height:1.65}.chart{margin-left:-12px;margin-right:-12px;border-radius:10px}.chart iframe{height:560px}.dashboard-actions{display:grid}.data-table{font-size:.9rem}}
+    @media(max-width:760px){.article{padding:32px 0 52px}.article p{font-size:1rem;line-height:1.65}.chart{margin-left:-12px;margin-right:-12px;border-radius:10px}.chart iframe{height:560px}.dashboard-actions,.header-actions{display:grid}.data-table{font-size:.9rem}}
   </style>
 </head>
 <body>
@@ -56,10 +57,13 @@
   <h1>Occupazione e salari dei laureati italiani a 1 e 5 anni dal titolo</h1>
   <p class="lead">I dati AlmaLaurea permettono di osservare gli esiti dei laureati italiani lungo due dimensioni semplici. La prima è il tasso di occupazione. La seconda è la retribuzione mensile netta. Guardate insieme, queste due variabili aiutano a distinguere i percorsi che portano più rapidamente al lavoro, quelli che pagano di più e quelli che richiedono più tempo per stabilizzarsi.</p>
   <div class="meta"><span class="pill">Fonte: AlmaLaurea 2025</span><span class="pill">Coorti osservate: 2024 e 2020</span><span class="pill">Elaborazione: Nazareno Lecis</span></div>
+  <div class="header-actions">
+    <a class="button primary" href="../dashboard/almalaurea/index.html">Apri la dashboard interattiva</a>
+  </div>
 </header>
 
 <p>L’analisi usa l’indagine AlmaLaurea 2025. I laureati osservati a 1 anno sono quelli della coorte 2024. I laureati osservati a 5 anni sono quelli della coorte 2020. La definizione di occupazione usata è quella meno restrittiva, che include anche attività di formazione retribuite.</p>
-<p>I file usati per costruire i grafici sono disponibili nel repository <a href="https://github.com/NazarenoLecis/analisi_almalaurea" target="_blank" rel="noopener">analisi_almalaurea</a>. Le figure dell'articolo sono estratti statici o viste incorporate dalla dashboard interattiva.</p>
+<p>I file usati per costruire i grafici sono disponibili nel repository <a href="https://github.com/NazarenoLecis/analisi_almalaurea" target="_blank" rel="noopener">analisi_almalaurea</a>. Le figure dell'articolo sono viste incorporate dalla <a href="../dashboard/almalaurea/index.html">dashboard interattiva AlmaLaurea</a>, dove puoi cambiare filtri e ricostruire le stesse viste.</p>
 <p>Le note metodologiche complete di AlmaLaurea sono disponibili qui: <a href="https://www2.almalaurea.it/cgi-php/universita/statistiche/note-metodologiche.php?lang=it&amp;config=occupazione&amp;anno=2025" target="_blank" rel="noopener">Note metodologiche alle schede-dati online, indagine occupazione 2025</a>.</p>
 
 <section class="dashboard-callout" aria-label="Dashboard interattiva AlmaLaurea">
