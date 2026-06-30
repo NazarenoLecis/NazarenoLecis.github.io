@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Perché cambiare il calendario scolastico | Nazareno Lecis</title>
-  <meta name="description" content="Vacanze estive, distribuzione delle ferie scolastiche, summer learning loss, disuguaglianze e organizzazione familiare.">
+  <title>Calendario scolastico e vacanze estive | Nazareno Lecis</title>
+  <meta name="description" content="Perché ridiscutere la distribuzione delle vacanze scolastiche estive in Italia usando dati Eurydice, OECD e letteratura sul summer learning loss.">
   <meta property="og:type" content="article">
-  <meta property="og:title" content="Perché cambiare il calendario scolastico">
-  <meta property="og:description" content="La questione riguarda la distribuzione del tempo della scuola e la lunga concentrazione estiva.">
+  <meta property="og:title" content="Calendario scolastico e vacanze estive">
+  <meta property="og:description" content="Il problema riguarda la concentrazione della pausa estiva, non solo il numero annuo di giorni di scuola.">
   <meta property="og:url" content="https://nazarenolecis.github.io/articoli/calendario-scolastico-vacanze-estive.html">
   <meta name="twitter:card" content="summary">
   <link rel="stylesheet" href="../assets/base.css">
@@ -17,50 +17,35 @@
   <style>
     .article{max-width:960px;margin:auto;padding:56px 0 72px}
     .article-header{border-bottom:1px solid var(--line);padding-bottom:32px;margin-bottom:34px}
-    .article h1{font-size:4.8rem;line-height:.95;letter-spacing:0;margin:.22em 0}
-    .article h2{font-size:2.08rem;letter-spacing:0;margin:54px 0 16px;color:var(--orange)}
-    .article h3{font-size:1.16rem;letter-spacing:0;margin:0 0 8px;color:var(--orange)}
+    .article h1{font-size:clamp(2.7rem,6vw,4.9rem);line-height:.95;letter-spacing:-.06em;margin:.22em 0}
+    .article h2{font-size:clamp(1.55rem,3vw,2.05rem);letter-spacing:-.035em;margin:52px 0 16px;color:var(--orange)}
+    .article h3{font-size:1.15rem;letter-spacing:-.02em;margin:28px 0 10px;color:var(--orange)}
     .article p{font-size:1.08rem;line-height:1.75;color:var(--text);margin:0 0 18px}
-    .article .lead{max-width:850px}
+    .article .lead{max-width:850px;color:var(--text)}
     .article a{color:var(--orange);font-weight:750}
     .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;color:var(--muted);font-size:.95rem}
     .pill{border:1px solid var(--line);border-radius:999px;padding:7px 11px;background:var(--panel)}
     .back{display:inline-flex;margin-bottom:22px;color:var(--orange);font-weight:750}
+    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
     .data-table{width:100%;border-collapse:collapse;margin:24px 0 34px;font-size:.98rem}
     .data-table th,.data-table td{border-bottom:1px solid var(--line);padding:11px 8px;text-align:left;vertical-align:top}
     .data-table th{color:var(--orange);font-weight:800}
-    .data-table td:nth-child(n+2),.data-table th:nth-child(n+2){text-align:right}
-    .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-    .stacked-chart{display:grid;gap:12px;margin:24px 0 34px}
-    .stacked-row{display:grid;grid-template-columns:220px minmax(260px,1fr) 72px;gap:12px;align-items:center}
-    .stacked-label{color:var(--text);font-weight:750;line-height:1.25}
-    .stacked-track{height:24px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel);display:flex}
-    .stacked-seg{height:100%}
-    .stacked-other{background:#3a332f}
-    .stacked-energy{background:#f2a541}
-    .stacked-cooling{background:#ff5a1f}
-    .stacked-value{color:var(--muted);font-size:.92rem;text-align:right}
-    .chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 8px;color:var(--muted);font-size:.92rem}
-    .chart-legend span{display:inline-flex;align-items:center;gap:7px}
-    .chart-legend i{display:block;width:12px;height:12px;border-radius:3px}
     .note-box{border-left:3px solid var(--orange);padding:14px 0 14px 18px;margin:28px 0;color:var(--muted)}
     .note-box p{color:var(--muted);font-size:1rem;line-height:1.6;margin:0 0 10px}
-    .note-box p:last-child{margin-bottom:0}
+    .source-list{padding-left:20px;color:var(--muted);line-height:1.7}
+    .source-list li{margin-bottom:11px}
+    .source-list span{display:block;color:var(--muted);font-size:.95rem;line-height:1.55;margin-top:2px}
     .method-list{display:grid;gap:14px;margin:22px 0 34px;padding:0;list-style:none}
     .method-list li{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);line-height:1.65}
     .method-list strong{display:block;color:var(--text);margin-bottom:4px}
-    .source-list{padding-left:20px;color:var(--muted);line-height:1.7}
-    .source-list li{margin-bottom:8px}
-    .dashboard-callout{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:20px;margin:30px 0}
-    .dashboard-callout p{font-size:1rem;color:var(--muted);line-height:1.6}
-    @media(max-width:760px){.article{padding:32px 0 52px}.article h1{font-size:3rem}.article h2{font-size:1.72rem}.article p{font-size:1rem;line-height:1.65}.data-table{font-size:.9rem;white-space:nowrap}.stacked-row{grid-template-columns:1fr}.stacked-value{text-align:left}}
+    @media(max-width:760px){.article{padding:32px 0 52px}.article p{font-size:1rem;line-height:1.65}.data-table{font-size:.9rem;white-space:nowrap}}
   </style>
 </head>
 <body>
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="../index.html"><span class="logo"></span><span><span class="brand-name">Nazareno Lecis</span><span class="brand-tag">Data &amp; Risk Analysis</span></span></a>
-    <nav class="nav"><a href="../index.html">Home</a><a class="active" href="index.html">Articoli</a><a href="../dashboard/index.html">Dashboard</a><a href="../media/index.html">Media</a><a href="../about/index.html">About</a><a href="https://github.com/NazarenoLecis">GitHub</a></nav><span class="sun">&#9788;</span>
+    <nav class="nav"><a href="../index.html">Home</a><a class="active" href="index.html">Articoli</a><a href="../dashboard/index.html">Dashboard</a><a href="../media/index.html">Media</a><a href="../about/index.html">About</a></nav><span class="sun">&#9788;</span>
   </div>
 </header>
 <main class="wrap">
@@ -68,132 +53,78 @@
 <a class="back" href="index.html">Torna agli articoli</a>
 <header class="article-header">
   <span class="orange">Scuola e calendario</span>
-  <h1>Perché cambiare il calendario scolastico</h1>
-  <p class="lead">La questione riguarda la concentrazione del riposo scolastico in un blocco estivo lunghissimo. Famiglie, lavoro, turismo, apprendimenti e disuguaglianze funzionano in un mondo molto diverso da quello in cui quel calendario si è formato.</p>
-  <div class="meta"><span class="pill">122 giorni di pausa scolastica</span><span class="pill">99 concentrati tra giugno e settembre</span><span class="pill">Summer learning loss</span></div>
+  <h1>Calendario scolastico e vacanze estive</h1>
+  <p class="lead">L'Italia ha una pausa estiva molto lunga e un calendario meno distribuito rispetto ad altri paesi europei. La questione riguarda apprendimenti, servizi alle famiglie, organizzazione del lavoro e disuguaglianze nelle opportunità educative.</p>
+  <div class="meta"><span class="pill">Eurydice</span><span class="pill">OECD</span><span class="pill">Summer learning loss</span></div>
 </header>
 
-<p>In Italia si discute spesso della scuola come se il calendario fosse un dettaglio amministrativo. In realtà decide quando i ragazzi stanno insieme, quando smettono di esercitare quello che hanno imparato, quando le famiglie devono coprire settimane senza scuola, quando il turismo riceve il picco di domanda, quando gli insegnanti precari lavorano e quando restano scoperti.</p>
-<p>L'Italia ha molti giorni di scuola. Nei confronti internazionali siamo attorno ai 200 giorni di lezione e, nei dati OECD discussi nei video da cui parte questo articolo, circa 39 settimane obbligatorie e molte ore annue di istruzione. La criticità sta nella distribuzione. Facciamo tanti giorni di scuola, poi concentriamo una quota enorme della pausa in estate.</p>
+<p>Il punto di partenza va chiarito. I grafici circolati sui social hanno avuto il merito di portare il tema nel dibattito, ma la fonte da citare per il confronto europeo sui calendari scolastici è <a href="https://eurydice.eacea.ec.europa.eu/data-and-visuals" target="_blank" rel="noopener">Eurydice</a>. Per ore annue e tempi di istruzione si possono usare anche i dati <a href="https://eurydice.eacea.ec.europa.eu/publications/recommended-annual-instruction-time-full-time-compulsory-education-europe-20242025" target="_blank" rel="noopener">Eurydice sui tempi di insegnamento obbligatori</a> e <a href="https://www.oecd.org/en/publications/education-at-a-glance-2024_c00cad36-en.html" target="_blank" rel="noopener">Education at a Glance 2024 dell'OECD</a>.</p>
 
-<h2>Quanti giorni di pausa facciamo</h2>
-<p>Nei materiali discussi nella live sul calendario scolastico, ripresi dai grafici condivisi da Matteo Villa e dal confronto OECD, l'Italia ha circa 122 giorni complessivi di ferie scolastiche in un anno. Di questi, 99 sono concentrati tra giugno e settembre. Restano quindi circa 23 giorni nel resto dell'anno.</p>
-<p>Il confronto con la Francia aiuta a capire il punto. Il totale annuo è quasi identico, circa 121 giorni. La pausa estiva però è molto più corta, circa 56 giorni, e il resto viene distribuito durante l'anno. Nei Paesi Bassi, come raccontato nella live, la pausa estiva è di circa sei settimane e le altre pause sono scaglionate tra autunno, Natale, primavera e maggio, con differenze territoriali pensate anche per ragioni logistiche.</p>
+<p>Il calendario italiano non va letto come se gli studenti andassero poco a scuola. L'Italia ha molti giorni di lezione e molte ore annue. La parte anomala è la distribuzione. Una quota molto ampia della pausa scolastica si concentra tra giugno e settembre, mentre in altri paesi la pausa estiva è più corta e le interruzioni sono distribuite durante l'anno.</p>
+
+<h2>Che cosa mostrano i dati europei</h2>
+<p>Lo strumento Eurydice sui calendari scolastici confronta l'inizio dell'anno, le vacanze e la durata delle pause nella scuola primaria e secondaria generale dei sistemi educativi europei. È la fonte corretta per discutere il calendario, perché raccoglie dati istituzionali dai paesi partecipanti alla rete Eurydice.</p>
 
 <div class="table-wrap">
-  <table class="data-table" aria-label="Distribuzione delle ferie scolastiche">
-    <thead><tr><th>Paese o modello</th><th>Pausa annua</th><th>Pausa estiva</th><th>Resto dell'anno</th></tr></thead>
+  <table class="data-table" aria-label="Fonti per leggere il calendario scolastico">
+    <thead><tr><th>Fonte</th><th>Che cosa misura</th><th>Come usarla</th></tr></thead>
     <tbody>
-      <tr><td>Italia</td><td>circa 122 giorni</td><td>circa 99 giorni</td><td>circa 23 giorni</td></tr>
-      <tr><td>Francia</td><td>circa 121 giorni</td><td>circa 56 giorni</td><td>circa 65 giorni</td></tr>
-      <tr><td>Paesi Bassi</td><td>simile per ordine di grandezza</td><td>circa 6 settimane</td><td>pause distribuite e scaglionate</td></tr>
+      <tr><td><a href="https://eurydice.eacea.ec.europa.eu/data-and-visuals" target="_blank" rel="noopener">Eurydice, School calendars in Europe</a></td><td>Inizio dell'anno scolastico, durata e frequenza delle pause, lunghezza delle vacanze estive.</td><td>Serve per confrontare la struttura del calendario tra paesi.</td></tr>
+      <tr><td><a href="https://eurydice.eacea.ec.europa.eu/publications/recommended-annual-instruction-time-full-time-compulsory-education-europe-20242025" target="_blank" rel="noopener">Eurydice, Recommended Annual Instruction Time 2024/2025</a></td><td>Ore minime raccomandate nell'istruzione obbligatoria a tempo pieno.</td><td>Serve per distinguere il numero di ore di istruzione dalla distribuzione delle vacanze.</td></tr>
+      <tr><td><a href="https://www.oecd.org/en/publications/education-at-a-glance-2024_c00cad36-en.html" target="_blank" rel="noopener">OECD, Education at a Glance 2024</a></td><td>Indicatori comparabili sui sistemi educativi, inclusi tempi di istruzione e organizzazione della scuola.</td><td>Serve per confrontare l'Italia con gli altri paesi OECD.</td></tr>
     </tbody>
   </table>
 </div>
 
-<p>Questa tabella sposta la domanda. Il tema diventa la lunghezza della pausa estiva e il peso molto ridotto delle pause intermedie. Un calendario diverso può mantenere un numero comparabile di giorni di vacanza e ridurre il blocco estivo.</p>
+<p>Il confronto con la Francia e con i Paesi Bassi rende il meccanismo chiaro. In Francia le pause durante l'anno sono più frequenti. Nei Paesi Bassi le vacanze estive durano circa sei settimane e sono scaglionate per aree territoriali. Questo riduce la concentrazione estiva e distribuisce meglio le interruzioni.</p>
 
-<h2>Cosa produce una chiusura così lunga</h2>
-<p>La chiusura estiva lunga ha effetti scolastici, familiari e sociali. Sul piano scolastico interrompe per molte settimane la continuità degli apprendimenti. Sul piano familiare sposta sulle famiglie il costo organizzativo della cura dei figli. Sul piano sociale rende più diseguale l'estate, perché alcune famiglie possono trasformarla in viaggi, sport, corsi, libri, tutoraggio e lingue straniere, mentre altre devono arrangiarsi con molte meno risorse.</p>
-<p>Una distribuzione più equilibrata può dare respiro durante l'anno, ridurre il ritorno settembrino dopo tre mesi di stop e rendere più semplice costruire attività estive leggere, mirate, non punitive. La scuola resta un'infrastruttura educativa anche quando il calendario cambia.</p>
-<p>Le chiusure lunghe pesano anche sul lavoro. Se la scuola si ferma per un periodo così esteso, qualcuno deve coprire quel tempo. Nelle famiglie italiane quel qualcuno è ancora spesso la madre. Il rapporto CNEL-Istat sul lavoro delle donne mostra un divario occupazionale forte tra donne e uomini, e mostra che la maternità continua a incidere sull'occupazione femminile. Lo studio di Banca d'Italia sul tempo pieno nella primaria va nella stessa direzione: più tempo scuola può sostenere gli apprendimenti e aumentare in modo duraturo la partecipazione delle madri al lavoro.</p>
+<h2>Perché la pausa lunga crea problemi</h2>
+<p>Una pausa estiva molto lunga interrompe la continuità degli apprendimenti e sposta sulle famiglie molte settimane di organizzazione. Le famiglie con più tempo, reddito e capitale culturale possono riempire l'estate con libri, sport, lingue, viaggi, tutoraggio e attività formative. Le famiglie con meno risorse hanno meno strumenti per compensare la chiusura della scuola.</p>
 
-<h2>Summer learning loss</h2>
-<p>Con summer learning loss si indica la perdita, o il rallentamento, degli apprendimenti durante la pausa estiva. La formulazione classica viene dalla letteratura statunitense. La meta-analisi di Cooper e coautori del 1996, basata su 39 studi, trovava un calo medio durante l'estate, più marcato in matematica che in lettura. Studi successivi, come Alexander, Entwisle e Olson, hanno collegato le differenze estive alle disuguaglianze sociali accumulate negli anni di scuola.</p>
-<p>Detto questo, il fenomeno va spiegato bene. È una stima empirica, non una legge fisica. Alcuni studenti perdono apprendimenti, altri restano stabili, altri migliorano. Gli effetti cambiano in base alla materia, all'età, al test usato, al contesto familiare e al modo in cui si misura la crescita. La letteratura più recente, in particolare il lavoro di von Hippel e Hamrock e altri studi di replica, ha mostrato che molte stime storiche sono sensibili agli strumenti di misurazione e che i divari non crescono sempre più velocemente in estate che durante l'anno scolastico.</p>
-<p>Questo limite rende il tema più serio. Se il summer learning loss cambia molto tra studenti e contesti, una politica pubblica intelligente deve evitare soluzioni automatiche e lavorare sulle condizioni che producono differenze. La domanda utile riguarda chi ha opportunità di apprendere anche d'estate, chi ne ha molte meno, e quali interventi funzionano davvero.</p>
+<p>Il calendario diventa quindi anche una politica sociale. La scuola non offre solo ore di lezione. Offre routine, contatti con i pari, adulti di riferimento, accesso ad attività, spazi e strumenti. Quando questa infrastruttura si ferma per quasi tre mesi, la differenza tra famiglie pesa di più.</p>
+
+<p>La pausa lunga pesa anche sull'organizzazione del lavoro. Se i figli restano senza scuola per molte settimane, qualcuno deve coprire quel tempo. In Italia questo costo organizzativo ricade spesso sulle madri, perché la cura dei figli resta distribuita in modo squilibrato dentro le famiglie. Un calendario più distribuito non risolve da solo il problema, ma riduce una pressione concreta.</p>
+
+<h2>Cosa dice la letteratura sul summer learning loss</h2>
+<p>La letteratura classica sul summer learning loss parte dall'idea che durante l'estate alcuni apprendimenti rallentino o arretrino. La meta-analisi di <a href="https://doi.org/10.3102/00346543066003227" target="_blank" rel="noopener">Cooper, Nye, Charlton, Lindsay e Greathouse (1996)</a> trovava perdite medie durante l'estate, più nette in matematica rispetto alla lettura. Gli studi di <a href="https://doi.org/10.1177/000312240707200202" target="_blank" rel="noopener">Alexander, Entwisle e Olson (2007)</a> hanno collegato le traiettorie estive alle disuguaglianze sociali di lungo periodo.</p>
+
+<p>La lettura più recente è più cauta. <a href="https://www.educationnext.org/is-summer-learning-loss-real-how-i-lost-faith-education-research-results/" target="_blank" rel="noopener">Paul von Hippel</a> ha mostrato che alcuni risultati storici sono difficili da replicare con dati e test più recenti. Anche i lavori su test-score gaps, come <a href="https://doi.org/10.1177/000312240406900501" target="_blank" rel="noopener">Downey, von Hippel e Broh (2004)</a>, invitano a distinguere con attenzione scuola, famiglia, misurazione e periodo estivo.</p>
+
+<p>La conclusione prudente è questa. Alcuni studenti perdono competenze durante l'estate, altri restano stabili, altri migliorano. Gli effetti cambiano per materia, età, test usato e contesto familiare. La policy deve partire da questa eterogeneità. Serve ridurre il periodo in cui le opportunità dipendono quasi solo dalla famiglia e costruire attività estive mirate per chi rischia di perdere terreno.</p>
 
 <div class="note-box">
-  <p>Il modo più onesto di usare questa letteratura è prudente. Le perdite estive esistono in molti studi, con dimensioni che cambiano molto tra dataset. La parte più solida per la policy è che l'estate allarga le differenze di opportunità, anche quando non si riesce a misurare in modo pulito ogni punto di competenza perso o guadagnato.</p>
+  <p>Il summer learning loss non va usato come slogan. Va usato come ipotesi empirica. La parte più robusta per la policy è che una lunga interruzione aumenta la dipendenza dalle risorse familiari. La scuola può ridurre questa dipendenza solo se resta presente con calendario, servizi e attività progettati bene.</p>
 </div>
 
-<h2>Estate e disuguaglianze</h2>
-<p>La scuola durante l'anno riduce almeno in parte il peso delle condizioni familiari. In estate quel filtro si indebolisce. Una famiglia con tempo, soldi e capitale culturale può costruire settimane ricche di stimoli. Una famiglia fragile può ritrovarsi senza servizi, senza alternative, senza spazi, senza libri, senza corsi, senza sport, con genitori che lavorano in orari incompatibili o con fratelli e sorelle da accudire.</p>
-<p>È qui che il calendario scolastico diventa una politica contro le disuguaglianze. Una pausa più corta e meglio distribuita riduce il periodo in cui il contesto familiare decide quasi tutto. Le attività estive mirate possono aiutare, soprattutto quando sono pensate come occasioni educative e non come doposcuola punitivo per chi è rimasto indietro.</p>
-<p>Il caso italiano più interessante è Arcipelago Educativo, promosso da Save the Children e Fondazione Agnelli e valutato da FBK-Irvapp. L'intervento 2022 ha usato uno studio randomizzato controllato e ha trovato effetti positivi negli apprendimenti. Save the Children e Fondazione Agnelli riportano un miglioramento equivalente a circa 2 mesi in matematica e 3 mesi e mezzo in italiano per gli studenti coinvolti. È una prova importante perché mostra che l'estate può essere usata per ridurre svantaggi, se l'intervento è progettato bene.</p>
-
-<h2>Il caldo come vincolo pratico</h2>
-<p>Quando si propone di ridistribuire il calendario, la risposta arriva quasi sempre sul caldo. È una risposta comprensibile, e va trattata come vincolo pratico. Gli esami di maturità si fanno già tra giugno e luglio. Le prove di recupero portano studenti a scuola anche in estate. Gli adulti lavorano in uffici, ospedali, università e amministrazioni anche nei mesi caldi. Gli edifici scolastici devono essere messi nelle condizioni di reggere un calendario più razionale.</p>
-<p>Per questo la dashboard sul caldo nelle scuole resta utile come supporto tecnico. Serve a capire dove mancano condizionamento o ventilazione dichiarati, dove gli indicatori termici sono deboli e quali regioni hanno più rischio. Il tema principale resta il calendario. Il caldo è uno dei vincoli da risolvere se si vuole prenderlo sul serio.</p>
-
-<h2>Che cosa ha già mosso il PNRR</h2>
-<p>Per capire quanto il tema sia entrato negli investimenti recenti ho guardato il CSV progetti di OpenPNRR, aggiornato al 26 febbraio 2026. Ho selezionato le principali misure che impattano edifici o spazi scolastici. Il conteggio riguarda i CUP/progetti, non gli edifici fisici univoci. Un CUP può riguardare un edificio, una parte di edificio o un intervento più articolato.</p>
-<p>Il primo dato è la scala. Le cinque misure principali considerate valgono 8.829 CUP e circa 11,3 miliardi di euro di finanziamento PNRR. La parte più grande è il piano di messa in sicurezza e riqualificazione dell'edilizia scolastica, con 3.121 CUP e circa 5 miliardi PNRR. Seguono nidi e scuole dell'infanzia, nuove scuole sostitutive, mense e infrastrutture sportive.</p>
-
-<div class="table-wrap">
-  <table class="data-table" aria-label="Interventi PNRR su edifici e spazi scolastici">
-    <thead><tr><th>Misura PNRR</th><th>CUP</th><th>Finanziamento PNRR</th><th>Termico o energetico</th><th>Raffrescamento esplicito</th></tr></thead>
-    <tbody>
-      <tr><td>Messa in sicurezza e riqualificazione edilizia scolastica</td><td>3.121</td><td>5,0 mld</td><td>613</td><td>13</td></tr>
-      <tr><td>Nuove scuole tramite sostituzione di edifici</td><td>207</td><td>1,1 mld</td><td>2</td><td>0</td></tr>
-      <tr><td>Asili nido e scuole dell'infanzia</td><td>3.227</td><td>4,0 mld</td><td>184</td><td>2</td></tr>
-      <tr><td>Mense e tempo pieno</td><td>1.863</td><td>0,9 mld</td><td>9</td><td>1</td></tr>
-      <tr><td>Infrastrutture per lo sport a scuola</td><td>411</td><td>0,3 mld</td><td>17</td><td>0</td></tr>
-      <tr><td>Totale misure considerate</td><td>8.829</td><td>11,3 mld</td><td>825</td><td>16</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="chart-legend" aria-label="Legenda interventi PNRR">
-  <span><i class="stacked-other"></i> altri interventi</span>
-  <span><i class="stacked-energy"></i> efficientamento, isolamento o involucro</span>
-  <span><i class="stacked-cooling"></i> climatizzazione o raffrescamento espliciti</span>
-</div>
-<div class="stacked-chart" aria-label="Composizione dei CUP PNRR scolastici per parole chiave termiche">
-  <div class="stacked-row"><div class="stacked-label">Riqualificazione edilizia scolastica</div><div class="stacked-track"><div class="stacked-seg stacked-other" style="width:80.4%"></div><div class="stacked-seg stacked-energy" style="width:19.2%"></div><div class="stacked-seg stacked-cooling" style="width:.4%"></div></div><div class="stacked-value">3.121 CUP</div></div>
-  <div class="stacked-row"><div class="stacked-label">Nuove scuole sostitutive</div><div class="stacked-track"><div class="stacked-seg stacked-other" style="width:99%"></div><div class="stacked-seg stacked-energy" style="width:1%"></div><div class="stacked-seg stacked-cooling" style="width:0%"></div></div><div class="stacked-value">207 CUP</div></div>
-  <div class="stacked-row"><div class="stacked-label">Nidi e infanzia</div><div class="stacked-track"><div class="stacked-seg stacked-other" style="width:94.3%"></div><div class="stacked-seg stacked-energy" style="width:5.6%"></div><div class="stacked-seg stacked-cooling" style="width:.1%"></div></div><div class="stacked-value">3.227 CUP</div></div>
-  <div class="stacked-row"><div class="stacked-label">Mense e tempo pieno</div><div class="stacked-track"><div class="stacked-seg stacked-other" style="width:99.5%"></div><div class="stacked-seg stacked-energy" style="width:.4%"></div><div class="stacked-seg stacked-cooling" style="width:.1%"></div></div><div class="stacked-value">1.863 CUP</div></div>
-  <div class="stacked-row"><div class="stacked-label">Sport a scuola</div><div class="stacked-track"><div class="stacked-seg stacked-other" style="width:95.9%"></div><div class="stacked-seg stacked-energy" style="width:4.1%"></div><div class="stacked-seg stacked-cooling" style="width:0%"></div></div><div class="stacked-value">411 CUP</div></div>
-</div>
-
-<p>Il secondo dato è più delicato. Cercando nei titoli e nelle descrizioni dei progetti parole legate a isolamento, cappotto, infissi, involucro, termico, efficientamento energetico e simili, emergono 825 CUP. Cercando parole direttamente legate a condizionamento, climatizzazione, raffrescamento, ventilazione o pompe di calore, emergono solo 16 CUP. Questo numero è quasi certamente una sottostima degli interventi reali sugli impianti, perché molti titoli sono generici e non descrivono il capitolato tecnico. È però utile per una cosa. Nei dati aperti nazionali l'ammodernamento recente è visibile, mentre la climatizzazione esplicita resta poco leggibile.</p>
-<p>Per i calcoli del repository questo è importante. I progetti PNRR possono essere usati per aggiornare le ipotesi di costo e di tempi, e in parte per marcare edifici già interessati da lavori recenti. Per attribuire con precisione un intervento a un edificio MIM serve però l'aggancio CUP edificio, o almeno una localizzazione affidabile. Senza quel passaggio, il dato PNRR è ottimo per misurare lo sforzo pubblico recente e molto più debole per dire se una specifica scuola sia già pronta al calendario estivo.</p>
-
-<section class="dashboard-callout" aria-label="Dashboard collegata">
-  <h2>Dashboard collegata</h2>
-  <p>La dashboard sul caldo nelle scuole permette di leggere, per regione e grado scolastico, la quota di righe scuola edificio con condizionamento o ventilazione dichiarati nei dati MIM e gli indicatori termici usati nello scenario.</p>
-  <p><a class="button primary" href="../dashboard/ciclo-unico-caldo/index.html">Apri la dashboard</a></p>
-</section>
-
-<h2>Una riforma ragionevole</h2>
-<p>Una riforma del calendario dovrebbe partire da una cosa semplice. Il blocco estivo va spezzato. Ridurre gradualmente la pausa lunga, spostare giorni su pause intermedie, introdurre attività leggere in estate per chi ne ha bisogno, coordinare mense, trasporti, tempo pieno, edilizia e climatizzazione.</p>
-<p>In pratica significa passare da una scuola che chiude per tre mesi a una scuola che respira durante l'anno. Pause più frequenti, estate più corta, edifici adeguati, attività educative non obbligatorie dove servono, più tempo pieno, più continuità. È una riforma meno spettacolare di come viene raccontata, ma molto più utile.</p>
-<p>La scuola italiana ha bisogno di un calendario costruito per gli studenti, per le famiglie e per un paese che non vive più secondo i ritmi agricoli di un secolo fa.</p>
-
-<h2>Note di lettura</h2>
+<h2>Cosa non segue dai dati</h2>
 <ul class="method-list">
-  <li><strong>Ferie scolastiche</strong> I numeri su 122 giorni totali, 99 giorni estivi e 23 giorni nel resto dell'anno sono quelli discussi nella live sul calendario scolastico a partire dai grafici condivisi da Matteo Villa. Vanno letti come ordine di grandezza comparativo, non come calendario amministrativo unico per ogni regione e anno.</li>
-  <li><strong>Summer learning loss</strong> Le stime dipendono molto dal test, dalla scala di misura e dal momento in cui vengono raccolti i dati. Per questo nel testo il fenomeno viene usato come rischio di policy, non come certezza uniforme per ogni studente.</li>
-  <li><strong>Disuguaglianze</strong> Molte differenze sono precedenti all'estate. La pausa estiva lunga può amplificarle, perché rende più importanti le risorse familiari.</li>
-  <li><strong>Tempo pieno</strong> Gli studi sul tempo pieno riguardano soprattutto la primaria. Sono utili per capire il rapporto tra servizi scolastici, apprendimenti e lavoro delle madri, e vanno adattati con cautela agli altri gradi scolastici.</li>
-  <li><strong>PNRR</strong> I conteggi OpenPNRR usano i CUP delle misure scolastiche principali. La classificazione termica è basata su parole chiave nei titoli e nelle descrizioni, quindi sottostima gli interventi impiantistici non descritti nel titolo del progetto.</li>
+  <li><strong>Non basta tagliare le vacanze.</strong> Una semplice riduzione amministrativa della pausa estiva senza spazi, personale, servizi e scuole attrezzate rischia di spostare il problema.</li>
+  <li><strong>Non serve copiare un paese.</strong> Francia e Paesi Bassi mostrano modelli più distribuiti. L'Italia deve adattare il calendario alla propria organizzazione scolastica, al clima, agli edifici e ai servizi locali.</li>
+  <li><strong>Non va confusa la quantità con la distribuzione.</strong> L'Italia ha già molti giorni e molte ore di scuola. Il problema riguarda il blocco estivo e la scarsità di pause intermedie.</li>
+  <li><strong>Non va ignorata l'edilizia scolastica.</strong> Una scuola aperta più a lungo richiede edifici utilizzabili, climatizzazione, laboratori, mense, palestre e trasporti.</li>
 </ul>
 
-<h2>Fonti</h2>
+<h2>Una riforma sensata</h2>
+<p>Una riforma del calendario dovrebbe ridurre la pausa estiva, distribuire più pause durante l'anno e mantenere il monte complessivo di istruzione. Le settimane recuperate non devono diventare solo lezione frontale. Possono servire per laboratori, sport, recupero mirato, attività progettuali, lettura, matematica applicata, coding, lingue e orientamento.</p>
+
+<p>Il modello più utile è un calendario più regolare, con meno mesi vuoti e più continuità. Una parte delle attività estive può essere volontaria e mirata agli studenti più fragili. Una parte può essere integrata nel calendario ordinario. Gli interventi estivi con evidenza positiva funzionano meglio quando hanno frequenza reale, personale preparato e obiettivi chiari. Le revisioni RAND sui programmi estivi vanno lette in questo senso, perché distinguono tra semplice custodia e attività educative strutturate.</p>
+
+<p>Questa riforma ha senso anche per l'organizzazione familiare. Una distribuzione più equilibrata riduce il picco estivo di cura informale, permette ai genitori di programmare meglio ferie e lavoro, riduce la pressione sui nonni e può aiutare soprattutto le famiglie senza reti familiari vicine.</p>
+
+<h2>Fonti principali</h2>
 <ul class="source-list">
-  <li><a href="https://www.youtube.com/watch?v=Lpnwdbivhco" target="_blank" rel="noopener">Ora! Territori, Modifica del calendario scolastico</a></li>
-  <li><a href="https://www.youtube.com/watch?v=yEye5kMdwgQ" target="_blank" rel="noopener">EconomiaItalia, Scuola, dobbiamo abolire le vacanze estive?</a></li>
-  <li><a href="https://www.oecd.org/content/dam/oecd/en/publications/reports/2024/08/how-is-the-school-year-organised-in-oecd-countries_5ee6aec3/a6385722-en.pdf" target="_blank" rel="noopener">OECD, How is the school year organised in OECD countries?</a></li>
-  <li><a href="https://eurydice.eacea.ec.europa.eu/media/3088/download" target="_blank" rel="noopener">Eurydice, Recommended annual instruction time in full-time compulsory education</a></li>
-  <li><a href="https://journals.sagepub.com/doi/10.3102/00346543066003227" target="_blank" rel="noopener">Cooper, Nye, Charlton, Lindsay e Greathouse, The effects of summer vacation on achievement test scores</a></li>
-  <li><a href="https://sociologicalscience.com/articles-v6-3-43/" target="_blank" rel="noopener">von Hippel e Hamrock, Do test score gaps grow before, during, or between the school years?</a></li>
-  <li><a href="https://journals.sagepub.com/doi/10.1177/000312240707200202" target="_blank" rel="noopener">Alexander, Entwisle e Olson, Lasting consequences of the summer learning gap</a></li>
-  <li><a href="https://www.urban.org/research/publication/social-class-differences-summer-learning-between-kindergarten-and-first-grade-model-specification-and-estimation" target="_blank" rel="noopener">Burkam, Ready, Lee e LoGerfo, Social-class differences in summer learning</a></li>
-  <li><a href="https://www.savethechildren.it/cosa-facciamo/pubblicazioni/arcipelago-educativo-valutazione-dimpatto" target="_blank" rel="noopener">Save the Children e Fondazione Agnelli, Arcipelago Educativo, valutazione d'impatto</a></li>
-  <li><a href="https://www.bancaditalia.it/pubblicazioni/temi-discussione/2023/2023-1423/index.html?com.dotmarketing.htmlpage.language=1" target="_blank" rel="noopener">Banca d'Italia, The short and medium term effects of full-day schooling on learning and maternal labor supply</a></li>
-  <li><a href="https://www.istat.it/wp-content/uploads/2025/03/istat-cnel.pdf" target="_blank" rel="noopener">CNEL e Istat, Il lavoro delle donne tra ostacoli e opportunità</a></li>
-  <li><a href="https://openpnrr.it/opendata/" target="_blank" rel="noopener">OpenPNRR, open data, CSV progetti aggiornato al 26 febbraio 2026</a></li>
+  <li><a href="https://eurydice.eacea.ec.europa.eu/data-and-visuals" target="_blank" rel="noopener">Eurydice, Data and Visuals</a><span>Portale ufficiale della rete Eurydice. Include lo strumento sui calendari scolastici europei e lo strumento sullo school year. È la fonte da citare per la distribuzione delle vacanze scolastiche, non i post social che riprendono quei dati.</span></li>
+  <li><a href="https://eurydice.eacea.ec.europa.eu/publications/recommended-annual-instruction-time-full-time-compulsory-education-europe-20242025" target="_blank" rel="noopener">Eurydice, Recommended Annual Instruction Time in Full-time Compulsory Education in Europe 2024/2025</a><span>Rapporto su ore minime raccomandate e tempi di istruzione obbligatoria nei sistemi educativi europei.</span></li>
+  <li><a href="https://www.oecd.org/en/publications/education-at-a-glance-2024_c00cad36-en.html" target="_blank" rel="noopener">OECD, Education at a Glance 2024</a><span>Fonte OECD per indicatori comparabili sui sistemi educativi, inclusi tempi di istruzione e organizzazione della scuola.</span></li>
+  <li><a href="https://doi.org/10.3102/00346543066003227" target="_blank" rel="noopener">Cooper, Nye, Charlton, Lindsay e Greathouse (1996), Review of Educational Research</a><span>Meta-analisi classica sugli effetti delle vacanze estive sui punteggi nei test.</span></li>
+  <li><a href="https://doi.org/10.1177/000312240707200202" target="_blank" rel="noopener">Alexander, Entwisle e Olson (2007), American Sociological Review</a><span>Studio sulle conseguenze di lungo periodo del summer learning gap.</span></li>
+  <li><a href="https://doi.org/10.1177/000312240406900501" target="_blank" rel="noopener">Downey, von Hippel e Broh (2004), American Sociological Review</a><span>Studio sulla crescita delle disuguaglianze cognitive durante l'anno scolastico e nei mesi estivi.</span></li>
+  <li><a href="https://www.educationnext.org/is-summer-learning-loss-real-how-i-lost-faith-education-research-results/" target="_blank" rel="noopener">von Hippel (2019), Education Next</a><span>Rilettura critica della letteratura classica e dei problemi di misurazione del summer learning loss.</span></li>
+  <li><a href="https://www.rand.org/pubs/research_reports/RR2836.html" target="_blank" rel="noopener">RAND Corporation, Investing in Successful Summer Programs</a><span>Revisione delle evidenze sui programmi estivi, utile per distinguere interventi educativi strutturati da semplice apertura estiva.</span></li>
 </ul>
+
 </article>
 </main>
-<footer class="footer">
-  <div class="wrap footer-inner social-links">
-    <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../assets/social-icons.svg#x"></use></svg><span>X</span></a>
-    <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
-    <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
-    <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
-  </div>
-</footer>
+<footer class="footer"><div class="wrap footer-inner social-links"><a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../assets/social-icons.svg#x"></use></svg><span>X</span></a><a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a><a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a><a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a></div></footer>
 </body>
 </html>
