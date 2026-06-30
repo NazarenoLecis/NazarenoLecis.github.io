@@ -15,6 +15,11 @@
     return document.getElementById(id);
   }
 
+  function toNumber(value) {
+    var parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   function removeSecondLevelMetric() {
     var select = byId("timeMetric");
     if (!select) return;
@@ -65,6 +70,9 @@
     button.className = "button compact";
     button.textContent = "Mostra classi/corsi";
     button.addEventListener("click", function () {
+      setSelect("scatterSurveyYear", "2025");
+      setSelect("scatterYearsAfter", "1");
+      setSelect("scatterGraduationYear", "2024");
       setSelect("scatterDegree", "*");
       setSelect("scatterPointDimension", "degree_class");
       window.setTimeout(function () {
@@ -97,11 +105,40 @@
   }
 
   function pointLabel(trace, index) {
+    if (Array.isArray(trace.text) && trace.text[index]) return trace.text[index];
     if (Array.isArray(trace.customdata) && trace.customdata[index] && trace.customdata[index][0]) {
       return trace.customdata[index][0];
     }
-    if (Array.isArray(trace.text) && trace.text[index]) return trace.text[index];
     return trace.name || "Punto";
+  }
+
+  function hasValidPoint(trace, index) {
+    var x = toNumber(arrayItem(trace.x, index));
+    var y = toNumber(arrayItem(trace.y, index));
+    return Number.isFinite(x) && Number.isFinite(y) && x > 0 && y > 0;
+  }
+
+  function filterInvalidScatterPoints(data, chartId) {
+    if (chartId !== "scatterChart") return data;
+    return data.map(function (trace) {
+      if (!trace || trace.type !== "scatter" || !Array.isArray(trace.x)) return trace;
+      var keep = [];
+      trace.x.forEach(function (_, index) {
+        if (hasValidPoint(trace, index)) keep.push(index);
+      });
+      if (keep.length === trace.x.length) return trace;
+      return Object.assign({}, trace, {
+        x: keep.map(function (index) { return arrayItem(trace.x, index); }),
+        y: keep.map(function (index) { return arrayItem(trace.y, index); }),
+        text: Array.isArray(trace.text) ? keep.map(function (index) { return trace.text[index]; }) : trace.text,
+        customdata: Array.isArray(trace.customdata) ? keep.map(function (index) { return trace.customdata[index]; }) : trace.customdata,
+        marker: Object.assign({}, trace.marker || {}, {
+          size: Array.isArray(trace.marker && trace.marker.size) ? keep.map(function (index) { return trace.marker.size[index]; }) : trace.marker && trace.marker.size
+        })
+      });
+    }).filter(function (trace) {
+      return !trace || !Array.isArray(trace.x) || trace.x.length > 0;
+    });
   }
 
   function splitDegreeClassTraces(data, chartId) {
@@ -111,6 +148,7 @@
     data.forEach(function (trace) {
       if (!trace || trace.type !== "scatter" || !Array.isArray(trace.x)) return;
       trace.x.forEach(function (_, index) {
+        if (!hasValidPoint(trace, index)) return;
         var label = pointLabel(trace, index);
         var marker = Object.assign({}, trace.marker || {});
         marker.size = arrayItem(marker.size, index);
@@ -135,6 +173,7 @@
 
   function cleanData(data, chartId) {
     if (!Array.isArray(data)) return data;
+    data = filterInvalidScatterPoints(data, chartId);
     data = splitDegreeClassTraces(data, chartId);
     var labelOffset = 0;
     data.forEach(function (trace, index) {
