@@ -113,6 +113,33 @@
   line-height: 1.45;
 }
 
+.time-method-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 16px;
+}
+
+.time-method-panel > div {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.time-method-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.time-method-panel p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .is-hidden {
   display: none !important;
 }
@@ -379,6 +406,7 @@
 .embed-mode .dash-head,
 .embed-mode .workflow-grid,
 .embed-mode .section-head,
+.embed-mode .time-method-panel,
 .embed-mode .chart-filter-panel,
 .embed-mode .kpi-grid,
 .embed-mode .commentary-panel,
@@ -437,7 +465,8 @@
 
   .workflow-grid,
   .section-head,
-  .filter-intro {
+  .filter-intro,
+  .time-method-panel {
     grid-template-columns: 1fr;
   }
 

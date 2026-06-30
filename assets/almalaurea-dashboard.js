@@ -141,6 +141,32 @@
     return metric === "net_monthly_salary" ? " euro" : "%";
   }
 
+  function timeSeriesHeading(cohortMode, metric) {
+    if (cohortMode && metric === "employment_rate") {
+      return "Evoluzione occupazionale della coorte selezionata";
+    }
+    if (cohortMode && metric === "net_monthly_salary") {
+      return "Evoluzione retributiva della coorte selezionata";
+    }
+    if (cohortMode && metric === "second_level_enrollment_rate") {
+      return "Prosecuzione alla magistrale della coorte";
+    }
+    if (metric === "employment_rate") {
+      return "Trend occupazionale a distanza fissa";
+    }
+    if (metric === "net_monthly_salary") {
+      return "Trend retributivo a distanza fissa";
+    }
+    return "Trend della prosecuzione alla magistrale";
+  }
+
+  function timeModeExplanation(cohortMode) {
+    if (cohortMode) {
+      return "Questa lettura segue la stessa coorte di laurea: l'asse orizzontale indica gli anni dalla laurea disponibili nel dataset, non l'anno di indagine.";
+    }
+    return "Questa lettura confronta anni di indagine diversi mantenendo fissa la distanza dalla laurea: e' una serie storica a orizzonte costante, non il percorso degli stessi laureati.";
+  }
+
   function shortText(value, maxLength) {
     value = asText(value);
     if (value.length <= maxLength) return value;
@@ -425,6 +451,7 @@
   function updateTimeModeUi() {
     var ids = chartIds.time;
     var mode = byId(ids.mode).value;
+    var metric = byId(ids.metric).value;
     var cohortMode = mode === "cohort_path";
 
     setTimeFieldVisibility(ids.start_year, cohortMode);
@@ -432,12 +459,8 @@
     setTimeFieldVisibility(ids.years_after_degree, cohortMode);
     setTimeFieldVisibility(ids.graduation_year, !cohortMode);
 
-    byId("timeSeriesTitle").textContent = cohortMode ?
-      "Percorso della coorte selezionata" :
-      "Trend a distanza fissa dalla laurea";
-    byId("timeModeNote").textContent = cohortMode ?
-      "Questa lettura segue la stessa coorte di laurea e confronta gli orizzonti disponibili: nel dataset attuale sono 1 e 5 anni dalla laurea." :
-      "Questa lettura non segue la stessa coorte: confronta anni di indagine diversi mantenendo fissa la distanza dalla laurea, ad esempio sempre 1 anno.";
+    byId("timeSeriesTitle").textContent = timeSeriesHeading(cohortMode, metric);
+    byId("timeModeNote").textContent = timeModeExplanation(cohortMode);
   }
 
   function syncGraduationYear(chart) {
