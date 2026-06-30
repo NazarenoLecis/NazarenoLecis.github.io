@@ -1,0 +1,10 @@
+{
+  "updated_at": null,
+  "source_repository": "https://github.com/NazarenoLecis/Crisi_abitativa",
+  "regions": [],
+  "methodology": [
+    "Il focus locale usa quotazioni OMI Agenzia Entrate e redditi dichiarati comunali MEF quando i file sono esportati dal repository Crisi_abitativa.",
+    "Prezzi e affitti medi/mediani sono calcolati sulle zone OMI disponibili del comune e non sono pesati per transazioni, stock, superficie o popolazione.",
+    "Gli indicatori locali sono proxy territoriali: non misurano canoni effettivi di contratto, prezzi effettivi di rogito o reddito disponibile familiare."
+  ]
+}

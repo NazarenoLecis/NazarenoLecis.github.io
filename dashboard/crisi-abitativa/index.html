@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Crisi abitativa | Nazareno Lecis</title>
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css">
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html">
+        <span class="logo"></span>
+        <span>
+          <span class="brand-name">Nazareno Lecis</span>
+          <span class="brand-tag">Data &amp; Risk Analysis</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">About</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap alm-dashboard housing-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Crisi abitativa</span>
+        <h1>Prezzi, affitti, redditi e accesso alla casa</h1>
+        <p class="lead">
+          Dashboard costruita per leggere la crisi abitativa su due scale: confronto europeo sugli indicatori armonizzati e focus locale italiano su prezzi, affitti e redditi comunali quando i dati territoriali sono disponibili.
+        </p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonte: Eurostat, OMI, MEF</strong>
+          <span id="sourceMeta">Grafico europeo via API Eurostat. Focus locale predisposto per export dal repository.</span>
+          <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">Apri repository Crisi_abitativa</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-grid" aria-label="Guida alla lettura">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Scegli l'indicatore</h2>
+        <p>Nel confronto europeo il menu cambia la variabile; l'Italia resta sempre evidenziata e il range mostra minimo e massimo tra paesi.</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Confronta pochi paesi</h2>
+        <p>Usa il filtro paesi per aggiungere linee selezionate. Troppe linee rendono il grafico meno leggibile.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Passa al locale</h2>
+        <p>Nel focus Italia scegli regione e misura OMI. I valori comunali sono proxy territoriali e vanno letti con le note metodologiche.</p>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard crisi abitativa">
+      <a href="#europeSection">Confronto europeo</a>
+      <a href="#localSection">Focus locale</a>
+      <a href="#methodologySection">Metodo e fonti</a>
+    </nav>
+
+    <section class="dashboard-section" id="europeSection">
+      <div class="section-head">
+        <span class="eyebrow">Europa</span>
+        <h2>Italia dentro il range europeo</h2>
+        <p>La banda mostra, anno per anno, il minimo e il massimo tra i paesi disponibili. La linea italiana resta sempre visibile; puoi aggiungere altri paesi per confronto.</p>
+      </div>
+      <details class="chart-filter-panel" open aria-label="Filtri confronto europeo">
+        <summary>Filtri confronto europeo</summary>
+        <div class="filter-intro">
+          <h3>Come usare i filtri</h3>
+          <p>Scegli la variabile nel primo menu. Nel secondo menu puoi selezionare uno o piu' paesi da evidenziare oltre all'Italia. EU27 viene mostrata quando Eurostat pubblica la serie aggregata.</p>
+        </div>
+        <div class="filter-grid housing-filter-grid">
+          <label>
+            <span>Indicatore</span>
+            <select id="europeIndicator"></select>
+          </label>
+          <label>
+            <span>Paesi da evidenziare</span>
+            <select id="highlightCountries" multiple size="4"></select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetEuropeFilters" type="button">Reset confronto</button>
+        </div>
+      </details>
+      <div class="kpi-grid housing-kpis">
+        <div class="kpi"><span id="kpiItalyLabel">Italia ultimo dato</span><strong id="kpiItaly">-</strong></div>
+        <div class="kpi"><span>Range paesi</span><strong id="kpiRange">-</strong></div>
+        <div class="kpi"><span>Anno</span><strong id="kpiYear">-</strong></div>
+      </div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="europeTitle">Confronto europeo</h2>
+          <span>range min-max, Italia sempre evidenziata</span>
+        </div>
+        <div id="europeChart" class="chart"></div>
+        <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="selection-comment" id="europeComment"></div>
+    </section>
+
+    <section class="dashboard-section" id="localSection">
+      <div class="section-head">
+        <span class="eyebrow">Italia locale</span>
+        <h2>Prezzi e affitti comunali</h2>
+        <p>La sezione locale usa gli export del repository Crisi_abitativa. Quando i file regionali sono presenti, il grafico mostra la distribuzione comunale per regione.</p>
+      </div>
+      <details class="chart-filter-panel" open aria-label="Filtri focus locale">
+        <summary>Filtri focus locale</summary>
+        <div class="filter-intro">
+          <h3>Come usare i filtri locali</h3>
+          <p>Scegli una regione e una misura: affitto medio, affitto mediano, prezzo di vendita medio o prezzo di vendita mediano. I comuni sono ordinati dal valore piu' alto al piu' basso.</p>
+        </div>
+        <div class="filter-grid housing-filter-grid">
+          <label>
+            <span>Regione</span>
+            <select id="localRegion"></select>
+          </label>
+          <label>
+            <span>Misura comunale</span>
+            <select id="localMetric">
+              <option value="rent_mean">Affitto medio OMI</option>
+              <option value="rent_median">Affitto mediano OMI</option>
+              <option value="sale_mean">Prezzo vendita medio OMI</option>
+              <option value="sale_median">Prezzo vendita mediano OMI</option>
+            </select>
+          </label>
+        </div>
+      </details>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="localTitle">Focus locale Italia</h2>
+          <span>divisione comunale</span>
+        </div>
+        <div id="localChart" class="chart"></div>
+        <div class="chart-credit">Fonte: OMI Agenzia Entrate e MEF Dipartimento Finanze, dove disponibili. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="selection-comment" id="localComment"></div>
+    </section>
+
+    <section class="notes-panel" id="methodologySection">
+      <div>
+        <h2>Note metodologiche</h2>
+        <ul id="methodologyList">
+          <li>Il confronto europeo usa indicatori armonizzati Eurostat. La disponibilita' temporale puo' cambiare tra paesi e indicatori.</li>
+          <li>Il range min-max e' calcolato sui paesi disponibili nell'anno, escludendo gli aggregati come EU27.</li>
+          <li>Nel focus locale prezzi e affitti OMI sono quotazioni territoriali per zona, non prezzi effettivi di transazione o canoni di contratto.</li>
+          <li>Medie e mediane comunali OMI non sono pesate per transazioni, stock abitativo, popolazione o superficie.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Fonte e repository</h2>
+        <p>Il codice sorgente del progetto dati e' nel repository <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">NazarenoLecis/Crisi_abitativa</a>.</p>
+        <p>La dashboard del sito consuma dati gia' puliti o endpoint pubblici. Le API e gli export pesanti non vengono eseguiti direttamente nel browser.</p>
+        <p>Per aggiornare il focus locale bisogna esportare dal repository Python i JSON regionali in <code>data/crisi-abitativa/regions/</code> e aggiornare <code>local_index.json</code>.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner social-links">
+      <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+      <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+    </div>
+  </footer>
+</body>
+</html>
