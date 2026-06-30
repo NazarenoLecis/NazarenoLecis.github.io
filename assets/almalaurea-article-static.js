@@ -185,6 +185,31 @@
     return plainCount ? plainSum / plainCount : null;
   }
 
+  function meanValue(values) {
+    var total = 0;
+    var count = 0;
+    values.forEach(function (value) {
+      if (!Number.isFinite(value) || value <= 0) return;
+      total += value;
+      count += 1;
+    });
+    return count ? total / count : null;
+  }
+
+  function medianValue(values) {
+    var ordered = values
+      .filter(function (value) { return Number.isFinite(value) && value > 0; })
+      .sort(function (a, b) { return a - b; });
+    if (!ordered.length) return null;
+    var middle = Math.floor(ordered.length / 2);
+    if (ordered.length % 2) return ordered[middle];
+    return (ordered[middle - 1] + ordered[middle]) / 2;
+  }
+
+  function sanitizeCourseType(value) {
+    return value === WILDCARD || !value ? "Tutti i tipi di corso" : String(value);
+  }
+
   function aggregatePoints(rows, keyFn, labelFn) {
     var buckets = new Map();
     rows.forEach(function (record) {
@@ -194,14 +219,16 @@
       buckets.get(key).rows.push(record);
     });
     return Array.from(buckets.values()).map(function (bucket) {
+      var salaryValues = bucket.rows.map(function (record) { return record.net_monthly_salary; });
       return {
         key: bucket.key,
         label: bucket.label,
         group_label: bucket.rows[0].disciplinary_group_label,
-        course_type_label: bucket.rows[0].course_type_label,
+        course_type_label: sanitizeCourseType(bucket.rows[0].course_type_label),
         graduates: bucket.rows.reduce(function (sum, record) { return sum + (record.graduates || 0); }, 0),
         employment_rate: weightedAverage(bucket.rows, "employment_rate"),
-        net_monthly_salary: weightedAverage(bucket.rows, "net_monthly_salary")
+        net_monthly_salary: weightedAverage(bucket.rows, "net_monthly_salary"),
+        net_monthly_salary_median: medianValue(salaryValues)
       };
     }).filter(function (point) {
       return Number.isFinite(point.employment_rate) && point.employment_rate > 0 && Number.isFinite(point.net_monthly_salary) && point.net_monthly_salary > 0;
@@ -249,8 +276,8 @@
         textfont: { size: 11 },
         cliponaxis: false,
         marker: { color: colorFor(index), size: 10 + 32 * Math.sqrt((point.graduates || 0) / maxGraduates), opacity: 0.85, line: { color: "rgba(255,255,255,.45)", width: 1 } },
-        customdata: [[point.label, point.group_label, point.course_type_label, point.graduates]],
-        hovertemplate: "<b>%{customdata[0]}</b><br>Gruppo: %{customdata[1]}<br>Tipo corso: %{customdata[2]}<br>Retribuzione media: %{x:.0f} euro<br>Occupazione: %{y:.1f}%<br>Laureati: %{customdata[3]:,.0f}<extra></extra>"
+        customdata: [[point.label, point.group_label, point.course_type_label, point.graduates, point.net_monthly_salary_median]],
+        hovertemplate: "<b>%{customdata[0]}</b><br>Gruppo: %{customdata[1]}<br>Tipo corso: %{customdata[2]}<br>Retribuzione media: %{x:.0f} euro<br>Retribuzione mediana: %{customdata[4]:.0f} euro<br>Occupazione: %{y:.1f}%<br>Laureati: %{customdata[3]:,.0f}<extra></extra>"
       };
     });
     window.Plotly.react(el.id, traces, layout({
@@ -279,19 +306,22 @@
     var traces = Array.from(byGroup.entries()).map(function (entry, index) {
       var group = entry[0];
       var groupRows = entry[1];
+      var salaryValues = groupRows.map(function (record) { return record.net_monthly_salary; });
+      var groupMeanSalary = meanValue(salaryValues);
+      var groupMedianSalary = medianValue(salaryValues);
       return {
         type: "box",
         name: group.length > 24 ? group.slice(0, 23) + "..." : group,
         y: groupRows.map(function (record) { return record.net_monthly_salary; }),
         text: groupRows.map(function (record) { return record.university_label; }),
-        customdata: groupRows.map(function (record) { return [record.disciplinary_group_label, record.course_type_label]; }),
+        customdata: groupRows.map(function (record) { return [record.disciplinary_group_label, sanitizeCourseType(record.course_type_label), groupMeanSalary, groupMedianSalary]; }),
         boxpoints: "all",
         jitter: 0.32,
         pointpos: 0,
         marker: { color: colorFor(index), opacity: 0.72, size: 7 },
         line: { color: colorFor(index) },
         fillcolor: "rgba(160,160,160,.16)",
-        hovertemplate: "<b>%{text}</b><br>Gruppo: %{customdata[0]}<br>Tipo corso: %{customdata[1]}<br>Retribuzione media: %{y:.0f} euro<extra></extra>"
+        hovertemplate: "<b>%{text}</b><br>Gruppo: %{customdata[0]}<br>Tipo corso: %{customdata[1]}<br>Retribuzione media: %{customdata[2]:.0f} euro<br>Retribuzione mediana: %{customdata[3]:.0f} euro<extra></extra>"
       };
     });
     window.Plotly.react(el.id, traces, layout({
