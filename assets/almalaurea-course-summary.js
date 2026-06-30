@@ -130,7 +130,7 @@
     return "Dato non pubblicato per questa combinazione di filtri.";
   }
 
-  function rowsFor(category, horizon, filters) {
+  function baseRows(category, horizon, filters) {
     if (!Number.isFinite(filters.graduation_year)) return [];
     if (filters.course_type !== WILDCARD && filters.course_type !== category.option.value) return [];
     var surveyYear = filters.graduation_year + horizon;
@@ -140,22 +140,39 @@
       if (record.graduation_year !== filters.graduation_year) return false;
       if (record.employment_definition !== filters.employment_definition) return false;
       if (record.course_type !== category.option.value) return false;
-      if (filters.university !== WILDCARD) {
-        if (record.university !== filters.university) return false;
-      } else if (record.university !== WILDCARD) {
-        return false;
-      }
-      if (filters.disciplinary_group !== WILDCARD) {
-        if (record.disciplinary_group !== filters.disciplinary_group) return false;
-      } else if (record.disciplinary_group !== WILDCARD) {
-        return false;
-      }
-      if (filters.degree_class !== WILDCARD) {
-        if (record.degree_class !== filters.degree_class) return false;
-      } else if (record.degree_class !== WILDCARD) {
-        return false;
-      }
+      if (filters.university !== WILDCARD && record.university !== filters.university) return false;
+      if (filters.university === WILDCARD && record.university !== WILDCARD) return false;
       return Number.isFinite(record.graduates) || Number.isFinite(record.employment_rate) || Number.isFinite(record.net_monthly_salary);
+    });
+  }
+
+  function chooseRows(category, horizon, filters) {
+    var base = baseRows(category, horizon, filters);
+    if (!base.length) return [];
+
+    var strict = base.filter(function (record) {
+      return record.disciplinary_group === filters.disciplinary_group &&
+        record.degree_class === filters.degree_class;
+    });
+    if (strict.length) return strict;
+
+    if (filters.degree_class !== WILDCARD) return [];
+
+    if (filters.disciplinary_group !== WILDCARD) {
+      var classRows = base.filter(function (record) {
+        return record.disciplinary_group === filters.disciplinary_group &&
+          record.degree_class !== WILDCARD;
+      });
+      return classRows;
+    }
+
+    var groupRows = base.filter(function (record) {
+      return record.disciplinary_group !== WILDCARD && record.degree_class === WILDCARD;
+    });
+    if (groupRows.length) return groupRows;
+
+    return base.filter(function (record) {
+      return record.degree_class !== WILDCARD;
     });
   }
 
@@ -172,7 +189,7 @@
   }
 
   function summaryValue(category, horizon, filters) {
-    var rows = rowsFor(category, horizon, filters);
+    var rows = chooseRows(category, horizon, filters);
     var value = aggregate(rows);
     return {
       value: value,
