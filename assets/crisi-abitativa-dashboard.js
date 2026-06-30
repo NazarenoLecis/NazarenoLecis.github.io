@@ -22,10 +22,14 @@
 
   var state = {
     europeCache: {},
-    currentIndicatorId: indicators[0].id,
+    currentIndicatorId: null,
     europeData: null,
     localIndex: null,
     localCache: {},
+    currentLocalRows: [],
+    currentLocalLabel: "",
+    currentLocalPayload: null,
+    selectedLocalComune: "",
     europeHasRendered: false,
     localHasRendered: false
   };
@@ -319,6 +323,81 @@
     byId("localComment").innerHTML = "<strong>Dataset atteso:</strong> un file per regione con geometrie comunali e record con campi <code>rent_mean</code>, <code>rent_median</code>, <code>sale_mean</code>, <code>sale_median</code>. " + escapeHtml((index.methodology || [])[0] || "");
   }
 
+
+  function normalizeText(value) {
+    return String(value == null ? "" : value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  }
+
+  function selectedMunicipalityName() {
+    return normalizeText(state.selectedLocalComune || (byId("localMunicipality") && byId("localMunicipality").value));
+  }
+
+  function isSelectedMunicipality(row) {
+    var selected = selectedMunicipalityName();
+    return selected && normalizeText(row.comune || row.name || row.label) === selected;
+  }
+
+  function populateMunicipalityControl(rows) {
+    var list = byId("localMunicipalityList");
+    var input = byId("localMunicipality");
+    if (!list || !input) return;
+    var names = Array.from(new Set((rows || []).map(function (row) { return row.comune || row.name || row.label; }).filter(Boolean))).sort(function (a, b) {
+      return a.localeCompare(b, "it");
+    });
+    list.innerHTML = names.map(function (name) { return "<option value=\"" + escapeHtml(name) + "\"></option>"; }).join("");
+  }
+
+  function collectCoordinates(coords, output) {
+    if (!Array.isArray(coords)) return output;
+    if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+      output.push(coords);
+      return output;
+    }
+    coords.forEach(function (item) { collectCoordinates(item, output); });
+    return output;
+  }
+
+  function featureLocation(feature) {
+    var coords = collectCoordinates(feature && feature.geometry && feature.geometry.coordinates, []);
+    if (!coords.length) return null;
+    var lon = 0;
+    var lat = 0;
+    coords.forEach(function (coord) {
+      lon += Number(coord[0]);
+      lat += Number(coord[1]);
+    });
+    return { lon: lon / coords.length, lat: lat / coords.length };
+  }
+
+  function featureValueByKey(feature, key) {
+    var props = (feature && feature.properties) || {};
+    if (key === "properties.com_catasto_code") return String(props.com_catasto_code || "").toUpperCase();
+    if (key === "properties.com_istat_code") return String(props.com_istat_code || "").toUpperCase();
+    return String(props.name || "").toUpperCase();
+  }
+
+  function selectedMunicipalityTrace(valid, payload, theme) {
+    var selected = valid.find(isSelectedMunicipality);
+    if (!selected || !(payload && payload.geojson && payload.geojson.features)) return null;
+    var key = geoFeatureKey(payload.geojson);
+    var location = rowLocation(selected);
+    var feature = payload.geojson.features.find(function (item) { return featureValueByKey(item, key) === location; });
+    var point = featureLocation(feature);
+    if (!point) return null;
+    return {
+      type: "scattergeo",
+      mode: "markers+text",
+      lon: [point.lon],
+      lat: [point.lat],
+      text: [selected.comune],
+      textposition: "top center",
+      name: "Comune selezionato",
+      marker: { size: 16, color: theme.text, line: { color: theme.orange, width: 4 }, symbol: "circle" },
+      hovertemplate: "<b>" + escapeHtml(selected.comune) + "</b><br>Valore: " + selected.value.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "<extra></extra>",
+      showlegend: false
+    };
+  }
+
   function rowLocation(row) {
     return String(row.codice_catastale || row.codice_istat || row.comune || "").toUpperCase();
   }
@@ -341,7 +420,7 @@
     var maxValue = Math.max.apply(null, valid.map(function (row) { return row.value; }));
     var minValue = Math.min.apply(null, valid.map(function (row) { return row.value; }));
     byId("localTitle").textContent = meta.label + " - " + regionLabel;
-    window.Plotly.react("localChart", [{
+    var traces = [{
       type: "choropleth",
       geojson: payload.geojson,
       featureidkey: geoFeatureKey(payload.geojson),
@@ -357,23 +436,30 @@
       marker: { line: { color: "rgba(255,255,255,.55)", width: 0.35 } },
       colorbar: { title: meta.unit, tickfont: { color: theme.text }, titlefont: { color: theme.text } },
       hovertemplate: "<b>%{text}</b><br>Provincia: %{customdata[0]}<br>Valore: %{z:.1f}<br>Zone OMI: %{customdata[1]}<extra></extra>"
-    }], {
+    }];
+    var selectedTrace = selectedMunicipalityTrace(valid, payload, theme);
+    if (selectedTrace) traces.push(selectedTrace);
+    window.Plotly.react("localChart", traces, {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 13 },
       margin: { l: 8, r: 8, t: 8, b: 8 },
       geo: { fitbounds: "locations", visible: false, bgcolor: "rgba(0,0,0,0)" }
     }, { responsive: true, displayModeBar: false });
-    byId("localComment").innerHTML = "<strong>Come leggere:</strong> la mappa colora i comuni della regione per " + escapeHtml(meta.label.toLowerCase()) + ". Il valore e' una " + escapeHtml(meta.description) + "; non e' un prezzo di rogito o un canone contrattuale. Comuni caricati: " + valid.length.toLocaleString("it-IT") + ".";
+    var selectedText = selectedMunicipalityName() ? " Comune evidenziato: " + escapeHtml((valid.find(isSelectedMunicipality) || {}).comune || state.selectedLocalComune) + "." : "";
+    byId("localComment").innerHTML = "<strong>Come leggere:</strong> la mappa colora i comuni della regione per " + escapeHtml(meta.label.toLowerCase()) + ". Il valore e' una " + escapeHtml(meta.description) + "; non e' un prezzo di rogito o un canone contrattuale. Comuni caricati: " + valid.length.toLocaleString("it-IT") + "." + selectedText;
   }
 
   function renderLocalBar(rows, regionLabel) {
     var metric = byId("localMetric").value;
     var meta = localMetrics[metric];
-    var valid = rows.filter(function (row) { return Number.isFinite(Number(row[metric])); })
+    var allValid = rows.filter(function (row) { return Number.isFinite(Number(row[metric])); })
       .map(function (row) { return Object.assign({}, row, { value: Number(row[metric]) }); })
-      .sort(function (a, b) { return b.value - a.value; })
-      .slice(0, 40);
+      .sort(function (a, b) { return b.value - a.value; });
+    var selectedRow = allValid.find(isSelectedMunicipality);
+    var valid = allValid.slice(0, selectedRow ? 39 : 40);
+    if (selectedRow && !valid.some(isSelectedMunicipality)) valid.push(selectedRow);
+    valid = valid.sort(function (a, b) { return b.value - a.value; });
     if (!valid.length) return renderMessage("localChart", "Nessun valore comunale disponibile per questa misura.");
     var theme = plotTheme();
     byId("localTitle").textContent = meta.label + " - " + regionLabel;
@@ -382,7 +468,7 @@
       orientation: "h",
       x: valid.map(function (row) { return row.value; }).reverse(),
       y: valid.map(function (row) { return row.comune || row.name || row.label; }).reverse(),
-      marker: { color: theme.orange, opacity: 0.84 },
+      marker: { color: valid.map(function (row) { return isSelectedMunicipality(row) ? theme.text : theme.orange; }).reverse(), opacity: 0.84, line: { color: valid.map(function (row) { return isSelectedMunicipality(row) ? theme.orange : "rgba(0,0,0,0)"; }).reverse(), width: valid.map(function (row) { return isSelectedMunicipality(row) ? 3 : 0; }).reverse() } },
       customdata: valid.map(function (row) { return [row.provincia || row.province || "", row.value]; }).reverse(),
       hovertemplate: "<b>%{y}</b><br>Provincia: %{customdata[0]}<br>Valore: %{customdata[1]:.1f}<extra></extra>"
     }], {
@@ -393,10 +479,12 @@
       xaxis: { title: { text: meta.unit }, gridcolor: theme.line, fixedrange: true },
       yaxis: { gridcolor: "rgba(0,0,0,0)", fixedrange: true }
     }, { responsive: true, displayModeBar: false });
-    byId("localComment").innerHTML = "<strong>Come leggere:</strong> il grafico mostra i primi 40 comuni della regione per " + escapeHtml(meta.label.toLowerCase()) + ". I valori OMI sono quotazioni territoriali, non transazioni o contratti effettivi.";
+    var selectedText = selectedMunicipalityName() ? " Se il comune selezionato non e' nei primi valori, viene comunque incluso nella classifica." : "";
+    byId("localComment").innerHTML = "<strong>Come leggere:</strong> il grafico mostra i primi comuni della regione per " + escapeHtml(meta.label.toLowerCase()) + ". I valori OMI sono quotazioni territoriali, non transazioni o contratti effettivi." + selectedText;
   }
 
   function renderLocalRows(rows, regionLabel, payload) {
+    populateMunicipalityControl(rows);
     if (payload && payload.geojson && payload.geojson.features) renderLocalMap(rows, regionLabel, payload);
     else renderLocalBar(rows, regionLabel);
     if (payload && payload.semestre_omi) {
@@ -407,6 +495,12 @@
   function loadLocalRegion() {
     var select = byId("localRegion");
     if (!state.localIndex || !select.value) return renderLocalUnavailable(state.localIndex || {});
+    var input = byId("localMunicipality");
+    if (input && state.currentLocalRegionFile !== select.value) {
+      input.value = "";
+      state.selectedLocalComune = "";
+    }
+    state.currentLocalRegionFile = select.value;
     var region = (state.localIndex.regions || []).find(function (item) { return item.file === select.value; });
     var label = region ? region.label : select.value;
     var url = LOCAL_REGION_BASE + select.value;
@@ -414,7 +508,10 @@
     var promise = state.localCache[url] || fetchJson(url);
     state.localCache[url] = promise;
     promise.then(function (payload) {
-      renderLocalRows(payload.records || payload.data || [], label, payload);
+      state.currentLocalRows = payload.records || payload.data || [];
+      state.currentLocalLabel = label;
+      state.currentLocalPayload = payload;
+      renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
       state.localHasRendered = true;
     }).catch(function () {
       renderLocalUnavailable(state.localIndex || {});
@@ -462,7 +559,14 @@
       renderEurope();
     });
     byId("localRegion").addEventListener("change", loadLocalRegion);
-    byId("localMetric").addEventListener("change", loadLocalRegion);
+    byId("localMetric").addEventListener("change", function () {
+      if (state.currentLocalRows.length) renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
+      else loadLocalRegion();
+    });
+    byId("localMunicipality").addEventListener("input", function () {
+      state.selectedLocalComune = byId("localMunicipality").value;
+      if (state.currentLocalRows.length) renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
+    });
     new MutationObserver(function () {
       if (state.europeData) renderEurope();
       if (state.localIndex && (state.localIndex.regions || []).length) loadLocalRegion();
