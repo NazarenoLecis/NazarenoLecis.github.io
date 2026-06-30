@@ -124,7 +124,9 @@
     currentIndicatorId: indicators[0].id,
     europeData: null,
     localIndex: null,
-    localCache: {}
+    localCache: {},
+    europeHasRendered: false,
+    localHasRendered: false
   };
 
   function byId(id) { return document.getElementById(id); }
@@ -358,13 +360,16 @@
       renderEurope();
       return Promise.resolve();
     }
-    renderMessage("europeChart", "Caricamento export Eurostat statico...", true);
-    byId("europeComment").textContent = "Sto caricando il JSON statico per " + indicator.label.toLowerCase() + ".";
+    if (state.europeHasRendered) {
+      renderMessage("europeChart", "Caricamento export Eurostat statico...", true);
+      byId("europeComment").textContent = "Sto caricando il JSON statico per " + indicator.label.toLowerCase() + ".";
+    }
     return fetchJson(staticEuropeUrl(indicator)).then(function (payload) {
       state.europeCache[indicator.id] = payload.records || [];
       state.europeData = state.europeCache[indicator.id];
       populateCountryControl(state.europeData);
       renderEurope();
+      state.europeHasRendered = true;
     }).catch(function (error) {
       state.europeData = [];
       renderMessage("europeChart", "Non riesco a caricare il JSON Eurostat statico: " + error.message);
@@ -485,11 +490,12 @@
     var region = (state.localIndex.regions || []).find(function (item) { return item.file === select.value; });
     var label = region ? region.label : select.value;
     var url = LOCAL_REGION_BASE + select.value;
-    renderMessage("localChart", "Caricamento dati locali...", true);
+    if (state.localHasRendered) renderMessage("localChart", "Caricamento dati locali...", true);
     var promise = state.localCache[url] || fetchJson(url);
     state.localCache[url] = promise;
     promise.then(function (payload) {
       renderLocalRows(payload.records || payload.data || [], label, payload);
+      state.localHasRendered = true;
     }).catch(function () {
       renderLocalUnavailable(state.localIndex || {});
     });
@@ -540,6 +546,9 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+
+
+
 
 
 
