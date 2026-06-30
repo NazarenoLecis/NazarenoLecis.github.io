@@ -4,6 +4,12 @@
     "top center", "bottom center", "top left", "top right",
     "bottom left", "bottom right", "middle left", "middle right"
   ];
+  var colorCycle = [
+    "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+    "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+    "#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#76b7b2",
+    "#edc948", "#b07aa1", "#ff9da7", "#9c755f", "#bab0ac"
+  ];
 
   function byId(id) {
     return document.getElementById(id);
@@ -86,14 +92,56 @@
     return count === 1 ? positions[0] : positions;
   }
 
+  function arrayItem(value, index) {
+    return Array.isArray(value) ? value[index] : value;
+  }
+
+  function pointLabel(trace, index) {
+    if (Array.isArray(trace.customdata) && trace.customdata[index] && trace.customdata[index][0]) {
+      return trace.customdata[index][0];
+    }
+    if (Array.isArray(trace.text) && trace.text[index]) return trace.text[index];
+    return trace.name || "Punto";
+  }
+
+  function splitDegreeClassTraces(data, chartId) {
+    var dimensionSelect = byId("scatterPointDimension");
+    if (chartId !== "scatterChart" || !dimensionSelect || dimensionSelect.value !== "degree_class") return data;
+    var split = [];
+    data.forEach(function (trace) {
+      if (!trace || trace.type !== "scatter" || !Array.isArray(trace.x)) return;
+      trace.x.forEach(function (_, index) {
+        var label = pointLabel(trace, index);
+        var marker = Object.assign({}, trace.marker || {});
+        marker.size = arrayItem(marker.size, index);
+        marker.color = colorCycle[split.length % colorCycle.length];
+        split.push(Object.assign({}, trace, {
+          name: label,
+          legendgroup: label,
+          showlegend: true,
+          x: [arrayItem(trace.x, index)],
+          y: [arrayItem(trace.y, index)],
+          text: [arrayItem(trace.text, index)],
+          customdata: Array.isArray(trace.customdata) ? [trace.customdata[index]] : trace.customdata,
+          marker: marker,
+          textposition: positionCycle[split.length % positionCycle.length],
+          hovertemplate: cleanTemplate(trace.hovertemplate),
+          cliponaxis: false
+        }));
+      });
+    });
+    return split.length ? split : data;
+  }
+
   function cleanData(data, chartId) {
     if (!Array.isArray(data)) return data;
+    data = splitDegreeClassTraces(data, chartId);
     var labelOffset = 0;
     data.forEach(function (trace, index) {
       if (!trace) return;
       if (trace.hovertemplate) trace.hovertemplate = cleanTemplate(trace.hovertemplate);
       if (chartId === "scatterChart" && trace.type === "scatter") {
-        trace.textposition = labelPositions(trace, labelOffset + index);
+        trace.textposition = trace.textposition || labelPositions(trace, labelOffset + index);
         trace.textfont = Object.assign({}, trace.textfont || {}, { size: 11 });
         trace.cliponaxis = false;
         labelOffset += Array.isArray(trace.text) ? trace.text.length : 1;
@@ -105,8 +153,14 @@
   function cleanChart(chartId) {
     var chart = byId(chartId);
     if (!chart || !window.Plotly || !Array.isArray(chart.data)) return;
-    cleanData(chart.data, chartId);
-    try { window.Plotly.redraw(chart); } catch (error) {}
+    var cleaned = cleanData(chart.data, chartId);
+    try {
+      if (cleaned !== chart.data) {
+        window.Plotly.react(chartId, cleaned, chart.layout, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
+      } else {
+        window.Plotly.redraw(chart);
+      }
+    } catch (error) {}
   }
 
   function patchPlotly() {
@@ -115,7 +169,7 @@
     var originalReact = window.Plotly.react;
     window.Plotly.react = function (gd, data, layout, config) {
       var chartId = typeof gd === "string" ? gd : gd && gd.id;
-      cleanData(data, chartId);
+      data = cleanData(data, chartId);
       var result = originalReact.call(window.Plotly, gd, data, layout, config);
       if (result && typeof result.then === "function") {
         result.then(function () {
