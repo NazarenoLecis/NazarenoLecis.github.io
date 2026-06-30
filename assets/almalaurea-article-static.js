@@ -1,11 +1,6 @@
 (function () {
-  var DATA_URL = "/data/almalaurea/almalaurea_article_timeseries_data.json";
-  var TIMESERIES_URL = "/data/almalaurea/almalaurea_article_timeseries_data.json";
   var WILDCARD = "*";
-  var records = [];
-  var timeRecords = [];
-  var chartCounter = 0;
-  var colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", "#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#76b7b2"];
+  var counter = 0;
 
   function onArticle() {
     return location.pathname.indexOf("/articoli/occupazione-salari-laureati-almalaurea") >= 0;
@@ -20,12 +15,8 @@
     return Number.isFinite(parsed) ? parsed : null;
   }
 
-  function asArray(value) {
-    return Array.isArray(value) ? value : [];
-  }
-
   function escapeHtml(value) {
-    return String(value === null || value === undefined ? "" : value)
+    return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -33,425 +24,132 @@
       .replace(/'/g, "&#039;");
   }
 
-  function colorFor(index) {
-    return colors[index % colors.length];
+  function format(value, suffix) {
+    return Number(value).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + suffix;
   }
 
-  function cssColor(name, fallback) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
-  }
-
-  function formatPercent(value) {
-    return Number.isFinite(value) ? value.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%" : "-";
-  }
-
-  function formatEuro(value) {
-    return Number.isFinite(value) ? Math.round(value).toLocaleString("it-IT") + " euro" : "-";
-  }
-
-  function normalize(record) {
-    record.survey_year = toNumber(record.survey_year);
-    record.graduation_year = toNumber(record.graduation_year);
-    record.years_after_degree = toNumber(record.years_after_degree);
-    record.graduates = toNumber(record.graduates);
-    record.employment_rate = toNumber(record.employment_rate);
-    record.net_monthly_salary = toNumber(record.net_monthly_salary);
-    record.second_level_enrollment_rate = toNumber(record.second_level_enrollment_rate);
-    record.university_label = record.university_label || record.university;
-    record.disciplinary_group_label = record.disciplinary_group_label || record.disciplinary_group;
-    record.course_type_label = record.course_type_label || record.course_type;
-    record.degree_class_label = record.degree_class_label || record.degree_class;
-    return record;
-  }
-
-  function parseIframeParams(iframe) {
+  function paramsFromIframe(iframe) {
     var src = iframe.getAttribute("src") || "";
     var query = src.split("?")[1] || "";
     var params = new URLSearchParams(query.replace(/&amp;/g, "&"));
     return {
       chart: params.get("chart") || "scatter",
-      survey: toNumber(params.get("survey")) || 2025,
       years: toNumber(params.get("years")) || 1,
-      cohort: toNumber(params.get("cohort")) || null,
-      definition: params.get("definition") || "broad",
       course: params.get("course") || WILDCARD,
-      dimension: params.get("dimension") || "disciplinary_group",
-      split: params.get("split") || "disciplinary_group",
-      timeMode: params.get("time_mode") || "fixed_horizon",
-      metric: params.get("metric") || "employment_rate"
+      dimension: params.get("dimension") || "disciplinary_group"
     };
-  }
-
-  function replaceIframes() {
-    document.querySelectorAll("figure.dashboard-live iframe").forEach(function (iframe) {
-      if (iframe.dataset.staticReplaced === "1") return;
-      iframe.dataset.staticReplaced = "1";
-      var params = parseIframeParams(iframe);
-      var div = document.createElement("div");
-      div.className = "article-static-chart";
-      div.id = "articleStaticChart" + (++chartCounter);
-      div.dataset.params = JSON.stringify(params);
-      div.innerHTML = "<div class=\"article-chart-loading\">Caricamento grafico...</div>";
-      iframe.replaceWith(div);
-    });
   }
 
   function ensureStyle() {
     if (byId("almArticleStaticStyle")) return;
     var style = document.createElement("style");
     style.id = "almArticleStaticStyle";
-    style.textContent = ".article-static-chart{min-height:560px;background:var(--bg)}.article-static-chart .plot-container,.article-static-chart .svg-container{background:var(--bg)!important}.article-chart-loading,.article-chart-error{padding:26px;color:var(--muted);line-height:1.55}.article-chart-error strong{color:var(--text)}@media(max-width:760px){.article-static-chart{min-width:880px;min-height:560px}}";
+    style.textContent = ".article-static-chart{padding:18px;background:var(--bg);overflow-x:auto}.static-chart{min-width:720px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:20px}.static-chart h4{margin:0 0 6px;font-size:1.08rem}.static-chart p{margin:0 0 16px!important;color:var(--muted)!important;font-size:.94rem!important;line-height:1.45!important}.static-row{display:grid;grid-template-columns:250px 1fr 96px;gap:12px;align-items:center;margin:10px 0}.static-row span{font-size:.92rem}.static-track{height:14px;border-radius:999px;background:color-mix(in srgb,var(--line) 72%,transparent);overflow:hidden}.static-track i{display:block;height:100%;width:calc(var(--v)*1%);background:var(--orange);border-radius:999px}.static-value{text-align:right;color:var(--orange);font-weight:800}.static-note{min-width:720px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:22px;color:var(--muted);line-height:1.55}.static-note strong{display:block;color:var(--text);margin-bottom:8px}.static-note a{color:var(--orange);font-weight:800}.best-course-rows .static-note{min-width:0;border:0;background:transparent;border-radius:0}.static-axis{font-size:.84rem;color:var(--muted);margin-top:12px}@media(max-width:760px){.article-static-chart{padding:12px}.static-chart,.static-note{min-width:760px}}";
     document.head.appendChild(style);
   }
 
-  function loadPlotly() {
-    if (window.Plotly) return Promise.resolve();
-    return new Promise(function (resolve, reject) {
-      var existing = document.querySelector("script[data-article-plotly]");
-      if (existing) {
-        existing.addEventListener("load", resolve);
-        existing.addEventListener("error", reject);
-        return;
-      }
-      var script = document.createElement("script");
-      script.src = "https://cdn.plot.ly/plotly-2.35.2.min.js";
-      script.dataset.articlePlotly = "1";
-      script.onload = resolve;
-      script.onerror = reject;
-      document.head.appendChild(script);
+  function introPatch() {
+    document.querySelectorAll(".article p").forEach(function (p) {
+      if ((p.textContent || "").indexOf("Le figure dell'articolo") < 0) return;
+      p.innerHTML = "I file usati per costruire l’analisi sono disponibili nel repository <a href=\"https://github.com/NazarenoLecis/analisi_almalaurea\" target=\"_blank\" rel=\"noopener\">analisi_almalaurea</a>. Le figure dell’articolo sono anteprime statiche leggere. La dashboard resta separata e carica i dati solo quando l’utente interagisce con i filtri.";
     });
   }
 
-  function fetchJson(url) {
-    return fetch(url).then(function (response) {
-      if (!response.ok) throw new Error("HTTP " + response.status + " su " + url);
-      return response.json();
+  function replaceIframes() {
+    document.querySelectorAll("figure.dashboard-live iframe").forEach(function (iframe) {
+      var div = document.createElement("div");
+      div.id = "articleStaticChart" + (++counter);
+      div.className = "article-static-chart";
+      div.dataset.params = JSON.stringify(paramsFromIframe(iframe));
+      iframe.replaceWith(div);
     });
   }
 
-  function extractRecords(payload) {
-    return asArray(payload.records)
-      .concat(asArray(payload.dashboard_records))
-      .concat(asArray(payload.detailed_records))
-      .concat(asArray(payload.article_records))
-      .concat(asArray(payload.data));
+  function rows(title, subtitle, data, key, suffix) {
+    var max = Math.max.apply(null, data.map(function (x) { return x[key]; })) || 1;
+    return "<div class=\"static-chart\"><h4>" + escapeHtml(title) + "</h4><p>" + escapeHtml(subtitle) + "</p>" +
+      data.map(function (x) {
+        var pct = Math.max(2, 100 * x[key] / max);
+        return "<div class=\"static-row\" style=\"--v:" + pct.toFixed(1) + "\"><span>" + escapeHtml(x.label) + "</span><div class=\"static-track\"><i></i></div><span class=\"static-value\">" + format(x[key], suffix) + "</span></div>";
+      }).join("") +
+      "<div class=\"static-axis\">Anteprima statica. Il dettaglio completo resta nella dashboard interattiva.</div></div>";
   }
 
-  function extractTimeRecords(payload) {
-    return asArray(payload.timeseries_records)
-      .concat(asArray(payload.time_records))
-      .concat(asArray(payload.timeseries))
-      .concat(asArray(payload.records));
+  function note(title, text) {
+    return "<div class=\"static-note\"><strong>" + escapeHtml(title) + "</strong><div>" + escapeHtml(text) + "</div><div style=\"margin-top:10px\"><a href=\"../dashboard/almalaurea/index.html\">Apri la dashboard interattiva</a></div></div>";
   }
 
-  function fetchData() {
-    return Promise.all([fetchJson(DATA_URL), fetchJson(TIMESERIES_URL).catch(function () { return { records: [] }; })])
-      .then(function (payloads) {
-        records = extractRecords(payloads[0]).map(normalize);
-        timeRecords = extractTimeRecords(payloads[1]).map(normalize);
-      });
-  }
+  var salaryOneYear = [
+    { label: "Scienze motorie e sportive", salary: 1022 },
+    { label: "Informatica e Tecnologie ICT", salary: 1608 },
+    { label: "Ingegneria industriale e dell’informazione", salary: 1635 },
+    { label: "Medico-sanitario e farmaceutico", salary: 1672 }
+  ];
+  var salaryFiveYears = [
+    { label: "Informatica e Tecnologie ICT", salary: 2226 },
+    { label: "Ingegneria industriale e dell’informazione", salary: 2185 },
+    { label: "Economico", salary: 2006 },
+    { label: "Medico-sanitario e farmaceutico", salary: 1993 },
+    { label: "Architettura e Ingegneria civile", salary: 1988 },
+    { label: "Educazione e Formazione", salary: 1477 }
+  ];
+  var firstLevel = [
+    { label: "Scientifico", employment: 29.4 },
+    { label: "Letterario-umanistico", employment: 33.7 },
+    { label: "Psicologico", employment: 36.1 },
+    { label: "Mediana gruppi", employment: 47.4 }
+  ];
+  var masters = [
+    { label: "Mediana gruppi", employment: 83.6 },
+    { label: "Informatica e Tecnologie ICT", employment: 93.3 },
+    { label: "Ingegneria industriale e dell’informazione", employment: 93.6 }
+  ];
+  var fiveYearsEmployment = [
+    { label: "Letterario-umanistico", employment: 88.1 },
+    { label: "Ingegneria industriale e dell’informazione", employment: 97.5 }
+  ];
 
-  function fixedRows(source, params) {
-    var cohort = params.cohort || (params.survey - params.years);
-    return source.filter(function (record) {
-      if (record.survey_year !== params.survey) return false;
-      if (record.years_after_degree !== params.years) return false;
-      if (record.graduation_year !== cohort) return false;
-      if (record.employment_definition !== params.definition) return false;
-      if (params.course !== WILDCARD && record.course_type !== params.course) return false;
-      if (params.course === WILDCARD && record.course_type !== WILDCARD) return false;
-      return Number.isFinite(record.net_monthly_salary) && record.net_monthly_salary > 0 &&
-        Number.isFinite(record.employment_rate) && record.employment_rate > 0;
-    });
-  }
-
-  function weightedAverage(rows, field) {
-    var weightedSum = 0;
-    var weightSum = 0;
-    var plainSum = 0;
-    var plainCount = 0;
-    rows.forEach(function (record) {
-      var value = record[field];
-      if (!Number.isFinite(value) || value <= 0) return;
-      plainSum += value;
-      plainCount += 1;
-      if (Number.isFinite(record.graduates) && record.graduates > 0) {
-        weightedSum += value * record.graduates;
-        weightSum += record.graduates;
-      }
-    });
-    if (weightSum > 0) return weightedSum / weightSum;
-    return plainCount ? plainSum / plainCount : null;
-  }
-
-  function aggregatePoints(rows, keyFn, labelFn) {
-    var buckets = new Map();
-    rows.forEach(function (record) {
-      var key = keyFn(record);
-      if (!key || key === WILDCARD) return;
-      if (!buckets.has(key)) buckets.set(key, { key: key, label: labelFn(record), rows: [] });
-      buckets.get(key).rows.push(record);
-    });
-    return Array.from(buckets.values()).map(function (bucket) {
-      return {
-        key: bucket.key,
-        label: bucket.label,
-        group_label: bucket.rows[0].disciplinary_group_label,
-        course_type_label: bucket.rows[0].course_type_label,
-        graduates: bucket.rows.reduce(function (sum, record) { return sum + (record.graduates || 0); }, 0),
-        employment_rate: weightedAverage(bucket.rows, "employment_rate"),
-        net_monthly_salary: weightedAverage(bucket.rows, "net_monthly_salary")
-      };
-    }).filter(function (point) {
-      return Number.isFinite(point.employment_rate) && point.employment_rate > 0 && Number.isFinite(point.net_monthly_salary) && point.net_monthly_salary > 0;
-    });
-  }
-
-  function scatterPoints(params) {
-    var rows = fixedRows(records, params);
-    if (params.dimension === "university") {
-      var universityRows = rows.filter(function (record) {
-        return record.university !== WILDCARD && record.degree_class === WILDCARD;
-      });
-      return aggregatePoints(universityRows, function (record) { return record.university; }, function (record) { return record.university_label; });
+  function renderChart(el) {
+    var params = JSON.parse(el.dataset.params || "{}");
+    if (params.chart === "box" && params.years === 5) {
+      el.innerHTML = rows("Retribuzioni a 5 anni", "Valori medi netti mensili citati nel testo.", salaryFiveYears, "salary", " €");
+    } else if (params.chart === "box") {
+      el.innerHTML = rows("Retribuzioni a 1 anno", "Valori medi netti mensili citati nel testo.", salaryOneYear, "salary", " €");
+    } else if (params.chart === "time") {
+      el.innerHTML = note("Percorso della coorte 2020", "Questa sezione resta statica nell’articolo. La dashboard consente di seguire la coorte e cambiare indicatore caricando i dati solo su richiesta.");
+    } else if (params.dimension === "university") {
+      el.innerHTML = note("Vista per ateneo", "La vista per ateneo richiede il dettaglio più pesante. Nell’articolo resta statica; nella dashboard viene caricata quando l’utente sceglie questa analisi.");
+    } else if (params.course === "laurea di primo livello") {
+      el.innerHTML = rows("Lauree triennali a 1 anno", "Tassi di occupazione citati nel testo.", firstLevel, "employment", "%");
+    } else if (params.course === "laurea magistrale biennale") {
+      el.innerHTML = rows("Magistrali biennali a 1 anno", "Tassi di occupazione citati nel testo.", masters, "employment", "%");
+    } else if (params.years === 5) {
+      el.innerHTML = rows("Occupazione a 5 anni", "Estremi citati nel testo per il secondo livello.", fiveYearsEmployment, "employment", "%");
+    } else {
+      el.innerHTML = rows("Retribuzioni a 1 anno", "Valori principali citati nel testo.", salaryOneYear, "salary", " €");
     }
-    if (params.dimension === "degree_class") {
-      var degreeRows = rows.filter(function (record) {
-        return record.degree_class !== WILDCARD && record.university === WILDCARD;
-      });
-      return aggregatePoints(degreeRows, function (record) { return record.degree_class; }, function (record) { return record.degree_class_label; });
-    }
-    var groupRows = rows.filter(function (record) {
-      return record.disciplinary_group !== WILDCARD && record.university === WILDCARD && record.degree_class === WILDCARD;
-    });
-    return aggregatePoints(groupRows, function (record) { return record.disciplinary_group; }, function (record) { return record.disciplinary_group_label; });
-  }
-
-  function clearForPlot(el) {
-    el.innerHTML = "";
-  }
-
-  function renderScatter(el, params) {
-    var points = scatterPoints(params);
-    if (!points.length) return renderError(el, "Nessun dato disponibile per questa vista statica.");
-    clearForPlot(el);
-    var maxGraduates = Math.max.apply(null, points.map(function (point) { return point.graduates || 0; })) || 1;
-    var traces = points.map(function (point, index) {
-      return {
-        type: "scatter",
-        mode: "markers+text",
-        name: point.label,
-        x: [point.net_monthly_salary],
-        y: [point.employment_rate],
-        text: [params.dimension === "university" ? "" : point.label],
-        textposition: ["top center", "bottom center", "top left", "top right", "bottom left", "bottom right"][index % 6],
-        textfont: { size: 11 },
-        cliponaxis: false,
-        marker: { color: colorFor(index), size: 10 + 32 * Math.sqrt((point.graduates || 0) / maxGraduates), opacity: 0.85, line: { color: "rgba(255,255,255,.45)", width: 1 } },
-        customdata: [[point.label, point.group_label, point.course_type_label, point.graduates]],
-        hovertemplate: "<b>%{customdata[0]}</b><br>Gruppo: %{customdata[1]}<br>Tipo corso: %{customdata[2]}<br>Retribuzione media: %{x:.0f} euro<br>Occupazione: %{y:.1f}%<br>Laureati: %{customdata[3]:,.0f}<extra></extra>"
-      };
-    });
-    window.Plotly.react(el.id, traces, layout({
-      xaxis: { title: { text: "Retribuzione mensile netta" }, gridcolor: cssColor("--line", "#303030"), fixedrange: true },
-      yaxis: { title: { text: "Tasso di occupazione" }, ticksuffix: "%", gridcolor: cssColor("--line", "#303030"), fixedrange: true },
-      margin: { l: 78, r: 220, t: 20, b: 76 }
-    }), plotConfig());
-  }
-
-  function boxRows(params) {
-    return fixedRows(records, params).filter(function (record) {
-      return record.university !== WILDCARD && record.degree_class === WILDCARD && record.disciplinary_group !== WILDCARD;
-    });
-  }
-
-  function renderBox(el, params) {
-    var rows = boxRows(params);
-    if (!rows.length) return renderError(el, "Nessun dato disponibile per questa distribuzione statica.");
-    clearForPlot(el);
-    var byGroup = new Map();
-    rows.forEach(function (record) {
-      var key = params.split === "course_type" ? record.course_type_label : record.disciplinary_group_label;
-      if (!byGroup.has(key)) byGroup.set(key, []);
-      byGroup.get(key).push(record);
-    });
-    var traces = Array.from(byGroup.entries()).map(function (entry, index) {
-      var group = entry[0];
-      var groupRows = entry[1];
-      return {
-        type: "box",
-        name: group.length > 24 ? group.slice(0, 23) + "..." : group,
-        y: groupRows.map(function (record) { return record.net_monthly_salary; }),
-        text: groupRows.map(function (record) { return record.university_label; }),
-        customdata: groupRows.map(function (record) { return [record.disciplinary_group_label, record.course_type_label]; }),
-        boxpoints: "all",
-        jitter: 0.32,
-        pointpos: 0,
-        marker: { color: colorFor(index), opacity: 0.72, size: 7 },
-        line: { color: colorFor(index) },
-        fillcolor: "rgba(160,160,160,.16)",
-        hovertemplate: "<b>%{text}</b><br>Gruppo: %{customdata[0]}<br>Tipo corso: %{customdata[1]}<br>Retribuzione media: %{y:.0f} euro<extra></extra>"
-      };
-    });
-    window.Plotly.react(el.id, traces, layout({
-      showlegend: false,
-      xaxis: { tickangle: -35, title: { text: params.split === "course_type" ? "Tipo corso" : "Gruppo disciplinare" }, gridcolor: "rgba(0,0,0,0)", fixedrange: true },
-      yaxis: { title: { text: "Retribuzione mensile netta" }, gridcolor: cssColor("--line", "#303030"), fixedrange: true },
-      margin: { l: 72, r: 26, t: 18, b: 132 }
-    }), plotConfig());
-  }
-
-  function metricLabel(metric) {
-    return metric === "net_monthly_salary" ? "Retribuzione mensile netta" : "Tasso di occupazione";
-  }
-
-  function metricSuffix(metric) {
-    return metric === "net_monthly_salary" ? " euro" : "%";
-  }
-
-  function timeRows(params) {
-    var metric = params.metric === "second_level_enrollment_rate" ? "employment_rate" : params.metric;
-    var source = timeRecords.length ? timeRecords : records;
-    return source.filter(function (record) {
-      if (record.employment_definition !== params.definition) return false;
-      if (params.course !== WILDCARD && record.course_type !== params.course) return false;
-      if (params.timeMode === "cohort_path") {
-        if (record.graduation_year !== params.cohort) return false;
-      } else {
-        if (record.years_after_degree !== params.years) return false;
-        if (record.survey_year < 2007 || record.survey_year > params.survey) return false;
-        if (record.graduation_year !== record.survey_year - params.years) return false;
-      }
-      if (params.dimension === "university") {
-        if (record.university === WILDCARD) return false;
-      } else if (record.disciplinary_group === WILDCARD || record.university !== WILDCARD) {
-        return false;
-      }
-      return Number.isFinite(record[metric]) && record[metric] > 0;
-    });
-  }
-
-  function renderTime(el, params) {
-    var metric = params.metric === "second_level_enrollment_rate" ? "employment_rate" : params.metric;
-    var rows = timeRows(params);
-    if (!rows.length) return renderError(el, "Nessun dato disponibile per questa serie statica.");
-    clearForPlot(el);
-    var buckets = new Map();
-    rows.forEach(function (record) {
-      var key = params.dimension === "university" ? record.university : record.disciplinary_group;
-      var label = params.dimension === "university" ? record.university_label : record.disciplinary_group_label;
-      var x = params.timeMode === "cohort_path" ? record.years_after_degree : record.survey_year;
-      if (!key || key === WILDCARD || !Number.isFinite(x)) return;
-      var bucketKey = key + "||" + x;
-      if (!buckets.has(bucketKey)) buckets.set(bucketKey, { key: key, label: label, x: x, rows: [] });
-      buckets.get(bucketKey).rows.push(record);
-    });
-    var points = Array.from(buckets.values()).map(function (bucket) {
-      return { key: bucket.key, label: bucket.label, x: bucket.x, value: weightedAverage(bucket.rows, metric), graduates: bucket.rows.reduce(function (sum, record) { return sum + (record.graduates || 0); }, 0) };
-    }).filter(function (point) { return Number.isFinite(point.value); });
-    if (!points.length) return renderError(el, "Nessun valore numerico disponibile per questa serie statica.");
-
-    var grouped = new Map();
-    points.forEach(function (point) {
-      if (!grouped.has(point.key)) grouped.set(point.key, []);
-      grouped.get(point.key).push(point);
-    });
-    var traces = Array.from(grouped.values()).map(function (series, index) {
-      series.sort(function (a, b) { return a.x - b.x; });
-      return { type: "scatter", mode: "lines+markers", name: series[0].label, x: series.map(function (point) { return point.x; }), y: series.map(function (point) { return point.value; }), marker: { color: colorFor(index), size: 8 }, line: { color: colorFor(index), width: 2 }, customdata: series.map(function (point) { return [point.label, point.graduates]; }), hovertemplate: "<b>%{customdata[0]}</b><br>" + (params.timeMode === "cohort_path" ? "Anni dalla laurea" : "Anno indagine") + ": %{x}<br>" + metricLabel(metric) + ": %{y:.1f}" + metricSuffix(metric) + "<br>Laureati: %{customdata[1]:,.0f}<extra></extra>" };
-    }).filter(function (trace) { return trace.x.length > 0; });
-    if (!traces.length) return renderError(el, "Nessuna serie valida da mostrare.");
-    window.Plotly.react(el.id, traces, layout({
-      xaxis: { title: { text: params.timeMode === "cohort_path" ? "Anni dalla laurea" : "Anno indagine" }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, dtick: 1 },
-      yaxis: { title: { text: metricLabel(metric) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, ticksuffix: metric === "net_monthly_salary" ? "" : "%" },
-      margin: { l: 76, r: 250, t: 18, b: 76 }
-    }), plotConfig());
-  }
-
-  function layout(extra) {
-    return Object.assign({
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
-      font: { color: cssColor("--text", "#f5f2ed"), family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
-      dragmode: false,
-      legend: { orientation: "v", x: 1.02, y: 1, xanchor: "left" }
-    }, extra || {});
-  }
-
-  function plotConfig() {
-    return { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false };
-  }
-
-  function renderError(el, message) {
-    el.innerHTML = "<div class=\"article-chart-error\"><strong>Grafico non disponibile.</strong><br>" + escapeHtml(message) + "</div>";
   }
 
   function renderCharts() {
-    document.querySelectorAll(".article-static-chart").forEach(function (el) {
-      var params = JSON.parse(el.dataset.params || "{}");
-      if (params.chart === "box") return renderBox(el, params);
-      if (params.chart === "time") return renderTime(el, params);
-      return renderScatter(el, params);
-    });
+    document.querySelectorAll(".article-static-chart").forEach(renderChart);
   }
 
-  function bestRowKey(record) {
-    return [record.employment_rate || -1, record.graduates || -1, record.net_monthly_salary || -1];
-  }
-
-  function betterThan(candidate, current) {
-    if (!current) return true;
-    var a = bestRowKey(candidate);
-    var b = bestRowKey(current);
-    for (var i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return a[i] > b[i];
-    return String(candidate.disciplinary_group_label).localeCompare(String(current.disciplinary_group_label), "it") < 0;
-  }
-
-  function renderBestCourses(containerId, secondLevel) {
-    var container = byId(containerId);
-    if (!container) return;
-    var best = new Map();
-    records.forEach(function (record) {
-      if (record.survey_year !== 2025 || record.years_after_degree !== 1 || record.graduation_year !== 2024) return;
-      if (record.employment_definition !== "broad") return;
-      if (record.university === WILDCARD || record.disciplinary_group === WILDCARD || record.degree_class !== WILDCARD) return;
-      var isSecond = record.course_type === "laurea magistrale biennale" || record.course_type === "laurea magistrale a ciclo unico";
-      if (secondLevel !== isSecond) return;
-      if (!Number.isFinite(record.employment_rate) || !Number.isFinite(record.graduates) || record.graduates < 20) return;
-      if (betterThan(record, best.get(record.university))) best.set(record.university, record);
-    });
-    var rows = Array.from(best.values()).sort(function (a, b) {
-      if (b.employment_rate !== a.employment_rate) return b.employment_rate - a.employment_rate;
-      return b.graduates - a.graduates;
-    });
-    if (!rows.length) {
-      container.textContent = "Nessun dato disponibile per questa selezione.";
-      return;
-    }
-    container.innerHTML = rows.map(function (record) {
-      var salary = Number.isFinite(record.net_monthly_salary) ? " - " + formatEuro(record.net_monthly_salary) : "";
-      return "<div class=\"best-course-row\" style=\"--rate:" + record.employment_rate.toFixed(1) + "\"><div class=\"best-course-main\"><strong>" + escapeHtml(record.university_label) + "</strong><span>" + escapeHtml(record.disciplinary_group_label) + " - " + escapeHtml(record.course_type_label.replace(/^laurea /i, "")) + "</span></div><div class=\"best-course-bar\" aria-hidden=\"true\"><span></span></div><div class=\"best-course-value\">" + formatPercent(record.employment_rate) + "</div><div class=\"best-course-meta\">" + Math.round(record.graduates).toLocaleString("it-IT") + " laureati" + salary + "</div></div>";
-    }).join("");
-  }
-
-  function renderBestCourseTables() {
-    renderBestCourses("bestCourseRowsFirstLevel", false);
-    renderBestCourses("bestCourseRowsSecondLevel", true);
+  function renderBestTables() {
+    var first = byId("bestCourseRowsFirstLevel");
+    var second = byId("bestCourseRowsSecondLevel");
+    if (first) first.innerHTML = note("Miglior ambito disponibile per ateneo", "La classifica completa richiede il dettaglio per ateneo. Per tenere l’articolo veloce, questa parte resta statica e rimanda alla dashboard.");
+    if (second) second.innerHTML = note("Miglior ambito disponibile nel secondo livello", "La classifica completa richiede il dettaglio per ateneo. Per tenere l’articolo veloce, questa parte resta statica e rimanda alla dashboard.");
   }
 
   function init() {
     if (!onArticle()) return;
     ensureStyle();
+    introPatch();
     replaceIframes();
-    Promise.all([loadPlotly(), fetchData()]).then(function () {
-      renderCharts();
-      renderBestCourseTables();
-    }).catch(function (error) {
-      document.querySelectorAll(".article-static-chart").forEach(function (el) {
-        renderError(el, "Non riesco a caricare i dati AlmaLaurea: " + error.message);
-      });
-    });
+    renderCharts();
+    renderBestTables();
+    window.setTimeout(renderBestTables, 300);
+    window.setTimeout(renderBestTables, 900);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
