@@ -26,6 +26,31 @@
     return location.pathname.indexOf("/articoli/occupazione-salari-laureati-almalaurea") >= 0;
   }
 
+  function removeTopGithubLink() {
+    document.querySelectorAll(".site-header .nav a").forEach(function (link) {
+      var href = link.getAttribute("href") || "";
+      var text = (link.textContent || "").trim().toLowerCase();
+      if (text === "github" || href === "https://github.com/NazarenoLecis" || href.indexOf("github.com/NazarenoLecis") >= 0) {
+        link.remove();
+      }
+    });
+  }
+
+  function injectSocialStyle() {
+    if (document.getElementById("roundSocialStyle")) return;
+    var style = document.createElement("style");
+    style.id = "roundSocialStyle";
+    style.textContent = [
+      ".social-links{gap:12px}",
+      ".social-link{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;padding:0!important;border:1.5px solid var(--orange)!important;border-radius:999px!important;background:transparent!important;color:var(--orange)!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}",
+      ".social-link:hover{background:color-mix(in srgb,var(--orange) 12%,transparent)!important;color:var(--orange)!important;border-color:var(--orange)!important}",
+      ".social-link svg{width:21px!important;height:21px!important}",
+      ".social-link span{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}",
+      ".contact-social-links{justify-content:flex-start;margin-top:18px}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
   function patchAlmaArticleDataFetch() {
     if (!isAlmaArticle() || window.__almArticleDataFetchPatched) return;
     window.__almArticleDataFetchPatched = true;
@@ -52,6 +77,8 @@
     } catch (error) {}
 
     apply(saved || "dark");
+    injectSocialStyle();
+    removeTopGithubLink();
 
     if (isAlmaArticle()) {
       patchAlmaArticleDataFetch();
