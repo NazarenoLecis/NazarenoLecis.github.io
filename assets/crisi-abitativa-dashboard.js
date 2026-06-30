@@ -312,6 +312,7 @@
     }
     select.disabled = false;
     byId("localMetric").disabled = false;
+    if (!byId("localMetric").value) byId("localMetric").value = "rent_mean";
     select.innerHTML = regions.map(function (region) {
       var selected = region.preload ? " selected" : "";
       return "<option value=\"" + escapeHtml(region.file) + "\"" + selected + ">" + escapeHtml(region.label) + "</option>";
@@ -563,10 +564,13 @@
       if (state.currentLocalRows.length) renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
       else loadLocalRegion();
     });
-    byId("localMunicipality").addEventListener("input", function () {
-      state.selectedLocalComune = byId("localMunicipality").value;
-      if (state.currentLocalRows.length) renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
-    });
+    var municipalityInput = byId("localMunicipality");
+    if (municipalityInput) {
+      municipalityInput.addEventListener("input", function () {
+        state.selectedLocalComune = municipalityInput.value;
+        if (state.currentLocalRows.length) renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
+      });
+    }
     new MutationObserver(function () {
       if (state.europeData) renderEurope();
       if (state.localIndex && (state.localIndex.regions || []).length) loadLocalRegion();
@@ -583,6 +587,7 @@
     loadEuropeIndex().then(function () {
       populateEuropeIndicatorControl();
       if (defaultEuropeIndicatorId) byId("europeIndicator").value = defaultEuropeIndicatorId;
+      if (!byId("europeIndicator").value && indicators[0]) byId("europeIndicator").value = indicators[0].id;
       loadEuropeIndicator(byId("europeIndicator").value || defaultEuropeIndicatorId).then(prefetchEuropeIndicators);
     }).catch(function (error) {
       renderMessage("europeChart", "Non riesco a caricare l'indice Eurostat statico: " + error.message);
