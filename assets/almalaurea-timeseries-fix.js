@@ -3,11 +3,11 @@
   var WILDCARD = "*";
   var records = [];
   var patched = false;
+  var rendering = false;
   var colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", "#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#76b7b2"];
 
   function byId(id) { return document.getElementById(id); }
   function toNumber(value) { var n = Number(value); return Number.isFinite(n) ? n : null; }
-  function label(value) { return value === null || value === undefined ? "" : String(value); }
   function cssColor(name, fallback) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
   function metricLabel(metric) { return metric === "net_monthly_salary" ? "Retribuzione mensile netta" : "Tasso di occupazione"; }
   function metricSuffix(metric) { return metric === "net_monthly_salary" ? " euro" : "%"; }
@@ -55,9 +55,9 @@
   }
 
   function readFilters() {
-    var mode = selectValue("timeMode", "fixed_horizon");
+    var selectedMetric = selectValue("timeMetric", "employment_rate");
     return {
-      mode: mode,
+      mode: selectValue("timeMode", "fixed_horizon"),
       start_year: selectNumber("timeStartYear", 2007),
       end_year: selectNumber("timeEndYear", 2025),
       years_after_degree: selectNumber("timeYearsAfter", 1),
@@ -67,7 +67,7 @@
       group: selectValue("timeGroup", WILDCARD),
       course: selectValue("timeCourse", WILDCARD),
       dimension: selectValue("timePointDimension", "disciplinary_group"),
-      metric: selectValue("timeMetric", "employment_rate") === "second_level_enrollment_rate" ? "employment_rate" : selectValue("timeMetric", "employment_rate")
+      metric: selectedMetric === "second_level_enrollment_rate" ? "employment_rate" : selectedMetric
     };
   }
 
@@ -129,9 +129,7 @@
       var x = xValue(record, filters);
       if (!key || key === WILDCARD || !Number.isFinite(x)) return;
       var bucketKey = key + "||" + x;
-      if (!buckets.has(bucketKey)) {
-        buckets.set(bucketKey, { key: key, label: seriesLabel(record, filters), x: x, rows: [] });
-      }
+      if (!buckets.has(bucketKey)) buckets.set(bucketKey, { key: key, label: seriesLabel(record, filters), x: x, rows: [] });
       buckets.get(bucketKey).rows.push(record);
     });
     return Array.from(buckets.values()).map(function (bucket) {
@@ -145,51 +143,88 @@
     }).filter(function (point) { return Number.isFinite(point.value); });
   }
 
+  function isFlatSeries(series, metric) {
+    if (series.length < 3) return false;
+    var values = series.map(function (point) { return point.value; }).filter(Number.isFinite);
+    if (values.length < 3) return false;
+    var min = Math.min.apply(null, values);
+    var max = Math.max.apply(null, values);
+    var tolerance = metric === "net_monthly_salary" ? 1 : 0.05;
+    return (max - min) <= tolerance;
+  }
+
   function renderMessage(message) {
     var chart = byId("timeSeriesChart");
     if (!chart) return;
     if (window.Plotly) window.Plotly.purge(chart);
-    chart.innerHTML = "<div class=\"empty-state\">" + message + "</div>";
+    chart.innerHTML = "<div class=\"empty-state\" style=\"padding:26px;line-height:1.55\">" + message + "</div>";
   }
 
   function render() {
+    if (rendering) return;
     if (!window.Plotly || !records.length || !byId("timeSeriesChart")) return;
-    var filters = readFilters();
-    var points = aggregate(rowsForChart(filters), filters);
-    if (!points.length) {
-      renderMessage("Nessun dato disponibile per questa combinazione di filtri.");
-      return;
-    }
-    var grouped = new Map();
-    points.forEach(function (point) {
-      if (!grouped.has(point.key)) grouped.set(point.key, []);
-      grouped.get(point.key).push(point);
-    });
-    var traces = Array.from(grouped.values()).map(function (series, index) {
-      series.sort(function (a, b) { return a.x - b.x; });
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: series[0].label,
-        x: series.map(function (point) { return point.x; }),
-        y: series.map(function (point) { return point.value; }),
-        marker: { size: 7, color: colors[index % colors.length] },
-        line: { width: 2, color: colors[index % colors.length] },
-        customdata: series.map(function (point) { return [point.label, point.graduates]; }),
-        hovertemplate: "<b>%{customdata[0]}</b><br>" + xTitle(filters) + ": %{x}<br>" + metricLabel(filters.metric) + ": %{y:.1f}" + metricSuffix(filters.metric) + "<br>Laureati: %{customdata[1]:,.0f}<extra></extra>"
+    rendering = true;
+    try {
+      var filters = readFilters();
+      var points = aggregate(rowsForChart(filters), filters);
+      if (!points.length) {
+        renderMessage("Nessun dato disponibile per questa combinazione di filtri.");
+        return;
+      }
+
+      var grouped = new Map();
+      points.forEach(function (point) {
+        if (!grouped.has(point.key)) grouped.set(point.key, []);
+        grouped.get(point.key).push(point);
+      });
+
+      var flatSeries = [];
+      var seriesList = Array.from(grouped.values()).map(function (series) {
+        series.sort(function (a, b) { return a.x - b.x; });
+        if (isFlatSeries(series, filters.metric)) flatSeries.push(series[0].label);
+        return series;
+      }).filter(function (series) {
+        return !isFlatSeries(series, filters.metric);
+      });
+
+      if (!seriesList.length) {
+        renderMessage("La serie storica caricata per questa combinazione è costante su tutto il periodo e quindi viene nascosta. Questo indica che il dataset storico caricato è probabilmente duplicato o non valido per questa vista. Serve rigenerare la base storica prima di mostrare il grafico.");
+        return;
+      }
+
+      var traces = seriesList.map(function (series, index) {
+        return {
+          type: "scatter",
+          mode: "lines+markers",
+          name: series[0].label,
+          x: series.map(function (point) { return point.x; }),
+          y: series.map(function (point) { return point.value; }),
+          marker: { size: 7, color: colors[index % colors.length] },
+          line: { width: 2, color: colors[index % colors.length] },
+          customdata: series.map(function (point) { return [point.label, point.graduates]; }),
+          hovertemplate: "<b>%{customdata[0]}</b><br>" + xTitle(filters) + ": %{x}<br>" + metricLabel(filters.metric) + ": %{y:.1f}" + metricSuffix(filters.metric) + "<br>Laureati: %{customdata[1]:,.0f}<extra></extra>"
+        };
+      });
+
+      var layout = {
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: cssColor("--text", "#f5f2ed"), family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
+        margin: { l: 76, r: 250, t: 14, b: 76 },
+        xaxis: { title: { text: xTitle(filters) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, dtick: 1 },
+        yaxis: { title: { text: metricLabel(filters.metric) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, ticksuffix: filters.metric === "net_monthly_salary" ? "" : "%" },
+        legend: { orientation: "v", x: 1.02, y: 1, xanchor: "left" },
+        dragmode: false,
+        annotations: flatSeries.length ? [{
+          text: "Serie costanti nascoste: " + flatSeries.length,
+          xref: "paper", yref: "paper", x: 0, y: 1.08,
+          showarrow: false, font: { size: 12, color: cssColor("--muted", "#b8b0a7") }
+        }] : []
       };
-    });
-    var layout = {
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
-      font: { color: cssColor("--text", "#f5f2ed"), family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
-      margin: { l: 76, r: 250, t: 14, b: 76 },
-      xaxis: { title: { text: xTitle(filters) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true },
-      yaxis: { title: { text: metricLabel(filters.metric) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, ticksuffix: filters.metric === "net_monthly_salary" ? "" : "%" },
-      legend: { orientation: "v", x: 1.02, y: 1, xanchor: "left" },
-      dragmode: false
-    };
-    window.Plotly.react("timeSeriesChart", traces, layout, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
+      window.Plotly.react("timeSeriesChart", traces, layout, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
+    } finally {
+      window.setTimeout(function () { rendering = false; }, 0);
+    }
   }
 
   function patchPlotly() {
@@ -198,9 +233,10 @@
     var originalReact = window.Plotly.react;
     window.Plotly.react = function (gd, data, layout, config) {
       var chartId = typeof gd === "string" ? gd : gd && gd.id;
-      var result = originalReact.call(window.Plotly, gd, data, layout, config);
-      if (chartId === "timeSeriesChart") window.setTimeout(render, 0);
-      return result;
+      if (chartId === "timeSeriesChart" && !rendering) {
+        window.setTimeout(render, 0);
+      }
+      return originalReact.call(window.Plotly, gd, data, layout, config);
     };
   }
 
