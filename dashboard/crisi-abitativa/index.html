@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="it">
 <head>
   <meta charset="utf-8">
@@ -48,7 +48,7 @@
         <span class="logo"></span>
         <div>
           <strong>Fonte: Eurostat, OMI, MEF</strong>
-          <span id="sourceMeta">Grafico europeo via API Eurostat. Focus locale caricato da export statici regionali.</span>
+          <span id="sourceMeta">Grafico europeo da export statici Eurostat. Focus locale caricato da export statici regionali.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">Apri repository Crisi_abitativa</a>
         </div>
       </div>
@@ -108,7 +108,7 @@
       <div class="section-head">
         <span class="eyebrow">Europa</span>
         <h2>Il confronto europeo: utile, ma non sufficiente</h2>
-        <p>Eurostat permette di confrontare paesi con definizioni armonizzate. Questo aiuta a capire se l'Italia e' un caso isolato o parte di una dinamica piu' ampia. Ma le medie nazionali nascondono differenze enormi tra territori: per questo il grafico europeo va letto come contesto, non come diagnosi completa.</p>
+          <p>Eurostat permette di confrontare paesi con definizioni armonizzate. I dati sono salvati come JSON statici per rendere la dashboard piu' veloce e non dipendere dall'API al caricamento della pagina. Il confronto aiuta a capire se l'Italia e' un caso isolato o parte di una dinamica piu' ampia, ma le medie nazionali nascondono differenze enormi tra territori.</p>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri confronto europeo">
         <summary>Filtri confronto europeo</summary>
@@ -177,7 +177,7 @@
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2 id="localTitle">Focus locale Italia</h2>
-          <span>mappa o classifica comunale</span>
+          <span>dettaglio comunale</span>
         </div>
         <div id="localChart" class="chart"></div>
         <div class="chart-credit">Fonte: OMI Agenzia Entrate e MEF Dipartimento Finanze, dove disponibili. Elaborazione di Nazareno Lecis.</div>
@@ -215,3 +215,4 @@
   </footer>
 </body>
 </html>
+

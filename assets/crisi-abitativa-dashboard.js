@@ -1,12 +1,12 @@
 ﻿(function () {
-  var EUROSTAT_BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/";
+  var EUROPE_DATA_BASE = "../../data/crisi-abitativa/eurostat/";
   var LOCAL_INDEX_URL = "../../data/crisi-abitativa/local_index.json";
   var LOCAL_REGION_BASE = "../../data/crisi-abitativa/regions/";
   var ITALY = "IT";
   var EU27 = "EU27_2020";
   var COUNTRY_RE = /^[A-Z]{2}$/;
   var EUROPE_COUNTRIES = [
-    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "EL", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "EU27_2020"
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE", "EU27_2020"
   ];
 
   var indicators = [
@@ -35,7 +35,7 @@
       label: "Tasso di sovraffollamento abitativo",
       shortLabel: "Sovraffollamento abitativo",
       dataset: "ilc_lvho05a",
-      params: { freq: "A", unit: "PC", incgrp: "TOTAL", age: "TOTAL", sex: "T" },
+      params: { freq: "A", unit: "PC", age: "TOTAL", sex: "T" },
       unit: "%",
       source: "Eurostat ilc_lvho05a",
       note: "Quota di popolazione che vive in abitazioni con meno stanze di quelle richieste dagli standard Eurostat rispetto alla composizione del nucleo familiare."
@@ -55,7 +55,7 @@
       label: "Arretrati su mutuo, affitto o bollette",
       shortLabel: "Arretrati abitativi e bollette",
       dataset: "ilc_mdes05",
-      params: { freq: "A", hhtyp: "TOTAL", incgrp: "TOTAL", unit: "PC" },
+      params: { freq: "A", hhcomp: "TOTAL", rskpovth: "TOTAL", unit: "PC" },
       unit: "%",
       source: "Eurostat ilc_mdes05",
       note: "Quota di popolazione in famiglie che dichiarano arretrati nei pagamenti collegati a mutuo, affitto, bollette o acquisti rateali. E' una misura di difficolta' finanziaria gia' materializzata."
@@ -65,7 +65,7 @@
       label: "Impossibilita' di riscaldare adeguatamente la casa",
       shortLabel: "Casa non riscaldata adeguatamente",
       dataset: "ilc_mdes01",
-      params: { freq: "A", hhtyp: "TOTAL", incgrp: "TOTAL", unit: "PC" },
+      params: { freq: "A", hhcomp: "TOTAL", rskpovth: "TOTAL", unit: "PC" },
       unit: "%",
       source: "Eurostat ilc_mdes01",
       note: "Quota di popolazione che dichiara di non potersi permettere di mantenere la casa adeguatamente calda. Va letto anche come proxy di poverta' energetica."
@@ -142,16 +142,8 @@
     };
   }
 
-  function eurostatUrl(indicator) {
-    var params = new URLSearchParams();
-    params.append("lang", "en");
-    Object.keys(indicator.params || {}).forEach(function (key) {
-      var value = indicator.params[key];
-      if (Array.isArray(value)) value.forEach(function (item) { params.append(key, item); });
-      else params.append(key, value);
-    });
-    EUROPE_COUNTRIES.forEach(function (geo) { params.append("geo", geo); });
-    return EUROSTAT_BASE + indicator.dataset + "?" + params.toString();
+  function staticEuropeUrl(indicator) {
+    return EUROPE_DATA_BASE + indicator.id + ".json";
   }
 
   function escapeHtml(value) {
@@ -207,7 +199,7 @@
   }
 
   function isCountry(code) {
-    return COUNTRY_RE.test(code || "") || code === "EL";
+    return COUNTRY_RE.test(code || "");
   }
 
   function parseEurostat(payload) {
@@ -360,23 +352,23 @@
   function loadEuropeIndicator(indicatorId) {
     var indicator = indicators.find(function (item) { return item.id === indicatorId; }) || indicators[0];
     state.currentIndicatorId = indicator.id;
-    renderMessage("europeChart", "Caricamento dati Eurostat...", true);
-    byId("europeComment").textContent = "Sto caricando " + indicator.label.toLowerCase() + " da " + indicator.source + ".";
     if (state.europeCache[indicator.id]) {
       state.europeData = state.europeCache[indicator.id];
       populateCountryControl(state.europeData);
       renderEurope();
       return Promise.resolve();
     }
-    return fetchJson(eurostatUrl(indicator)).then(function (payload) {
-      state.europeCache[indicator.id] = parseEurostat(payload);
+    renderMessage("europeChart", "Caricamento export Eurostat statico...", true);
+    byId("europeComment").textContent = "Sto caricando il JSON statico per " + indicator.label.toLowerCase() + ".";
+    return fetchJson(staticEuropeUrl(indicator)).then(function (payload) {
+      state.europeCache[indicator.id] = payload.records || [];
       state.europeData = state.europeCache[indicator.id];
       populateCountryControl(state.europeData);
       renderEurope();
     }).catch(function (error) {
       state.europeData = [];
-      renderMessage("europeChart", "Non riesco a caricare Eurostat: " + error.message);
-      byId("europeComment").textContent = "Se l'API Eurostat non risponde, rigenera un export statico dal repository Crisi_abitativa e collegalo alla dashboard.";
+      renderMessage("europeChart", "Non riesco a caricare il JSON Eurostat statico: " + error.message);
+      byId("europeComment").textContent = "Rigenera gli export statici dal repository Crisi_abitativa o controlla che i file siano presenti in data/crisi-abitativa/eurostat/.";
     });
   }
 
@@ -483,7 +475,7 @@
     if (payload && payload.geojson && payload.geojson.features) renderLocalMap(rows, regionLabel, payload);
     else renderLocalBar(rows, regionLabel);
     if (payload && payload.semestre_omi) {
-      byId("sourceMeta").textContent = "Eurostat via API. Focus locale: " + regionLabel + " OMI " + payload.semestre_omi + ".";
+      byId("sourceMeta").textContent = "Eurostat da export statici. Focus locale: " + regionLabel + " OMI " + payload.semestre_omi + ".";
     }
   }
 
@@ -548,3 +540,6 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+
+
+

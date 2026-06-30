@@ -1,0 +1,75 @@
+{
+  "updated_at": "2026-06-30",
+  "indicators": [
+    {
+      "id": "housing_overburden",
+      "file": "housing_overburden.json",
+      "label": "Sovraccarico dei costi abitativi",
+      "dataset": "ilc_lvho07a",
+      "records": 560
+    },
+    {
+      "id": "housing_cost_burden_median",
+      "file": "housing_cost_burden_median.json",
+      "label": "Peso mediano dei costi abitativi sul reddito",
+      "dataset": "ilc_lvho08a",
+      "records": 560
+    },
+    {
+      "id": "overcrowding",
+      "file": "overcrowding.json",
+      "label": "Tasso di sovraffollamento abitativo",
+      "dataset": "ilc_lvho05a",
+      "records": 1713
+    },
+    {
+      "id": "severe_deprivation",
+      "file": "severe_deprivation.json",
+      "label": "Grave deprivazione abitativa",
+      "dataset": "ilc_mdho06a",
+      "records": 461
+    },
+    {
+      "id": "arrears",
+      "file": "arrears.json",
+      "label": "Arretrati su mutuo, affitto o bollette",
+      "dataset": "ilc_mdes05",
+      "records": 570
+    },
+    {
+      "id": "inability_warm",
+      "file": "inability_warm.json",
+      "label": "Impossibilita' di riscaldare adeguatamente la casa",
+      "dataset": "ilc_mdes01",
+      "records": 572
+    },
+    {
+      "id": "young_parents",
+      "file": "young_parents.json",
+      "label": "Persone 25-34 anni che vivono con i genitori",
+      "dataset": "ilc_lvps08",
+      "records": 572
+    },
+    {
+      "id": "leaving_home_age",
+      "file": "leaving_home_age.json",
+      "label": "Eta' media di uscita dalla casa dei genitori",
+      "dataset": "yth_demo_030",
+      "records": 636
+    },
+    {
+      "id": "permits",
+      "file": "permits.json",
+      "label": "Permessi edilizi per nuove abitazioni",
+      "dataset": "sts_cobp_a",
+      "records": 565
+    },
+    {
+      "id": "gfcf_dwellings",
+      "file": "gfcf_dwellings.json",
+      "label": "Investimenti in abitazioni sul PIL",
+      "dataset": "nama_10_an6",
+      "records": 878
+    }
+  ]
+}
