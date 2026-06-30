@@ -40,7 +40,7 @@
     if (byId("almChartContextStyle")) return;
     var style = document.createElement("style");
     style.id = "almChartContextStyle";
-    style.textContent = ".chart-context-note{margin:0 0 14px;padding:12px 14px;border-left:3px solid var(--orange);background:color-mix(in srgb,var(--orange) 9%,transparent);color:var(--muted);line-height:1.45}.chart-context-note strong{display:block;color:var(--text);font-size:.98rem}.chart-context-note p{margin:6px 0 0;color:var(--muted);font-size:.94rem}.chart-context-note small{display:block;margin-top:6px;color:var(--muted);font-size:.86rem}.chart-context-note .chart-source{color:var(--orange);font-weight:750}";
+    style.textContent = ".chart-context-note{margin:0 0 14px;padding:12px 14px;border-left:3px solid var(--orange);background:color-mix(in srgb,var(--orange) 9%,transparent);color:var(--muted);line-height:1.45}.chart-context-note strong{display:block;color:var(--text);font-size:.98rem}.chart-context-note p{margin:6px 0 0;color:var(--muted);font-size:.94rem}.chart-context-note small{display:block;margin-top:6px;color:var(--muted);font-size:.86rem}.chart-context-note .chart-source{color:var(--orange);font-weight:750}.chart-bottom-credit{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--line);color:var(--muted);font-size:.86rem;line-height:1.4}.chart-bottom-credit strong{color:var(--orange);font-weight:800}";
     document.head.appendChild(style);
   }
 
@@ -61,6 +61,26 @@
       panel.insertAdjacentElement("afterbegin", note);
     }
     return note;
+  }
+
+  function ensureBottomCredit(chartId) {
+    var chart = byId(chartId);
+    if (!chart) return null;
+    var panel = chart.closest(".chart-panel");
+    if (!panel) return null;
+    var credit = panel.querySelector(".chart-bottom-credit[data-chart='" + chartId + "']");
+    if (credit) return credit;
+    credit = document.createElement("div");
+    credit.className = "chart-bottom-credit";
+    credit.dataset.chart = chartId;
+    chart.insertAdjacentElement("afterend", credit);
+    return credit;
+  }
+
+  function setBottomCredit(chartId) {
+    var credit = ensureBottomCredit(chartId);
+    if (!credit) return;
+    credit.innerHTML = "Fonte: AlmaLaurea. <strong>Elaborazione: Nazareno Lecis.</strong>";
   }
 
   function setPanelTitle(chartId, title, subtitle) {
@@ -92,6 +112,7 @@
       shortFilter("classe", selectLabel("scatterDegree"))
     ]);
     note.querySelector("small").textContent = sourceText();
+    setBottomCredit("scatterChart");
   }
 
   function updateBoxContext() {
@@ -111,6 +132,7 @@
       shortFilter("tipo corso", selectLabel("boxCourse"))
     ]);
     note.querySelector("small").textContent = sourceText();
+    setBottomCredit("boxChart");
   }
 
   function updateTimeContext() {
@@ -146,6 +168,7 @@
     ];
     note.querySelector("p").textContent = joinParts(parts);
     note.querySelector("small").textContent = sourceText();
+    setBottomCredit("timeSeriesChart");
   }
 
   function updateAll() {
