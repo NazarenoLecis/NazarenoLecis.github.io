@@ -31,7 +31,8 @@
     currentLocalPayload: null,
     selectedLocalComune: "",
     europeHasRendered: false,
-    localHasRendered: false
+    localHasRendered: false,
+    localRequestSerial: 0
   };
 
   function byId(id) { return document.getElementById(id); }
@@ -73,6 +74,14 @@
     if (!el) return;
     if (window.Plotly) window.Plotly.purge(el);
     el.innerHTML = "<div class=\"empty-state" + (loading ? " loading-state" : "") + "\">" + escapeHtml(message) + "</div>";
+  }
+
+  function clearChartMessage(id) {
+    var el = byId(id);
+    if (!el) return;
+    el.querySelectorAll(".empty-state").forEach(function (message) {
+      message.remove();
+    });
   }
 
   function fetchJson(url) {
@@ -421,6 +430,7 @@
     var maxValue = Math.max.apply(null, valid.map(function (row) { return row.value; }));
     var minValue = Math.min.apply(null, valid.map(function (row) { return row.value; }));
     byId("localTitle").textContent = meta.label + " - " + regionLabel;
+    clearChartMessage("localChart");
     var traces = [{
       type: "choropleth",
       geojson: payload.geojson,
@@ -464,6 +474,7 @@
     if (!valid.length) return renderMessage("localChart", "Nessun valore comunale disponibile per questa misura.");
     var theme = plotTheme();
     byId("localTitle").textContent = meta.label + " - " + regionLabel;
+    clearChartMessage("localChart");
     window.Plotly.react("localChart", [{
       type: "bar",
       orientation: "h",
@@ -505,31 +516,21 @@
     var region = (state.localIndex.regions || []).find(function (item) { return item.file === select.value; });
     var label = region ? region.label : select.value;
     var url = LOCAL_REGION_BASE + select.value;
+    var requestSerial = state.localRequestSerial + 1;
+    state.localRequestSerial = requestSerial;
     if (state.localHasRendered) renderMessage("localChart", "Caricamento...", true);
     var promise = state.localCache[url] || fetchJson(url);
     state.localCache[url] = promise;
     promise.then(function (payload) {
+      if (requestSerial !== state.localRequestSerial) return;
       state.currentLocalRows = payload.records || payload.data || [];
       state.currentLocalLabel = label;
       state.currentLocalPayload = payload;
       renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
       state.localHasRendered = true;
     }).catch(function () {
+      if (requestSerial !== state.localRequestSerial) return;
       renderLocalUnavailable(state.localIndex || {});
-    });
-  }
-
-
-  function prefetchLocalRegions() {
-    if (!state.localIndex || !(state.localIndex.regions || []).length) return;
-    (state.localIndex.regions || []).forEach(function (region) {
-      if (!region || !region.file) return;
-      var url = LOCAL_REGION_BASE + region.file;
-      if (state.localCache[url]) return;
-      state.localCache[url] = fetchJson(url).catch(function (error) {
-        delete state.localCache[url];
-        throw error;
-      });
     });
   }
 
@@ -539,7 +540,6 @@
       populateLocalControls(index);
       if ((index.regions || []).length) {
         loadLocalRegion();
-        prefetchLocalRegions();
       }
       else renderLocalUnavailable(index);
       byId("methodologyList").innerHTML = (index.methodology || []).map(function (item) {
@@ -597,8 +597,6 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-
-
 
 
 
