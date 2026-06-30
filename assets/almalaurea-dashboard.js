@@ -2,6 +2,8 @@
   var DATA_URL = "../../data/almalaurea/almalaurea_dashboard_data.json";
   var TIMESERIES_URL = "../../data/almalaurea/almalaurea_timeseries_data.json";
   var WILDCARD = "*";
+  var sharedData = window.AlmaLaureaData = window.AlmaLaureaData || {};
+  sharedData.cache = sharedData.cache || {};
   var queryParams = new URLSearchParams(window.location.search);
   var embedMode = queryParams.get("embed") === "1";
   if (embedMode) {
@@ -248,14 +250,21 @@
   function populateTimeCohortSelect() {
     var select = byId("timeCohort");
     if (!select) return;
+    var currentValue = select.value;
     var years = Array.from(new Set(state.timeseriesRecords.map(function (record) {
       return record.graduation_year;
     }))).filter(Number.isFinite).sort(function (a, b) {
       return a - b;
     });
+    if (!years.length && state.metadata.graduation_years) {
+      years = state.metadata.graduation_years.filter(Number.isFinite);
+    }
     select.innerHTML = years.map(function (year) {
       return "<option value=\"" + year + "\">" + year + "</option>";
     }).join("");
+    if (hasOption(select, currentValue)) {
+      select.value = currentValue;
+    }
   }
 
   function hasOption(select, value) {
@@ -427,6 +436,15 @@
     }, 120);
   }
 
+  function requestedEmbedChart() {
+    var chart = queryParams.get("chart");
+    return chartIds[chart] ? chart : "scatter";
+  }
+
+  function shouldLoadTimeseriesOnInit() {
+    return !embedMode || requestedEmbedChart() === "time";
+  }
+
   function applyEmbedMode() {
     if (!embedMode) return;
     var sectionIds = {
@@ -434,7 +452,7 @@
       box: "boxSection",
       time: "timeSection",
     };
-    var chart = sectionIds[queryParams.get("chart")] ? queryParams.get("chart") : "scatter";
+    var chart = requestedEmbedChart();
     Object.keys(sectionIds).forEach(function (key) {
       var section = byId(sectionIds[key]);
       if (section) section.classList.toggle("embed-active", key === chart);
@@ -701,8 +719,17 @@
     return Boolean(window.Plotly);
   }
 
+  function clearChartMessage(elementId) {
+    var element = byId(elementId);
+    if (!element) return;
+    element.querySelectorAll(".empty-state").forEach(function (message) {
+      message.remove();
+    });
+  }
+
   function renderMessage(elementId, message) {
     var element = byId(elementId);
+    if (!element) return;
     if (plotlyAvailable()) window.Plotly.purge(element);
     element.innerHTML = "<div class=\"empty-state\">" + escapeHtml(message) + "</div>";
   }
@@ -744,6 +771,7 @@
       renderMessage("scatterChart", "Nessun dato disponibile per questa combinazione di filtri.");
       return;
     }
+    clearChartMessage("scatterChart");
 
     var maxGraduates = Math.max.apply(null, points.map(function (point) {
       return point.graduates || 0;
@@ -859,6 +887,7 @@
       renderMessage("boxChart", "Nessun valore di retribuzione disponibile.");
       return;
     }
+    clearChartMessage("boxChart");
 
     window.Plotly.react(
       "boxChart",
@@ -1044,6 +1073,7 @@
       );
       return;
     }
+    clearChartMessage("timeSeriesChart");
 
     var xaxis = {
       gridcolor: plotTheme().line,
@@ -1325,26 +1355,51 @@
   }
 
   function fetchJson(url, optional) {
-    return fetch(url).then(function (response) {
-      if (!response.ok) {
-        if (optional) return { records: [] };
-        throw new Error("HTTP " + response.status);
-      }
-      return response.json();
+    var cacheKey = new URL(url, window.location.href).href;
+    if (!sharedData.cache[cacheKey]) {
+      sharedData.cache[cacheKey] = fetch(url).then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      });
+    }
+    return sharedData.cache[cacheKey].catch(function (error) {
+      if (optional) return { records: [] };
+      throw error;
     });
   }
 
+  sharedData.dashboard = sharedData.dashboard || function (optional) {
+    return fetchJson(DATA_URL, optional);
+  };
+  sharedData.timeseries = sharedData.timeseries || function (optional) {
+    return fetchJson(TIMESERIES_URL, optional);
+  };
+
+  function loadTimeseriesRecords() {
+    return sharedData.timeseries(true)
+      .then(function (timeseriesPayload) {
+        sharedData.timeseriesPayload = timeseriesPayload;
+        state.timeseriesRecords = (timeseriesPayload.records || []).map(normalizeTimeseriesRecord);
+        populateTimeCohortSelect();
+        if (!byId("timeCohort").value) {
+          setSelect("timeCohort", state.metadata.latest_survey_year - 5);
+        }
+        updateTimeSeries();
+        window.dispatchEvent(new CustomEvent("almalaurea:timeseries-ready", {
+          detail: timeseriesPayload,
+        }));
+      })
+      .catch(function (error) {
+        renderMessage("timeSeriesChart", "Non riesco a caricare la serie storica AlmaLaurea: " + error.message);
+      });
+  }
+
   function init() {
-    Promise.all([
-      fetchJson(DATA_URL, false),
-      fetchJson(TIMESERIES_URL, true),
-    ])
-      .then(function (payloads) {
-        var payload = payloads[0];
-        var timeseriesPayload = payloads[1];
+    sharedData.dashboard(false)
+      .then(function (payload) {
         state.metadata = payload.metadata;
         state.records = payload.records.map(normalizeRecord);
-        state.timeseriesRecords = (timeseriesPayload.records || []).map(normalizeTimeseriesRecord);
+        state.timeseriesRecords = [];
         allFieldDefinitions().forEach(populateSelect);
         populateTimeYearSelects();
         populateTimeCohortSelect();
@@ -1354,8 +1409,15 @@
         prepareResponsiveFilters();
         updateSourceAndNotes();
         bindEvents();
-        updateAll();
+        updateScatter();
+        updateBox();
+        if (shouldLoadTimeseriesOnInit()) {
+          renderMessage("timeSeriesChart", "Caricamento serie storica AlmaLaurea...");
+        }
         focusQueryChart();
+        if (shouldLoadTimeseriesOnInit()) {
+          loadTimeseriesRecords();
+        }
       })
       .catch(function (error) {
         renderFatal("Non riesco a caricare i dati AlmaLaurea: " + error.message);

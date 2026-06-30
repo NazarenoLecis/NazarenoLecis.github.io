@@ -190,6 +190,14 @@
     chart.innerHTML = "<div class=\"empty-state\">" + escapeHtml(message) + "</div>";
   }
 
+  function clearEmpty() {
+    var chart = byId("cohortPathExtraChart");
+    if (!chart) return;
+    chart.querySelectorAll(".empty-state").forEach(function (message) {
+      message.remove();
+    });
+  }
+
   function render() {
     ensureStyle();
     var panel = ensurePanel();
@@ -244,6 +252,7 @@
       dragmode: false,
     };
 
+    clearEmpty();
     window.Plotly.react("cohortPathExtraChart", traces, layout, {
       responsive: true,
       displayModeBar: false,
@@ -282,12 +291,17 @@
 
   function init() {
     if (location.pathname.indexOf("/dashboard/almalaurea/") < 0) return;
-    fetch(DATA_URL)
-      .then(function (response) { return response.json(); })
-      .then(function (payload) {
-        records = (payload.records || []).map(normalizeRecord);
-        wait(0);
-      });
+    function start(payload) {
+      records = (payload.records || []).map(normalizeRecord);
+      wait(0);
+    }
+    if (window.AlmaLaureaData && window.AlmaLaureaData.timeseriesPayload) {
+      start(window.AlmaLaureaData.timeseriesPayload);
+      return;
+    }
+    window.addEventListener("almalaurea:timeseries-ready", function (event) {
+      start(event.detail || { records: [] });
+    }, { once: true });
   }
 
   if (document.readyState === "loading") {

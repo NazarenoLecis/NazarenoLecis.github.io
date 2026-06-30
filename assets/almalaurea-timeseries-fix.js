@@ -150,6 +150,14 @@
     chart.innerHTML = "<div class=\"empty-state\" style=\"padding:26px;line-height:1.55\">" + message + "</div>";
   }
 
+  function clearMessage() {
+    var chart = byId("timeSeriesChart");
+    if (!chart) return;
+    chart.querySelectorAll(".empty-state").forEach(function (message) {
+      message.remove();
+    });
+  }
+
   function render() {
     if (rendering) return;
     if (!window.Plotly || !records.length || !byId("timeSeriesChart")) return;
@@ -194,6 +202,7 @@
         };
       });
 
+      clearMessage();
       var layout = {
         paper_bgcolor: "rgba(0,0,0,0)",
         plot_bgcolor: "rgba(0,0,0,0)",
@@ -250,7 +259,10 @@
 
   function init() {
     if (location.pathname.indexOf("/dashboard/almalaurea/") < 0) return;
-    fetch(DATA_URL).then(function (response) { return response.json(); }).then(function (payload) {
+    var loader = window.AlmaLaureaData && window.AlmaLaureaData.timeseries ?
+      window.AlmaLaureaData.timeseries(true) :
+      fetch(DATA_URL).then(function (response) { return response.json(); });
+    loader.then(function (payload) {
       records = (payload.records || []).map(normalize);
       wait(0);
     });

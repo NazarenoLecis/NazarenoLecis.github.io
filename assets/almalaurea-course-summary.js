@@ -348,8 +348,10 @@
 
   function init() {
     if (location.pathname.indexOf("/dashboard/almalaurea/") < 0) return;
-    fetch(DATA_URL)
-      .then(function (response) { return response.json(); })
+    var loader = window.AlmaLaureaData && window.AlmaLaureaData.dashboard ?
+      window.AlmaLaureaData.dashboard(false) :
+      fetch(DATA_URL).then(function (response) { return response.json(); });
+    loader
       .then(function (payload) {
         metadata = payload.metadata || {};
         records = (payload.records || []).map(normalizeRecord);
