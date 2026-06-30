@@ -1,7 +1,9 @@
 (function () {
   var DATA_URL = "/data/almalaurea/almalaurea_dashboard_data.json";
+  var TIMESERIES_URL = "/data/almalaurea/almalaurea_timeseries_data.json";
   var WILDCARD = "*";
   var records = [];
+  var timeRecords = [];
   var chartCounter = 0;
   var colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf", "#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#76b7b2"];
 
@@ -116,13 +118,19 @@
     });
   }
 
-  function fetchData() {
-    return fetch(DATA_URL).then(function (response) {
-      if (!response.ok) throw new Error("HTTP " + response.status);
+  function fetchJson(url) {
+    return fetch(url).then(function (response) {
+      if (!response.ok) throw new Error("HTTP " + response.status + " su " + url);
       return response.json();
-    }).then(function (payload) {
-      records = (payload.records || []).map(normalize);
     });
+  }
+
+  function fetchData() {
+    return Promise.all([fetchJson(DATA_URL), fetchJson(TIMESERIES_URL).catch(function () { return { records: [] }; })])
+      .then(function (payloads) {
+        records = (payloads[0].records || []).map(normalize);
+        timeRecords = (payloads[1].records || []).map(normalize);
+      });
   }
 
   function baseRows(params) {
@@ -179,12 +187,7 @@
         textposition: ["top center", "bottom center", "top left", "top right", "bottom left", "bottom right"][index % 6],
         textfont: { size: 11 },
         cliponaxis: false,
-        marker: {
-          color: colorFor(index),
-          size: 10 + 32 * Math.sqrt((record.graduates || 0) / maxGraduates),
-          opacity: 0.85,
-          line: { color: "rgba(255,255,255,.45)", width: 1 }
-        },
+        marker: { color: colorFor(index), size: 10 + 32 * Math.sqrt((record.graduates || 0) / maxGraduates), opacity: 0.85, line: { color: "rgba(255,255,255,.45)", width: 1 } },
         customdata: [[label, record.disciplinary_group_label, record.course_type_label, record.graduates]],
         hovertemplate: "<b>%{customdata[0]}</b><br>Gruppo: %{customdata[1]}<br>Tipo corso: %{customdata[2]}<br>Retribuzione media: %{x:.0f} euro<br>Occupazione: %{y:.1f}%<br>Laureati: %{customdata[3]:,.0f}<extra></extra>"
       };
@@ -240,8 +243,99 @@
     }), plotConfig());
   }
 
-  function renderTime(el) {
-    renderError(el, "La serie storica incorporata è stata disattivata perché la base storica caricata produceva valori costanti e fuorvianti. La vista verrà riattivata dopo la rigenerazione del JSON storico.");
+  function weightedAverage(rows, field) {
+    var weightedSum = 0;
+    var weightSum = 0;
+    var plainSum = 0;
+    var plainCount = 0;
+    rows.forEach(function (record) {
+      var value = record[field];
+      if (!Number.isFinite(value) || value <= 0) return;
+      plainSum += value;
+      plainCount += 1;
+      if (Number.isFinite(record.graduates) && record.graduates > 0) {
+        weightedSum += value * record.graduates;
+        weightSum += record.graduates;
+      }
+    });
+    if (weightSum > 0) return weightedSum / weightSum;
+    return plainCount ? plainSum / plainCount : null;
+  }
+
+  function metricLabel(metric) {
+    return metric === "net_monthly_salary" ? "Retribuzione mensile netta" : "Tasso di occupazione";
+  }
+
+  function metricSuffix(metric) {
+    return metric === "net_monthly_salary" ? " euro" : "%";
+  }
+
+  function timeRows(params) {
+    var metric = params.metric === "second_level_enrollment_rate" ? "employment_rate" : params.metric;
+    var source = timeRecords.length ? timeRecords : records;
+    var base = source.filter(function (record) {
+      if (record.employment_definition !== params.definition) return false;
+      if (params.course !== WILDCARD && record.course_type !== params.course) return false;
+      if (params.timeMode === "cohort_path") {
+        if (record.graduation_year !== params.cohort) return false;
+      } else {
+        if (record.years_after_degree !== params.years) return false;
+        if (record.survey_year < 2007 || record.survey_year > params.survey) return false;
+        if (record.graduation_year !== record.survey_year - params.years) return false;
+      }
+      if (!Number.isFinite(record[metric]) || record[metric] <= 0) return false;
+      return true;
+    });
+
+    var strict = base.filter(function (record) {
+      if (params.course === WILDCARD && record.course_type !== WILDCARD) return false;
+      if (params.dimension === "university") {
+        return record.university !== WILDCARD && record.disciplinary_group === WILDCARD;
+      }
+      return record.disciplinary_group !== WILDCARD && record.university === WILDCARD;
+    });
+    if (strict.length) return strict;
+
+    return base.filter(function (record) {
+      if (params.dimension === "university") return record.university !== WILDCARD;
+      return record.disciplinary_group !== WILDCARD && record.university === WILDCARD;
+    });
+  }
+
+  function renderTime(el, params) {
+    var metric = params.metric === "second_level_enrollment_rate" ? "employment_rate" : params.metric;
+    var rows = timeRows(params);
+    if (!rows.length) return renderError(el, "Nessun dato disponibile per questa serie statica.");
+    var buckets = new Map();
+    rows.forEach(function (record) {
+      var key = params.dimension === "university" ? record.university : record.disciplinary_group;
+      var label = params.dimension === "university" ? record.university_label : record.disciplinary_group_label;
+      var x = params.timeMode === "cohort_path" ? record.years_after_degree : record.survey_year;
+      if (!key || key === WILDCARD || !Number.isFinite(x)) return;
+      var bucketKey = key + "||" + x;
+      if (!buckets.has(bucketKey)) buckets.set(bucketKey, { key: key, label: label, x: x, rows: [] });
+      buckets.get(bucketKey).rows.push(record);
+    });
+    var points = Array.from(buckets.values()).map(function (bucket) {
+      return { key: bucket.key, label: bucket.label, x: bucket.x, value: weightedAverage(bucket.rows, metric), graduates: bucket.rows.reduce(function (sum, record) { return sum + (record.graduates || 0); }, 0) };
+    }).filter(function (point) { return Number.isFinite(point.value); });
+    if (!points.length) return renderError(el, "Nessun valore numerico disponibile per questa serie statica.");
+
+    var grouped = new Map();
+    points.forEach(function (point) {
+      if (!grouped.has(point.key)) grouped.set(point.key, []);
+      grouped.get(point.key).push(point);
+    });
+    var traces = Array.from(grouped.values()).map(function (series, index) {
+      series.sort(function (a, b) { return a.x - b.x; });
+      return { type: "scatter", mode: "lines+markers", name: series[0].label, x: series.map(function (point) { return point.x; }), y: series.map(function (point) { return point.value; }), marker: { color: colorFor(index), size: 8 }, line: { color: colorFor(index), width: 2 }, customdata: series.map(function (point) { return [point.label, point.graduates]; }), hovertemplate: "<b>%{customdata[0]}</b><br>" + (params.timeMode === "cohort_path" ? "Anni dalla laurea" : "Anno indagine") + ": %{x}<br>" + metricLabel(metric) + ": %{y:.1f}" + metricSuffix(metric) + "<br>Laureati: %{customdata[1]:,.0f}<extra></extra>" };
+    }).filter(function (trace) { return trace.x.length > 0; });
+    if (!traces.length) return renderError(el, "Nessuna serie valida da mostrare.");
+    window.Plotly.react(el.id, traces, layout({
+      xaxis: { title: { text: params.timeMode === "cohort_path" ? "Anni dalla laurea" : "Anno indagine" }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, dtick: 1 },
+      yaxis: { title: { text: metricLabel(metric) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, ticksuffix: metric === "net_monthly_salary" ? "" : "%" },
+      margin: { l: 76, r: 250, t: 18, b: 76 }
+    }), plotConfig());
   }
 
   function layout(extra) {
