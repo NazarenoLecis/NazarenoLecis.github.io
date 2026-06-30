@@ -1,10 +1,19 @@
-{
-  "updated_at": null,
+﻿{
+  "updated_at": "2026-06-30",
   "source_repository": "https://github.com/NazarenoLecis/Crisi_abitativa",
-  "regions": [],
+  "default_region": "sardegna.json",
+  "regions": [
+    {
+      "label": "Sardegna",
+      "file": "sardegna.json",
+      "preload": true,
+      "status": "preloaded"
+    }
+  ],
   "methodology": [
-    "Il focus locale usa quotazioni OMI Agenzia Entrate e redditi dichiarati comunali MEF quando i file sono esportati dal repository Crisi_abitativa.",
-    "Prezzi e affitti medi/mediani sono calcolati sulle zone OMI disponibili del comune e non sono pesati per transazioni, stock, superficie o popolazione.",
-    "Gli indicatori locali sono proxy territoriali: non misurano canoni effettivi di contratto, prezzi effettivi di rogito o reddito disponibile familiare."
+    "Il focus locale usa quotazioni OMI Agenzia Entrate, redditi dichiarati comunali MEF, anagrafica ISTAT dei comuni e confini comunali openpolis quando i file regionali sono esportati dal repository Crisi_abitativa.",
+    "Prezzi e affitti medi/mediani sono calcolati sulle zone OMI residenziali disponibili del comune e non sono pesati per transazioni, stock abitativo, superficie o popolazione.",
+    "Gli indicatori locali sono proxy territoriali: non misurano canoni effettivi di contratto, prezzi effettivi di rogito o reddito disponibile familiare.",
+    "La Sardegna e' inclusa come regione precaricata per evitare una dashboard vuota; le altre regioni vanno generate nello stesso formato JSON e aggiunte a questo indice."
   ]
 }

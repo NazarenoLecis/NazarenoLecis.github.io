@@ -41,14 +41,14 @@
         <span class="eyebrow">Crisi abitativa</span>
         <h1>Prezzi, affitti, redditi e accesso alla casa</h1>
         <p class="lead">
-          Dashboard costruita per leggere la crisi abitativa su due scale: confronto europeo sugli indicatori armonizzati e focus locale italiano su prezzi, affitti e redditi comunali quando i dati territoriali sono disponibili.
+          Dashboard costruita per leggere la crisi abitativa su due scale. La prima mostra dove si colloca l'Italia nel confronto europeo sugli indicatori armonizzati; la seconda scende al livello comunale, perche' il problema abitativo diventa concreto quando prezzi, affitti e redditi incontrano i mercati locali.
         </p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
           <strong>Fonte: Eurostat, OMI, MEF</strong>
-          <span id="sourceMeta">Grafico europeo via API Eurostat. Focus locale predisposto per export dal repository.</span>
+          <span id="sourceMeta">Grafico europeo via API Eurostat. Focus locale caricato da export statici regionali.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">Apri repository Crisi_abitativa</a>
         </div>
       </div>
@@ -58,17 +58,17 @@
       <div class="workflow-step">
         <span>1</span>
         <h2>Scegli l'indicatore</h2>
-        <p>Nel confronto europeo il menu cambia la variabile; l'Italia resta sempre evidenziata e il range mostra minimo e massimo tra paesi.</p>
+        <p>Nel confronto europeo il primo menu cambia la variabile: costi abitativi, sovraffollamento, arretrati, offerta, giovani in casa con i genitori e altri proxy della crisi.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
-        <h2>Confronta pochi paesi</h2>
-        <p>Usa il filtro paesi per aggiungere linee selezionate. Troppe linee rendono il grafico meno leggibile.</p>
+        <h2>Leggi il range</h2>
+        <p>L'Italia resta sempre evidenziata. La banda arancione mostra minimo e massimo tra paesi disponibili: serve a capire il posizionamento, non e' una media europea.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
         <h2>Passa al locale</h2>
-        <p>Nel focus Italia scegli regione e misura OMI. I valori comunali sono proxy territoriali e vanno letti con le note metodologiche.</p>
+        <p>Nel focus Italia scegli regione e misura OMI. La Sardegna e' caricata di default; gli altri export regionali possono essere aggiunti dallo stesso repository dati.</p>
       </div>
     </section>
 
@@ -78,17 +78,43 @@
       <a href="#methodologySection">Metodo e fonti</a>
     </nav>
 
+    <section class="dashboard-section indicator-guide" aria-label="Spiegazione indicatori">
+      <div class="section-head">
+        <span class="eyebrow">Prima di leggere i grafici</span>
+        <h2>Gli indicatori misurano pezzi diversi della crisi</h2>
+        <p>Non esiste un numero unico che dica se la casa e' accessibile. Per questo la dashboard separa costo economico, qualita' dell'abitare, domanda compressa e offerta. Il confronto europeo serve a vedere il quadro generale; il focus comunale mostra dove la pressione diventa locale.</p>
+      </div>
+      <div class="indicator-card-grid">
+        <article class="indicator-card">
+          <h3>Affordability</h3>
+          <p>Include sovraccarico dei costi abitativi, peso mediano dei costi sul reddito, arretrati e rischio di poverta' dopo i costi abitativi. Risponde alla domanda: quanto pesa la casa sul bilancio delle famiglie?</p>
+        </article>
+        <article class="indicator-card">
+          <h3>Qualita' e spazio</h3>
+          <p>Sovraffollamento, grave deprivazione abitativa e impossibilita' di riscaldare adeguatamente la casa misurano condizioni materiali dell'abitare, non solo prezzi.</p>
+        </article>
+        <article class="indicator-card">
+          <h3>Domanda latente</h3>
+          <p>Giovani adulti che vivono con i genitori ed eta' di uscita da casa sono proxy imperfetti ma utili: intercettano domanda abitativa rimandata, anche quando non appare ancora come contratto di affitto o acquisto.</p>
+        </article>
+        <article class="indicator-card">
+          <h3>Offerta e stock</h3>
+          <p>Permessi edilizi e investimenti in abitazioni descrivono la capacita' del sistema di produrre o rinnovare offerta. Non coincidono automaticamente con case disponibili dove servono.</p>
+        </article>
+      </div>
+    </section>
+
     <section class="dashboard-section" id="europeSection">
       <div class="section-head">
         <span class="eyebrow">Europa</span>
-        <h2>Italia dentro il range europeo</h2>
-        <p>La banda mostra, anno per anno, il minimo e il massimo tra i paesi disponibili. La linea italiana resta sempre visibile; puoi aggiungere altri paesi per confronto.</p>
+        <h2>Il confronto europeo: utile, ma non sufficiente</h2>
+        <p>Eurostat permette di confrontare paesi con definizioni armonizzate. Questo aiuta a capire se l'Italia e' un caso isolato o parte di una dinamica piu' ampia. Ma le medie nazionali nascondono differenze enormi tra territori: per questo il grafico europeo va letto come contesto, non come diagnosi completa.</p>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri confronto europeo">
         <summary>Filtri confronto europeo</summary>
         <div class="filter-intro">
           <h3>Come usare i filtri</h3>
-          <p>Scegli la variabile nel primo menu. Nel secondo menu puoi selezionare uno o piu' paesi da evidenziare oltre all'Italia. EU27 viene mostrata quando Eurostat pubblica la serie aggregata.</p>
+          <p>Scegli la variabile nel primo menu. Nel secondo menu puoi selezionare uno o piu' paesi da evidenziare oltre all'Italia. EU27 viene mostrata quando Eurostat pubblica la serie aggregata. Se un paese sparisce in alcuni anni, significa che Eurostat non ha un valore disponibile per quella combinazione di filtri.</p>
         </div>
         <div class="filter-grid housing-filter-grid">
           <label>
@@ -123,14 +149,14 @@
     <section class="dashboard-section" id="localSection">
       <div class="section-head">
         <span class="eyebrow">Italia locale</span>
-        <h2>Prezzi e affitti comunali</h2>
-        <p>La sezione locale usa gli export del repository Crisi_abitativa. Quando i file regionali sono presenti, il grafico mostra la distribuzione comunale per regione.</p>
+        <h2>Prezzi e affitti comunali: dove il problema diventa concreto</h2>
+        <p>Le medie nazionali dicono poco su cosa succede davvero a Cagliari, Nuoro, Sassari o nei comuni interni. Questa sezione usa export statici regionali con quotazioni OMI comunali: la Sardegna e' pre-caricata, mentre la struttura permette di aggiungere le altre regioni generando gli stessi JSON.</p>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri focus locale">
         <summary>Filtri focus locale</summary>
         <div class="filter-intro">
           <h3>Come usare i filtri locali</h3>
-          <p>Scegli una regione e una misura: affitto medio, affitto mediano, prezzo di vendita medio o prezzo di vendita mediano. I comuni sono ordinati dal valore piu' alto al piu' basso.</p>
+          <p>Scegli una regione e una misura: affitto medio, affitto mediano, prezzo di vendita medio o prezzo di vendita mediano. Quando sono presenti le geometrie, il grafico mostra una mappa comunale; altrimenti usa una classifica dei comuni con valori disponibili.</p>
         </div>
         <div class="filter-grid housing-filter-grid">
           <label>
@@ -151,7 +177,7 @@
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2 id="localTitle">Focus locale Italia</h2>
-          <span>divisione comunale</span>
+          <span>mappa o classifica comunale</span>
         </div>
         <div id="localChart" class="chart"></div>
         <div class="chart-credit">Fonte: OMI Agenzia Entrate e MEF Dipartimento Finanze, dove disponibili. Elaborazione di Nazareno Lecis.</div>
@@ -163,10 +189,11 @@
       <div>
         <h2>Note metodologiche</h2>
         <ul id="methodologyList">
-          <li>Il confronto europeo usa indicatori armonizzati Eurostat. La disponibilita' temporale puo' cambiare tra paesi e indicatori.</li>
-          <li>Il range min-max e' calcolato sui paesi disponibili nell'anno, escludendo gli aggregati come EU27.</li>
+          <li>Il confronto europeo usa indicatori armonizzati Eurostat. La disponibilita' temporale puo' cambiare tra paesi e indicatori, quindi il range non sempre e' calcolato sugli stessi paesi.</li>
+          <li>Il range min-max e' calcolato sui paesi disponibili nell'anno, escludendo gli aggregati come EU27. Non rappresenta una media, una mediana o una distribuzione interna ai paesi.</li>
+          <li>Gli indicatori europei sono utili per il contesto, ma la crisi abitativa e' fortemente locale: prezzi, affitti, redditi, turismo, universita', trasporti e disponibilita' di stock cambiano tra comuni.</li>
           <li>Nel focus locale prezzi e affitti OMI sono quotazioni territoriali per zona, non prezzi effettivi di transazione o canoni di contratto.</li>
-          <li>Medie e mediane comunali OMI non sono pesate per transazioni, stock abitativo, popolazione o superficie.</li>
+          <li>Medie e mediane comunali OMI sono calcolate sulle zone OMI disponibili e non sono pesate per transazioni, stock abitativo, popolazione o superficie.</li>
         </ul>
       </div>
       <div>
