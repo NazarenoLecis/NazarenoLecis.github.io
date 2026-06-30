@@ -104,6 +104,8 @@
     scatterRequest: 0,
     boxRequest: 0,
     timeseriesRequest: 0,
+    boxActivated: false,
+    timeseriesActivated: false,
   };
 
   function byId(id) {
@@ -456,10 +458,6 @@
     return chartIds[chart] ? chart : "scatter";
   }
 
-  function shouldLoadTimeseriesOnInit() {
-    return !embedMode || requestedEmbedChart() === "time";
-  }
-
   function applyEmbedMode() {
     if (!embedMode) return;
     var sectionIds = {
@@ -477,7 +475,7 @@
   function prepareResponsiveFilters() {
     if (embedMode || !window.matchMedia) return;
     var query = window.matchMedia("(max-width: 760px)");
-    var panels = Array.prototype.slice.call(document.querySelectorAll(".filter-details"));
+    var panels = Array.prototype.slice.call(document.querySelectorAll(".chart-filter-panel"));
 
     function syncPanels(event) {
       panels.forEach(function (panel) {
@@ -1351,8 +1349,40 @@
 
   function updateAll() {
     updateScatter();
-    updateBox();
-    updateTimeSeries();
+    if (state.boxActivated) updateBox();
+    if (state.timeseriesActivated) updateTimeSeries();
+  }
+
+  function activateBox() {
+    state.boxActivated = true;
+    return updateBox();
+  }
+
+  function activateTimeSeries() {
+    state.timeseriesActivated = true;
+    return updateTimeSeries();
+  }
+
+  function observeSectionOnce(sectionId, callback) {
+    var section = byId(sectionId);
+    if (!section || !("IntersectionObserver" in window)) return;
+    var observer = new IntersectionObserver(function (entries) {
+      if (!entries.some(function (entry) { return entry.isIntersecting; })) return;
+      observer.disconnect();
+      callback();
+    }, { rootMargin: "220px 0px", threshold: 0.01 });
+    observer.observe(section);
+  }
+
+  function prepareLazyChartLoading() {
+    if (embedMode) return;
+    observeSectionOnce("boxSection", activateBox);
+    observeSectionOnce("timeSection", activateTimeSeries);
+
+    var boxLink = document.querySelector('a[href="#boxSection"]');
+    var timeLink = document.querySelector('a[href="#timeSection"]');
+    if (boxLink) boxLink.addEventListener("click", activateBox);
+    if (timeLink) timeLink.addEventListener("click", activateTimeSeries);
   }
 
   function downloadScatterCsv() {
@@ -1392,17 +1422,19 @@
 
   function resetBoxFilters() {
     setDetailedDefaults("box");
-    updateBox();
+    activateBox();
   }
 
   function resetTimeFilters() {
     setTimeDefaults();
-    updateTimeSeries();
+    activateTimeSeries();
   }
 
   function bindDetailedEvents(chart, updateFn) {
     fieldSets[chart].forEach(function (field) {
-      byId(field.id).addEventListener("change", function () {
+      var element = byId(field.id);
+      if (!element) return;
+      element.addEventListener("change", function () {
         if (field.key === "survey_year" || field.key === "years_after_degree") {
           syncGraduationYear(chart);
         }
@@ -1415,27 +1447,32 @@
     });
   }
 
+  function on(id, eventName, handler) {
+    var element = byId(id);
+    if (element) element.addEventListener(eventName, handler);
+  }
+
   function bindEvents() {
     bindDetailedEvents("scatter", updateScatter);
-    bindDetailedEvents("box", updateBox);
+    bindDetailedEvents("box", activateBox);
 
-    byId("scatterPointDimension").addEventListener("change", function () {
+    on("scatterPointDimension", "change", function () {
       avoidSinglePointScatter();
       updateScatter();
     });
-    byId("boxSplitDimension").addEventListener("change", updateBox);
+    on("boxSplitDimension", "change", activateBox);
 
     fieldSets.time.forEach(function (field) {
-      byId(field.id).addEventListener("change", updateTimeSeries);
+      on(field.id, "change", activateTimeSeries);
     });
     ["timeMode", "timeStartYear", "timeEndYear", "timeCohort", "timePointDimension", "timeMetric"].forEach(function (id) {
-      byId(id).addEventListener("change", updateTimeSeries);
+      on(id, "change", activateTimeSeries);
     });
 
-    byId("resetScatterFilters").addEventListener("click", resetScatterFilters);
-    byId("downloadScatter").addEventListener("click", downloadScatterCsv);
-    byId("resetBoxFilters").addEventListener("click", resetBoxFilters);
-    byId("resetTimeFilters").addEventListener("click", resetTimeFilters);
+    on("resetScatterFilters", "click", resetScatterFilters);
+    on("downloadScatterCsv", "click", downloadScatterCsv);
+    on("resetBoxFilters", "click", resetBoxFilters);
+    on("resetTimeFilters", "click", resetTimeFilters);
 
     new MutationObserver(function () {
       updateAll();
@@ -1611,18 +1648,24 @@
         updateSourceAndNotes();
         bindEvents();
         var initialChart = requestedEmbedChart();
+        renderMessage("boxChart", "Il boxplot si carica quando raggiungi questa sezione.");
+        renderMessage("timeSeriesChart", "Le serie storiche si caricano quando raggiungi questa sezione.");
         if (!embedMode || initialChart === "scatter") {
           updateScatter();
         }
-        if (!embedMode || initialChart === "box") {
-          updateBox();
+        if (embedMode && initialChart === "box") {
+          activateBox();
         }
-        if (shouldLoadTimeseriesOnInit()) {
-          renderMessage("timeSeriesChart", "Caricamento serie storica AlmaLaurea...", true);
+        if (embedMode && initialChart === "time") {
+          activateTimeSeries();
         }
         focusQueryChart();
-        if (shouldLoadTimeseriesOnInit()) {
-          loadTimeseriesRecords();
+        prepareLazyChartLoading();
+        if (!embedMode && queryParams.get("chart") === "box") {
+          activateBox();
+        }
+        if (!embedMode && queryParams.get("chart") === "time") {
+          activateTimeSeries();
         }
       })
       .catch(function (error) {

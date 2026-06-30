@@ -227,8 +227,7 @@
         course_type_label: sanitizeCourseType(bucket.rows[0].course_type_label),
         graduates: bucket.rows.reduce(function (sum, record) { return sum + (record.graduates || 0); }, 0),
         employment_rate: weightedAverage(bucket.rows, "employment_rate"),
-        net_monthly_salary: weightedAverage(bucket.rows, "net_monthly_salary"),
-        net_monthly_salary_median: medianValue(salaryValues)
+        net_monthly_salary: weightedAverage(bucket.rows, "net_monthly_salary")
       };
     }).filter(function (point) {
       return Number.isFinite(point.employment_rate) && point.employment_rate > 0 && Number.isFinite(point.net_monthly_salary) && point.net_monthly_salary > 0;
@@ -276,8 +275,8 @@
         textfont: { size: 11 },
         cliponaxis: false,
         marker: { color: colorFor(index), size: 10 + 32 * Math.sqrt((point.graduates || 0) / maxGraduates), opacity: 0.85, line: { color: "rgba(255,255,255,.45)", width: 1 } },
-        customdata: [[point.label, point.group_label, point.course_type_label, point.graduates, point.net_monthly_salary_median]],
-        hovertemplate: "<b>%{customdata[0]}</b><br>Gruppo: %{customdata[1]}<br>Tipo corso: %{customdata[2]}<br>Retribuzione media: %{x:.0f} euro<br>Retribuzione mediana: %{customdata[4]:.0f} euro<br>Occupazione: %{y:.1f}%<br>Laureati: %{customdata[3]:,.0f}<extra></extra>"
+        customdata: [[point.label, point.group_label, point.course_type_label, point.graduates]],
+        hovertemplate: "<b>%{customdata[0]}</b><br>Gruppo: %{customdata[1]}<br>Tipo corso: %{customdata[2]}<br>Retribuzione media: %{x:.0f} euro<br>Occupazione: %{y:.1f}%<br>Laureati: %{customdata[3]:,.0f}<extra></extra>"
       };
     });
     window.Plotly.react(el.id, traces, layout({

@@ -89,7 +89,7 @@
   padding: 16px;
 }
 
-.filter-summary {
+.chart-filter-panel > summary {
   display: none;
   cursor: pointer;
   list-style: none;
@@ -97,11 +97,11 @@
   font-weight: 850;
 }
 
-.filter-summary::-webkit-details-marker {
+.chart-filter-panel > summary::-webkit-details-marker {
   display: none;
 }
 
-.filter-summary::after {
+.chart-filter-panel > summary::after {
   content: "+";
   width: 28px;
   height: 28px;
@@ -112,7 +112,7 @@
   color: var(--text);
 }
 
-.filter-details[open] > .filter-summary::after {
+.chart-filter-panel[open] > summary::after {
   content: "-";
 }
 
@@ -592,7 +592,7 @@
     white-space: nowrap;
   }
 
-  .filter-summary {
+  .chart-filter-panel > summary {
     min-height: 38px;
     display: flex;
     align-items: center;
@@ -600,11 +600,11 @@
     gap: 14px;
   }
 
-  .filter-details[open] > .filter-summary {
+  .chart-filter-panel[open] > summary {
     margin-bottom: 14px;
   }
 
-  .filter-details:not([open]) {
+  .chart-filter-panel:not([open]) {
     padding-bottom: 12px;
   }
 
