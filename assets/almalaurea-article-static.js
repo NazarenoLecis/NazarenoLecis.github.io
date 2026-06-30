@@ -1,5 +1,5 @@
 (function () {
-  var DATA_URL = "/data/almalaurea/almalaurea_dashboard_data.json";
+  var DATA_URL = "/data/almalaurea/almalaurea_article_timeseries_data.json";
   var TIMESERIES_URL = "/data/almalaurea/almalaurea_article_timeseries_data.json";
   var WILDCARD = "*";
   var records = [];
@@ -18,6 +18,10 @@
   function toNumber(value) {
     var parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function asArray(value) {
+    return Array.isArray(value) ? value : [];
   }
 
   function escapeHtml(value) {
@@ -96,7 +100,7 @@
     if (byId("almArticleStaticStyle")) return;
     var style = document.createElement("style");
     style.id = "almArticleStaticStyle";
-    style.textContent = ".article-static-chart{min-height:560px;background:var(--bg)}.article-chart-loading,.article-chart-error{padding:26px;color:var(--muted);line-height:1.55}.article-chart-error strong{color:var(--text)}@media(max-width:760px){.article-static-chart{min-width:880px;min-height:560px}}";
+    style.textContent = ".article-static-chart{min-height:560px;background:var(--bg)}.article-static-chart .plot-container,.article-static-chart .svg-container{background:var(--bg)!important}.article-chart-loading,.article-chart-error{padding:26px;color:var(--muted);line-height:1.55}.article-chart-error strong{color:var(--text)}@media(max-width:760px){.article-static-chart{min-width:880px;min-height:560px}}";
     document.head.appendChild(style);
   }
 
@@ -125,70 +129,127 @@
     });
   }
 
+  function extractRecords(payload) {
+    return asArray(payload.records)
+      .concat(asArray(payload.dashboard_records))
+      .concat(asArray(payload.detailed_records))
+      .concat(asArray(payload.article_records))
+      .concat(asArray(payload.data));
+  }
+
+  function extractTimeRecords(payload) {
+    return asArray(payload.timeseries_records)
+      .concat(asArray(payload.time_records))
+      .concat(asArray(payload.timeseries))
+      .concat(asArray(payload.records));
+  }
+
   function fetchData() {
     return Promise.all([fetchJson(DATA_URL), fetchJson(TIMESERIES_URL).catch(function () { return { records: [] }; })])
       .then(function (payloads) {
-        records = (payloads[0].records || []).map(normalize);
-        timeRecords = (payloads[1].records || []).map(normalize);
+        records = extractRecords(payloads[0]).map(normalize);
+        timeRecords = extractTimeRecords(payloads[1]).map(normalize);
       });
   }
 
-  function baseRows(params) {
+  function fixedRows(source, params) {
     var cohort = params.cohort || (params.survey - params.years);
-    return records.filter(function (record) {
+    return source.filter(function (record) {
       if (record.survey_year !== params.survey) return false;
       if (record.years_after_degree !== params.years) return false;
       if (record.graduation_year !== cohort) return false;
       if (record.employment_definition !== params.definition) return false;
       if (params.course !== WILDCARD && record.course_type !== params.course) return false;
       if (params.course === WILDCARD && record.course_type !== WILDCARD) return false;
-      return true;
-    });
-  }
-
-  function scatterRows(params) {
-    return baseRows(params).filter(function (record) {
-      if (params.dimension === "university") {
-        if (record.university === WILDCARD) return false;
-        if (record.disciplinary_group !== WILDCARD) return false;
-        if (record.degree_class !== WILDCARD) return false;
-      } else if (params.dimension === "degree_class") {
-        if (record.degree_class === WILDCARD) return false;
-        if (record.university !== WILDCARD) return false;
-      } else {
-        if (record.disciplinary_group === WILDCARD) return false;
-        if (record.university !== WILDCARD) return false;
-        if (record.degree_class !== WILDCARD) return false;
-      }
       return Number.isFinite(record.net_monthly_salary) && record.net_monthly_salary > 0 &&
         Number.isFinite(record.employment_rate) && record.employment_rate > 0;
     });
   }
 
-  function scatterLabel(record, dimension) {
-    if (dimension === "university") return record.university_label;
-    if (dimension === "degree_class") return record.degree_class_label;
-    return record.disciplinary_group_label;
+  function weightedAverage(rows, field) {
+    var weightedSum = 0;
+    var weightSum = 0;
+    var plainSum = 0;
+    var plainCount = 0;
+    rows.forEach(function (record) {
+      var value = record[field];
+      if (!Number.isFinite(value) || value <= 0) return;
+      plainSum += value;
+      plainCount += 1;
+      if (Number.isFinite(record.graduates) && record.graduates > 0) {
+        weightedSum += value * record.graduates;
+        weightSum += record.graduates;
+      }
+    });
+    if (weightSum > 0) return weightedSum / weightSum;
+    return plainCount ? plainSum / plainCount : null;
+  }
+
+  function aggregatePoints(rows, keyFn, labelFn) {
+    var buckets = new Map();
+    rows.forEach(function (record) {
+      var key = keyFn(record);
+      if (!key || key === WILDCARD) return;
+      if (!buckets.has(key)) buckets.set(key, { key: key, label: labelFn(record), rows: [] });
+      buckets.get(key).rows.push(record);
+    });
+    return Array.from(buckets.values()).map(function (bucket) {
+      return {
+        key: bucket.key,
+        label: bucket.label,
+        group_label: bucket.rows[0].disciplinary_group_label,
+        course_type_label: bucket.rows[0].course_type_label,
+        graduates: bucket.rows.reduce(function (sum, record) { return sum + (record.graduates || 0); }, 0),
+        employment_rate: weightedAverage(bucket.rows, "employment_rate"),
+        net_monthly_salary: weightedAverage(bucket.rows, "net_monthly_salary")
+      };
+    }).filter(function (point) {
+      return Number.isFinite(point.employment_rate) && point.employment_rate > 0 && Number.isFinite(point.net_monthly_salary) && point.net_monthly_salary > 0;
+    });
+  }
+
+  function scatterPoints(params) {
+    var rows = fixedRows(records, params);
+    if (params.dimension === "university") {
+      var universityRows = rows.filter(function (record) {
+        return record.university !== WILDCARD && record.degree_class === WILDCARD;
+      });
+      return aggregatePoints(universityRows, function (record) { return record.university; }, function (record) { return record.university_label; });
+    }
+    if (params.dimension === "degree_class") {
+      var degreeRows = rows.filter(function (record) {
+        return record.degree_class !== WILDCARD && record.university === WILDCARD;
+      });
+      return aggregatePoints(degreeRows, function (record) { return record.degree_class; }, function (record) { return record.degree_class_label; });
+    }
+    var groupRows = rows.filter(function (record) {
+      return record.disciplinary_group !== WILDCARD && record.university === WILDCARD && record.degree_class === WILDCARD;
+    });
+    return aggregatePoints(groupRows, function (record) { return record.disciplinary_group; }, function (record) { return record.disciplinary_group_label; });
+  }
+
+  function clearForPlot(el) {
+    el.innerHTML = "";
   }
 
   function renderScatter(el, params) {
-    var rows = scatterRows(params);
-    if (!rows.length) return renderError(el, "Nessun dato disponibile per questa vista statica.");
-    var maxGraduates = Math.max.apply(null, rows.map(function (record) { return record.graduates || 0; })) || 1;
-    var traces = rows.map(function (record, index) {
-      var label = scatterLabel(record, params.dimension);
+    var points = scatterPoints(params);
+    if (!points.length) return renderError(el, "Nessun dato disponibile per questa vista statica.");
+    clearForPlot(el);
+    var maxGraduates = Math.max.apply(null, points.map(function (point) { return point.graduates || 0; })) || 1;
+    var traces = points.map(function (point, index) {
       return {
         type: "scatter",
         mode: "markers+text",
-        name: label,
-        x: [record.net_monthly_salary],
-        y: [record.employment_rate],
-        text: [params.dimension === "university" ? "" : label],
+        name: point.label,
+        x: [point.net_monthly_salary],
+        y: [point.employment_rate],
+        text: [params.dimension === "university" ? "" : point.label],
         textposition: ["top center", "bottom center", "top left", "top right", "bottom left", "bottom right"][index % 6],
         textfont: { size: 11 },
         cliponaxis: false,
-        marker: { color: colorFor(index), size: 10 + 32 * Math.sqrt((record.graduates || 0) / maxGraduates), opacity: 0.85, line: { color: "rgba(255,255,255,.45)", width: 1 } },
-        customdata: [[label, record.disciplinary_group_label, record.course_type_label, record.graduates]],
+        marker: { color: colorFor(index), size: 10 + 32 * Math.sqrt((point.graduates || 0) / maxGraduates), opacity: 0.85, line: { color: "rgba(255,255,255,.45)", width: 1 } },
+        customdata: [[point.label, point.group_label, point.course_type_label, point.graduates]],
         hovertemplate: "<b>%{customdata[0]}</b><br>Gruppo: %{customdata[1]}<br>Tipo corso: %{customdata[2]}<br>Retribuzione media: %{x:.0f} euro<br>Occupazione: %{y:.1f}%<br>Laureati: %{customdata[3]:,.0f}<extra></extra>"
       };
     });
@@ -200,17 +261,15 @@
   }
 
   function boxRows(params) {
-    return baseRows(params).filter(function (record) {
-      if (record.university === WILDCARD) return false;
-      if (record.degree_class !== WILDCARD) return false;
-      if (record.disciplinary_group === WILDCARD) return false;
-      return Number.isFinite(record.net_monthly_salary) && record.net_monthly_salary > 0;
+    return fixedRows(records, params).filter(function (record) {
+      return record.university !== WILDCARD && record.degree_class === WILDCARD && record.disciplinary_group !== WILDCARD;
     });
   }
 
   function renderBox(el, params) {
     var rows = boxRows(params);
     if (!rows.length) return renderError(el, "Nessun dato disponibile per questa distribuzione statica.");
+    clearForPlot(el);
     var byGroup = new Map();
     rows.forEach(function (record) {
       var key = params.split === "course_type" ? record.course_type_label : record.disciplinary_group_label;
@@ -243,25 +302,6 @@
     }), plotConfig());
   }
 
-  function weightedAverage(rows, field) {
-    var weightedSum = 0;
-    var weightSum = 0;
-    var plainSum = 0;
-    var plainCount = 0;
-    rows.forEach(function (record) {
-      var value = record[field];
-      if (!Number.isFinite(value) || value <= 0) return;
-      plainSum += value;
-      plainCount += 1;
-      if (Number.isFinite(record.graduates) && record.graduates > 0) {
-        weightedSum += value * record.graduates;
-        weightSum += record.graduates;
-      }
-    });
-    if (weightSum > 0) return weightedSum / weightSum;
-    return plainCount ? plainSum / plainCount : null;
-  }
-
   function metricLabel(metric) {
     return metric === "net_monthly_salary" ? "Retribuzione mensile netta" : "Tasso di occupazione";
   }
@@ -273,7 +313,7 @@
   function timeRows(params) {
     var metric = params.metric === "second_level_enrollment_rate" ? "employment_rate" : params.metric;
     var source = timeRecords.length ? timeRecords : records;
-    var base = source.filter(function (record) {
+    return source.filter(function (record) {
       if (record.employment_definition !== params.definition) return false;
       if (params.course !== WILDCARD && record.course_type !== params.course) return false;
       if (params.timeMode === "cohort_path") {
@@ -283,22 +323,12 @@
         if (record.survey_year < 2007 || record.survey_year > params.survey) return false;
         if (record.graduation_year !== record.survey_year - params.years) return false;
       }
-      if (!Number.isFinite(record[metric]) || record[metric] <= 0) return false;
-      return true;
-    });
-
-    var strict = base.filter(function (record) {
-      if (params.course === WILDCARD && record.course_type !== WILDCARD) return false;
       if (params.dimension === "university") {
-        return record.university !== WILDCARD && record.disciplinary_group === WILDCARD;
+        if (record.university === WILDCARD) return false;
+      } else if (record.disciplinary_group === WILDCARD || record.university !== WILDCARD) {
+        return false;
       }
-      return record.disciplinary_group !== WILDCARD && record.university === WILDCARD;
-    });
-    if (strict.length) return strict;
-
-    return base.filter(function (record) {
-      if (params.dimension === "university") return record.university !== WILDCARD;
-      return record.disciplinary_group !== WILDCARD && record.university === WILDCARD;
+      return Number.isFinite(record[metric]) && record[metric] > 0;
     });
   }
 
@@ -306,6 +336,7 @@
     var metric = params.metric === "second_level_enrollment_rate" ? "employment_rate" : params.metric;
     var rows = timeRows(params);
     if (!rows.length) return renderError(el, "Nessun dato disponibile per questa serie statica.");
+    clearForPlot(el);
     var buckets = new Map();
     rows.forEach(function (record) {
       var key = params.dimension === "university" ? record.university : record.disciplinary_group;
