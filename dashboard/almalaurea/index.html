@@ -74,6 +74,13 @@
       </div>
     </section>
 
+    <nav class="dashboard-jump-nav" aria-label="Sezioni della dashboard AlmaLaurea">
+      <a href="#scatterSection">Scatterplot</a>
+      <a href="#boxSection">Boxplot</a>
+      <a href="#timeSection">Serie storiche</a>
+      <a href="#methodologySection">Metodo e fonte</a>
+    </nav>
+
     <section class="dashboard-section" id="scatterSection">
       <div class="section-head">
         <div>
@@ -86,7 +93,8 @@
           se visualizzare gruppi disciplinari, atenei o classi.
         </p>
       </div>
-      <div class="chart-filter-panel" aria-label="Filtri scatterplot">
+      <details class="chart-filter-panel filter-details" aria-label="Filtri scatterplot" open>
+        <summary class="filter-summary">Filtri scatterplot</summary>
         <div class="filter-intro">
           <h3>Filtri scatterplot</h3>
           <p>
@@ -141,7 +149,7 @@
           <button class="button compact" id="resetScatterFilters" type="button">Reset scatter</button>
           <button class="button compact primary" id="downloadScatter" type="button">Scarica CSV scatter</button>
         </div>
-      </div>
+      </details>
       <section class="kpi-grid" aria-label="Indicatori principali scatterplot">
         <div class="kpi">
           <span>Laureati</span>
@@ -184,7 +192,8 @@
           retribuzione entro il perimetro selezionato.
         </p>
       </div>
-      <div class="chart-filter-panel" aria-label="Filtri boxplot">
+      <details class="chart-filter-panel filter-details" aria-label="Filtri boxplot" open>
+        <summary class="filter-summary">Filtri boxplot</summary>
         <div class="filter-intro">
           <h3>Filtri boxplot</h3>
           <p>
@@ -233,7 +242,7 @@
         <div class="filter-actions">
           <button class="button compact" id="resetBoxFilters" type="button">Reset boxplot</button>
         </div>
-      </div>
+      </details>
       <div class="chart-panel">
         <div class="panel-title">
           <h2>Distribuzione retribuzione</h2>
@@ -280,7 +289,8 @@
           </p>
         </div>
       </div>
-      <div class="chart-filter-panel" aria-label="Filtri serie storica">
+      <details class="chart-filter-panel filter-details" aria-label="Filtri serie storica" open>
+        <summary class="filter-summary">Filtri serie storica</summary>
         <div class="filter-intro">
           <h3>Filtri serie storica</h3>
           <p>
@@ -349,7 +359,7 @@
         <div class="filter-actions">
           <button class="button compact" id="resetTimeFilters" type="button">Reset serie storica</button>
         </div>
-      </div>
+      </details>
       <div class="chart-panel">
         <div class="panel-title">
           <h2 id="timeSeriesTitle">Trend occupazione/retribuzione</h2>
@@ -359,7 +369,7 @@
       </div>
     </section>
 
-    <section class="notes-panel">
+    <section class="notes-panel" id="methodologySection">
       <div>
         <h2>Note metodologiche</h2>
         <ul id="methodologyList"></ul>

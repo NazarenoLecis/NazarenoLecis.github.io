@@ -441,6 +441,25 @@
     });
   }
 
+  function prepareResponsiveFilters() {
+    if (embedMode || !window.matchMedia) return;
+    var query = window.matchMedia("(max-width: 760px)");
+    var panels = Array.prototype.slice.call(document.querySelectorAll(".filter-details"));
+
+    function syncPanels(event) {
+      panels.forEach(function (panel) {
+        panel.open = !event.matches;
+      });
+    }
+
+    syncPanels(query);
+    if (query.addEventListener) {
+      query.addEventListener("change", syncPanels);
+    } else if (query.addListener) {
+      query.addListener(syncPanels);
+    }
+  }
+
   function setTimeFieldVisibility(id, hidden) {
     var element = byId(id);
     if (!element) return;
@@ -1329,6 +1348,7 @@
         setDefaults();
         applyQueryParams();
         applyEmbedMode();
+        prepareResponsiveFilters();
         updateSourceAndNotes();
         bindEvents();
         updateAll();

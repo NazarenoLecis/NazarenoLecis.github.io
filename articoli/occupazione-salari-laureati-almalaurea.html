@@ -18,6 +18,7 @@
     .article p{font-size:1.08rem;line-height:1.75;color:var(--text);margin:0 0 18px}
     .article .lead{max-width:850px}
     .article a{color:var(--orange);font-weight:750}
+    .article h2[id]{scroll-margin-top:130px}
     .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;color:var(--muted);font-size:.95rem}
     .pill{border:1px solid var(--line);border-radius:999px;padding:7px 11px;background:var(--panel)}
     .header-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
@@ -29,6 +30,9 @@
     .dashboard-callout h2{font-size:1.35rem;margin:0 0 10px;letter-spacing:-.03em}
     .dashboard-callout p{font-size:1rem;color:var(--muted);line-height:1.6}
     .dashboard-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+    .article-toc{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 34px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .article-toc a{display:inline-flex;align-items:center;min-height:40px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);font-size:.95rem}
+    .article-toc a:hover{border-color:var(--orange);color:var(--orange)}
     .note,.method{border-left:3px solid var(--orange);padding:15px 0 15px 18px;margin:28px 0;color:var(--muted)}
     .note p,.method p{color:var(--muted);font-size:1rem;margin:0 0 10px;line-height:1.6}
     .note p:last-child,.method p:last-child{margin-bottom:0}
@@ -39,7 +43,7 @@
     .data-table th{color:var(--orange);font-weight:800}
     .data-table td:last-child,.data-table th:last-child{text-align:right}
     .back{display:inline-flex;margin-bottom:22px;color:var(--orange);font-weight:750}
-    @media(max-width:760px){.article{padding:32px 0 52px}.article p{font-size:1rem;line-height:1.65}.chart{margin-left:-12px;margin-right:-12px;border-radius:10px}.chart iframe{height:560px}.dashboard-actions,.header-actions{display:grid}.data-table{font-size:.9rem}}
+    @media(max-width:760px){.article{padding:32px 0 52px}.article h1{font-size:clamp(2.35rem,13vw,3.4rem)}.article p{font-size:1rem;line-height:1.65}.article-toc{flex-wrap:nowrap;overflow-x:auto;margin-left:-12px;margin-right:-12px;padding:12px;scrollbar-width:none}.article-toc::-webkit-scrollbar{display:none}.article-toc a{white-space:nowrap}.chart{margin-left:-12px;margin-right:-12px;border-radius:10px}.chart iframe{height:560px}.chart.dashboard-live{overflow-x:auto;-webkit-overflow-scrolling:touch}.chart.dashboard-live iframe,.chart.dashboard-live figcaption{min-width:720px}.dashboard-actions,.header-actions{display:grid}.data-table{display:block;overflow-x:auto;white-space:nowrap;font-size:.9rem}}
   </style>
 </head>
 <body>
@@ -75,25 +79,35 @@
   </div>
 </section>
 
-<h2>Che cosa coprono le schede AlmaLaurea 2025</h2>
+<nav class="article-toc" aria-label="Indice dell'articolo">
+  <a href="#copertura">Copertura</a>
+  <a href="#lettura">Come leggere</a>
+  <a href="#un-anno">A 1 anno</a>
+  <a href="#triennali">Triennali</a>
+  <a href="#coorte">Coorte</a>
+  <a href="#cinque-anni">A 5 anni</a>
+  <a href="#note">Note</a>
+</nav>
+
+<h2 id="copertura">Che cosa coprono le schede AlmaLaurea 2025</h2>
 <p>La rilevazione 2025 ha coinvolto quasi 700 mila laureati di primo e secondo livello di 78 università italiane aderenti ad AlmaLaurea. Il blocco principale riguarda 320 mila laureati del 2024 osservati a 1 anno dal titolo. La rilevazione include anche 129 mila laureati di secondo livello del 2022 osservati a 3 anni e 125 mila laureati di secondo livello del 2020 osservati a 5 anni.</p>
 <p>Questo punto è importante per leggere i grafici a 5 anni. Nelle schede-dati online usate qui, la documentazione a 3 e 5 anni riguarda i laureati di secondo livello. I laureati di primo livello del 2022 e del 2020 che non hanno proseguito la formazione universitaria sono stati rilevati separatamente, con metodologia solo CAWI, e non hanno le stesse schede-dati. Quindi nei grafici a 5 anni il filtro totale non va letto come totale di tutti i laureati di primo e secondo livello. Va letto come totale del perimetro disponibile nelle schede a 5 anni, cioè il secondo livello.</p>
 <p>La rilevazione a 1 anno usa CAWI e CATI. Il tasso di risposta sul totale dei laureati 2024 è pari al 60,8 per cento, con valori molto simili tra primo livello e secondo livello. A 5 anni, per i laureati di secondo livello del 2020, il tasso di risposta sul totale è pari al 52,6 per cento. Considerando solo i laureati contattabili, il tasso sale al 64,7 per cento a 1 anno e al 61,6 per cento a 5 anni per il secondo livello.</p>
 <p>Le schede-dati non sono sottoposte alla procedura di calibrazione usata invece per il rapporto annuale sul complesso dei laureati. Sono pensate per documentare collettivi molto dettagliati, fino al livello di corso e ateneo. Questa scelta migliora la granularità, ma richiede cautela quando si trasformano i risultati in confronti generali.</p>
 
-<h2>Come leggere i dati</h2>
+<h2 id="lettura">Come leggere i dati</h2>
 <p>Gli scatter mostrano ogni gruppo disciplinare come un punto. Sull’asse orizzontale c’è la retribuzione mensile netta. Sull’asse verticale c’è il tasso di occupazione. La dimensione della bolla indica il numero di laureati osservati.</p>
 <p>I valori dello scatter sono aggregati. Il punto di un gruppo disciplinare non rappresenta una persona. Rappresenta la media osservata per quel gruppo, dopo i filtri applicati su coorte, distanza dalla laurea, definizione occupazionale e tipo di corso.</p>
 <p>Le serie storiche vanno lette con una distinzione ulteriore. Osservare sempre i laureati a 1 anno dal titolo significa confrontare coorti diverse nello stesso momento del percorso. Seguire la stessa coorte significa invece guardare, quando i dati sono disponibili, la stessa coorte a 1 e 5 anni dalla laurea. Nella dashboard questa differenza e' esplicitata con il filtro "Lettura".</p>
 <p>Questa distinzione conta anche quando nel testo compaiono mediane. La mediana delle retribuzioni medie dei gruppi disciplinari non è la mediana salariale individuale dei laureati. È una sintesi calcolata sui valori medi dei gruppi. Per calcolare mediane individuali servirebbero microdati.</p>
 <div class="method"><p>I boxplot mostrano la distribuzione delle retribuzioni tra atenei dentro ciascun gruppo disciplinare. La linea interna alla scatola indica la mediana degli atenei. La scatola contiene la parte centrale della distribuzione. I baffi seguono la convenzione standard del boxplot, basata sull’intervallo interquartile. I punti mostrano gli atenei.</p><p>Un punto molto alto o molto basso va letto insieme al numero di laureati. Un valore estremo con poche decine di osservazioni può dipendere da composizione del corso, territorio, selezione degli studenti o casualità campionaria.</p></div>
 
-<h2>Definizione di occupato</h2>
+<h2 id="definizione">Definizione di occupato</h2>
 <p>A partire dalla rilevazione 2023, le schede-dati sono consultabili usando la definizione meno restrittiva di occupato. Sono considerati occupati tutti coloro che dichiarano di svolgere un’attività retribuita, comprese attività di formazione post-laurea retribuite.</p>
 <p>Questa definizione è più ampia della definizione restrittiva usata in alcune rilevazioni precedenti. Per confronti storici con vecchie dashboard o vecchi video, bisogna quindi controllare sempre quale definizione di occupato è stata usata.</p>
 <p>Per i laureati di primo livello, AlmaLaurea distingue anche la condizione occupazionale e formativa. Il tasso di occupazione è dato dalla somma di chi lavora e non è iscritto a una laurea di secondo livello e di chi lavora mentre è iscritto a una laurea di secondo livello. Chi non lavora perché sta proseguendo gli studi non entra tra gli occupati. Per questo i tassi delle triennali possono sembrare molto bassi, soprattutto nei gruppi in cui la magistrale è il proseguimento normale del percorso.</p>
 
-<h2>Limiti metodologici da tenere presenti</h2>
+<h2 id="limiti">Limiti metodologici da tenere presenti</h2>
 <p>Le informazioni sul percorso universitario provengono dagli archivi amministrativi degli atenei. Le informazioni sulla condizione occupazionale derivano invece dall’indagine sugli esiti occupazionali. La retribuzione mensile netta non è verificata tramite contratto, dichiarazione fiscale o dato contributivo.</p>
 <p>La domanda sulla retribuzione usa fasce di importo. La media è calcolata usando il valore centrale della fascia, con regole specifiche per la prima e l’ultima classe. A partire dall’indagine 2024, in alcune interviste telefoniche è stata usata una seconda domanda con fasce più ampie per ridurre le mancate risposte. Quindi la retribuzione media non è una media calcolata su importi puntuali dichiarati al centesimo.</p>
 <p>Le mancate risposte sulla retribuzione sono escluse dal calcolo. AlmaLaurea segnala che la quota di mancate risposte è contenuta, ma non nulla. Per i laureati di primo livello a 1 anno è pari al 2,3 per cento. Per i magistrali biennali è pari all’1,6 per cento a 1 anno e all’1,7 per cento a 5 anni. Per i laureati magistrali a ciclo unico è pari all’1,8 per cento a 1 anno e all’1,8 per cento a 5 anni.</p>
@@ -103,52 +117,52 @@
 
 <figure class="chart dashboard-live"><iframe loading="lazy" title="Boxplot interattivo AlmaLaurea 2025 a 1 anno dalla laurea" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=box&amp;survey=2025&amp;years=1&amp;cohort=2024&amp;definition=broad&amp;split=disciplinary_group"></iframe><figcaption>Distribuzione della retribuzione mensile netta per gruppo disciplinare. Indagine AlmaLaurea 2025, coorte 2024 osservata a 1 anno dal titolo. Vista incorporata dalla dashboard interattiva.</figcaption></figure>
 
-<h2>A un anno dalla laurea le differenze sono già ampie</h2>
+<h2 id="un-anno">A un anno dalla laurea le differenze sono già ampie</h2>
 <p>A 1 anno dalla laurea il quadro è molto eterogeneo. Nel totale dei corsi, la retribuzione mensile netta va da 1.022 euro per Scienze motorie e sportive a 1.672 euro per Medico-sanitario e farmaceutico. Informatica e Tecnologie ICT arriva a 1.608 euro, Ingegneria industriale e dell’informazione a 1.635 euro.</p>
 <p>La differenza riguarda anche il tasso di occupazione. Psicologico registra il valore più basso, con il 47,3 per cento. Medico-sanitario e farmaceutico arriva all’86,7 per cento. Educazione e Formazione è al 76,2 per cento. Informatica e Tecnologie ICT è al 71,9 per cento.</p>
 <figure class="chart dashboard-live"><iframe loading="lazy" title="Scatterplot interattivo AlmaLaurea 2025 a 1 anno dalla laurea" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=scatter&amp;survey=2025&amp;years=1&amp;cohort=2024&amp;definition=broad&amp;dimension=disciplinary_group"></iframe><figcaption>Totale corsi. Indagine AlmaLaurea 2025, coorte 2024 osservata a 1 anno dal titolo. Vista incorporata dalla dashboard interattiva.</figcaption></figure>
 <p>A 1 anno dal titolo i percorsi sono in fasi diverse. Alcuni gruppi entrano subito nel mercato del lavoro. Altri hanno transizioni più lente, maggiore prosecuzione formativa, più instabilità iniziale o tempi più lunghi di assestamento professionale.</p>
 
-<h2>Le lauree triennali hanno una transizione più debole</h2>
+<h2 id="triennali">Le lauree triennali hanno una transizione più debole</h2>
 <p>La differenza per tipo di corso è rilevante. Tra le lauree di primo livello, la mediana delle retribuzioni medie dei gruppi disciplinari è pari a 1.144 euro. La mediana dei tassi di occupazione dei gruppi disciplinari è pari al 47,4 per cento. Alcuni gruppi hanno valori particolarmente bassi. Scientifico ha un tasso di occupazione del 29,4 per cento. Letterario-umanistico è al 33,7 per cento. Psicologico è al 36,1 per cento.</p>
 <figure class="chart dashboard-live"><iframe loading="lazy" title="Scatterplot interattivo AlmaLaurea 2025 per lauree di primo livello" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=scatter&amp;survey=2025&amp;years=1&amp;cohort=2024&amp;definition=broad&amp;course=laurea%20di%20primo%20livello&amp;dimension=disciplinary_group"></iframe><figcaption>Lauree di primo livello. Indagine AlmaLaurea 2025, coorte 2024 osservata a 1 anno dal titolo. Vista incorporata dalla dashboard interattiva.</figcaption></figure>
 <p>La spiegazione più probabile è istituzionale. In molti ambiti la triennale non è trattata come titolo terminale. Una parte consistente dei laureati prosegue verso la magistrale. Il dato a 1 anno misura quindi una fase intermedia del percorso formativo.</p>
 <p>Questo meccanismo è particolarmente importante nei gruppi dove la prosecuzione degli studi è frequente. Scientifico, psicologico, letterario-umanistico e una parte dei percorsi politico-sociali possono avere una transizione più lunga perché il titolo triennale apre meno sbocchi diretti o perché il percorso professionalizzante richiede un secondo livello.</p>
 
-<h2>Le magistrali biennali mostrano esiti migliori già a 1 anno</h2>
+<h2 id="magistrali">Le magistrali biennali mostrano esiti migliori già a 1 anno</h2>
 <p>Le lauree magistrali biennali mostrano una transizione più forte. A 1 anno dalla laurea, la mediana delle retribuzioni medie dei gruppi disciplinari è pari a 1.415 euro e la mediana dei tassi di occupazione è pari all’83,6 per cento. Informatica e Tecnologie ICT arriva a 1.771 euro e al 93,3 per cento di occupazione. Ingegneria industriale e dell’informazione arriva a 1.787 euro e al 93,6 per cento.</p>
 <figure class="chart dashboard-live"><iframe loading="lazy" title="Scatterplot interattivo AlmaLaurea 2025 per lauree magistrali biennali" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=scatter&amp;survey=2025&amp;years=1&amp;cohort=2024&amp;definition=broad&amp;course=laurea%20magistrale%20biennale&amp;dimension=disciplinary_group"></iframe><figcaption>Lauree magistrali biennali. Indagine AlmaLaurea 2025, coorte 2024 osservata a 1 anno dal titolo. Vista incorporata dalla dashboard interattiva.</figcaption></figure>
 <p>ICT e ingegneria combinano domanda elevata, competenze trasferibili e maggiore spendibilità immediata nel settore privato. La dimensione dei gruppi conta. ICT ha meno laureati rispetto a economia, ingegneria o medico-sanitario. Una domanda elevata su una platea più piccola può sostenere salari più alti già all’ingresso.</p>
 <p>Medico-sanitario e farmaceutico ha tassi di occupazione molto elevati. Il gruppo contiene percorsi professionalizzanti e professioni sanitarie con domanda strutturale. Il valore medio del gruppo va letto ricordando che non si tratta solo di medicina.</p>
 <p>Economico ha numeri molto grandi e sbocchi diffusi in imprese, consulenza, finanza, amministrazione, controllo, marketing e pubblica amministrazione. La media del gruppo è meno estrema di ICT e ingegneria, ma il volume dei laureati è molto alto.</p>
 
-<h2>Giuridico, praticantato e tempi di accesso alla professione</h2>
+<h2 id="giuridico">Giuridico, praticantato e tempi di accesso alla professione</h2>
 <p>Il gruppo giuridico richiede una lettura specifica. A 1 anno dalla laurea molti laureati sono ancora dentro praticantato, tirocinio, concorsi, preparazione all’esame di Stato o percorsi di accesso alla magistratura. Queste fasi possono produrre redditi bassi o intermittenti anche quando il percorso successivo migliora.</p>
 <p>La struttura del settore pesa. Una parte rilevante degli sbocchi tradizionali passa da studi professionali, lavoro autonomo o forme ibride di collaborazione. Il primo anno dopo il titolo può quindi catturare un periodo di investimento professionale, non solo il valore finale della competenza giuridica.</p>
 
-<h2>Seguire la stessa coorte</h2>
+<h2 id="coorte">Seguire la stessa coorte</h2>
 <p>Il confronto tra coorte 2024 a 1 anno e coorte 2020 a 5 anni e' utile per leggere due momenti del percorso, ma non segue gli stessi laureati. Per seguire una coorte bisogna fissare l'anno di laurea. La coorte 2020, per esempio, e' osservabile a 1 anno nell'indagine 2021 e a 5 anni nell'indagine 2025.</p>
 <figure class="chart dashboard-live"><iframe loading="lazy" title="Percorso interattivo della coorte AlmaLaurea 2020" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=time&amp;time_mode=cohort_path&amp;cohort=2020&amp;definition=broad&amp;metric=employment_rate&amp;dimension=disciplinary_group"></iframe><figcaption>Percorso della stessa coorte. Coorte 2020 osservata a 1 e 5 anni dalla laurea, con serie per gruppo disciplinare. Vista incorporata dalla dashboard interattiva.</figcaption></figure>
 
-<h2>A cinque anni l’occupazione è alta, ma il perimetro è diverso</h2>
+<h2 id="cinque-anni">A cinque anni l’occupazione è alta, ma il perimetro è diverso</h2>
 <p>A 5 anni dalla laurea il quadro cambia. I tassi di occupazione sono molto più elevati e più concentrati. Il valore minimo tra i gruppi disciplinari è l’88,1 per cento del Letterario-umanistico. Il valore massimo è il 97,5 per cento di Ingegneria industriale e dell’informazione.</p>
 <p>Questi dati a 5 anni vanno letti sul perimetro dei laureati di secondo livello. Non sono il seguito diretto del grafico totale a 1 anno, perché il totale a 1 anno include anche le lauree di primo livello. Per un confronto più pulito bisogna isolare la stessa tipologia di corso, per esempio magistrale biennale con magistrale biennale.</p>
 <figure class="chart dashboard-live"><iframe loading="lazy" title="Scatterplot interattivo AlmaLaurea 2025 a 5 anni dalla laurea" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=scatter&amp;survey=2025&amp;years=5&amp;cohort=2020&amp;definition=broad&amp;dimension=disciplinary_group"></iframe><figcaption>Totale dei corsi disponibili nelle schede a 5 anni, riferito al secondo livello. Indagine AlmaLaurea 2025, coorte 2020 osservata a 5 anni dal titolo. Vista incorporata dalla dashboard interattiva.</figcaption></figure>
 <p>Il dato segnala una forte normalizzazione dell’ingresso nel lavoro dopo la fase iniziale. Una parte dei laureati completa la magistrale, supera fasi di tirocinio, entra in concorsi, trova il primo impiego stabile o cambia settore. A 5 anni il mercato ha avuto più tempo per assorbire percorsi inizialmente più lenti.</p>
 
-<h2>I salari restano molto diversi anche a 5 anni</h2>
+<h2 id="salari-cinque-anni">I salari restano molto diversi anche a 5 anni</h2>
 <p>A 5 anni dalla laurea, dentro il perimetro del secondo livello, la retribuzione mensile netta va da 1.477 euro per Educazione e Formazione a 2.226 euro per Informatica e Tecnologie ICT.</p>
 <table class="data-table"><thead><tr><th>Gruppo disciplinare</th><th>Retribuzione netta mensile</th></tr></thead><tbody><tr><td>Informatica e Tecnologie ICT</td><td>2.226 €</td></tr><tr><td>Ingegneria industriale e dell’informazione</td><td>2.185 €</td></tr><tr><td>Economico</td><td>2.006 €</td></tr><tr><td>Medico-sanitario e farmaceutico</td><td>1.993 €</td></tr><tr><td>Architettura e Ingegneria civile</td><td>1.988 €</td></tr></tbody></table>
 <p>I gruppi più bassi sono Educazione e Formazione, con 1.477 euro, Letterario-umanistico, con 1.562 euro, Arte e Design, con 1.563 euro, Psicologico, con 1.641 euro, Linguistico, con 1.646 euro.</p>
 <figure class="chart dashboard-live"><iframe loading="lazy" title="Boxplot interattivo AlmaLaurea 2025 a 5 anni dalla laurea" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=box&amp;survey=2025&amp;years=5&amp;cohort=2020&amp;definition=broad&amp;split=disciplinary_group"></iframe><figcaption>Distribuzione della retribuzione mensile netta per gruppo disciplinare. Indagine AlmaLaurea 2025, coorte 2020 osservata a 5 anni dal titolo. Vista incorporata dalla dashboard interattiva.</figcaption></figure>
 <p>Il messaggio principale resta stabile. L’occupazione tende a essere alta a 5 anni, mentre la retribuzione continua a variare molto tra gruppi disciplinari.</p>
 
-<h2>Come usare questi dati per scegliere</h2>
+<h2 id="scelta">Come usare questi dati per scegliere</h2>
 <p>Questi dati non devono sostituire preferenze, capacità, vincoli familiari, luogo in cui si vuole vivere e interesse personale. Servono a rendere esplicita una parte dell’informazione che spesso gli studenti ricevono tardi o in modo confuso.</p>
 <p>La scelta dell’università dovrebbe includere almeno tre domande. Quali sono gli sbocchi medi del percorso. Quanto varia il risultato tra atenei e territori. Quanto il corso è terminale o richiede quasi sempre un livello successivo.</p>
 <p>Mettere questi dati dentro l’orientamento scolastico aiuterebbe gli studenti a scegliere con più informazioni. Non serve dire a tutti di studiare la stessa cosa. Serve rendere visibili costi, tempi e risultati medi dei percorsi.</p>
 
-<h2>Note di lettura</h2>
+<h2 id="note">Note di lettura</h2>
 <div class="note">
   <p><strong>Composizione dei gruppi disciplinari principali.</strong> I gruppi usati da AlmaLaurea seguono la classificazione MUR delle classi di laurea. Non coincidono sempre con le categorie usate nel linguaggio comune.</p>
   <ul>
