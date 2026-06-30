@@ -11,7 +11,6 @@
   <script defer src="../../assets/theme.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-dashboard.js"></script>
-  <script defer src="../../assets/almalaurea-timeseries-guard.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -71,7 +70,7 @@
       <div class="workflow-step">
         <span>3</span>
         <h2>Guarda l'evoluzione</h2>
-        <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea.</p>
+        <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea, oppure segue una singola coorte quando sono disponibili piu' osservazioni.</p>
       </div>
     </section>
 
@@ -236,14 +235,14 @@
         </div>
         <div>
           <h3>Perimetro</h3>
-          <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea.</p>
+          <p>La definizione restrittiva e' usata come default per le serie lunghe perche' e' la piu' continua negli anni storici. La definizione meno restrittiva resta disponibile dove AlmaLaurea pubblica le metriche.</p>
         </div>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri serie storica">
         <summary>Filtri serie storica</summary>
         <div class="filter-intro">
           <h3>Filtri serie storica</h3>
-          <p>La serie storica confronta anni di indagine diversi a parita' di distanza dalla laurea.</p>
+          <p>Usa il trend a distanza fissa per confrontare coorti diverse nello stesso momento dopo la laurea. Usa il percorso della coorte per seguire gli stessi laureati nei punti temporali disponibili.</p>
         </div>
         <div id="timeModeNote" class="time-mode-note"></div>
         <div class="filter-grid">

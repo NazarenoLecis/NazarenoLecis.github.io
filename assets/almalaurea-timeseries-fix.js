@@ -143,16 +143,6 @@
     }).filter(function (point) { return Number.isFinite(point.value); });
   }
 
-  function isFlatSeries(series, metric) {
-    if (series.length < 3) return false;
-    var values = series.map(function (point) { return point.value; }).filter(Number.isFinite);
-    if (values.length < 3) return false;
-    var min = Math.min.apply(null, values);
-    var max = Math.max.apply(null, values);
-    var tolerance = metric === "net_monthly_salary" ? 1 : 0.05;
-    return (max - min) <= tolerance;
-  }
-
   function renderMessage(message) {
     var chart = byId("timeSeriesChart");
     if (!chart) return;
@@ -178,17 +168,15 @@
         grouped.get(point.key).push(point);
       });
 
-      var flatSeries = [];
       var seriesList = Array.from(grouped.values()).map(function (series) {
         series.sort(function (a, b) { return a.x - b.x; });
-        if (isFlatSeries(series, filters.metric)) flatSeries.push(series[0].label);
         return series;
       }).filter(function (series) {
-        return !isFlatSeries(series, filters.metric);
+        return series.length > 1;
       });
 
       if (!seriesList.length) {
-        renderMessage("La serie storica caricata per questa combinazione è costante su tutto il periodo e quindi viene nascosta. Questo indica che il dataset storico caricato è probabilmente duplicato o non valido per questa vista. Serve rigenerare la base storica prima di mostrare il grafico.");
+        renderMessage("Non ci sono almeno due punti temporali numerici per questa selezione. Prova una definizione occupazionale, un indicatore o un intervallo temporale diverso.");
         return;
       }
 
@@ -214,12 +202,7 @@
         xaxis: { title: { text: xTitle(filters) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, dtick: 1 },
         yaxis: { title: { text: metricLabel(filters.metric) }, gridcolor: cssColor("--line", "#303030"), fixedrange: true, ticksuffix: filters.metric === "net_monthly_salary" ? "" : "%" },
         legend: { orientation: "v", x: 1.02, y: 1, xanchor: "left" },
-        dragmode: false,
-        annotations: flatSeries.length ? [{
-          text: "Serie costanti nascoste: " + flatSeries.length,
-          xref: "paper", yref: "paper", x: 0, y: 1.08,
-          showarrow: false, font: { size: 12, color: cssColor("--muted", "#b8b0a7") }
-        }] : []
+        dragmode: false
       };
       window.Plotly.react("timeSeriesChart", traces, layout, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false });
     } finally {

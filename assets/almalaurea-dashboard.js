@@ -1034,11 +1034,14 @@
           "Laureati: %{customdata[3]:,.0f}<extra></extra>",
       };
     }).filter(function (trace) {
-      return trace.x.length > 0;
+      return trace.x.length > 1;
     });
 
     if (!traces.length) {
-      renderMessage("timeSeriesChart", "Nessun valore numerico disponibile per la serie storica.");
+      renderMessage(
+        "timeSeriesChart",
+        "Non ci sono almeno due punti temporali numerici per questa combinazione di filtri. Prova una definizione occupazionale, un indicatore o un intervallo temporale diverso."
+      );
       return;
     }
 
