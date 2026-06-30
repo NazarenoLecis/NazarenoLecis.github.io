@@ -12,6 +12,14 @@
     .media-cover{width:100%;height:100%;min-height:260px;object-fit:cover;object-position:center;display:block;transition:transform .6s ease}
     .media-video-card{display:grid}
     .media-video-card:hover .media-cover{transform:scale(1.03)}
+    .media-category{margin-top:30px}
+    .media-category h3{margin:0 0 8px;font-size:1.18rem;letter-spacing:0}
+    .media-category>p{margin:0 0 14px;color:var(--muted);line-height:1.45}
+    .video-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+    .video-card{grid-template-columns:1fr!important;gap:0!important;padding:0!important;overflow:hidden;align-items:start;min-height:0}
+    .video-card img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--panel)}
+    .video-body{display:block;padding:15px 16px 16px}
+    .video-channel{display:block;margin:8px 0 0;color:var(--muted);font-size:.86rem;font-weight:750}
   </style>
 </head>
 <body>
@@ -53,7 +61,53 @@
         <img class="media-cover" src="../assets/WhatsApp%20Image%202026-06-26%20at%2017.16.39.jpeg" alt="Copertina Pecunia Non Olet" loading="lazy">
         <span style="padding:24px;display:flex;flex-direction:column;justify-content:center"><span class="orange">Playlist</span><h3 style="font-size:1.55rem;margin:8px 0 0">Pecunia Non Olet</h3><p style="font-size:1rem;margin-top:10px">Playlist con interventi e contenuti video su economia, finanza, dati e politiche pubbliche.</p><span class="date" style="margin-top:18px">Apri la playlist su YouTube &rarr;</span></span>
       </a>
-      <div class="card" style="grid-template-columns:1fr;min-height:150px"><span><h3>Video da classificare</h3><p>Lista interna di link YouTube raccolti. Non vengono mostrati con titoli provvisori per evitare informazioni non verificate.</p><span class="date">In aggiornamento</span></span></div>
+      <section class="media-category">
+        <h3>Bilancio pubblico, sviluppo e vincoli europei</h3>
+        <p>Interventi su manovre di bilancio, NADEF, MES, patto di stabilit&agrave; e politiche per la crescita.</p>
+        <div class="video-grid">
+          <a class="card video-card" href="https://www.youtube.com/watch?v=2Lqd9B-hcl0" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/2Lqd9B-hcl0/hqdefault.jpg" alt="Tesi Programmatiche di ORA!: Sviluppo Economico" loading="lazy"><span class="video-body"><h3>Tesi Programmatiche di ORA!: Sviluppo Economico</h3><span class="video-channel">ORA!</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/live/7nMglE6lfTY" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/7nMglE6lfTY/hqdefault.jpg" alt="Legge di bilancio: distorsioni fiscali e incentivi sbagliati" loading="lazy"><span class="video-body"><h3>Legge di bilancio: distorsioni fiscali e incentivi sbagliati</h3><span class="video-channel">ORA!</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=oPGT6kw_zRg&amp;t=1829s" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/oPGT6kw_zRg/hqdefault.jpg" alt="Introduzione alla manovra di bilancio 2026 - Con Nazareno Lecis" loading="lazy"><span class="video-body"><h3>Introduzione alla manovra di bilancio 2026 - Con Nazareno Lecis</h3><span class="video-channel">ORA!</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=2Ja1EXuA_OQ&amp;t=8s" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/2Ja1EXuA_OQ/hqdefault.jpg" alt="La NADEF: l'economia dietro le politiche economiche - 1" loading="lazy"><span class="video-body"><h3>La NADEF: l&rsquo;economia dietro le politiche economiche - 1</h3><span class="video-channel">Liberi Oltre le Illusioni - Agor&agrave;</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=hP3n91-Px0Y" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/hP3n91-Px0Y/hqdefault.jpg" alt="La NADEF: l'economia dietro le politiche economiche - 2" loading="lazy"><span class="video-body"><h3>La NADEF: l&rsquo;economia dietro le politiche economiche - 2</h3><span class="video-channel">Liberi Oltre le Illusioni - Agor&agrave;</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=I1jzIKpTOSk" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/I1jzIKpTOSk/hqdefault.jpg" alt="La NADEF: l'economia dietro le politiche economiche - 3" loading="lazy"><span class="video-body"><h3>La NADEF: l&rsquo;economia dietro le politiche economiche - 3</h3><span class="video-channel">Liberi Oltre le Illusioni - Agor&agrave;</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=lXK_YniTnLE&amp;t=2576s" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/lXK_YniTnLE/hqdefault.jpg" alt="L'eterno ritorno della sospensione del patto di stabilita, con Nazareno Lecis" loading="lazy"><span class="video-body"><h3>L&rsquo;eterno ritorno della sospensione del patto di stabilit&agrave;, con Nazareno Lecis</h3><span class="video-channel">L&rsquo;Avvocato dell&rsquo;Atomo</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=L6JR1xDP8k4" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/L6JR1xDP8k4/hqdefault.jpg" alt="MES: Tutte le BUFALE sul Meccanismo Europeo di Stabilita" loading="lazy"><span class="video-body"><h3>MES: Tutte le BUFALE sul Meccanismo Europeo di Stabilit&agrave;</h3><span class="video-channel">LiberiOltre</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+        </div>
+      </section>
+
+      <section class="media-category">
+        <h3>Pensioni, salari e mercato del lavoro</h3>
+        <p>Discussioni su sistema pensionistico, riforme, salari e dati INPS.</p>
+        <div class="video-grid">
+          <a class="card video-card" href="https://www.youtube.com/live/d24xmmdhCow" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/d24xmmdhCow/hqdefault.jpg" alt="Pensioni italiane: la live definitiva!" loading="lazy"><span class="video-body"><h3>Pensioni italiane: la live definitiva!</h3><span class="video-channel">Michele Boldrin</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=pMQTpi7mHZ4" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/pMQTpi7mHZ4/hqdefault.jpg" alt="Quota Cento: che faccio, lascio?" loading="lazy"><span class="video-body"><h3>Quota Cento: che faccio, lascio?</h3><span class="video-channel">LiberiOltre</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=YSa83yiSj7s" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/YSa83yiSj7s/hqdefault.jpg" alt="Storia delle riforme e controriforme pensionistiche con Giuliano Cazzola" loading="lazy"><span class="video-body"><h3>Storia delle riforme e controriforme pensionistiche con Giuliano Cazzola</h3><span class="video-channel">Liberi Oltre le Illusioni - Agor&agrave;</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=_OiLyzmNWB8" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/_OiLyzmNWB8/hqdefault.jpg" alt="Tutto quello che i dati INPS dicono sui salari bassi (o quasi)" loading="lazy"><span class="video-body"><h3>Tutto quello che i dati INPS dicono sui salari bassi (o quasi)</h3><span class="video-channel">LiberiOltre</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+        </div>
+      </section>
+
+      <section class="media-category">
+        <h3>Debunking, dati macro e finanza pubblica</h3>
+        <p>Analisi e fact-checking su spread, inflazione, Superbonus e performance economica.</p>
+        <div class="video-grid">
+          <a class="card video-card" href="https://www.youtube.com/watch?v=mS-3tVqKRmE" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/mS-3tVqKRmE/hqdefault.jpg" alt="Perche lo spread sale? con Nazareno Lecis" loading="lazy"><span class="video-body"><h3>Perch&eacute; lo spread sale? con Nazareno Lecis</h3><span class="video-channel">LiberiOltre</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=TasQyi5Y4Mo" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/TasQyi5Y4Mo/hqdefault.jpg" alt="I numeri del superbonus" loading="lazy"><span class="video-body"><h3>I numeri del superbonus</h3><span class="video-channel">LiberiOltre</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=JMDNqdLXD7g&amp;t=771s" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/JMDNqdLXD7g/hqdefault.jpg" alt="Il carrello tricolore ha fermato l'inflazione! Debunking" loading="lazy"><span class="video-body"><h3>Il carrello tricolore ha fermato l&rsquo;inflazione! #Debunking</h3><span class="video-channel">LiberiOltre</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=nTHDbmG4B6U" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/nTHDbmG4B6U/hqdefault.jpg" alt="Deborghing: la valutazione della performance di un paese." loading="lazy"><span class="video-body"><h3>Deborghing: la valutazione della performance di un paese.</h3><span class="video-channel">LiberiOltre</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+        </div>
+      </section>
+
+      <section class="media-category">
+        <h3>Dati, universit&agrave; e policy settoriali</h3>
+        <p>Contenuti su dati, programmazione, universit&agrave;, liberalizzazioni e politiche climatiche.</p>
+        <div class="video-grid">
+          <a class="card video-card" href="https://www.youtube.com/watch?v=YvgLhaFMVOs&amp;t=3s" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/YvgLhaFMVOs/hqdefault.jpg" alt="Live coding Phyton per la finanza - Selenium con Nazareno Lecis" loading="lazy"><span class="video-body"><h3>Live coding Phyton per la finanza - Selenium con Nazareno Lecis</h3><span class="video-channel">EconomiaItalia</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=kS97D4bEQAs" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/kS97D4bEQAs/hqdefault.jpg" alt="Universita: QUALE CONVIENE?" loading="lazy"><span class="video-body"><h3>Universit&agrave;: QUALE CONVIENE?</h3><span class="video-channel">EconomiaItalia</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=ay-viZevjNY" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/ay-viZevjNY/hqdefault.jpg" alt="Indice delle liberalizzazioni: come siamo messi?" loading="lazy"><span class="video-body"><h3>Indice delle liberalizzazioni: come siamo messi?</h3><span class="video-channel">Liberi Oltre le Illusioni - Agor&agrave;</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+          <a class="card video-card" href="https://www.youtube.com/watch?v=4ZkL0U1DARs" target="_blank" rel="noopener"><img src="https://i.ytimg.com/vi/4ZkL0U1DARs/hqdefault.jpg" alt="Cambiamento climatico: quali policy attuare?" loading="lazy"><span class="video-body"><h3>Cambiamento climatico: quali policy attuare?</h3><span class="video-channel">Liberi Oltre le Illusioni - STEM</span><span class="date">Guarda su YouTube &rarr;</span></span></a>
+        </div>
+      </section>
     </section>
   </main>
   <footer class="footer">
