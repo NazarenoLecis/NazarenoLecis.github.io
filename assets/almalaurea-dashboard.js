@@ -94,12 +94,16 @@
     loadedRecordChunks: new Set(),
     recordChunkPromises: {},
     timeseriesRecords: [],
+    timeseriesLoaded: false,
+    timeseriesLoading: false,
+    timeseriesLoadPromise: null,
     timeseriesDetailLoaded: false,
     timeseriesDetailPromise: null,
     colorMap: new Map(),
     lastPoints: [],
     scatterRequest: 0,
     boxRequest: 0,
+    timeseriesRequest: 0,
   };
 
   function byId(id) {
@@ -684,6 +688,28 @@
     return plainCount > 0 ? plainSum / plainCount : null;
   }
 
+  function numericValues(values) {
+    return (values || []).map(toNumber).filter(Number.isFinite);
+  }
+
+  function meanValue(values) {
+    var valid = numericValues(values);
+    if (!valid.length) return null;
+    return valid.reduce(function (sum, value) {
+      return sum + value;
+    }, 0) / valid.length;
+  }
+
+  function medianValue(values) {
+    var valid = numericValues(values).sort(function (a, b) {
+      return a - b;
+    });
+    if (!valid.length) return null;
+    var middle = Math.floor(valid.length / 2);
+    if (valid.length % 2) return valid[middle];
+    return (valid[middle - 1] + valid[middle]) / 2;
+  }
+
   function aggregateRows(rows, dimension) {
     var buckets = new Map();
 
@@ -746,11 +772,13 @@
     });
   }
 
-  function renderMessage(elementId, message) {
+  function renderMessage(elementId, message, loading) {
     var element = byId(elementId);
     if (!element) return;
     if (plotlyAvailable()) window.Plotly.purge(element);
-    element.innerHTML = "<div class=\"empty-state\">" + escapeHtml(message) + "</div>";
+    element.innerHTML = "<div class=\"empty-state" + (loading ? " loading-state" : "") + "\">" +
+      escapeHtml(message) +
+      "</div>";
   }
 
   function plotLayout(extra) {
@@ -800,6 +828,11 @@
     var traces = splitByColor(points).map(function (entry) {
       var colorKey = entry[0];
       var tracePoints = entry[1];
+      var salaryValues = tracePoints.map(function (point) {
+        return point.net_monthly_salary;
+      });
+      var traceMeanSalary = meanValue(salaryValues);
+      var traceMedianSalary = medianValue(salaryValues);
       return {
         type: "scatter",
         mode: showLabels ? "markers+text" : "markers",
@@ -825,14 +858,18 @@
             point.course_type_label,
             point.graduates,
             formatPercent(point.second_level_enrollment_rate),
+            traceMeanSalary,
+            traceMedianSalary,
           ];
         }),
         hovertemplate: "<b>%{customdata[0]}</b><br>" +
           "Gruppo: %{customdata[1]}<br>" +
           "Tipo corso: %{customdata[2]}<br>" +
-          "Retribuzione: %{x:.0f} euro<br>" +
+          "Retribuzione media del punto: %{x:.0f} euro<br>" +
           "Occupazione: %{y:.1f}%<br>" +
           "Iscritti a magistrale: %{customdata[4]}<br>" +
+          "Media della serie: %{customdata[5]:.0f} euro<br>" +
+          "Mediana della serie: %{customdata[6]:.0f} euro<br>" +
           "Laureati: %{customdata[3]:,.0f}<extra></extra>",
       };
     });
@@ -874,6 +911,11 @@
       var groupRows = entry[1].filter(function (record) {
         return Number.isFinite(record.net_monthly_salary);
       });
+      var salaryValues = groupRows.map(function (record) {
+        return record.net_monthly_salary;
+      });
+      var groupMeanSalary = meanValue(salaryValues);
+      var groupMedianSalary = medianValue(salaryValues);
       return {
         type: "box",
         name: shortText(group, 22),
@@ -884,6 +926,8 @@
             record.disciplinary_group_label,
             record.course_type_label,
             formatPercent(record.second_level_enrollment_rate),
+            groupMeanSalary,
+            groupMedianSalary,
           ];
         }),
         boxpoints: "all",
@@ -895,7 +939,9 @@
         hovertemplate: "<b>%{text}</b><br>" +
           "Gruppo: %{customdata[0]}<br>" +
           "Tipo corso: %{customdata[1]}<br>" +
-          "Retribuzione: %{y:.0f} euro<br>" +
+          "Retribuzione ateneo: %{y:.0f} euro<br>" +
+          "Media della distribuzione: %{customdata[3]:.0f} euro<br>" +
+          "Mediana della distribuzione: %{customdata[4]:.0f} euro<br>" +
           "Iscritti a magistrale: %{customdata[2]}<extra></extra>",
       };
     }).filter(function (trace) {
@@ -1054,6 +1100,15 @@
         return a.x_value - b.x_value;
       });
       var traceLabel = traceRows.length ? traceRows[0].label : key;
+      var metricValues = traceRows.map(function (record) {
+        return record[metric];
+      });
+      var traceMean = meanValue(metricValues);
+      var traceMedian = medianValue(metricValues);
+      var salaryStats = metric === "net_monthly_salary" ?
+        "Media della serie: %{customdata[5]:.0f} euro<br>" +
+        "Mediana della serie: %{customdata[6]:.0f} euro<br>" :
+        "";
       return {
         type: "scatter",
         mode: "lines+markers",
@@ -1069,6 +1124,8 @@
             record.years_after_degree,
             record.graduates,
             traceLabel,
+            traceMean,
+            traceMedian,
           ];
         }),
         hovertemplate: cohortMode ?
@@ -1077,11 +1134,13 @@
           "Anno indagine: %{customdata[0]}<br>" +
           "Coorte: %{customdata[1]}<br>" +
           label + ": %{y:.1f}" + suffix + "<br>" +
+          salaryStats +
           "Laureati: %{customdata[3]:,.0f}<extra></extra>" :
           "<b>%{customdata[4]}</b><br>" +
           "Anno indagine: %{x}<br>" +
           "Coorte: %{customdata[1]}<br>" +
           label + ": %{y:.1f}" + suffix + "<br>" +
+          salaryStats +
           "Laureati: %{customdata[3]:,.0f}<extra></extra>",
       };
     }).filter(function (trace) {
@@ -1226,7 +1285,7 @@
     var filters = getDetailedFilters("scatter");
     var dimension = filters.point_dimension;
     var requestId = state.scatterRequest += 1;
-    renderMessage("scatterChart", "Caricamento dati AlmaLaurea...");
+    renderMessage("scatterChart", "Caricamento dati AlmaLaurea...", true);
     return loadDetailedRecordsFor(filters.survey_year, filters.years_after_degree)
       .then(function () {
         if (requestId !== state.scatterRequest) return;
@@ -1247,7 +1306,7 @@
   function updateBox() {
     var filters = getDetailedFilters("box");
     var requestId = state.boxRequest += 1;
-    renderMessage("boxChart", "Caricamento dati AlmaLaurea...");
+    renderMessage("boxChart", "Caricamento dati AlmaLaurea...", true);
     return loadDetailedRecordsFor(filters.survey_year, filters.years_after_degree)
       .then(function () {
         if (requestId !== state.boxRequest) return;
@@ -1261,17 +1320,33 @@
 
   function updateTimeSeries() {
     updateTimeModeUi();
-    var filters = getTimeFilters();
-    if (timeFiltersNeedDetail(filters) && !state.timeseriesDetailLoaded && !liteMode) {
-      renderMessage("timeSeriesChart", "Caricamento dettaglio storico per ateneo...");
-      loadTimeseriesDetailRecords()
-        .then(updateTimeSeries)
-        .catch(function (error) {
-          renderMessage("timeSeriesChart", "Non riesco a caricare il dettaglio storico per ateneo: " + error.message);
-        });
+    var requestId = state.timeseriesRequest += 1;
+
+    if (!state.timeseriesLoaded) {
+      renderMessage("timeSeriesChart", "Caricamento serie storica AlmaLaurea...", true);
+      loadTimeseriesRecords();
       return;
     }
-    renderTimeSeries(timeseriesRows(filters), filters);
+
+    renderMessage("timeSeriesChart", "Aggiornamento serie storica...", true);
+    window.setTimeout(function () {
+      if (requestId !== state.timeseriesRequest) return;
+      var filters = getTimeFilters();
+      if (timeFiltersNeedDetail(filters) && !state.timeseriesDetailLoaded && !liteMode) {
+        renderMessage("timeSeriesChart", "Caricamento dettaglio storico per ateneo...", true);
+        loadTimeseriesDetailRecords()
+          .then(function () {
+            if (requestId !== state.timeseriesRequest) return;
+            renderTimeSeries(timeseriesRows(filters), filters);
+          })
+          .catch(function (error) {
+            if (requestId !== state.timeseriesRequest) return;
+            renderMessage("timeSeriesChart", "Non riesco a caricare il dettaglio storico per ateneo: " + error.message);
+          });
+        return;
+      }
+      renderTimeSeries(timeseriesRows(filters), filters);
+    }, 40);
   }
 
   function updateAll() {
@@ -1463,10 +1538,21 @@
   };
 
   function loadTimeseriesRecords() {
-    return sharedData.timeseries(true)
+    if (state.timeseriesLoaded) return Promise.resolve();
+    if (state.timeseriesLoadPromise) return state.timeseriesLoadPromise;
+
+    state.timeseriesLoading = true;
+    renderMessage("timeSeriesChart", "Caricamento serie storica AlmaLaurea...", true);
+
+    state.timeseriesLoadPromise = sharedData.timeseries(false)
       .then(function (timeseriesPayload) {
         sharedData.timeseriesPayload = timeseriesPayload;
         state.timeseriesRecords = (timeseriesPayload.records || []).map(normalizeTimeseriesRecord);
+        sharedData.timeseriesPayload = Object.assign({}, timeseriesPayload, {
+          records: state.timeseriesRecords,
+        });
+        state.timeseriesLoaded = true;
+        state.timeseriesLoading = false;
         state.timeseriesDetailLoaded = false;
         state.timeseriesDetailPromise = null;
         populateTimeCohortSelect();
@@ -1475,12 +1561,16 @@
         }
         updateTimeSeries();
         window.dispatchEvent(new CustomEvent("almalaurea:timeseries-ready", {
-          detail: timeseriesPayload,
+          detail: sharedData.timeseriesPayload,
         }));
       })
       .catch(function (error) {
+        state.timeseriesLoading = false;
+        state.timeseriesLoadPromise = null;
         renderMessage("timeSeriesChart", "Non riesco a caricare la serie storica AlmaLaurea: " + error.message);
       });
+
+    return state.timeseriesLoadPromise;
   }
 
   function loadTimeseriesDetailRecords() {
@@ -1508,6 +1598,9 @@
         sharedData.metadata = state.metadata;
         sharedData.records = state.records;
         state.timeseriesRecords = [];
+        state.timeseriesLoaded = false;
+        state.timeseriesLoading = false;
+        state.timeseriesLoadPromise = null;
         allFieldDefinitions().forEach(populateSelect);
         populateTimeYearSelects();
         populateTimeCohortSelect();
@@ -1525,7 +1618,7 @@
           updateBox();
         }
         if (shouldLoadTimeseriesOnInit()) {
-          renderMessage("timeSeriesChart", "Caricamento serie storica AlmaLaurea...");
+          renderMessage("timeSeriesChart", "Caricamento serie storica AlmaLaurea...", true);
         }
         focusQueryChart();
         if (shouldLoadTimeseriesOnInit()) {

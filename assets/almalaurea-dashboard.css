@@ -456,6 +456,26 @@
   padding: 28px;
 }
 
+.loading-state {
+  gap: 14px;
+}
+
+.loading-state::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--line);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: alm-spin .8s linear infinite;
+}
+
+@keyframes alm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .embed-mode body {
   background: var(--bg);
 }
