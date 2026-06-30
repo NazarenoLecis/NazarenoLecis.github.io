@@ -1,10 +1,10 @@
 (() => {
   const DATA_URL = "../data/ciclo-unico-caldo/article_data.json";
   const gradeKeys = ["Infanzia", "Primaria", "Secondaria I grado", "Secondaria II grado"];
-  const gradeColors = ["#ff5a1f", "#f2a541", "#49b6a5", "#7c8cff"];
+  const gradeColors = ["#ff5a1f", "#f2a541", "#cc6a2c", "#ffe0b5"];
   const ageKeys = ["Prima del 1976", "1976-1992", "Dal 1993", "Non definito"];
-  const ageColors = ["#ff5a1f", "#f2a541", "#49b6a5", "#8d8178"];
-  const moneyColors = ["#ff5a1f", "#49b6a5", "#7c8cff"];
+  const ageColors = ["#ff5a1f", "#f2a541", "#cc6a2c", "#8d8178"];
+  const moneyColors = ["#ff5a1f", "#f2a541", "#cc6a2c"];
 
   const byId = (id) => document.getElementById(id);
 

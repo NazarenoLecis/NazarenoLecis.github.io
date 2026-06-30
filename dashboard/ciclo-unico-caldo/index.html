@@ -2,142 +2,289 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Scuole, caldo e climatizzazione</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scuole, caldo e climatizzazione | Nazareno Lecis</title>
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
+  <link rel="preload" href="dashboard_caldo.json" as="fetch" crossorigin>
+  <script defer src="../../assets/theme.js"></script>
   <style>
-    :root {
-      --bg: #111417;
-      --panel: #191f24;
-      --panel-2: #202830;
-      --text: #f4f0e8;
-      --muted: #b7c0c7;
-      --line: #33404b;
-      --accent: #ff6b35;
-      --accent-2: #46c2a8;
-      --danger: #e84d3d;
-      --warning: #f1b84b;
-      --shadow: rgba(0, 0, 0, .24);
+    .heat-dashboard {
+      --max: 1500px;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bg);
+
+    .heat-dashboard .dash-head h1 {
+      letter-spacing: 0;
+    }
+
+    .heat-dashboard .source-panel code,
+    .heat-dashboard .notes-panel code,
+    .heat-dashboard .selection-comment code {
+      padding: 2px 5px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--panel);
       color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.45;
+      font-size: .9em;
     }
-    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 44px; }
-    header { display: grid; gap: 12px; margin-bottom: 22px; }
-    h1 { margin: 0; font-size: clamp(2rem, 5vw, 4.4rem); line-height: .95; letter-spacing: 0; max-width: 920px; }
-    h2 { margin: 0; font-size: 1.1rem; }
-    p { margin: 0; }
-    .lede { color: var(--muted); font-size: 1.05rem; max-width: 880px; }
-    .toolbar {
-      display: grid;
+
+    .heat-filter-grid {
       grid-template-columns: repeat(2, minmax(220px, 1fr));
-      gap: 14px;
-      margin: 24px 0;
-      padding: 16px;
+    }
+
+    .heat-dashboard .kpi-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+
+    .heat-dashboard .kpi-grid .kpi:nth-child(4) {
+      display: block !important;
+    }
+
+    .heat-dashboard .chart-panel {
+      overflow-x: auto;
+    }
+
+    #barChart {
+      display: block;
+      min-width: 980px;
+      width: 100%;
+      height: 520px;
+    }
+
+    .axis text,
+    .bar-label {
+      fill: var(--muted);
+      font-size: 12px;
+    }
+
+    .value-label {
+      fill: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .grid-line {
+      stroke: color-mix(in srgb, var(--line) 78%, transparent);
+      stroke-width: 1;
+    }
+
+    .bar {
+      fill: var(--orange);
+    }
+
+    .bar.warning {
+      fill: #f2a541;
+    }
+
+    .bar.danger {
+      fill: #d9431f;
+    }
+
+    .bar.good {
+      fill: #ff8a3d;
+    }
+
+    .heat-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .heat-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92rem;
+    }
+
+    .heat-table th,
+    .heat-table td {
+      padding: 10px 12px;
+      border-top: 1px solid var(--line);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .heat-table th:first-child,
+    .heat-table td:first-child {
+      text-align: left;
+    }
+
+    .heat-table th {
+      color: var(--orange);
+      font-weight: 800;
+    }
+
+    .chart-credit,
+    .table-credit {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.4;
+    }
+
+    .selection-comment {
+      margin-top: 14px;
+      padding: 16px 18px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--panel);
-      box-shadow: 0 16px 36px var(--shadow);
+      background: color-mix(in srgb, var(--panel) 90%, transparent);
+      color: var(--muted);
+      line-height: 1.5;
     }
-    label { display: grid; gap: 7px; color: var(--muted); font-size: .9rem; }
-    select {
-      min-height: 42px;
-      border: 1px solid var(--line);
-      border-radius: 7px;
-      background: var(--panel-2);
-      color: var(--text);
-      padding: 0 12px;
-      font: inherit;
+
+    .selection-comment strong {
+      color: var(--orange);
     }
-    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
-    .kpi {
-      min-height: 116px;
-      padding: 16px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-    }
-    .kpi span { display: block; color: var(--muted); font-size: .86rem; }
-    .kpi strong { display: block; margin-top: 8px; font-size: clamp(1.5rem, 3vw, 2.3rem); line-height: 1; }
-    .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
-    .panel {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      box-shadow: 0 16px 36px var(--shadow);
-    }
-    .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 16px 16px 0; }
-    .panel-note { color: var(--muted); font-size: .9rem; }
-    .chart-wrap { overflow-x: auto; padding: 8px 12px 14px; }
-    #barChart { display: block; min-width: 980px; width: 100%; height: 520px; }
-    .axis text, .bar-label { fill: var(--muted); font-size: 12px; }
-    .value-label { fill: var(--text); font-size: 12px; font-weight: 700; }
-    .grid-line { stroke: rgba(255,255,255,.08); stroke-width: 1; }
-    .bar { fill: var(--accent); }
-    .bar.warning { fill: var(--warning); }
-    .bar.danger { fill: var(--danger); }
-    .bar.good { fill: var(--accent-2); }
-    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
-    th, td { padding: 10px 12px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; }
-    th:first-child, td:first-child { text-align: left; }
-    th { color: var(--muted); font-weight: 700; }
-    .table-wrap { overflow-x: auto; padding: 0 0 8px; }
-    .notes { display: grid; gap: 10px; margin-top: 18px; color: var(--muted); font-size: .94rem; }
-    .notes strong { color: var(--text); }
+
     @media (max-width: 760px) {
-      main { width: min(100% - 20px, 1180px); padding-top: 20px; }
-      .toolbar, .kpis { grid-template-columns: 1fr; }
-      .panel-head { display: grid; }
+      .heat-filter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .heat-dashboard .kpi-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .heat-dashboard .chart,
+      .heat-dashboard .main-chart .chart {
+        min-width: 760px;
+      }
     }
   </style>
 </head>
 <body>
-  <main>
-    <header>
-      <h1>Scuole, caldo e climatizzazione</h1>
-      <p class="lede">Dashboard dal repository Ciclo unico scolastico sui dati MIM degli impianti di riscaldamento e condizionamento. Il grafico principale mostra quante righe scuola-edificio dichiarano condizionamento o ventilazione, per regione e grado.</p>
-    </header>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html">
+        <span class="logo"></span>
+        <span>
+          <span class="brand-name">Nazareno Lecis</span>
+          <span class="brand-tag">Data &amp; Risk Analysis</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">About</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
 
-    <section class="toolbar" aria-label="Filtri">
-      <label>
-        Grado scolastico
-        <select id="gradeSelect"></select>
-      </label>
-      <label>
-        Metrica
-        <select id="metricSelect"></select>
-      </label>
-    </section>
-
-    <section class="kpis" aria-label="Indicatori sintetici">
-      <div class="kpi"><span>Righe MIM nel perimetro</span><strong id="kpiSites">-</strong></div>
-      <div class="kpi"><span>A/C dichiarata</span><strong id="kpiAcData">-</strong></div>
-      <div class="kpi"><span>Mitigazione termica media/alta</span><strong id="kpiMitigation">-</strong></div>
-      <div class="kpi"><span>Rischio caldo alto</span><strong id="kpiRisk">-</strong></div>
-    </section>
-
-    <section class="layout">
-      <div class="panel">
-        <div class="panel-head">
-          <h2 id="chartTitle">Barplot per regione</h2>
-          <p class="panel-note" id="chartNote"></p>
+  <main class="wrap alm-dashboard heat-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Ciclo unico scolastico</span>
+        <h1>Scuole, caldo e climatizzazione</h1>
+        <p class="lead">
+          Dashboard sui dati MIM degli impianti di riscaldamento e condizionamento. Il grafico mostra la quota di righe scuola edificio con condizionamento o ventilazione dichiarati, per regione e grado scolastico, insieme ad alcuni indicatori termici usati nello scenario del repository.
+        </p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonte: MIM, Istat, repository Ciclo_unico_scolastico</strong>
+          <span>Dataset MIM di edilizia scolastica, impianti, origine degli edifici e indicatori energetici. Elaborazione di Nazareno Lecis.</span>
+          <a class="related-link" href="../../articoli/quanto-costerebbe-aria-condizionata-scuole.html">Leggi l'articolo collegato</a>
+          <a class="related-link" href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Apri repository dati</a>
         </div>
-        <div class="chart-wrap">
-          <svg id="barChart" role="img" aria-labelledby="chartTitle"></svg>
+      </div>
+    </section>
+
+    <section class="workflow-grid" aria-label="Guida alla lettura">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Scegli il grado</h2>
+        <p>Il menu permette di leggere tutte le righe MIM insieme oppure separare infanzia, primaria, secondaria di primo grado e secondaria di secondo grado.</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Cambia metrica</h2>
+        <p>La quota A/C usa il campo diretto MIM. Le metriche su rischio e mitigazione sono proxy costruiti dallo scenario del repository.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Leggi note e fonti</h2>
+        <p>Le regioni sono ordinate dalla quota più alta alla più bassa per la metrica selezionata. La tabella sotto il grafico espone tutte le variabili principali.</p>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard caldo scuole">
+      <a href="#chartSection">Grafico</a>
+      <a href="#tableSection">Tabella</a>
+      <a href="#methodologySection">Metodo e fonti</a>
+    </nav>
+
+    <section class="dashboard-section" id="chartSection">
+      <div class="section-head">
+        <span class="eyebrow">Confronto regionale</span>
+        <div>
+          <h2 id="chartSectionTitle">Condizionamento e rischio caldo nelle scuole</h2>
+          <p>Usa i filtri per cambiare grado scolastico e metrica. Il grafico resta sempre regionale, così il confronto territoriale rimane leggibile.</p>
         </div>
       </div>
 
-      <div class="panel">
-        <div class="panel-head">
-          <h2>Tabella regioni</h2>
-          <p class="panel-note">Valori ordinati come nel grafico.</p>
+      <details class="chart-filter-panel" open aria-label="Filtri dashboard caldo">
+        <summary>Filtri dashboard caldo</summary>
+        <div class="filter-intro">
+          <h3>Come usare i filtri</h3>
+          <p>Il filtro sul grado cambia il perimetro osservato. Il filtro sulla metrica cambia la variabile ordinata nel grafico. La quota A/C dichiarata include nel denominatore anche i valori non definiti, mentre la quota sui soli SI/NO li esclude.</p>
         </div>
-        <div class="table-wrap">
-          <table>
+        <div class="filter-grid heat-filter-grid">
+          <label>
+            <span>Grado scolastico</span>
+            <select id="gradeSelect"></select>
+          </label>
+          <label>
+            <span>Metrica</span>
+            <select id="metricSelect"></select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetHeatFilters" type="button">Reset filtri</button>
+        </div>
+      </details>
+
+      <div class="kpi-grid" aria-label="Indicatori sintetici">
+        <div class="kpi"><span>Righe MIM nel perimetro</span><strong id="kpiSites">-</strong></div>
+        <div class="kpi"><span>A/C dichiarata</span><strong id="kpiAcData">-</strong></div>
+        <div class="kpi"><span>Mitigazione media/alta</span><strong id="kpiMitigation">-</strong></div>
+        <div class="kpi"><span>Rischio caldo alto</span><strong id="kpiRisk">-</strong></div>
+      </div>
+
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="chartTitle">Barplot per regione</h2>
+          <span id="chartNote"></span>
+        </div>
+        <div class="chart">
+          <svg id="barChart" role="img" aria-labelledby="chartTitle"></svg>
+        </div>
+        <div class="chart-credit">Fonte: MIM, Portale unico dei dati della scuola. Elaborazione di Nazareno Lecis.</div>
+      </div>
+
+      <div class="selection-comment">
+        <strong>Nota di lettura.</strong> La presenza di condizionamento o ventilazione è un dato dichiarato nel campo MIM <code>CONDIZIONAMENTOVENTILAZIONE</code>. Non misura la temperatura in aula e non garantisce che tutte le aule siano raffrescate.
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="tableSection">
+      <div class="section-head">
+        <span class="eyebrow">Dettaglio</span>
+        <div>
+          <h2>Tabella regioni</h2>
+          <p>La tabella segue lo stesso ordinamento del grafico e permette di confrontare A/C dichiarata, valori non definiti, indicatori termici e rischio caldo.</p>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="heat-table-wrap">
+          <table class="heat-table">
             <thead>
               <tr>
                 <th>Regione</th>
@@ -152,15 +299,38 @@
             <tbody id="tableBody"></tbody>
           </table>
         </div>
+        <div class="table-credit">Fonte: MIM, dataset edilizia scolastica e impianti. Elaborazione di Nazareno Lecis.</div>
       </div>
     </section>
 
-    <section class="notes">
-      <p><strong>Come leggere:</strong> le unita sono righe scuola-edificio del dataset MIM. La quota A/C dichiarata usa come denominatore tutte le righe, inclusi i NON DEFINITO, per restare confrontabile con l'articolo.</p>
-      <p><strong>Campo diretto:</strong> `CONDIZIONAMENTOVENTILAZIONE` vale SI, NO o NON DEFINITO nel dataset MIM sugli impianti.</p>
-      <p><strong>Proxy termico:</strong> rischio caldo e mitigazione termica arrivano dallo scenario del repo: zonizzazione dell'impianto termico, vetri doppi, isolamento coperture, isolamento pareti, consumi energetici, posizione comunale e studenti esposti.</p>
+    <section class="notes-panel" id="methodologySection">
+      <div>
+        <h2>Note metodologiche</h2>
+        <ul>
+          <li>Le unità sono righe scuola edificio del dataset MIM. Non coincidono sempre con istituti scolastici o edifici fisici unici.</li>
+          <li>La quota A/C dichiarata usa come denominatore tutte le righe, compresi i valori <code>NON DEFINITO</code>, per mantenere confrontabile la base regionale.</li>
+          <li>Il campo diretto è <code>CONDIZIONAMENTOVENTILAZIONE</code>, con valori SI, NO o NON DEFINITO nel dataset MIM sugli impianti.</li>
+          <li>Rischio caldo e mitigazione termica sono proxy del repository. Usano indicatori MIM su impianti, doppi vetri, isolamento, riduzione dei consumi, posizione comunale e studenti esposti.</li>
+          <li>Le classi di rischio indicano priorità di intervento. Non sono misure fisiche della temperatura dentro le aule.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Fonti e repository</h2>
+        <p>Fonte principale: MIM, Portale unico dei dati della scuola, dataset di edilizia scolastica e impianti.</p>
+        <p>Fonti territoriali e di scenario: Istat per comuni e popolazione, repository <a class="related-link" href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">NazarenoLecis/Ciclo_unico_scolastico</a> per pipeline, proxy e aggregazioni.</p>
+        <p>Elaborazione di Nazareno Lecis.</p>
+      </div>
     </section>
   </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner social-links">
+      <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+      <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+    </div>
+  </footer>
 
   <script>
     var state = { data: null };
@@ -181,35 +351,37 @@
         label: "Quota A/C non definita",
         suffix: "%",
         color: "danger",
-        note: "Righe MIM in cui il campo CONDIZIONAMENTOVENTILAZIONE e' NON DEFINITO o non compilato."
+        note: "Righe MIM in cui il campo CONDIZIONAMENTOVENTILAZIONE è NON DEFINITO o non compilato."
       },
       quota_mitigazione_media_alta: {
         label: "Quota con mitigazione termica media o alta",
         suffix: "%",
         color: "good",
-        note: "Proxy: almeno una combinazione robusta di indicatori energetici/termici MIM."
+        note: "Proxy del repository basato su indicatori energetici e termici MIM."
       },
       quota_nessun_indicatore_termico: {
         label: "Quota senza indicatori termici MIM",
         suffix: "%",
         color: "danger",
-        note: "Sedi senza segnali MIM di mitigazione termica tra quelli disponibili."
+        note: "Righe senza segnali MIM di mitigazione termica tra quelli disponibili."
       },
       quota_rischio_caldo_alto: {
         label: "Quota in rischio caldo alto",
         suffix: "%",
         color: "danger",
-        note: "Indice di scenario: latitudine, fragilita termica dell'edificio e studenti esposti."
+        note: "Indice di scenario basato su posizione, fragilità termica e studenti esposti."
       },
       quota_rischio_caldo_alto_medio: {
         label: "Quota in rischio caldo medio/alto",
         suffix: "%",
         color: "warning",
-        note: "Perimetro ampio di priorita potenziale prima di estendere il calendario nei mesi caldi."
+        note: "Perimetro ampio di priorità potenziale prima di estendere il calendario nei mesi caldi."
       }
     };
 
-    function byId(id) { return document.getElementById(id); }
+    function byId(id) {
+      return document.getElementById(id);
+    }
 
     function formatNumber(value) {
       return Number(value || 0).toLocaleString("it-IT", { maximumFractionDigits: 0 });
@@ -299,7 +471,7 @@
       return sorted;
     }
 
-    function updateTable(rows, metricId) {
+    function updateTable(rows) {
       var body = byId("tableBody");
       body.innerHTML = rows.map(function (row) {
         return "<tr>" +
@@ -320,7 +492,13 @@
       var rows = rowsForGrade(grade);
       updateKpis(grade);
       var sorted = drawChart(rows, metricId);
-      updateTable(sorted, metricId);
+      updateTable(sorted);
+    }
+
+    function resetFilters() {
+      byId("gradeSelect").value = "Tutti";
+      byId("metricSelect").value = "quota_aria_condizionata_si";
+      render();
     }
 
     function populateControls() {
@@ -333,6 +511,7 @@
       byId("metricSelect").value = "quota_aria_condizionata_si";
       byId("gradeSelect").addEventListener("change", render);
       byId("metricSelect").addEventListener("change", render);
+      byId("resetHeatFilters").addEventListener("click", resetFilters);
       window.addEventListener("resize", render);
     }
 
@@ -344,7 +523,7 @@
       .then(function (payload) {
         state.data = payload;
         populateControls();
-        render();
+        resetFilters();
       })
       .catch(function (error) {
         byId("chartTitle").textContent = "Errore nel caricamento dei dati";

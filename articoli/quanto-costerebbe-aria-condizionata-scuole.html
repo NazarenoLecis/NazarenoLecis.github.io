@@ -18,9 +18,9 @@
   <style>
     .article{max-width:960px;margin:auto;padding:56px 0 72px}
     .article-header{border-bottom:1px solid var(--line);padding-bottom:32px;margin-bottom:34px}
-    .article h1{font-size:clamp(2.45rem,6vw,4.9rem);line-height:.95;letter-spacing:-.07em;margin:.22em 0}
-    .article h2{font-size:clamp(1.55rem,3vw,2.18rem);letter-spacing:-.04em;margin:54px 0 16px;color:var(--orange)}
-    .article h3{font-size:1.15rem;letter-spacing:-.02em;margin:0}
+    .article h1{font-size:4.8rem;line-height:.95;letter-spacing:0;margin:.22em 0}
+    .article h2{font-size:2.08rem;letter-spacing:0;margin:54px 0 16px;color:var(--orange)}
+    .article h3{font-size:1.15rem;letter-spacing:0;margin:0}
     .article p{font-size:1.08rem;line-height:1.75;color:var(--text);margin:0 0 18px}
     .article .lead{max-width:850px}
     .article a{color:var(--orange);font-weight:750}
@@ -28,10 +28,10 @@
     .pill{border:1px solid var(--line);border-radius:999px;padding:7px 11px;background:var(--panel)}
     .back{display:inline-flex;margin-bottom:22px;color:var(--orange);font-weight:750}
     .kpi-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:26px 0 34px}
-    .article-kpi{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:15px}
+    .article-kpi{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:15px}
     .article-kpi span{display:block;color:var(--muted);font-size:.84rem}
-    .article-kpi strong{display:block;margin-top:7px;font-size:clamp(1.35rem,3vw,2rem);line-height:1;color:var(--orange)}
-    .article-chart{margin:30px 0 42px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+    .article-kpi strong{display:block;margin-top:7px;font-size:1.95rem;line-height:1;color:var(--orange)}
+    .article-chart{margin:30px 0 42px;border:1px solid var(--line);border-radius:8px;background:var(--card);overflow:hidden}
     .chart-head{padding:17px 18px 13px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--panel) 88%,transparent)}
     .chart-head p{font-size:.96rem;color:var(--muted);line-height:1.5;margin:7px 0 0}
     .chart-body{padding:14px 14px 10px}
@@ -54,9 +54,12 @@
     .data-table td:nth-child(2),.data-table td:nth-child(3),.data-table th:nth-child(2),.data-table th:nth-child(3){text-align:right}
     .source-list{padding-left:20px;color:var(--muted);line-height:1.7}
     .source-list li{margin-bottom:8px}
-    .dashboard-callout{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:20px;margin:30px 0}
+    .method-list,.term-list{display:grid;gap:14px;margin:22px 0 34px;padding:0;list-style:none}
+    .method-list li,.term-list li{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);line-height:1.65}
+    .method-list strong,.term-list strong{display:block;color:var(--text);margin-bottom:4px}
+    .dashboard-callout{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:20px;margin:30px 0}
     .dashboard-callout p{font-size:1rem;color:var(--muted);line-height:1.6}
-    @media(max-width:760px){.article{padding:32px 0 52px}.article h1{font-size:clamp(2.25rem,12vw,3.35rem)}.article p{font-size:1rem;line-height:1.65}.kpi-strip{grid-template-columns:1fr 1fr}.article-chart{margin-left:-12px;margin-right:-12px;border-radius:10px}.data-table{display:block;overflow-x:auto;white-space:nowrap;font-size:.9rem}}
+    @media(max-width:760px){.article{padding:32px 0 52px}.article h1{font-size:3rem}.article h2{font-size:1.72rem}.article p{font-size:1rem;line-height:1.65}.article-kpi strong{font-size:1.65rem}.kpi-strip{grid-template-columns:1fr 1fr}.article-chart{margin-left:-12px;margin-right:-12px;border-radius:10px}.data-table{display:block;overflow-x:auto;white-space:nowrap;font-size:.9rem}}
   </style>
 </head>
 <body>
@@ -72,7 +75,7 @@
 <header class="article-header">
   <span class="orange">Scuole e caldo</span>
   <h1>Ma quanto costerebbe mettere l'aria condizionata nelle scuole?</h1>
-  <p class="lead">Il punto di partenza è semplice. Nei dati MIM sugli impianti scolastici solo una piccola parte delle righe scuola edificio dichiara condizionamento o ventilazione. La parte più interessante arriva subito dopo. Se si passa dal disagio di giugno a una stima di intervento, le cifre diventano molto meno spaventose di quanto sembri nel dibattito pubblico.</p>
+  <p class="lead">Ogni giugno si torna alla stessa scena. Aule calde, esami, finestre aperte quando basta poco e finestre aperte quando non basta più. La domanda diventa quasi sempre emotiva, poi scivola subito sul costo. Ho provato a prenderla alla lettera, partendo dai dati aperti sulle scuole e arrivando a una stima ordinata di quanto servirebbe per rendere gli edifici più vivibili nei mesi caldi.</p>
   <div class="meta"><span class="pill">Fonte dati scolastici MIM</span><span class="pill">Costi da benchmark OpenCoesione</span><span class="pill">PIL 2025 Istat</span></div>
 </header>
 
@@ -83,8 +86,9 @@
   <div class="article-kpi"><span>Quota del PIL</span><strong id="kpiHeatGdp">-</strong></div>
 </section>
 
-<p>I dati usati qui vengono dal repository <a href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Ciclo_unico_scolastico</a>. Il campo decisivo è <code>CONDIZIONAMENTOVENTILAZIONE</code>, contenuto nel dataset MIM sugli impianti di riscaldamento e condizionamento. Su 60.030 righe scuola edificio, i sì sono 4.457. La quota nazionale è 7,42 per cento.</p>
-<p>Questo numero non chiude il discorso. Lo apre. Una scuola può avere ventilazione senza un impianto completo di climatizzazione. Un edificio può avere una parte condizionata e una parte senza impianto. Il campo MIM resta però il migliore dato nazionale aperto per iniziare una discussione concreta.</p>
+<p>I dati usati qui vengono dal repository <a href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Ciclo_unico_scolastico</a>. Il punto di partenza è il campo <code>CONDIZIONAMENTOVENTILAZIONE</code>, contenuto nel dataset MIM sugli impianti di riscaldamento e condizionamento. Su 60.030 righe scuola edificio, i sì sono 4.457. La quota nazionale è 7,42 per cento.</p>
+<p>Prima di andare avanti conviene chiarire cosa significa quel denominatore. La riga scuola edificio è la relazione tra una scuola e un edificio registrata nell'anagrafe. Non coincide sempre con un istituto, perché un istituto può usare più sedi. Non coincide sempre con un edificio unico nel senso comune, perché uno stesso edificio può ospitare più scuole o più gradi. È una misura amministrativa, utile proprio perché permette di collegare didattica, territorio e caratteristiche fisiche degli edifici.</p>
+<p>Anche il sì al condizionamento va letto con cautela. Il campo MIM dice che risulta presente condizionamento o ventilazione. Non dice che ogni aula sia raffrescata, non misura la temperatura interna e non certifica la qualità dell'impianto. Allo stesso modo, <code>NON DEFINITO</code> non va trasformato automaticamente in assenza di impianto. Per questo nel grafico principale la quota viene calcolata su tutte le righe, così resta confrontabile con la base dati completa, mentre la dashboard permette anche di guardare solo ai casi definiti.</p>
 
 <figure class="article-chart">
   <div class="chart-head">
@@ -95,11 +99,11 @@
   <figcaption class="chart-note">La quota usa tutte le righe del dataset MIM come denominatore, comprese quelle con valore non definito. Le etichette sopra i gruppi indicano la quota regionale complessiva.</figcaption>
 </figure>
 
-<p>La geografia è molto diseguale. Le Marche superano il 30 per cento. Sardegna e Veneto stanno sopra la media nazionale. Lazio e Campania sono molto più in basso. Questo è il primo messaggio utile per una politica pubblica. Non serve immaginare una misura cieca. Si può partire da dove il bisogno è maggiore e dove il caldo estivo rende più fragile la scuola.</p>
+<p>La geografia è molto diseguale. Le Marche superano il 30 per cento. Sardegna e Veneto stanno sopra la media nazionale. Lazio e Campania sono molto più in basso. Questo è già un pezzo di politica pubblica. Se il problema non è distribuito nello stesso modo, la risposta può essere programmata per priorità, senza fingere che tutte le scuole abbiano la stessa urgenza e lo stesso tipo di edificio.</p>
 
-<h2>Il problema non è solo comprare condizionatori</h2>
-<p>Una parte consistente degli edifici scolastici italiani è stata costruita prima che il tema del raffrescamento estivo entrasse davvero nella progettazione ordinaria. Nei dati MIM quasi metà degli edifici ha una costruzione precedente al 1976 oppure non ha una data sufficientemente definita. Le ristrutturazioni recenti esistono, ma non cambiano da sole la struttura del problema.</p>
-<p>Questo conta perché il costo non riguarda solo la macchina appesa al muro. In molti edifici servono impianti elettrici adeguati, regolazione termica, ombreggiamento, ventilazione, isolamento, serramenti, coperture e soluzioni leggere per ridurre il calore prima ancora di raffreddare l'aria.</p>
+<h2>Perché l'età degli edifici cambia tutto</h2>
+<p>Una parte consistente degli edifici scolastici italiani è stata costruita prima che il raffrescamento estivo entrasse davvero nella progettazione ordinaria. Nei dati MIM quasi metà degli edifici ha una costruzione precedente al 1976 oppure non ha una data sufficientemente definita. Le ristrutturazioni ci sono, e in alcuni casi pesano molto, però non cancellano il problema di partenza. Un edificio nato in un'altra stagione tecnica può avere impianti elettrici sottodimensionati, dispersioni elevate, aule esposte al sole, serramenti deboli e coperture che accumulano calore.</p>
+<p>Per questo la stima non può essere ridotta alla domanda su quanti apparecchi comprare. In alcuni casi ha senso un intervento leggero, fatto di ventilazione, ombreggiamento e regolazione. In altri casi bisogna intervenire prima sull'involucro, sugli impianti, sulla distribuzione dei carichi elettrici o sulla gestione per zone. Un condizionatore installato in un edificio che disperde molto rischia di diventare una spesa inefficiente, oltre che una fonte di consumi più alti.</p>
 
 <figure class="article-chart">
   <div class="chart-head">
@@ -107,12 +111,18 @@
     <p>Le barre mostrano la composizione degli edifici per periodo di costruzione. La percentuale a destra indica la quota costruita prima del 1976.</p>
   </div>
   <div class="chart-body" id="ageRegionChart"></div>
-  <figcaption class="chart-note">Le classi sono aggregate dai periodi MIM. La voce non definito raccoglie edifici senza informazione utilizzabile sul periodo di costruzione.</figcaption>
+  <figcaption class="chart-note">Le classi sono aggregate dai periodi MIM. La voce non definito raccoglie edifici senza informazione utilizzabile sul periodo di costruzione. Le ristrutturazioni e gli adattamenti sono letti dal modello come segnali separati, perché un edificio vecchio può essere stato migliorato e un edificio più recente può comunque avere dotazioni termiche deboli.</figcaption>
 </figure>
 
+<h2>Come funziona il modello</h2>
+<p>Il modello del repository costruisce prima una base scolastica unica. Mette insieme anagrafe delle scuole, edifici, impianti, origine degli edifici, riduzione dei consumi energetici, spazi disponibili e informazioni territoriali. Quando serve, usa i comuni e le coordinate per avvicinare il dato scolastico alla geografia del caldo. Il risultato è una tabella in cui ogni riga conserva sia la parte didattica sia la parte edilizia.</p>
+<p>Da lì vengono costruiti tre passaggi. Il primo è il dato diretto sull'aria condizionata, letto dal campo MIM <code>CONDIZIONAMENTOVENTILAZIONE</code>. Il secondo è la mitigazione termica, cioè la presenza di segnali che possono ridurre la fragilità dell'edificio. Entrano qui la zonizzazione dell'impianto termico, i doppi vetri, l'isolamento delle coperture, l'isolamento delle pareti, la riduzione dei consumi e la presenza dichiarata di condizionamento o ventilazione. Il terzo è il rischio caldo, che combina esposizione geografica, fragilità termica dell'edificio e studenti potenzialmente coinvolti.</p>
+<p>Le classi di rischio alto, medio e basso non sono una misura della temperatura in aula. Sono una graduatoria di priorità. Servono a dire dove un'estensione del calendario o un giugno sempre più caldo incontrano edifici meno pronti. La presenza di aria condizionata dichiarata abbassa la fragilità nel modello, perché è un segnale diretto di mitigazione. Quando il dato è mancante o non definito, il modello non lo trasforma in un sì nascosto.</p>
+
 <h2>Una stima del costo</h2>
-<p>Il modello del repository non prende un prezzo unico e lo moltiplica per tutte le scuole. Parte dagli edifici, legge le dotazioni presenti nei dataset MIM e assegna interventi diversi. Per il caldo separa due famiglie di costo. La prima è il comfort termico, che intercetta la regolazione minima dell'edificio. La seconda è la mitigazione caldo calendario, che comprende raffrescamento, ventilazione e ombreggiamento nelle sedi con rischio caldo medio o alto e indicatori termici deboli.</p>
-<p>I costi unitari e i tempi non sono inventati a mano. Il repository costruisce benchmark da progetti pubblici comparabili presenti in OpenCoesione, con programmazione 2014 2020 e 2021 2027. Questa base va letta insieme alla stagione PNRR, perché il tema concreto è la capacità della macchina pubblica di trasformare fondi disponibili in cantieri conclusi. Per ogni categoria il modello usa progetti simili, costi osservati e durate osservate o previste. Poi applica un range di rischio, perché gli edifici scolastici non sono tutti uguali.</p>
+<p>Per stimare la spesa il modello non prende un prezzo unico e lo moltiplica per tutte le scuole. Parte dagli edifici, legge le dotazioni presenti nei dataset MIM e assegna interventi diversi. Per il caldo separa due famiglie di costo. La prima è il comfort termico, che intercetta la regolazione minima dell'edificio. La seconda è la mitigazione caldo calendario, che comprende raffrescamento, ventilazione e ombreggiamento nelle sedi con rischio caldo medio o alto e indicatori termici deboli.</p>
+<p>I costi unitari e i tempi arrivano da una calibrazione su progetti pubblici comparabili presenti in OpenCoesione, con programmazione 2014 2020 e 2021 2027. La stessa logica è utile per leggere anche la stagione PNRR, perché il tema concreto è trasformare risorse disponibili in cantieri conclusi. Per ogni categoria il repository associa progetti simili, costi osservati e durate osservate o previste. Poi applica un intervallo di rischio, perché due edifici possono richiedere lavori molto diversi pur avendo la stessa etichetta amministrativa.</p>
+<p>Questa è una stima di investimento, non un capitolato d'appalto. Dentro non c'è l'idea di mettere lo stesso apparecchio in ogni aula. C'è una classificazione per priorità, utile per capire ordine di grandezza, tempi e peso relativo sul bilancio pubblico.</p>
 
 <table class="data-table" aria-label="Costo del pacchetto caldo per categoria">
   <thead><tr><th>Voce</th><th>Costo stimato</th><th>Quota PIL</th></tr></thead>
@@ -128,11 +138,11 @@
   <figcaption class="chart-note">Il PIL usato per il rapporto è il PIL nominale 2025 pubblicato da Istat, pari a 2.258.049 milioni di euro. Le quote annue dividono la spesa sugli anni di realizzazione del modello.</figcaption>
 </figure>
 
-<p>Il pacchetto caldo vale circa 6,7 miliardi di euro nello scenario base. È lo 0,295 per cento del PIL italiano del 2025. Spalmato sui tre anni di realizzazione del modello, pesa circa lo 0,098 per cento del PIL annuo. Anche prendendo la riforma completa senza chiudere nessuna scuola, il valore base è 37,6 miliardi, pari all'1,664 per cento del PIL. Diviso sui quattro anni del modello, fa circa lo 0,416 per cento del PIL annuo.</p>
-<p>La versione con risparmi immobiliari vale 36,7 miliardi. La differenza rispetto allo scenario senza chiusure è circa 848 milioni. Il punto politico è chiaro. Si può discutere se chiudere o tenere aperte le sedi piccole. Questa scelta non determina la fattibilità finanziaria dell'intervento sul caldo. Se si decide di non chiudere nessuna scuola, la stima resta dentro un ordine di grandezza gestibile.</p>
+<p>Il pacchetto caldo vale circa 6,7 miliardi di euro nello scenario base. È lo 0,295 per cento del PIL italiano del 2025. Spalmato sui tre anni di realizzazione del modello, pesa circa lo 0,098 per cento del PIL annuo. Il rapporto con il PIL non è una copertura di bilancio, naturalmente. Serve a tenere il numero nella giusta scala. Quando una cifra viene detta in miliardi sembra enorme per definizione. Rapportata alla dimensione dell'economia italiana, diventa un investimento pubblico molto circoscritto.</p>
+<p>Ho tenuto anche l'opzione senza chiusure, perché è politicamente importante. La riforma completa senza chiudere nessuna scuola vale 37,6 miliardi, pari all'1,664 per cento del PIL. Divisa sui quattro anni del modello, fa circa lo 0,416 per cento del PIL annuo. La versione con risparmi immobiliari vale 36,7 miliardi. La differenza è circa 848 milioni. Quindi il tema delle chiusure può essere discusso per ragioni territoriali, didattiche o organizzative, ma non decide la fattibilità finanziaria del pacchetto caldo.</p>
 
 <div class="note-box">
-  <p>La domanda su dove trovare i soldi resta legittima quando serve scegliere una copertura di bilancio. Diventa molto meno convincente quando viene usata per far sembrare impossibile un intervento che, nel suo perimetro caldo, vale meno di tre decimi di punto di PIL.</p>
+  <p>La domanda su dove trovare i soldi resta legittima quando serve scegliere una copertura di bilancio. Fa molta meno impressione quando viene usata per presentare come impossibile un intervento che, nel suo perimetro caldo, vale meno di tre decimi di punto di PIL.</p>
   <p>La parte difficile è amministrativa e politica. Bisogna programmare, fare gare, coordinare comuni, province, città metropolitane e ministero, evitare interventi inutili negli edifici già adeguati, dare priorità alle aree più esposte e agli edifici più fragili.</p>
 </div>
 
@@ -141,6 +151,27 @@
 <p>In pratica si può partire dalle scuole senza A/C dichiarata, con rischio caldo medio o alto e senza indicatori termici robusti. Poi si distinguono interventi rapidi e interventi strutturali. In alcuni casi bastano ombreggiamento, ventilazione e regolazione. In altri serve un intervento più completo sull'involucro e sugli impianti. La stima dei costi serve proprio a non mettere tutto nello stesso sacco.</p>
 <p>Questa è una cosa fattibile. Richiede volontà politica, capacità di spesa e una lista ordinata di priorità. Non richiede di trattare il caldo nelle scuole come una calamità inevitabile ogni giugno.</p>
 
+<h2>Note metodologiche</h2>
+<ul class="method-list">
+  <li><strong>Unità di osservazione</strong> La dashboard e il primo grafico usano righe scuola edificio. È una scelta trasparente perché segue la struttura dei dati MIM, ma va distinta dal numero di istituti scolastici e dal numero fisico di edifici.</li>
+  <li><strong>Dato sul condizionamento</strong> Il campo MIM <code>CONDIZIONAMENTOVENTILAZIONE</code> viene usato come informazione diretta. Un sì indica presenza dichiarata di condizionamento o ventilazione. Non misura copertura per aula, potenza dell'impianto, qualità dell'aria o temperatura reale.</li>
+  <li><strong>Valori non definiti</strong> <code>NON DEFINITO</code> resta una categoria autonoma. Nel calcolo principale rimane nel denominatore, perché escluderlo farebbe salire le percentuali nelle regioni dove il dato è compilato peggio o meglio.</li>
+  <li><strong>Età e ristrutturazioni</strong> Il periodo di costruzione viene letto dal dataset MIM sull'origine degli edifici. Gli adattamenti e le ristrutturazioni vengono considerati come segnali successivi, perché un edificio antico può essere stato migliorato e un edificio più recente può essere ancora fragile dal punto di vista termico.</li>
+  <li><strong>Costi e tempi</strong> I valori pubblicati derivano dallo scenario corrente del repository. I costi unitari sono configurabili e sono letti insieme ai benchmark OpenCoesione sui progetti pubblici comparabili. Fondi europei, programmazione 2021 2027, PNRR, gare, prezzari e contratti sono le fonti naturali con cui raffinare il modello quando si passa dalla stima nazionale alla progettazione operativa.</li>
+  <li><strong>Spese incluse</strong> Il pacchetto caldo è una stima di investimento sugli edifici. Non include una previsione completa dei consumi energetici futuri, della manutenzione ordinaria o di eventuali costi contrattuali del personale. Quelle voci vanno aggiunte se si vuole costruire un piano finanziario annuale.</li>
+  <li><strong>Quota del PIL</strong> Il rapporto con il PIL serve a dare scala all'ordine di grandezza. Non dice quale capitolo di bilancio debba finanziare l'intervento e non sostituisce la scelta politica sulla copertura.</li>
+</ul>
+
+<h2>Parole usate nel testo</h2>
+<ul class="term-list">
+  <li><strong>Riga scuola edificio</strong> È la relazione amministrativa tra una scuola e un edificio. È utile per collegare studenti, grado scolastico e caratteristiche edilizie, ma non va letta come sinonimo perfetto di sede fisica.</li>
+  <li><strong>Sede</strong> Nel modello è il luogo scolastico su cui si decide se intervenire, potenziare, mantenere o accorpare. Può derivare da una o più righe amministrative, a seconda di come sono registrati edifici e scuole.</li>
+  <li><strong>Comfort termico</strong> Indica la capacità minima dell'edificio di gestire il caldo e il freddo in modo regolato. Nel modello è legato soprattutto alla zonizzazione dell'impianto termico e agli indicatori energetici disponibili.</li>
+  <li><strong>Mitigazione caldo calendario</strong> È il pacchetto di interventi pensato per rendere più compatibile l'uso degli edifici nei periodi caldi. Comprende raffrescamento dove serve, ventilazione, ombreggiamento e misure leggere o strutturali secondo il rischio.</li>
+  <li><strong>Rischio caldo</strong> È un indice di priorità, non una misura meteorologica. Combina esposizione geografica, fragilità termica e studenti potenzialmente coinvolti.</li>
+  <li><strong>Scenario base, minimo e prudente</strong> Sono tre modi di leggere l'incertezza. Lo scenario base usa la stima centrale. Il minimo e il prudente servono a vedere cosa succede se i costi e i tempi reali risultano più favorevoli o più difficili.</li>
+</ul>
+
 <section class="dashboard-callout" aria-label="Dashboard collegata">
   <h2>La dashboard tecnica</h2>
   <p>La dashboard collegata permette di cambiare grado scolastico e metrica, leggere tutte le regioni e controllare quota A/C, quota non definita, mitigazione termica e rischio caldo.</p>
@@ -148,8 +179,8 @@
 </section>
 
 <h2>Fonti e metodo</h2>
-<p>La base scolastica usa i dataset MIM di edilizia scolastica. Il dato diretto sugli impianti è il dataset sugli impianti di riscaldamento e condizionamento. L'età degli edifici viene dal dataset MIM sull'origine degli edifici. I costi e i tempi sono stimati dal repository a partire da costi unitari, benchmark OpenCoesione e fattori di rischio per categoria.</p>
-<p>Il rapporto con il PIL usa il PIL nominale 2025 pubblicato da Istat nel comunicato su PIL e indebitamento delle amministrazioni pubbliche. Il valore usato è 2.258.049 milioni di euro.</p>
+<p>La base scolastica usa i dataset MIM di edilizia scolastica. Il dato diretto sugli impianti viene dal file sugli impianti di riscaldamento e condizionamento. L'età degli edifici viene dal file sull'origine degli edifici. Gli indicatori termici usano i campi su zonizzazione, doppi vetri, isolamento di coperture e pareti, riduzione dei consumi e condizionamento o ventilazione dichiarati.</p>
+<p>I costi e i tempi sono quelli dello scenario corrente del repository. La timeline realistica usa benchmark OpenCoesione sui progetti comparabili. Il modello resta aggiornabile, perché quando si passa dal quadro nazionale al progetto esecutivo vanno letti anche prezzari regionali, gare, contratti, dati PNRR e banche dati di acquisto pubblico. Il rapporto con il PIL usa il PIL nominale 2025 pubblicato da Istat nel comunicato su PIL e indebitamento delle amministrazioni pubbliche. Il valore usato è 2.258.049 milioni di euro.</p>
 <ul class="source-list">
   <li><a href="https://dati.istruzione.it/opendata/opendata/catalogo/elements1/" target="_blank" rel="noopener">MIM, Portale unico dei dati della scuola</a></li>
   <li><a href="https://opencoesione.gov.it/it/opendata/" target="_blank" rel="noopener">OpenCoesione, open data sui progetti pubblici</a></li>
