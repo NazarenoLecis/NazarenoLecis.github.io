@@ -74,6 +74,7 @@
   function readFilters() {
     return {
       survey_year: toNumber(byId("scatterSurveyYear") && byId("scatterSurveyYear").value),
+      graduation_year: toNumber(byId("scatterGraduationYear") && byId("scatterGraduationYear").value),
       employment_definition: byId("scatterDefinition") ? byId("scatterDefinition").value : "broad",
       university: byId("scatterUniversity") ? byId("scatterUniversity").value : WILDCARD,
       disciplinary_group: byId("scatterGroup") ? byId("scatterGroup").value : WILDCARD,
@@ -110,13 +111,33 @@
     ].filter(function (item) { return Boolean(item.option); });
   }
 
+  function availableSurveyYears() {
+    return (metadata.survey_years || []).map(toNumber).filter(Number.isFinite);
+  }
+
+  function missingReason(category, horizon, filters) {
+    if (!Number.isFinite(filters.graduation_year)) {
+      return "Seleziona una coorte per calcolare il dato.";
+    }
+    var surveyNeeded = filters.graduation_year + horizon;
+    var years = availableSurveyYears();
+    if (years.length && years.indexOf(surveyNeeded) < 0) {
+      return "Per la coorte " + filters.graduation_year + " servirebbe l’indagine " + surveyNeeded + ", non presente nei dati caricati.";
+    }
+    if (category.key === "first" && horizon === 5) {
+      return "Il dato a 5 anni per la prima laurea non è nella stessa base dettagliata: AlmaLaurea rileva quel perimetro separatamente.";
+    }
+    return "Dato non pubblicato per questa combinazione di filtri.";
+  }
+
   function rowsFor(category, horizon, filters) {
-    if (!Number.isFinite(filters.survey_year)) return [];
+    if (!Number.isFinite(filters.graduation_year)) return [];
     if (filters.course_type !== WILDCARD && filters.course_type !== category.option.value) return [];
+    var surveyYear = filters.graduation_year + horizon;
     return records.filter(function (record) {
-      if (record.survey_year !== filters.survey_year) return false;
+      if (record.survey_year !== surveyYear) return false;
       if (record.years_after_degree !== horizon) return false;
-      if (record.graduation_year !== filters.survey_year - horizon) return false;
+      if (record.graduation_year !== filters.graduation_year) return false;
       if (record.employment_definition !== filters.employment_definition) return false;
       if (record.course_type !== category.option.value) return false;
       if (filters.university !== WILDCARD) {
@@ -150,10 +171,22 @@
     };
   }
 
-  function cellHtml(value) {
-    if (!value) return "<span class=\"course-empty\">Non disponibile</span>";
-    return "<strong>" + formatPercent(value.employment_rate) + "</strong>" +
-      "<span>" + formatEuro(value.net_monthly_salary) + " · " + formatInt(value.graduates) + " laureati</span>";
+  function summaryValue(category, horizon, filters) {
+    var rows = rowsFor(category, horizon, filters);
+    var value = aggregate(rows);
+    return {
+      value: value,
+      reason: value ? "" : missingReason(category, horizon, filters),
+    };
+  }
+
+  function cellHtml(result) {
+    if (!result || !result.value) {
+      return "<span class=\"course-empty\">Non disponibile</span>" +
+        "<span class=\"course-empty\">" + escapeHtml(result && result.reason ? result.reason : "Dato non disponibile.") + "</span>";
+    }
+    return "<strong>" + formatPercent(result.value.employment_rate) + "</strong>" +
+      "<span>" + formatEuro(result.value.net_monthly_salary) + " · " + formatInt(result.value.graduates) + " laureati</span>";
   }
 
   function ensurePanel() {
@@ -164,7 +197,7 @@
     var panel = document.createElement("section");
     panel.id = "courseTypeSummaryPanel";
     panel.className = "course-summary-panel";
-    panel.innerHTML = "<div class=\"course-summary-head\"><h2>Indicatori per tipo di corso</h2><p>La tabella usa gli stessi filtri dello scatterplot e confronta prima laurea, laurea magistrale e magistrale a ciclo unico a 1 e 5 anni dal titolo.</p></div><div id=\"courseTypeSummary\"></div>";
+    panel.innerHTML = "<div class=\"course-summary-head\"><h2>Indicatori per tipo di corso</h2><p>La tabella usa la coorte e gli altri filtri dello scatterplot. Il dato a 1 anno richiede l’indagine dell’anno successivo alla laurea; il dato a 5 anni richiede l’indagine cinque anni dopo.</p></div><div id=\"courseTypeSummary\"></div>";
     kpis.insertAdjacentElement("afterend", panel);
     return panel;
   }
@@ -186,8 +219,8 @@
     var rows = visibleCategories.map(function (category) {
       return {
         category: category,
-        one: aggregate(rowsFor(category, 1, filters)),
-        five: aggregate(rowsFor(category, 5, filters)),
+        one: summaryValue(category, 1, filters),
+        five: summaryValue(category, 5, filters),
       };
     });
 
@@ -200,8 +233,8 @@
 
   function bind() {
     [
-      "scatterSurveyYear", "scatterDefinition", "scatterUniversity", "scatterGroup",
-      "scatterCourse", "scatterDegree", "resetScatterFilters"
+      "scatterSurveyYear", "scatterYearsAfter", "scatterGraduationYear", "scatterDefinition",
+      "scatterUniversity", "scatterGroup", "scatterCourse", "scatterDegree", "resetScatterFilters"
     ].forEach(function (id) {
       var element = byId(id);
       if (element) element.addEventListener(id === "resetScatterFilters" ? "click" : "change", function () {
