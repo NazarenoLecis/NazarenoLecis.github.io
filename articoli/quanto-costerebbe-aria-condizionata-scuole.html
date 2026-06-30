@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ma quanto costerebbe mettere l'aria condizionata nelle scuole? | Nazareno Lecis</title>
+  <meta name="description" content="Dati MIM, età degli edifici scolastici e stima dei costi per rendere le scuole italiane più vivibili nei mesi caldi.">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Ma quanto costerebbe mettere l'aria condizionata nelle scuole?">
+  <meta property="og:description" content="Una stima con dati MIM, benchmark OpenCoesione e rapporto con il PIL italiano.">
+  <meta property="og:url" content="https://nazarenolecis.github.io/articoli/quanto-costerebbe-aria-condizionata-scuole.html">
+  <meta name="twitter:card" content="summary">
+  <link rel="stylesheet" href="../assets/base.css">
+  <link rel="stylesheet" href="../assets/layout.css">
+  <link rel="stylesheet" href="../assets/components.css">
+  <script defer src="../assets/theme.js"></script>
+  <script defer src="../assets/ciclo-unico-caldo-article.js"></script>
+  <style>
+    .article{max-width:960px;margin:auto;padding:56px 0 72px}
+    .article-header{border-bottom:1px solid var(--line);padding-bottom:32px;margin-bottom:34px}
+    .article h1{font-size:clamp(2.45rem,6vw,4.9rem);line-height:.95;letter-spacing:-.07em;margin:.22em 0}
+    .article h2{font-size:clamp(1.55rem,3vw,2.18rem);letter-spacing:-.04em;margin:54px 0 16px;color:var(--orange)}
+    .article h3{font-size:1.15rem;letter-spacing:-.02em;margin:0}
+    .article p{font-size:1.08rem;line-height:1.75;color:var(--text);margin:0 0 18px}
+    .article .lead{max-width:850px}
+    .article a{color:var(--orange);font-weight:750}
+    .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;color:var(--muted);font-size:.95rem}
+    .pill{border:1px solid var(--line);border-radius:999px;padding:7px 11px;background:var(--panel)}
+    .back{display:inline-flex;margin-bottom:22px;color:var(--orange);font-weight:750}
+    .kpi-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:26px 0 34px}
+    .article-kpi{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:15px}
+    .article-kpi span{display:block;color:var(--muted);font-size:.84rem}
+    .article-kpi strong{display:block;margin-top:7px;font-size:clamp(1.35rem,3vw,2rem);line-height:1;color:var(--orange)}
+    .article-chart{margin:30px 0 42px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+    .chart-head{padding:17px 18px 13px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--panel) 88%,transparent)}
+    .chart-head p{font-size:.96rem;color:var(--muted);line-height:1.5;margin:7px 0 0}
+    .chart-body{padding:14px 14px 10px}
+    .chart-note{padding:12px 18px;color:var(--muted);font-size:.9rem;line-height:1.45;border-top:1px solid var(--line)}
+    .chart-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .chart-scroll svg{display:block;min-width:760px;width:100%;height:auto}
+    .chart-legend{display:flex;flex-wrap:wrap;gap:10px;padding:4px 4px 12px}
+    .chart-legend-item{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:.9rem}
+    .chart-legend-item i{display:block;width:12px;height:12px;border-radius:3px}
+    .grid-line{stroke:color-mix(in srgb,var(--line) 78%,transparent);stroke-width:1}
+    .axis-label{fill:var(--muted);font-size:12px}
+    .value-label{fill:var(--text);font-size:12px;font-weight:800}
+    .article-bar{rx:3px;shape-rendering:geometricPrecision}
+    .note-box{border-left:3px solid var(--orange);padding:14px 0 14px 18px;margin:28px 0;color:var(--muted)}
+    .note-box p{color:var(--muted);font-size:1rem;line-height:1.6;margin:0 0 10px}
+    .note-box p:last-child{margin-bottom:0}
+    .data-table{width:100%;border-collapse:collapse;margin:22px 0 34px;font-size:.98rem}
+    .data-table th,.data-table td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left}
+    .data-table th{color:var(--orange);font-weight:800}
+    .data-table td:nth-child(2),.data-table td:nth-child(3),.data-table th:nth-child(2),.data-table th:nth-child(3){text-align:right}
+    .source-list{padding-left:20px;color:var(--muted);line-height:1.7}
+    .source-list li{margin-bottom:8px}
+    .dashboard-callout{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:20px;margin:30px 0}
+    .dashboard-callout p{font-size:1rem;color:var(--muted);line-height:1.6}
+    @media(max-width:760px){.article{padding:32px 0 52px}.article h1{font-size:clamp(2.25rem,12vw,3.35rem)}.article p{font-size:1rem;line-height:1.65}.kpi-strip{grid-template-columns:1fr 1fr}.article-chart{margin-left:-12px;margin-right:-12px;border-radius:10px}.data-table{display:block;overflow-x:auto;white-space:nowrap;font-size:.9rem}}
+  </style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="../index.html"><span class="logo"></span><span><span class="brand-name">Nazareno Lecis</span><span class="brand-tag">Data & Risk Analysis</span></span></a>
+    <nav class="nav"><a href="../index.html">Home</a><a class="active" href="index.html">Articoli</a><a href="../dashboard/index.html">Dashboard</a><a href="../media/index.html">Media</a><a href="../about/index.html">About</a><a href="https://github.com/NazarenoLecis">GitHub</a></nav><span class="sun">&#9788;</span>
+  </div>
+</header>
+<main class="wrap">
+<article class="article">
+<a class="back" href="index.html">Torna agli articoli</a>
+<header class="article-header">
+  <span class="orange">Scuole e caldo</span>
+  <h1>Ma quanto costerebbe mettere l'aria condizionata nelle scuole?</h1>
+  <p class="lead">Il punto di partenza è semplice. Nei dati MIM sugli impianti scolastici solo una piccola parte delle righe scuola edificio dichiara condizionamento o ventilazione. La parte più interessante arriva subito dopo. Se si passa dal disagio di giugno a una stima di intervento, le cifre diventano molto meno spaventose di quanto sembri nel dibattito pubblico.</p>
+  <div class="meta"><span class="pill">Fonte dati scolastici MIM</span><span class="pill">Costi da benchmark OpenCoesione</span><span class="pill">PIL 2025 Istat</span></div>
+</header>
+
+<section class="kpi-strip" aria-label="Numeri principali">
+  <div class="article-kpi"><span>Righe scuola edificio MIM</span><strong id="kpiMimRows">-</strong></div>
+  <div class="article-kpi"><span>Con A/C dichiarata</span><strong id="kpiAcShare">-</strong></div>
+  <div class="article-kpi"><span>Pacchetto caldo</span><strong id="kpiHeatCost">-</strong></div>
+  <div class="article-kpi"><span>Quota del PIL</span><strong id="kpiHeatGdp">-</strong></div>
+</section>
+
+<p>I dati usati qui vengono dal repository <a href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Ciclo_unico_scolastico</a>. Il campo decisivo è <code>CONDIZIONAMENTOVENTILAZIONE</code>, contenuto nel dataset MIM sugli impianti di riscaldamento e condizionamento. Su 60.030 righe scuola edificio, i sì sono 4.457. La quota nazionale è 7,42 per cento.</p>
+<p>Questo numero non chiude il discorso. Lo apre. Una scuola può avere ventilazione senza un impianto completo di climatizzazione. Un edificio può avere una parte condizionata e una parte senza impianto. Il campo MIM resta però il migliore dato nazionale aperto per iniziare una discussione concreta.</p>
+
+<figure class="article-chart">
+  <div class="chart-head">
+    <h3>Regioni e gradi scolastici nello stesso grafico</h3>
+    <p>Ogni gruppo regionale contiene quattro barre interne. La legenda permette di leggere subito se il problema cambia tra infanzia, primaria, secondaria di primo grado e secondaria di secondo grado.</p>
+  </div>
+  <div class="chart-body" id="regionalGradeChart"></div>
+  <figcaption class="chart-note">La quota usa tutte le righe del dataset MIM come denominatore, comprese quelle con valore non definito. Le etichette sopra i gruppi indicano la quota regionale complessiva.</figcaption>
+</figure>
+
+<p>La geografia è molto diseguale. Le Marche superano il 30 per cento. Sardegna e Veneto stanno sopra la media nazionale. Lazio e Campania sono molto più in basso. Questo è il primo messaggio utile per una politica pubblica. Non serve immaginare una misura cieca. Si può partire da dove il bisogno è maggiore e dove il caldo estivo rende più fragile la scuola.</p>
+
+<h2>Il problema non è solo comprare condizionatori</h2>
+<p>Una parte consistente degli edifici scolastici italiani è stata costruita prima che il tema del raffrescamento estivo entrasse davvero nella progettazione ordinaria. Nei dati MIM quasi metà degli edifici ha una costruzione precedente al 1976 oppure non ha una data sufficientemente definita. Le ristrutturazioni recenti esistono, ma non cambiano da sole la struttura del problema.</p>
+<p>Questo conta perché il costo non riguarda solo la macchina appesa al muro. In molti edifici servono impianti elettrici adeguati, regolazione termica, ombreggiamento, ventilazione, isolamento, serramenti, coperture e soluzioni leggere per ridurre il calore prima ancora di raffreddare l'aria.</p>
+
+<figure class="article-chart">
+  <div class="chart-head">
+    <h3>Età degli edifici scolastici per regione</h3>
+    <p>Le barre mostrano la composizione degli edifici per periodo di costruzione. La percentuale a destra indica la quota costruita prima del 1976.</p>
+  </div>
+  <div class="chart-body" id="ageRegionChart"></div>
+  <figcaption class="chart-note">Le classi sono aggregate dai periodi MIM. La voce non definito raccoglie edifici senza informazione utilizzabile sul periodo di costruzione.</figcaption>
+</figure>
+
+<h2>Una stima del costo</h2>
+<p>Il modello del repository non prende un prezzo unico e lo moltiplica per tutte le scuole. Parte dagli edifici, legge le dotazioni presenti nei dataset MIM e assegna interventi diversi. Per il caldo separa due famiglie di costo. La prima è il comfort termico, che intercetta la regolazione minima dell'edificio. La seconda è la mitigazione caldo calendario, che comprende raffrescamento, ventilazione e ombreggiamento nelle sedi con rischio caldo medio o alto e indicatori termici deboli.</p>
+<p>I costi unitari e i tempi non sono inventati a mano. Il repository costruisce benchmark da progetti pubblici comparabili presenti in OpenCoesione, con programmazione 2014 2020 e 2021 2027. Questa base va letta insieme alla stagione PNRR, perché il tema concreto è la capacità della macchina pubblica di trasformare fondi disponibili in cantieri conclusi. Per ogni categoria il modello usa progetti simili, costi osservati e durate osservate o previste. Poi applica un range di rischio, perché gli edifici scolastici non sono tutti uguali.</p>
+
+<table class="data-table" aria-label="Costo del pacchetto caldo per categoria">
+  <thead><tr><th>Voce</th><th>Costo stimato</th><th>Quota PIL</th></tr></thead>
+  <tbody id="costTableBody"></tbody>
+</table>
+
+<figure class="article-chart">
+  <div class="chart-head">
+    <h3>Quanto pesa sul PIL</h3>
+    <p>Il pacchetto caldo comprende comfort termico, raffrescamento, ventilazione e ombreggiamento. Le altre due barre mostrano la riforma completa nel modello, con e senza risparmi da chiusure.</p>
+  </div>
+  <div class="chart-body" id="costChart"></div>
+  <figcaption class="chart-note">Il PIL usato per il rapporto è il PIL nominale 2025 pubblicato da Istat, pari a 2.258.049 milioni di euro. Le quote annue dividono la spesa sugli anni di realizzazione del modello.</figcaption>
+</figure>
+
+<p>Il pacchetto caldo vale circa 6,7 miliardi di euro nello scenario base. È lo 0,295 per cento del PIL italiano del 2025. Spalmato sui tre anni di realizzazione del modello, pesa circa lo 0,098 per cento del PIL annuo. Anche prendendo la riforma completa senza chiudere nessuna scuola, il valore base è 37,6 miliardi, pari all'1,664 per cento del PIL. Diviso sui quattro anni del modello, fa circa lo 0,416 per cento del PIL annuo.</p>
+<p>La versione con risparmi immobiliari vale 36,7 miliardi. La differenza rispetto allo scenario senza chiusure è circa 848 milioni. Il punto politico è chiaro. Si può discutere se chiudere o tenere aperte le sedi piccole. Questa scelta non determina la fattibilità finanziaria dell'intervento sul caldo. Se si decide di non chiudere nessuna scuola, la stima resta dentro un ordine di grandezza gestibile.</p>
+
+<div class="note-box">
+  <p>La domanda su dove trovare i soldi resta legittima quando serve scegliere una copertura di bilancio. Diventa molto meno convincente quando viene usata per far sembrare impossibile un intervento che, nel suo perimetro caldo, vale meno di tre decimi di punto di PIL.</p>
+  <p>La parte difficile è amministrativa e politica. Bisogna programmare, fare gare, coordinare comuni, province, città metropolitane e ministero, evitare interventi inutili negli edifici già adeguati, dare priorità alle aree più esposte e agli edifici più fragili.</p>
+</div>
+
+<h2>Che cosa si potrebbe fare</h2>
+<p>Una linea sensata partirebbe da tre criteri. Il primo è la presenza dichiarata di condizionamento o ventilazione. Il secondo è il rischio caldo, costruito nel repository con posizione geografica, studenti esposti e indicatori termici dell'edificio. Il terzo è l'età dell'edificio, perché un edificio vecchio può richiedere lavori preliminari prima di installare un impianto efficace.</p>
+<p>In pratica si può partire dalle scuole senza A/C dichiarata, con rischio caldo medio o alto e senza indicatori termici robusti. Poi si distinguono interventi rapidi e interventi strutturali. In alcuni casi bastano ombreggiamento, ventilazione e regolazione. In altri serve un intervento più completo sull'involucro e sugli impianti. La stima dei costi serve proprio a non mettere tutto nello stesso sacco.</p>
+<p>Questa è una cosa fattibile. Richiede volontà politica, capacità di spesa e una lista ordinata di priorità. Non richiede di trattare il caldo nelle scuole come una calamità inevitabile ogni giugno.</p>
+
+<section class="dashboard-callout" aria-label="Dashboard collegata">
+  <h2>La dashboard tecnica</h2>
+  <p>La dashboard collegata permette di cambiare grado scolastico e metrica, leggere tutte le regioni e controllare quota A/C, quota non definita, mitigazione termica e rischio caldo.</p>
+  <p><a class="button primary" href="../dashboard/ciclo-unico-caldo/index.html">Apri la dashboard</a></p>
+</section>
+
+<h2>Fonti e metodo</h2>
+<p>La base scolastica usa i dataset MIM di edilizia scolastica. Il dato diretto sugli impianti è il dataset sugli impianti di riscaldamento e condizionamento. L'età degli edifici viene dal dataset MIM sull'origine degli edifici. I costi e i tempi sono stimati dal repository a partire da costi unitari, benchmark OpenCoesione e fattori di rischio per categoria.</p>
+<p>Il rapporto con il PIL usa il PIL nominale 2025 pubblicato da Istat nel comunicato su PIL e indebitamento delle amministrazioni pubbliche. Il valore usato è 2.258.049 milioni di euro.</p>
+<ul class="source-list">
+  <li><a href="https://dati.istruzione.it/opendata/opendata/catalogo/elements1/" target="_blank" rel="noopener">MIM, Portale unico dei dati della scuola</a></li>
+  <li><a href="https://opencoesione.gov.it/it/opendata/" target="_blank" rel="noopener">OpenCoesione, open data sui progetti pubblici</a></li>
+  <li><a href="https://www.istat.it/comunicato-stampa/pil-e-indebitamento-delle-ap-anni-2023-2025/" target="_blank" rel="noopener">Istat, PIL e indebitamento delle AP, anni 2023 2025</a></li>
+  <li><a href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Repository Ciclo_unico_scolastico</a></li>
+</ul>
+</article>
+</main>
+<footer class="footer">
+  <div class="wrap footer-inner social-links">
+    <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+    <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+    <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+    <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+  </div>
+</footer>
+</body>
+</html>
