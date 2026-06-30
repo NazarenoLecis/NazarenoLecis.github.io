@@ -95,10 +95,11 @@
   <a href="#copertura">Copertura</a>
   <a href="#lettura">Come leggere</a>
   <a href="#un-anno">A 1 anno</a>
-  <a href="#atenei">Atenei</a>
   <a href="#triennali">Triennali</a>
+  <a href="#magistrali">Magistrali</a>
   <a href="#coorte">Coorte</a>
   <a href="#cinque-anni">A 5 anni</a>
+  <a href="#atenei">Atenei</a>
   <a href="#note">Note</a>
 </nav>
 
@@ -149,34 +150,6 @@
   <figcaption>Fonte: AlmaLaurea 2025. Coorte 2024 osservata a 1 anno dalla laurea; occupati incluse attivita' di formazione retribuite.</figcaption>
 </figure>
 <p>A 1 anno dal titolo i percorsi sono in fasi diverse. Alcuni gruppi entrano subito nel mercato del lavoro. Altri hanno transizioni più lente, maggiore prosecuzione formativa, più instabilità iniziale o tempi più lunghi di assestamento professionale.</p>
-
-<h2 id="atenei">La stessa mappa vista dagli atenei</h2>
-<p>La lettura per ateneo risponde a una domanda diversa. Non mostra quale gruppo disciplinare renda di più in media, ma dove si collocano gli atenei quando si aggregano i percorsi disponibili a 1 anno dalla laurea. Il risultato dipende molto dalla composizione dei corsi e dal mercato del lavoro territoriale.</p>
-<figure class="chart dashboard-live">
-  <div class="chart-context">
-    <h3>Occupazione e retribuzione per ateneo a 1 anno</h3>
-    <p>Ogni punto e' un ateneo. Asse orizzontale = retribuzione mensile netta, asse verticale = tasso di occupazione, dimensione bolla = numero di laureati osservati. Il dato e' aggregato sul perimetro selezionato e non misura solo la qualita' dell'ateneo.</p>
-  </div>
-  <iframe loading="lazy" title="Scatterplot interattivo AlmaLaurea 2025 per ateneo" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=scatter&amp;survey=2025&amp;years=1&amp;cohort=2024&amp;definition=broad&amp;dimension=university"></iframe>
-  <figcaption>Fonte: AlmaLaurea 2025. Coorte 2024 osservata a 1 anno; punti per ateneo, occupati incluse attivita' di formazione retribuite.</figcaption>
-</figure>
-
-<figure class="chart">
-  <div class="chart-context">
-    <h3>Miglior ambito disponibile per tasso di occupazione, per ateneo</h3>
-    <p>Per ciascun ateneo viene selezionata la combinazione pubblicata con il tasso di occupazione più alto a 1 anno dalla laurea, tra gruppo disciplinare e tipo di corso. Sono incluse solo combinazioni con almeno 20 laureati osservati. La dashboard corrente non contiene il dettaglio classe di laurea per ateneo, quindi questo non va letto come migliore singola classe MUR.</p>
-  </div>
-  <div class="best-course-card">
-    <div class="best-course-head" aria-hidden="true">
-      <span>Ateneo e ambito</span>
-      <span>Indicatore</span>
-      <span>Tasso</span>
-      <span>Base</span>
-    </div>
-    <div class="best-course-rows" id="bestCourseRows">Caricamento dati...</div>
-  </div>
-  <figcaption>Fonte: AlmaLaurea 2025. Elaborazione di Nazareno Lecis su coorte 2024 osservata a 1 anno; definizione di occupazione ampia. La retribuzione indicata, quando disponibile, e' mensile netta.</figcaption>
-</figure>
 
 <h2 id="triennali">Le lauree triennali hanno una transizione più debole</h2>
 <p>La differenza per tipo di corso è rilevante. Tra le lauree di primo livello, la mediana delle retribuzioni medie dei gruppi disciplinari è pari a 1.144 euro. La mediana dei tassi di occupazione dei gruppi disciplinari è pari al 47,4 per cento. Alcuni gruppi hanno valori particolarmente bassi. Scientifico ha un tasso di occupazione del 29,4 per cento. Letterario-umanistico è al 33,7 per cento. Psicologico è al 36,1 per cento.</p>
@@ -247,6 +220,63 @@
 </figure>
 <p>Il messaggio principale resta stabile. L’occupazione tende a essere alta a 5 anni, mentre la retribuzione continua a variare molto tra gruppi disciplinari.</p>
 
+<h2 id="atenei">La lettura per ateneo va separata per tipo di laurea</h2>
+<p>Dopo aver distinto triennali, magistrali e distanza dalla laurea si può cambiare unità di osservazione. La domanda non è più solo quale gruppo disciplinare abbia esiti migliori, ma dove si collocano gli atenei dentro uno stesso perimetro di corso. Anche qui mischiare primo livello e secondo livello sarebbe fuorviante, perché misurano fasi diverse del percorso.</p>
+
+<figure class="chart dashboard-live">
+  <div class="chart-context">
+    <h3>Atenei e lauree triennali a 1 anno</h3>
+    <p>Ogni punto è un ateneo, filtrato sulle lauree di primo livello. Il tasso di occupazione resta legato alla quota di laureati che prosegue verso la magistrale: un valore basso può indicare prosecuzione degli studi, non necessariamente difficoltà occupazionale definitiva.</p>
+  </div>
+  <iframe loading="lazy" title="Scatterplot interattivo AlmaLaurea 2025 per ateneo e lauree triennali" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=scatter&amp;survey=2025&amp;years=1&amp;cohort=2024&amp;definition=broad&amp;course=laurea%20di%20primo%20livello&amp;dimension=university"></iframe>
+  <figcaption>Fonte: AlmaLaurea 2025. Coorte 2024 osservata a 1 anno; punti per ateneo, filtro su lauree di primo livello.</figcaption>
+</figure>
+
+<figure class="chart dashboard-live">
+  <div class="chart-context">
+    <h3>Atenei e lauree magistrali biennali a 1 anno</h3>
+    <p>La stessa lettura viene ripetuta sulle magistrali biennali, dove il titolo è più spesso terminale e il tasso di occupazione è meno influenzato dalla prosecuzione immediata degli studi. Il confronto tra atenei va comunque letto insieme a territorio, composizione dei corsi e dimensione del campione.</p>
+  </div>
+  <iframe loading="lazy" title="Scatterplot interattivo AlmaLaurea 2025 per ateneo e lauree magistrali biennali" src="../dashboard/almalaurea/index.html?embed=1&amp;chart=scatter&amp;survey=2025&amp;years=1&amp;cohort=2024&amp;definition=broad&amp;course=laurea%20magistrale%20biennale&amp;dimension=university"></iframe>
+  <figcaption>Fonte: AlmaLaurea 2025. Coorte 2024 osservata a 1 anno; punti per ateneo, filtro su lauree magistrali biennali.</figcaption>
+</figure>
+
+<p>La lettura per ateneo può essere spinta un passo oltre, ma con una cautela importante: nel dataset della dashboard il dettaglio più stabile disponibile per ateneo combina gruppo disciplinare e tipo di corso, non sempre la singola classe MUR. Per questo le due tabelle sotto parlano di migliore ambito disponibile, non di migliore corso in senso stretto.</p>
+
+<figure class="chart">
+  <div class="chart-context">
+    <h3>Miglior ambito disponibile nelle lauree triennali, per ateneo</h3>
+    <p>Per ciascun ateneo viene selezionata la combinazione pubblicata con il tasso di occupazione più alto a 1 anno tra i gruppi disciplinari delle lauree di primo livello. Sono incluse solo combinazioni con almeno 20 laureati osservati.</p>
+  </div>
+  <div class="best-course-card">
+    <div class="best-course-head" aria-hidden="true">
+      <span>Ateneo e ambito</span>
+      <span>Indicatore</span>
+      <span>Tasso</span>
+      <span>Base</span>
+    </div>
+    <div class="best-course-rows" id="bestCourseRowsFirstLevel">Caricamento dati...</div>
+  </div>
+  <figcaption>Fonte: AlmaLaurea 2025. Elaborazione di Nazareno Lecis su coorte 2024 osservata a 1 anno; definizione di occupazione ampia. La retribuzione indicata, quando disponibile, è mensile netta.</figcaption>
+</figure>
+
+<figure class="chart">
+  <div class="chart-context">
+    <h3>Miglior ambito disponibile nel secondo livello, per ateneo</h3>
+    <p>La stessa selezione viene ripetuta per magistrali biennali e ciclo unico. Questa separazione evita di confrontare direttamente percorsi triennali, percorsi magistrali e corsi a ciclo unico, che hanno tempi di ingresso professionale diversi.</p>
+  </div>
+  <div class="best-course-card">
+    <div class="best-course-head" aria-hidden="true">
+      <span>Ateneo e ambito</span>
+      <span>Indicatore</span>
+      <span>Tasso</span>
+      <span>Base</span>
+    </div>
+    <div class="best-course-rows" id="bestCourseRowsSecondLevel">Caricamento dati...</div>
+  </div>
+  <figcaption>Fonte: AlmaLaurea 2025. Elaborazione di Nazareno Lecis su coorte 2024 osservata a 1 anno; magistrali biennali e lauree magistrali a ciclo unico. La retribuzione indicata, quando disponibile, è mensile netta.</figcaption>
+</figure>
+
 <h2 id="scelta">Come usare questi dati per scegliere</h2>
 <p>Questi dati non devono sostituire preferenze, capacità, vincoli familiari, luogo in cui si vuole vivere e interesse personale. Servono a rendere esplicita una parte dell’informazione che spesso gli studenti ricevono tardi o in modo confuso.</p>
 <p>La scelta dell’università dovrebbe includere almeno tre domande. Quali sono gli sbocchi medi del percorso. Quanto varia il risultato tra atenei e territori. Quanto il corso è terminale o richiede quasi sempre un livello successivo.</p>
@@ -276,8 +306,9 @@
 </main>
 <script>
 (function () {
-  var container = document.getElementById("bestCourseRows");
-  if (!container) return;
+  var firstLevelContainer = document.getElementById("bestCourseRowsFirstLevel");
+  var secondLevelContainer = document.getElementById("bestCourseRowsSecondLevel");
+  if (!firstLevelContainer && !secondLevelContainer) return;
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -322,7 +353,17 @@
     return String(candidate.disciplinary_group).localeCompare(String(current.disciplinary_group), "it") < 0;
   }
 
-  function render(records) {
+  function isFirstLevel(record) {
+    return record.course_type === "laurea di primo livello";
+  }
+
+  function isSecondLevel(record) {
+    return record.course_type === "laurea magistrale biennale" ||
+      record.course_type === "laurea magistrale a ciclo unico";
+  }
+
+  function render(records, container, coursePredicate) {
+    if (!container) return;
     var bestByUniversity = new Map();
     records.forEach(function (record) {
       if (record.survey_year !== 2025) return;
@@ -331,6 +372,7 @@
       if (record.employment_definition !== "broad") return;
       if (record.university === "*" || record.disciplinary_group === "*" || record.course_type === "*") return;
       if (record.degree_class !== "*") return;
+      if (!coursePredicate(record)) return;
       if (!isNumber(record.employment_rate) || !isNumber(record.graduates) || record.graduates < 20) return;
       if (betterThan(record, bestByUniversity.get(record.university))) {
         bestByUniversity.set(record.university, record);
@@ -368,10 +410,17 @@
       return response.json();
     })
     .then(function (payload) {
-      render(payload.records || []);
+      var records = payload.records || [];
+      render(records, firstLevelContainer, isFirstLevel);
+      render(records, secondLevelContainer, isSecondLevel);
     })
     .catch(function () {
-      container.textContent = "Non riesco a caricare i dati per questo grafico.";
+      if (firstLevelContainer) {
+        firstLevelContainer.textContent = "Non riesco a caricare i dati per questo grafico.";
+      }
+      if (secondLevelContainer) {
+        secondLevelContainer.textContent = "Non riesco a caricare i dati per questo grafico.";
+      }
     });
 })();
 </script>
