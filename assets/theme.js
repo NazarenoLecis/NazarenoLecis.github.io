@@ -1,1 +1,62 @@
-(function(){function apply(t){document.documentElement.setAttribute('data-theme',t);try{localStorage.setItem('theme',t)}catch(e){}document.querySelectorAll('.sun,.theme-toggle').forEach(function(b){b.textContent=t==='light'?'☾':'☼';b.setAttribute('role','button');b.setAttribute('tabindex','0');b.setAttribute('aria-label',t==='light'?'Passa al tema scuro':'Passa al tema chiaro')})}function loadScript(src,key){if(document.querySelector('script[data-'+key+']'))return;var s=document.createElement('script');s.src=src;s.defer=true;s.dataset[key]='1';document.head.appendChild(s)}function isAlmaArticle(){return location.pathname.indexOf('/articoli/occupazione-salari-laureati-almalaurea')>=0}function loadAlmaLaureaScripts(){var isDash=location.pathname.indexOf('/dashboard/almalaurea/')>=0;if(!isDash&&!isAlmaArticle())return;if(isDash||isAlmaArticle()){loadScript('/assets/almalaurea-no-downloads.js','almNoDownloads')}if(isDash){loadScript('/assets/almalaurea-filter-placement.js','almFilterPlacement');loadScript('/assets/almalaurea-clean-charts.js','almCleanCharts');loadScript('/assets/almalaurea-remove-zero-values.js','almRemoveZeroValues');loadScript('/assets/almalaurea-hover-stats.js','almHoverStats');loadScript('/assets/almalaurea-course-summary.js','almSummary');loadScript('/assets/almalaurea-chart-context.js','almChartContext');loadScript('/assets/almalaurea-trend-explainer.js','almTrendExplainer');loadScript('/assets/almalaurea-plot-reset.js','almPlotReset');loadScript('/assets/almalaurea-disable-zoom.js','almDisableZoom');loadScript('/assets/almalaurea-cohort-extra-chart.js','almCohortExtra');loadScript('/assets/almalaurea-coverage-note.js','almCoverageNote');loadScript('/assets/almalaurea-methodology-notes.js','almMethodologyNotes')}if(isAlmaArticle()){loadScript('/assets/almalaurea-article-static.js','almArticleStatic');loadScript('/assets/almalaurea-article-scatter-label-fix.js','almArticleScatterLabelFix')}loadScript('/assets/almalaurea-mobile-charts.js','almMobileCharts')}function start(){var saved=null;try{saved=localStorage.getItem('theme')}catch(e){}apply(saved||'dark');loadAlmaLaureaScripts();document.addEventListener('click',function(e){var b=e.target.closest('.sun,.theme-toggle');if(!b)return;apply(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light')});document.addEventListener('keydown',function(e){var b=e.target.closest&&e.target.closest('.sun,.theme-toggle');if(!b)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();b.click()}})}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',start)}else{start()}})();
+(function () {
+  function apply(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    try {
+      localStorage.setItem("theme", theme);
+    } catch (error) {}
+
+    document.querySelectorAll(".sun,.theme-toggle").forEach(function (button) {
+      button.textContent = theme === "light" ? "☾" : "☼";
+      button.setAttribute("role", "button");
+      button.setAttribute("tabindex", "0");
+      button.setAttribute("aria-label", theme === "light" ? "Passa al tema scuro" : "Passa al tema chiaro");
+    });
+  }
+
+  function loadScript(src, key) {
+    if (document.querySelector("script[data-" + key + "]")) return;
+    var script = document.createElement("script");
+    script.src = src;
+    script.defer = true;
+    script.dataset[key] = "1";
+    document.head.appendChild(script);
+  }
+
+  function isAlmaArticle() {
+    return location.pathname.indexOf("/articoli/occupazione-salari-laureati-almalaurea") >= 0;
+  }
+
+  function start() {
+    var saved = null;
+    try {
+      saved = localStorage.getItem("theme");
+    } catch (error) {}
+
+    apply(saved || "dark");
+
+    if (isAlmaArticle()) {
+      loadScript("/assets/almalaurea-article-static.js", "almArticleStatic");
+    }
+
+    document.addEventListener("click", function (event) {
+      var button = event.target.closest(".sun,.theme-toggle");
+      if (!button) return;
+      apply(document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light");
+    });
+
+    document.addEventListener("keydown", function (event) {
+      var button = event.target.closest && event.target.closest(".sun,.theme-toggle");
+      if (!button) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        button.click();
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+})();
