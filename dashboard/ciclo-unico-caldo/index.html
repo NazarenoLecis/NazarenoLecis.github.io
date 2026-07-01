@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="preload" href="dashboard_caldo.json" as="fetch" crossorigin>
+  <link rel="preload" href="https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <style>
     .heat-dashboard {
@@ -556,7 +556,7 @@
       window.addEventListener("resize", render);
     }
 
-    fetch("dashboard_caldo.json")
+    fetch("https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo.json")
       .then(function (response) {
         if (!response.ok) throw new Error("HTTP " + response.status);
         return response.json();
