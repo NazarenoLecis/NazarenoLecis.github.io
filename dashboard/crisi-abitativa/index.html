@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
+  <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/regions/sardegna.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
@@ -78,6 +79,7 @@
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard crisi abitativa">
       <a href="#europeSection">Confronto europeo</a>
+      <a href="#stockAgeSection">Stock abitativo</a>
       <a href="#localSection">Focus locale</a>
       <a href="#methodologySection">Metodo e fonti</a>
     </nav>
@@ -103,9 +105,26 @@
         </article>
         <article class="indicator-card">
           <h3>Offerta e stock</h3>
-          <p>Permessi edilizi e investimenti in abitazioni descrivono la capacita' del sistema di produrre o rinnovare offerta. Non coincidono automaticamente con case disponibili dove servono.</p>
+          <p>Permessi edilizi e investimenti in abitazioni descrivono la capacita' del sistema di produrre o rinnovare offerta. Lo stock per periodo di costruzione e' una fotografia separata dell'eta' del patrimonio immobiliare.</p>
         </article>
       </div>
+    </section>
+
+    <section class="dashboard-section" id="stockAgeSection">
+      <div class="section-head">
+        <span class="eyebrow">Stock abitativo</span>
+        <h2>Eta' del patrimonio immobiliare</h2>
+        <p>I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione, usando un JSON statico gia' aggregato.</p>
+      </div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="stockAgeTitle">Abitazioni per periodo di costruzione</h2>
+          <span>quota dello stock, 2021</span>
+        </div>
+        <div id="stockAgeChart" class="chart"></div>
+        <div class="chart-credit">Fonte: Eurostat Census Hub 2021. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="selection-comment" id="stockAgeComment"></div>
     </section>
 
     <section class="dashboard-section" id="europeSection">
@@ -142,7 +161,7 @@
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2 id="europeTitle">Confronto europeo</h2>
-          <span>range min-max, Italia sempre evidenziata</span>
+          <span id="europeSubtitle">range min-max, Italia sempre evidenziata</span>
         </div>
         <div id="europeChart" class="chart"></div>
         <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>

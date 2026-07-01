@@ -1,6 +1,7 @@
 (function () {
   var EUROPE_DATA_BASE = "https://data.nazarenolecis.com/crisi-abitativa/eurostat/";
   var EUROPE_INDEX_URL = EUROPE_DATA_BASE + "index.json";
+  var STOCK_AGE_URL = EUROPE_DATA_BASE + "estat_dwellings_by_construction_period_2021.json";
   var LOCAL_INDEX_URL = "https://data.nazarenolecis.com/crisi-abitativa/local_index.json";
   var LOCAL_REGION_BASE = "https://data.nazarenolecis.com/crisi-abitativa/regions/";
   var ITALY = "IT";
@@ -30,6 +31,7 @@
     currentLocalLabel: "",
     currentLocalPayload: null,
     selectedLocalComune: "",
+    stockAgeData: null,
     europeHasRendered: false,
     localHasRendered: false,
     localRequestSerial: 0
@@ -192,6 +194,12 @@
     return indicators.find(function (item) { return item.id === byId("europeIndicator").value; }) || indicators[0];
   }
 
+  function isAbsoluteIndicator(indicator) {
+    if (!indicator) return false;
+    if (indicator.show_eu_aggregate === false || indicator.absolute_count) return true;
+    return /abitazioni|famiglie|persone|m2|m²/i.test(indicator.unit || "");
+  }
+
   function renderEurope() {
     var indicator = currentIndicator();
     var records = state.europeData || [];
@@ -232,7 +240,8 @@
       }
     ];
 
-    if (records.some(function (record) { return record.geo === EU27; })) {
+    var showEuAggregate = !isAbsoluteIndicator(indicator);
+    if (showEuAggregate && records.some(function (record) { return record.geo === EU27; })) {
       traces.push(traceForCountry(records, EU27, "EU27", theme.muted, 2));
     }
     traces.push(traceForCountry(records, ITALY, "Italia", theme.orange, 4));
@@ -244,6 +253,7 @@
     });
 
     byId("europeTitle").textContent = indicator.shortLabel;
+    byId("europeSubtitle").textContent = "range min-max, Italia sempre evidenziata";
     var italyRows = records.filter(function (record) { return record.geo === ITALY; }).sort(function (a, b) { return b.year - a.year; });
     var latestItaly = italyRows[0];
     if (latestItaly) {
@@ -252,7 +262,7 @@
       byId("kpiItaly").textContent = formatValue(latestItaly.value, indicator.unit);
       byId("kpiRange").textContent = formatValue(Math.min.apply(null, latestValues), indicator.unit) + " - " + formatValue(Math.max.apply(null, latestValues), indicator.unit);
       byId("kpiYear").textContent = latestItaly.period || latestItaly.year;
-      byId("europeComment").innerHTML = "<strong>Come leggere:</strong> " + escapeHtml(indicator.note) + " La banda arancione indica il range min-max tra paesi disponibili: non e' una media europea e non misura la distribuzione interna ai singoli paesi.";
+      byId("europeComment").innerHTML = "<strong>Come leggere:</strong> " + escapeHtml(indicator.note || "") + " La banda arancione indica il range min-max tra paesi disponibili: non e' una media europea e non misura la distribuzione interna ai singoli paesi." + (showEuAggregate ? "" : " Per gli indicatori in valori assoluti EU27 non viene disegnato: e' un aggregato e sarebbe fuori scala rispetto ai singoli paesi.");
     }
 
     window.Plotly.react("europeChart", traces, {
@@ -266,21 +276,68 @@
     }, { responsive: true, displayModeBar: false });
   }
 
+  function renderStockAge(records) {
+    records = records || [];
+    if (!records.length) return renderMessage("stockAgeChart", "Nessun dato disponibile sull'eta' del patrimonio immobiliare.");
+    var theme = plotTheme();
+    var countries = [
+      { code: ITALY, name: "Italia", color: theme.orange },
+      { code: EU27, name: "EU27", color: theme.muted }
+    ].filter(function (country) {
+      return records.some(function (record) { return record.geo === country.code; });
+    });
+    var buckets = [];
+    records.forEach(function (record) {
+      if (!buckets.some(function (bucket) { return bucket.id === record.bucket; })) {
+        buckets.push({ id: record.bucket, label: record.bucket_label || record.bucket });
+      }
+    });
+    var traces = countries.map(function (country) {
+      return {
+        type: "bar",
+        name: country.name,
+        x: buckets.map(function (bucket) { return bucket.label; }),
+        y: buckets.map(function (bucket) {
+          var row = records.find(function (record) { return record.geo === country.code && record.bucket === bucket.id; });
+          return row ? Number(row.share_pct) : null;
+        }),
+        marker: { color: country.color, opacity: country.code === ITALY ? 0.9 : 0.58 },
+        customdata: buckets.map(function (bucket) {
+          var row = records.find(function (record) { return record.geo === country.code && record.bucket === bucket.id; });
+          return row ? [row.value, row.geo_total] : [null, null];
+        }),
+        hovertemplate: "<b>%{fullData.name}</b><br>Periodo: %{x}<br>Quota stock: %{y:.1f}%<br>Abitazioni: %{customdata[0]:,.0f}<extra></extra>"
+      };
+    });
+    clearChartMessage("stockAgeChart");
+    window.Plotly.react("stockAgeChart", traces, {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
+      margin: { l: 72, r: 40, t: 14, b: 112 },
+      barmode: "group",
+      xaxis: { title: { text: "Periodo di costruzione" }, gridcolor: theme.line, fixedrange: true, tickangle: -30 },
+      yaxis: { title: { text: "Quota dello stock abitativo (%)" }, gridcolor: theme.line, fixedrange: true, rangemode: "tozero" },
+      legend: { orientation: "h", x: 0, y: 1.12, xanchor: "left" }
+    }, { responsive: true, displayModeBar: false });
+    byId("stockAgeComment").innerHTML = "<strong>Come leggere:</strong> questo grafico usa un unico JSON statico gia' aggregato. Le barre mostrano la composizione percentuale dello stock abitativo 2021 per periodo di costruzione; il tooltip riporta anche il numero di abitazioni.";
+  }
+
+  function loadStockAge() {
+    return fetchJson(STOCK_AGE_URL).then(function (payload) {
+      state.stockAgeData = payload.records || [];
+      renderStockAge(state.stockAgeData);
+    }).catch(function (error) {
+      renderMessage("stockAgeChart", "Non riesco a caricare il JSON sullo stock abitativo: " + error.message);
+      byId("stockAgeComment").textContent = "Verifica che estat_dwellings_by_construction_period_2021.json sia stato sincronizzato su Cloudflare R2.";
+    });
+  }
+
   function loadEuropeIndex() {
     return fetchJson(EUROPE_INDEX_URL).then(function (payload) {
       indicators = payload.indicators || [];
       defaultEuropeIndicatorId = payload.default_indicator || (indicators[0] && indicators[0].id) || null;
       if (!indicators.length) throw new Error("indice Eurostat vuoto");
-    });
-  }
-
-
-  function prefetchEuropeIndicators() {
-    indicators.forEach(function (indicator) {
-      if (!indicator || !indicator.id || state.europeCache[indicator.id]) return;
-      fetchJson(staticEuropeUrl(indicator)).then(function (payload) {
-        state.europeCache[indicator.id] = payload.records || [];
-      }).catch(function () {});
     });
   }
 
@@ -573,6 +630,7 @@
     }
     new MutationObserver(function () {
       if (state.europeData) renderEurope();
+      if (state.stockAgeData) renderStockAge(state.stockAgeData);
       if (state.localIndex && (state.localIndex.regions || []).length) loadLocalRegion();
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
@@ -580,6 +638,7 @@
   function init() {
     if (!window.Plotly) {
       renderMessage("europeChart", "Plotly non e' disponibile.");
+      renderMessage("stockAgeChart", "Plotly non e' disponibile.");
       renderMessage("localChart", "Plotly non e' disponibile.");
       return;
     }
@@ -588,10 +647,11 @@
       populateEuropeIndicatorControl();
       if (defaultEuropeIndicatorId) byId("europeIndicator").value = defaultEuropeIndicatorId;
       if (!byId("europeIndicator").value && indicators[0]) byId("europeIndicator").value = indicators[0].id;
-      loadEuropeIndicator(byId("europeIndicator").value || defaultEuropeIndicatorId).then(prefetchEuropeIndicators);
+      loadEuropeIndicator(byId("europeIndicator").value || defaultEuropeIndicatorId);
     }).catch(function (error) {
       renderMessage("europeChart", "Non riesco a caricare l'indice Eurostat statico: " + error.message);
     });
+    loadStockAge();
     loadLocalIndex();
   }
 
