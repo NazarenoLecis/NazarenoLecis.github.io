@@ -22,8 +22,21 @@
     document.head.appendChild(script);
   }
 
+  function loadScriptWhenIdle(src, key) {
+    var schedule = window.requestIdleCallback || function (callback) {
+      return window.setTimeout(callback, 900);
+    };
+    schedule(function () {
+      loadScript(src, key);
+    }, { timeout: 2200 });
+  }
+
   function isAlmaArticle() {
     return location.pathname.indexOf("/articoli/occupazione-salari-laureati-almalaurea") >= 0;
+  }
+
+  function isNativeEnglishPage() {
+    return document.documentElement.lang === "en";
   }
 
   function isHeatDashboard() {
@@ -86,9 +99,9 @@
     loadScript("/assets/lang.js", "language");
     loadScript("/assets/professional-title.js", "professionalTitle");
 
-    if (isAlmaArticle()) {
+    if (isAlmaArticle() && !isNativeEnglishPage()) {
       patchAlmaArticleDataFetch();
-      loadScript("/assets/almalaurea-article-static.js", "almArticleStatic");
+      loadScriptWhenIdle("/assets/almalaurea-article-static.js", "almArticleStatic");
     }
 
     if (isHeatDashboard()) {

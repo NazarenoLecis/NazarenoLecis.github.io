@@ -17,6 +17,9 @@
   var queued = false;
   var data = null;
   var dataPromise = null;
+  var observer = null;
+  var nativeEnglishPage = document.documentElement.lang === "en";
+  var dataApplyQueued = false;
 
   var exactOverrides = {
     "Statistico e analista del rischio": "Statistician and Risk Analysis Officer",
@@ -123,7 +126,7 @@
   }
 
   function shouldSkip(element) {
-    return !element || Boolean(element.closest("script,style,noscript,.language-switch"));
+    return !element || Boolean(element.closest("script,style,noscript,.language-switch,.js-plotly-plot,.plot-container,.svg-container,svg,canvas"));
   }
 
   function translateTextNode(node, language) {
@@ -189,6 +192,10 @@
     return validLanguages[language] ? language : "it";
   }
 
+  function isNativeEnglishPage() {
+    return nativeEnglishPage;
+  }
+
   function saveLanguage(language) {
     try {
       localStorage.setItem(storageKey, language);
@@ -218,6 +225,12 @@
     saveLanguage(language);
     window.location.href = target;
     return true;
+  }
+
+  function maybeNavigateFromStoredPreference(language) {
+    if (language !== "en") return false;
+    if (isNativeEnglishPage()) return false;
+    return maybeNavigateToArticle(language);
   }
 
   function localisedHref(originalHref, language) {
@@ -256,17 +269,31 @@
     if (!validLanguages[language]) language = "it";
     currentLanguage = language;
     saveLanguage(language);
+    if (isNativeEnglishPage()) {
+      applying = true;
+      setActive("en");
+      document.documentElement.lang = "en";
+      syncLinks("en");
+      applying = false;
+      return;
+    }
+    applying = true;
     if (updateUrl) setUrlLanguage(language);
     setActive(language);
     setMetadata(language);
     syncLinks(language);
     if (language === "en" && !data) {
+      applying = false;
+      if (dataApplyQueued) return;
+      dataApplyQueued = true;
       loadData().then(function () {
+        dataApplyQueued = false;
         if (currentLanguage === "en") applyLanguage("en", false);
-      }).catch(function () {});
+      }).catch(function () {
+        dataApplyQueued = false;
+      });
       return;
     }
-    applying = true;
     walk(document.body, language);
     syncLinks(language);
     applying = false;
@@ -275,10 +302,11 @@
   function scheduleApply() {
     if (applying || queued) return;
     queued = true;
-    (window.requestAnimationFrame || function (callback) { return setTimeout(callback, 16); })(function () {
+    var schedule = window.requestIdleCallback || window.requestAnimationFrame || function (callback) { return setTimeout(callback, 16); };
+    schedule(function () {
       queued = false;
       applyLanguage(currentLanguage, false);
-    });
+    }, { timeout: 250 });
   }
 
   function injectStyle() {
@@ -324,24 +352,24 @@
   }
 
   function observeChanges() {
-    if (!window.MutationObserver || !document.body) return;
-    var observer = new MutationObserver(function () {
+    if (!window.MutationObserver || !document.body || observer || isNativeEnglishPage()) return;
+    observer = new MutationObserver(function () {
       if (applying) return;
       scheduleApply();
     });
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["placeholder", "aria-label", "alt", "title", "content", "href"]
+      characterData: true
     });
   }
 
   function start() {
     injectStyle();
     injectSwitch();
-    applyLanguage(languageFromUrlOrStorage(), false);
+    var language = languageFromUrlOrStorage();
+    if (maybeNavigateFromStoredPreference(language)) return;
+    applyLanguage(language, false);
     observeChanges();
   }
 
