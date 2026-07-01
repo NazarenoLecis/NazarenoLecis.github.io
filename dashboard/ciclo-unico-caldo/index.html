@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="preload" href="dashboard_caldo.json" as="fetch" crossorigin>
+  <link rel="preload" href="/data/ciclo-unico-caldo/dashboard_caldo.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <style>
     .heat-dashboard {
@@ -223,18 +223,16 @@
 
     <section class="dashboard-section" id="chartSection">
       <div class="section-head">
-        <span class="eyebrow">Confronto regionale</span>
-        <div>
-          <h2 id="chartSectionTitle">Condizionamento e rischio caldo nelle scuole</h2>
-          <p>Usa i filtri per cambiare grado scolastico e metrica. Il grafico resta sempre regionale, così il confronto territoriale rimane leggibile.</p>
-        </div>
+        <span class="eyebrow">Condizioni termiche</span>
+        <h2>Quota di scuole-edifici con condizionamento dichiarato</h2>
+        <p>Il dato misura righe scuola edificio nei dataset MIM. Va letto come indicatore amministrativo di presenza dichiarata, non come misura diretta del comfort termico nelle aule.</p>
       </div>
 
-      <details class="chart-filter-panel" open aria-label="Filtri dashboard caldo">
-        <summary>Filtri dashboard caldo</summary>
+      <details class="chart-filter-panel" open aria-label="Filtri dashboard caldo scuole">
+        <summary>Filtri</summary>
         <div class="filter-intro">
-          <h3>Come usare i filtri</h3>
-          <p>Il filtro sul grado cambia il perimetro osservato. Il filtro sulla metrica cambia la variabile ordinata nel grafico. La quota A/C dichiarata include nel denominatore anche i valori non definiti, mentre la quota sui soli SI/NO li esclude.</p>
+          <h3>Filtri</h3>
+          <p>Scegli grado scolastico e metrica. Le regioni sono riordinate automaticamente in base alla variabile selezionata.</p>
         </div>
         <div class="filter-grid heat-filter-grid">
           <label>
@@ -251,8 +249,8 @@
         </div>
       </details>
 
-      <div class="kpi-grid" aria-label="Indicatori sintetici">
-        <div class="kpi"><span>Righe MIM nel perimetro</span><strong id="kpiSites">-</strong></div>
+      <div class="kpi-grid">
+        <div class="kpi"><span>Righe MIM</span><strong id="kpiSites">-</strong></div>
         <div class="kpi"><span>A/C dichiarata</span><strong id="kpiAcData">-</strong></div>
         <div class="kpi"><span>Mitigazione media/alta</span><strong id="kpiMitigation">-</strong></div>
         <div class="kpi"><span>Rischio caldo alto</span><strong id="kpiRisk">-</strong></div>
@@ -260,27 +258,22 @@
 
       <div class="chart-panel main-chart">
         <div class="panel-title">
-          <h2 id="chartTitle">Barplot per regione</h2>
-          <span id="chartNote"></span>
+          <h2 id="chartTitle">Quota A/C per regione</h2>
+          <span id="chartNote">Caricamento dati...</span>
         </div>
-        <div class="chart">
-          <svg id="barChart" role="img" aria-labelledby="chartTitle"></svg>
-        </div>
-        <div class="chart-credit">Fonte: MIM, Portale unico dei dati della scuola. Elaborazione di Nazareno Lecis.</div>
+        <svg id="barChart" class="chart" role="img" aria-label="Grafico a barre sulle condizioni termiche delle scuole"></svg>
+        <div class="chart-credit">Fonte: MIM, dataset edilizia scolastica e impianti. Elaborazione di Nazareno Lecis.</div>
       </div>
-
-      <div class="selection-comment">
-        <strong>Nota di lettura.</strong> La presenza di condizionamento o ventilazione è un dato dichiarato nel campo MIM <code>CONDIZIONAMENTOVENTILAZIONE</code>. Non misura la temperatura in aula e non garantisce che tutte le aule siano raffrescate.
+      <div class="selection-comment" id="selectionComment">
+        <strong>Come leggere:</strong> le quote sono calcolate sulle righe scuola edificio del dataset MIM. Una riga non coincide sempre con un edificio fisico unico.
       </div>
     </section>
 
     <section class="dashboard-section" id="tableSection">
       <div class="section-head">
-        <span class="eyebrow">Dettaglio</span>
-        <div>
-          <h2>Tabella regioni</h2>
-          <p>La tabella segue lo stesso ordinamento del grafico e permette di confrontare A/C dichiarata, valori non definiti, indicatori termici e rischio caldo.</p>
-        </div>
+        <span class="eyebrow">Tabella</span>
+        <h2>Dati regionali</h2>
+        <p>La tabella riporta le principali variabili aggregate per regione e grado selezionato.</p>
       </div>
       <div class="chart-panel">
         <div class="heat-table-wrap">
@@ -289,14 +282,16 @@
               <tr>
                 <th>Regione</th>
                 <th>Righe MIM</th>
-                <th>A/C dichiarata</th>
+                <th>A/C SI</th>
                 <th>A/C non definita</th>
                 <th>Mitigazione media/alta</th>
                 <th>Nessun indicatore termico</th>
-                <th>Rischio alto</th>
+                <th>Rischio caldo alto</th>
               </tr>
             </thead>
-            <tbody id="tableBody"></tbody>
+            <tbody id="tableBody">
+              <tr><td colspan="7">Caricamento dati...</td></tr>
+            </tbody>
           </table>
         </div>
         <div class="table-credit">Fonte: MIM, dataset edilizia scolastica e impianti. Elaborazione di Nazareno Lecis.</div>
@@ -556,7 +551,7 @@
       window.addEventListener("resize", render);
     }
 
-    fetch("dashboard_caldo.json")
+    fetch("/data/ciclo-unico-caldo/dashboard_caldo.json")
       .then(function (response) {
         if (!response.ok) throw new Error("HTTP " + response.status);
         return response.json();
