@@ -101,7 +101,8 @@
       "records": 534,
       "theme_label": "Demografia",
       "absolute_count": true,
-      "show_eu_aggregate": false
+      "show_eu_aggregate": true,
+      "eu_average_from_countries": true
     },
     {
       "id": "estat_population_total_a",
@@ -117,7 +118,8 @@
       "records": 1729,
       "theme_label": "Demografia",
       "absolute_count": true,
-      "show_eu_aggregate": false
+      "show_eu_aggregate": true,
+      "eu_average_from_countries": true
     },
     {
       "id": "estat_age_leaving_parental_home_a",
@@ -146,94 +148,6 @@
       "file": "estat_young_living_with_parents_25_34_a.json",
       "records": 572,
       "theme_label": "Domanda latente"
-    },
-    {
-      "id": "estat_gfcf_dwellings_pct_gdp_a",
-      "label": "Investimenti in abitazioni",
-      "shortLabel": "Investimenti in abitazioni (% PIL)",
-      "dataset": "nama_10_an6",
-      "unit": "% del PIL",
-      "source": "Eurostat nama_10_an6",
-      "theme": "investimenti",
-      "frequency": "A",
-      "note": "Quota di PIL investita in abitazioni. Puo crescere per maggiore quantita costruita, ma anche per aumento dei prezzi dei lavori e dei materiali.",
-      "file": "estat_gfcf_dwellings_pct_gdp_a.json",
-      "records": 878,
-      "theme_label": "Investimenti"
-    },
-    {
-      "id": "estat_new_residential_construction_cost_i21_q",
-      "label": "Costi di costruzione residenziale",
-      "shortLabel": "Costi nuovi edifici residenziali (indice 2021=100)",
-      "dataset": "sts_copi_q",
-      "unit": "indice 2021=100",
-      "source": "Eurostat sts_copi_q",
-      "theme": "offerta",
-      "frequency": "Q",
-      "note": "Indice trimestrale dei costi di costruzione dei nuovi edifici residenziali, base 2021=100. Costi piu alti possono rallentare nuova offerta o riflettersi sui prezzi finali.",
-      "file": "estat_new_residential_construction_cost_i21_q.json",
-      "records": 2327,
-      "theme_label": "Offerta"
-    },
-    {
-      "id": "estat_building_permits_dwellings_index_q",
-      "label": "Permessi di costruzione per abitazioni",
-      "shortLabel": "Permessi abitativi (indice 2021=100)",
-      "dataset": "sts_cobp_q",
-      "unit": "indice 2021=100",
-      "source": "Eurostat sts_cobp_q",
-      "theme": "offerta",
-      "frequency": "Q",
-      "note": "Indice trimestrale dei permessi di costruzione per abitazioni, base 2021=100. Mostra la dinamica recente delle autorizzazioni, non il livello assoluto di nuove case.",
-      "file": "estat_building_permits_dwellings_index_q.json",
-      "records": 2834,
-      "theme_label": "Offerta"
-    },
-    {
-      "id": "estat_residential_permits_floor_area_a",
-      "label": "Superficie residenziale autorizzata",
-      "shortLabel": "Permessi residenziali in m2 per 1.000 abitanti",
-      "dataset": "tipsho50",
-      "unit": "m2 per 1.000 abitanti",
-      "source": "Eurostat tipsho50",
-      "theme": "offerta",
-      "frequency": "A",
-      "note": "Superficie residenziale autorizzata dai permessi edilizi, normalizzata per 1.000 abitanti. Aiuta a confrontare l'intensita dell'offerta potenziale tra paesi di dimensioni diverse.",
-      "file": "estat_residential_permits_floor_area_a.json",
-      "records": 565,
-      "theme_label": "Offerta",
-      "absolute_count": true,
-      "show_eu_aggregate": false
-    },
-    {
-      "id": "estat_residential_permits_dwellings_ths_a",
-      "label": "Permessi edilizi per nuove abitazioni",
-      "shortLabel": "Nuove abitazioni autorizzate",
-      "dataset": "sts_cobp_a",
-      "unit": "migliaia di abitazioni",
-      "source": "Eurostat sts_cobp_a",
-      "theme": "offerta",
-      "frequency": "A",
-      "note": "Permessi edilizi rilasciati per nuove abitazioni residenziali. E' un indicatore anticipatore dell'offerta potenziale: un permesso non equivale a un'abitazione completata.",
-      "file": "estat_residential_permits_dwellings_ths_a.json",
-      "records": 565,
-      "theme_label": "Offerta",
-      "absolute_count": true,
-      "show_eu_aggregate": false
-    },
-    {
-      "id": "estat_construction_production_index_a",
-      "label": "Produzione nelle costruzioni",
-      "shortLabel": "Produzione nelle costruzioni (indice 2015=100)",
-      "dataset": "sts_copr_a",
-      "unit": "indice 2015=100",
-      "source": "Eurostat sts_copr_a",
-      "theme": "offerta",
-      "frequency": "A",
-      "note": "Indice dell'attivita produttiva nel settore costruzioni. Non riguarda solo edilizia residenziale, quindi va letto come contesto dell'offerta edilizia complessiva.",
-      "file": "estat_construction_production_index_a.json",
-      "records": 691,
-      "theme_label": "Offerta"
     },
     {
       "id": "estat_hpi_total_i15_q",

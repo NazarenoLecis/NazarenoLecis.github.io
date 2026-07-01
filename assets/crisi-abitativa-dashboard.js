@@ -177,7 +177,7 @@
 
   function selectedStockAgeCountries() {
     var select = byId("stockAgeCountries");
-    return select ? Array.from(select.selectedOptions || []).map(function (option) { return option.value; }) : [];
+    return select ? Array.from(select.options || []).filter(function (option) { return option.selected; }).map(function (option) { return option.value; }) : [];
   }
 
   function populateStockAgeCountryControl(records) {
@@ -186,7 +186,7 @@
     var current = new Set(selectedStockAgeCountries());
     var countries = new Map();
     (records || []).forEach(function (record) {
-      if (isCountry(record.geo) && record.geo !== ITALY) countries.set(record.geo, record.geo_label);
+      if (isCountry(record.geo) && record.geo !== ITALY && record.geo !== EU27) countries.set(record.geo, record.geo_label);
     });
     select.innerHTML = Array.from(countries.entries()).sort(function (a, b) {
       if (a[0] === EU27) return -1;
@@ -213,12 +213,34 @@
     };
   }
 
+  function traceForEuAverage(byYear, years, theme) {
+    var values = years.map(function (year) {
+      var rows = (byYear.get(year) || []).filter(function (record) {
+        return isCountry(record.geo) && Number.isFinite(record.value);
+      });
+      if (!rows.length) return null;
+      return rows.reduce(function (total, record) { return total + record.value; }, 0) / rows.length;
+    });
+    return {
+      type: "scatter",
+      mode: "lines+markers",
+      name: "Media UE",
+      x: years,
+      y: values,
+      line: { color: theme.muted, width: 2, dash: "dot" },
+      marker: { color: theme.muted, size: 5 },
+      customdata: years,
+      hovertemplate: "<b>Media UE</b><br>Periodo: %{customdata}<br>Valore: %{y:.1f}<extra></extra>"
+    };
+  }
+
   function currentIndicator() {
     return indicators.find(function (item) { return item.id === byId("europeIndicator").value; }) || indicators[0];
   }
 
   function isAbsoluteIndicator(indicator) {
     if (!indicator) return false;
+    if (indicator.show_eu_aggregate === true) return false;
     if (indicator.show_eu_aggregate === false || indicator.absolute_count) return true;
     return /abitazioni|famiglie|persone|m2|m²/i.test(indicator.unit || "");
   }
@@ -264,7 +286,9 @@
     ];
 
     var showEuAggregate = !isAbsoluteIndicator(indicator);
-    if (showEuAggregate && records.some(function (record) { return record.geo === EU27; })) {
+    if (indicator.eu_average_from_countries) {
+      traces.push(traceForEuAverage(byYear, years, theme));
+    } else if (showEuAggregate && records.some(function (record) { return record.geo === EU27; })) {
       traces.push(traceForCountry(records, EU27, "EU27", theme.muted, 2));
     }
     traces.push(traceForCountry(records, ITALY, "Italia", theme.orange, 4));
@@ -285,7 +309,7 @@
       byId("kpiItaly").textContent = formatValue(latestItaly.value, indicator.unit);
       byId("kpiRange").textContent = formatValue(Math.min.apply(null, latestValues), indicator.unit) + " - " + formatValue(Math.max.apply(null, latestValues), indicator.unit);
       byId("kpiYear").textContent = latestItaly.period || latestItaly.year;
-      byId("europeComment").innerHTML = "<strong>Come leggere:</strong> " + escapeHtml(indicator.note || "") + " La banda arancione indica il range min-max tra paesi disponibili: non e' una media europea e non misura la distribuzione interna ai singoli paesi." + (showEuAggregate ? "" : " Per gli indicatori in valori assoluti EU27 non viene disegnato: e' un aggregato e sarebbe fuori scala rispetto ai singoli paesi.");
+      byId("europeComment").innerHTML = "<strong>Come leggere:</strong> " + escapeHtml(indicator.note || "") + " La banda arancione indica il range min-max tra paesi disponibili: non e' una media europea e non misura la distribuzione interna ai singoli paesi." + (indicator.eu_average_from_countries ? " La linea Media UE e' calcolata come media semplice dei paesi disponibili nello stesso anno, quindi resta dentro il range." : (showEuAggregate ? "" : " Per gli indicatori in valori assoluti EU27 non viene disegnato: e' un aggregato e sarebbe fuori scala rispetto ai singoli paesi."));
     }
 
     window.Plotly.react("europeChart", traces, {
@@ -641,12 +665,17 @@
       Array.from(byId("highlightCountries").options).forEach(function (option) { option.selected = false; });
       renderEurope();
     });
-    byId("stockAgeCountries").addEventListener("change", function () {
+    function rerenderStockAge() {
       if (state.stockAgeData) renderStockAge(state.stockAgeData);
+    }
+    byId("stockAgeCountries").addEventListener("change", rerenderStockAge);
+    byId("stockAgeCountries").addEventListener("input", rerenderStockAge);
+    byId("stockAgeCountries").addEventListener("click", function () {
+      setTimeout(rerenderStockAge, 0);
     });
     byId("resetStockAgeCountries").addEventListener("click", function () {
       Array.from(byId("stockAgeCountries").options).forEach(function (option) { option.selected = false; });
-      if (state.stockAgeData) renderStockAge(state.stockAgeData);
+      rerenderStockAge();
     });
     byId("localRegion").addEventListener("change", loadLocalRegion);
     byId("localMetric").addEventListener("change", function () {

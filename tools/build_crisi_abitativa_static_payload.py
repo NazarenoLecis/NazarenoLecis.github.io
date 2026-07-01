@@ -28,10 +28,24 @@ ABSOLUTE_IDS = {
     "estat_dwellings_unoccupied_2021",
 }
 
+EU_AGGREGATE_LINE_IDS = {
+    "estat_private_households_total_a",
+    "estat_population_total_a",
+}
+
 ONE_POINT_STOCK_IDS = {
     "estat_dwellings_total_2021",
     "estat_dwellings_occupied_2021",
     "estat_dwellings_unoccupied_2021",
+}
+
+SUPPLY_SERIES_IDS = {
+    "estat_gfcf_dwellings_pct_gdp_a",
+    "estat_new_residential_construction_cost_i21_q",
+    "estat_building_permits_dwellings_index_q",
+    "estat_residential_permits_floor_area_a",
+    "estat_residential_permits_dwellings_ths_a",
+    "estat_construction_production_index_a",
 }
 
 
@@ -109,7 +123,7 @@ def main() -> None:
     }
 
     source_ids = {source for _, _, source in PERIODS}
-    removed_stock_ids = source_ids | ONE_POINT_STOCK_IDS
+    removed_stock_ids = source_ids | ONE_POINT_STOCK_IDS | SUPPLY_SERIES_IDS
     index = fetch_json("index.json")
     indicators = []
     removed_count = 0
@@ -119,7 +133,11 @@ def main() -> None:
             continue
 
         indicator = dict(indicator)
-        if is_absolute_indicator(indicator):
+        if indicator.get("id") in EU_AGGREGATE_LINE_IDS:
+            indicator["absolute_count"] = True
+            indicator["show_eu_aggregate"] = True
+            indicator["eu_average_from_countries"] = True
+        elif is_absolute_indicator(indicator):
             indicator["absolute_count"] = True
             indicator["show_eu_aggregate"] = False
         indicators.append(indicator)
@@ -136,7 +154,7 @@ def main() -> None:
     )
 
     print(f"Wrote {len(records)} construction-period records")
-    print(f"Removed {removed_count} one-point stock indicators from index")
+    print(f"Removed {removed_count} stock/supply indicators from index")
     print(f"Wrote {len(indicators)} index indicators")
 
 
