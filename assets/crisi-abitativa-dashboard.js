@@ -175,6 +175,29 @@
     return Array.from(byId("highlightCountries").selectedOptions || []).map(function (option) { return option.value; });
   }
 
+  function selectedStockAgeCountries() {
+    var select = byId("stockAgeCountries");
+    return select ? Array.from(select.selectedOptions || []).map(function (option) { return option.value; }) : [];
+  }
+
+  function populateStockAgeCountryControl(records) {
+    var select = byId("stockAgeCountries");
+    if (!select) return;
+    var current = new Set(selectedStockAgeCountries());
+    var countries = new Map();
+    (records || []).forEach(function (record) {
+      if (isCountry(record.geo) && record.geo !== ITALY) countries.set(record.geo, record.geo_label);
+    });
+    select.innerHTML = Array.from(countries.entries()).sort(function (a, b) {
+      if (a[0] === EU27) return -1;
+      if (b[0] === EU27) return 1;
+      return a[1].localeCompare(b[1], "it");
+    }).map(function (entry) {
+      var selected = current.has(entry[0]) ? " selected" : "";
+      return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(entry[1] || entry[0]) + "</option>";
+    }).join("");
+  }
+
   function traceForCountry(records, code, name, color, width) {
     var rows = records.filter(function (record) { return record.geo === code; }).sort(function (a, b) { return a.year - b.year; });
     return {
@@ -280,11 +303,9 @@
     records = records || [];
     if (!records.length) return renderMessage("stockAgeChart", "Nessun dato disponibile sull'eta' del patrimonio immobiliare.");
     var theme = plotTheme();
-    var countries = [
-      { code: ITALY, name: "Italia", color: theme.orange },
-      { code: EU27, name: "EU27", color: theme.muted }
-    ].filter(function (country) {
-      return records.some(function (record) { return record.geo === country.code; });
+    var selectedCodes = selectedStockAgeCountries();
+    var countryCodes = [ITALY, EU27].concat(selectedCodes).filter(function (code, index, array) {
+      return array.indexOf(code) === index && records.some(function (record) { return record.geo === code; });
     });
     var buckets = [];
     records.forEach(function (record) {
@@ -292,18 +313,21 @@
         buckets.push({ id: record.bucket, label: record.bucket_label || record.bucket });
       }
     });
-    var traces = countries.map(function (country) {
+    var colors = [theme.orange, theme.muted, "#4e79a7", "#59a14f", "#e15759", "#b07aa1", "#76b7b2", "#edc948"];
+    var traces = countryCodes.map(function (code, index) {
+      var labelRecord = records.find(function (record) { return record.geo === code; });
+      var name = code === ITALY ? "Italia" : (code === EU27 ? "EU27" : ((labelRecord && labelRecord.geo_label) || code));
       return {
         type: "bar",
-        name: country.name,
+        name: name,
         x: buckets.map(function (bucket) { return bucket.label; }),
         y: buckets.map(function (bucket) {
-          var row = records.find(function (record) { return record.geo === country.code && record.bucket === bucket.id; });
+          var row = records.find(function (record) { return record.geo === code && record.bucket === bucket.id; });
           return row ? Number(row.share_pct) : null;
         }),
-        marker: { color: country.color, opacity: country.code === ITALY ? 0.9 : 0.58 },
+        marker: { color: colors[index % colors.length], opacity: code === ITALY ? 0.9 : 0.68 },
         customdata: buckets.map(function (bucket) {
-          var row = records.find(function (record) { return record.geo === country.code && record.bucket === bucket.id; });
+          var row = records.find(function (record) { return record.geo === code && record.bucket === bucket.id; });
           return row ? [row.value, row.geo_total] : [null, null];
         }),
         hovertemplate: "<b>%{fullData.name}</b><br>Periodo: %{x}<br>Quota stock: %{y:.1f}%<br>Abitazioni: %{customdata[0]:,.0f}<extra></extra>"
@@ -326,6 +350,7 @@
   function loadStockAge() {
     return fetchJson(STOCK_AGE_URL).then(function (payload) {
       state.stockAgeData = payload.records || [];
+      populateStockAgeCountryControl(state.stockAgeData);
       renderStockAge(state.stockAgeData);
     }).catch(function (error) {
       renderMessage("stockAgeChart", "Non riesco a caricare il JSON sullo stock abitativo: " + error.message);
@@ -615,6 +640,13 @@
     byId("resetEuropeFilters").addEventListener("click", function () {
       Array.from(byId("highlightCountries").options).forEach(function (option) { option.selected = false; });
       renderEurope();
+    });
+    byId("stockAgeCountries").addEventListener("change", function () {
+      if (state.stockAgeData) renderStockAge(state.stockAgeData);
+    });
+    byId("resetStockAgeCountries").addEventListener("click", function () {
+      Array.from(byId("stockAgeCountries").options).forEach(function (option) { option.selected = false; });
+      if (state.stockAgeData) renderStockAge(state.stockAgeData);
     });
     byId("localRegion").addEventListener("change", loadLocalRegion);
     byId("localMetric").addEventListener("change", function () {

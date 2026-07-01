@@ -28,6 +28,12 @@ ABSOLUTE_IDS = {
     "estat_dwellings_unoccupied_2021",
 }
 
+ONE_POINT_STOCK_IDS = {
+    "estat_dwellings_total_2021",
+    "estat_dwellings_occupied_2021",
+    "estat_dwellings_unoccupied_2021",
+}
+
 
 def fetch_json(name: str) -> dict:
     request = urllib.request.Request(
@@ -103,12 +109,13 @@ def main() -> None:
     }
 
     source_ids = {source for _, _, source in PERIODS}
+    removed_stock_ids = source_ids | ONE_POINT_STOCK_IDS
     index = fetch_json("index.json")
     indicators = []
-    inserted = False
+    removed_count = 0
     for indicator in index.get("indicators", []):
-        if indicator.get("id") in source_ids:
-            inserted = True
+        if indicator.get("id") in removed_stock_ids:
+            removed_count += 1
             continue
 
         indicator = dict(indicator)
@@ -129,7 +136,7 @@ def main() -> None:
     )
 
     print(f"Wrote {len(records)} construction-period records")
-    print("Removed individual construction-period indicators from index" if inserted else "No construction-period indicators found in index")
+    print(f"Removed {removed_count} one-point stock indicators from index")
     print(f"Wrote {len(indicators)} index indicators")
 
 

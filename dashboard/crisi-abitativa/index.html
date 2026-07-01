@@ -116,6 +116,22 @@
         <h2>Eta' del patrimonio immobiliare</h2>
         <p>I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione, usando un JSON statico gia' aggregato.</p>
       </div>
+      <details class="chart-filter-panel" open aria-label="Filtri eta patrimonio immobiliare">
+        <summary>Filtri stock abitativo</summary>
+        <div class="filter-intro">
+          <h3>Paesi da confrontare</h3>
+          <p>Italia ed EU27 restano sempre visibili. Puoi aggiungere altri paesi dal menu: il grafico usa quote percentuali dello stock per evitare che i paesi piu' grandi schiaccino gli altri.</p>
+        </div>
+        <div class="filter-grid housing-filter-grid">
+          <label>
+            <span>Paesi da aggiungere</span>
+            <select id="stockAgeCountries" multiple size="4"></select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetStockAgeCountries" type="button">Reset paesi</button>
+        </div>
+      </details>
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2 id="stockAgeTitle">Abitazioni per periodo di costruzione</h2>
