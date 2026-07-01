@@ -39,15 +39,6 @@ ONE_POINT_STOCK_IDS = {
     "estat_dwellings_unoccupied_2021",
 }
 
-SUPPLY_SERIES_IDS = {
-    "estat_gfcf_dwellings_pct_gdp_a",
-    "estat_new_residential_construction_cost_i21_q",
-    "estat_building_permits_dwellings_index_q",
-    "estat_residential_permits_floor_area_a",
-    "estat_residential_permits_dwellings_ths_a",
-    "estat_construction_production_index_a",
-}
-
 
 def fetch_json(name: str) -> dict:
     request = urllib.request.Request(
@@ -56,6 +47,18 @@ def fetch_json(name: str) -> dict:
     )
     with urllib.request.urlopen(request, timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def load_index() -> dict:
+    remote_index = fetch_json("index.json")
+    local_path = OUT_DIR / "index.json"
+    if not local_path.exists():
+        return remote_index
+
+    local_index = json.loads(local_path.read_text(encoding="utf-8-sig"))
+    local_count = len(local_index.get("indicators", []))
+    remote_count = len(remote_index.get("indicators", []))
+    return local_index if local_count > remote_count else remote_index
 
 
 def is_absolute_indicator(indicator: dict) -> bool:
@@ -123,8 +126,8 @@ def main() -> None:
     }
 
     source_ids = {source for _, _, source in PERIODS}
-    removed_stock_ids = source_ids | ONE_POINT_STOCK_IDS | SUPPLY_SERIES_IDS
-    index = fetch_json("index.json")
+    removed_stock_ids = source_ids | ONE_POINT_STOCK_IDS
+    index = load_index()
     indicators = []
     removed_count = 0
     for indicator in index.get("indicators", []):
@@ -154,7 +157,7 @@ def main() -> None:
     )
 
     print(f"Wrote {len(records)} construction-period records")
-    print(f"Removed {removed_count} stock/supply indicators from index")
+    print(f"Removed {removed_count} construction-period/one-point stock indicators from index")
     print(f"Wrote {len(indicators)} index indicators")
 
 
