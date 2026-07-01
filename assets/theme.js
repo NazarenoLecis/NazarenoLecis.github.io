@@ -77,8 +77,8 @@
     apply(saved || "dark");
     injectSocialStyle();
     removeTopGithubLink();
-    loadScript("/assets/lang.js", "language");
-    loadScript("/assets/professional-title.js", "professionalTitle");
+    loadScriptWhenIdle("/assets/lang.js", "language");
+    loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {
       loadScriptWhenIdle("/assets/almalaurea-article-static.js", "almArticleStatic");

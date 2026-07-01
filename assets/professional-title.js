@@ -43,14 +43,4 @@
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
   else run();
-
-  if (window.MutationObserver) {
-    new MutationObserver(run).observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["title", "alt", "aria-label", "content"]
-    });
-  }
 })();
