@@ -1,5 +1,5 @@
 (function () {
-  var DATA_URL = "/data/almalaurea/almalaurea_metadata.json";
+  var DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json";
   var WILDCARD = "*";
   var records = [];
   var metadata = null;

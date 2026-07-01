@@ -1,6 +1,6 @@
 (function () {
-  var DATA_URL = "/data/almalaurea/almalaurea_article_timeseries_data.json";
-  var TIMESERIES_URL = "/data/almalaurea/almalaurea_article_timeseries_data.json";
+  var DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json";
+  var TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json";
   var WILDCARD = "*";
   var records = [];
   var timeRecords = [];

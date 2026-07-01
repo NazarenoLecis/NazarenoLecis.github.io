@@ -1,10 +1,10 @@
 (function () {
-  var METADATA_URL = "../../data/almalaurea/almalaurea_metadata.json";
-  var DASHBOARD_CHUNK_BASE = "../../data/almalaurea/dashboard_chunks/";
-  var TIMESERIES_AGG_URL = "../../data/almalaurea/almalaurea_timeseries_aggregated_data.json";
-  var TIMESERIES_DETAIL_URL = "../../data/almalaurea/almalaurea_timeseries_university_data.json";
-  var ARTICLE_DATA_URL = "../../data/almalaurea/almalaurea_article_data.json";
-  var ARTICLE_TIMESERIES_URL = "../../data/almalaurea/almalaurea_article_timeseries_data.json";
+  var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json";
+  var DASHBOARD_CHUNK_BASE = "https://data.nazarenolecis.com/almalaurea/dashboard_chunks/";
+  var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json";
+  var TIMESERIES_DETAIL_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_university_data.json";
+  var ARTICLE_DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json";
+  var ARTICLE_TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json";
   var WILDCARD = "*";
   var sharedData = window.AlmaLaureaData = window.AlmaLaureaData || {};
   sharedData.cache = sharedData.cache || {};

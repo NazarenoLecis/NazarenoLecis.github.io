@@ -73,6 +73,8 @@ jobs:
               --endpoint-url "${R2_ENDPOINT}" \
               --no-progress \
               --cache-control "public, max-age=3600"
+          else
+            echo "No local data folder to sync. Runtime data is expected to live on Cloudflare R2."
           fi
 
       - name: Publish dashboard runtime data to R2 when present
@@ -84,4 +86,6 @@ jobs:
               --no-progress \
               --cache-control "public, max-age=3600" \
               --content-type "application/json"
+          else
+            echo "No local heat dashboard JSON to upload. Runtime data is expected to live on Cloudflare R2."
           fi

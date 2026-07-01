@@ -1,8 +1,8 @@
 (function () {
-  var EUROPE_DATA_BASE = "../../data/crisi-abitativa/eurostat/";
+  var EUROPE_DATA_BASE = "https://data.nazarenolecis.com/crisi-abitativa/eurostat/";
   var EUROPE_INDEX_URL = EUROPE_DATA_BASE + "index.json";
-  var LOCAL_INDEX_URL = "../../data/crisi-abitativa/local_index.json";
-  var LOCAL_REGION_BASE = "../../data/crisi-abitativa/regions/";
+  var LOCAL_INDEX_URL = "https://data.nazarenolecis.com/crisi-abitativa/local_index.json";
+  var LOCAL_REGION_BASE = "https://data.nazarenolecis.com/crisi-abitativa/regions/";
   var ITALY = "IT";
   var EU27 = "EU27_2020";
   var COUNTRY_RE = /^[A-Z]{2}$/;

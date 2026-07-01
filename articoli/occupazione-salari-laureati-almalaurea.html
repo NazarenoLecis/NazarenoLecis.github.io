@@ -411,7 +411,7 @@
     }).join("");
   }
 
-  fetch("../data/almalaurea/almalaurea_article_data.json")
+  fetch("https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json")
     .then(function (response) {
       if (!response.ok) throw new Error("HTTP " + response.status);
       return response.json();
