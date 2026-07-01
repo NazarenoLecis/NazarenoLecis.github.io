@@ -84,6 +84,7 @@
     injectSocialStyle();
     removeTopGithubLink();
     loadScript("/assets/lang.js", "language");
+    loadScript("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle()) {
       patchAlmaArticleDataFetch();
