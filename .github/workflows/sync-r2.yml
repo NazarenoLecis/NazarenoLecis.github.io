@@ -12,27 +12,45 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: r2-data-sync
+  cancel-in-progress: true
+
 jobs:
   sync-r2:
     runs-on: ubuntu-latest
 
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
-      R2_BUCKET: ${{ secrets.R2_BUCKET }}
-      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      CLOUDFLARE_R2: ${{ secrets.CLOUDFLARE_R2 }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Validate required secrets
+      - name: Load Cloudflare R2 secret
+        shell: bash
         run: |
-          test -n "$AWS_ACCESS_KEY_ID"
-          test -n "$AWS_SECRET_ACCESS_KEY"
+          test -n "$CLOUDFLARE_R2"
+
+          while IFS= read -r line; do
+            line="${line#export }"
+            case "$line" in
+              R2_ACCESS_KEY_ID=*|R2_SECRET_ACCESS_KEY=*|R2_BUCKET=*|R2_ENDPOINT=*)
+                printf '%s\n' "$line" >> "$GITHUB_ENV"
+                ;;
+            esac
+          done <<< "$CLOUDFLARE_R2"
+
+      - name: Validate required values
+        shell: bash
+        run: |
+          test -n "$R2_ACCESS_KEY_ID"
+          test -n "$R2_SECRET_ACCESS_KEY"
           test -n "$R2_BUCKET"
           test -n "$R2_ENDPOINT"
+          echo "AWS_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID" >> "$GITHUB_ENV"
+          echo "AWS_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY" >> "$GITHUB_ENV"
 
       - name: Install AWS CLI
         run: |
