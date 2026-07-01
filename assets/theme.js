@@ -68,25 +68,6 @@
     document.head.appendChild(style);
   }
 
-  function patchAlmaArticleDataFetch() {
-    if (!isAlmaArticle() || window.__almArticleDataFetchPatched) return;
-    window.__almArticleDataFetchPatched = true;
-
-    var originalFetch = window.fetch.bind(window);
-    var articleTimeseriesFetchCount = 0;
-
-    window.fetch = function (input, init) {
-      var url = typeof input === "string" ? input : String(input && input.url || "");
-      if (url.indexOf("/data/almalaurea/almalaurea_article_timeseries_data.json") >= 0 || url.indexOf("almalaurea_article_timeseries_data.json") >= 0) {
-        articleTimeseriesFetchCount += 1;
-        if (articleTimeseriesFetchCount === 1) {
-          return originalFetch("/data/almalaurea/almalaurea_dashboard_data.json", init);
-        }
-      }
-      return originalFetch(input, init);
-    };
-  }
-
   function start() {
     var saved = null;
     try {
@@ -100,7 +81,6 @@
     loadScript("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {
-      patchAlmaArticleDataFetch();
       loadScriptWhenIdle("/assets/almalaurea-article-static.js", "almArticleStatic");
     }
 

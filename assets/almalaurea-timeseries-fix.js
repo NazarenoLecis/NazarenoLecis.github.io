@@ -1,5 +1,5 @@
 (function () {
-  var DATA_URL = "/data/almalaurea/almalaurea_timeseries_aggregated_data.json";
+  var DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json";
   var WILDCARD = "*";
   var records = [];
   var patched = false;
