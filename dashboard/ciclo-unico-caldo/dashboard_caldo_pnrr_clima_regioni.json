@@ -1,0 +1,94 @@
+{
+  "methodology": "Aggregazione leggera da dashboard_caldo_pnrr_projects.json: ciclo 2021-2027 e categorie efficientamento_energetico, comfort_termico, mitigazione_caldo_calendario. I progetti non sono collegati ai codici edificio MIM, quindi il rapporto per 100 righe scuola-edificio e una proxy di intensita territoriale, non una quota esatta di scuole finanziate.",
+  "categories": [
+    "efficientamento_energetico",
+    "comfort_termico",
+    "mitigazione_caldo_calendario"
+  ],
+  "records": [
+    {
+      "regione": "Emilia-Romagna",
+      "projects": 1,
+      "cost_eur": 131969,
+      "categories": [
+        {
+          "id": "efficientamento_energetico",
+          "label": "Efficientamento energetico",
+          "projects": 1,
+          "cost_eur": 131969
+        }
+      ]
+    },
+    {
+      "regione": "Lazio",
+      "projects": 15,
+      "cost_eur": 199999999.99,
+      "categories": [
+        {
+          "id": "efficientamento_energetico",
+          "label": "Efficientamento energetico",
+          "projects": 15,
+          "cost_eur": 199999999.99
+        }
+      ]
+    },
+    {
+      "regione": "Lombardia",
+      "projects": 2,
+      "cost_eur": 2200000,
+      "categories": [
+        {
+          "id": "efficientamento_energetico",
+          "label": "Efficientamento energetico",
+          "projects": 2,
+          "cost_eur": 2200000
+        }
+      ]
+    },
+    {
+      "regione": "Piemonte",
+      "projects": 4,
+      "cost_eur": 455227.4,
+      "categories": [
+        {
+          "id": "efficientamento_energetico",
+          "label": "Efficientamento energetico",
+          "projects": 3,
+          "cost_eur": 365227.4
+        },
+        {
+          "id": "comfort_termico",
+          "label": "Comfort termico",
+          "projects": 1,
+          "cost_eur": 90000
+        }
+      ]
+    },
+    {
+      "regione": "Sardegna",
+      "projects": 4,
+      "cost_eur": 13664994.98,
+      "categories": [
+        {
+          "id": "efficientamento_energetico",
+          "label": "Efficientamento energetico",
+          "projects": 4,
+          "cost_eur": 13664994.98
+        }
+      ]
+    },
+    {
+      "regione": "Toscana",
+      "projects": 3,
+      "cost_eur": 559854.25,
+      "categories": [
+        {
+          "id": "efficientamento_energetico",
+          "label": "Efficientamento energetico",
+          "projects": 3,
+          "cost_eur": 559854.25
+        }
+      ]
+    }
+  ]
+}

@@ -9,7 +9,9 @@
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
   <link rel="preload" href="https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo.json" as="fetch" crossorigin>
+  <link rel="preload" href="dashboard_caldo_pnrr_clima_regioni.json" as="fetch">
   <script defer src="../../assets/theme.js"></script>
+  <script defer src="../../assets/ciclo-unico-caldo-dashboard.js"></script>
   <style>
     .heat-dashboard {
       --max: 1500px;
@@ -46,7 +48,8 @@
       overflow-x: auto;
     }
 
-    #barChart {
+    #barChart,
+    #pnrrChart {
       display: block;
       min-width: 980px;
       width: 100%;
@@ -84,6 +87,10 @@
 
     .bar.good {
       fill: #ff8a3d;
+    }
+
+    .bar.investment {
+      fill: #76b7b2;
     }
 
     .heat-table-wrap {
@@ -170,7 +177,7 @@
         <a href="../../articoli/index.html">Articoli</a>
         <a class="active" href="../index.html">Dashboard</a>
         <a href="../../media/index.html">Media</a>
-        <a href="../../about/index.html">About</a>
+        <a href="../../about/index.html">Chi sono</a>
         <a href="https://github.com/NazarenoLecis">GitHub</a>
       </nav>
       <span class="sun">&#9788;</span>
@@ -190,7 +197,8 @@
         <span class="logo"></span>
         <div>
           <strong>Fonte: MIM, Istat, repository Ciclo_unico_scolastico</strong>
-          <span>Dataset MIM di edilizia scolastica, impianti, origine degli edifici e indicatori energetici. Elaborazione di Nazareno Lecis.</span>
+          <span>Dataset MIM di edilizia scolastica, impianti, origine degli edifici e indicatori energetici.</span>
+          <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
           <a class="related-link" href="../../articoli/calendario-scolastico-vacanze-estive.html">Leggi l'articolo collegato</a>
           <a class="related-link" href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Apri repository dati</a>
         </div>
@@ -217,6 +225,7 @@
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard caldo scuole">
       <a href="#chartSection">Grafico</a>
+      <a href="#pnrrSection">PNRR clima</a>
       <a href="#tableSection">Tabella</a>
       <a href="#methodologySection">Metodo e fonti</a>
     </nav>
@@ -274,6 +283,48 @@
       </div>
     </section>
 
+    <section class="dashboard-section" id="pnrrSection">
+      <div class="section-head">
+        <span class="eyebrow">Investimenti recenti</span>
+        <div>
+          <h2>PNRR clima/energia rispetto allo stock scolastico</h2>
+          <p>Il grafico mette a 100 le righe scuola-edificio MIM di ogni regione e mostra i progetti PNRR 2021-2027 collegati a efficientamento energetico, comfort termico o mitigazione caldo.</p>
+        </div>
+      </div>
+
+      <details class="chart-filter-panel" open aria-label="Filtri investimenti PNRR clima">
+        <summary>Filtri investimenti PNRR clima</summary>
+        <div class="filter-intro">
+          <h3>Come leggere il rapporto</h3>
+          <p>Il numeratore PNRR e' regionale e non e' collegato ai codici edificio MIM. Il filtro sul grado cambia quindi il denominatore MIM, mantenendo il confronto territoriale leggero e coerente con il grafico principale.</p>
+        </div>
+        <div class="filter-grid heat-filter-grid">
+          <label>
+            <span>Grado scolastico</span>
+            <select id="pnrrGradeSelect"></select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetPnrrFilters" type="button">Reset investimenti</button>
+        </div>
+      </details>
+
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="pnrrChartTitle">Progetti clima/energia per 100 scuole-edificio</h2>
+          <span id="pnrrChartNote">progetti 2021-2027 / righe MIM per regione</span>
+        </div>
+        <div class="chart">
+          <svg id="pnrrChart" role="img" aria-labelledby="pnrrChartTitle"></svg>
+        </div>
+        <div class="chart-credit">Fonte: OpenCoesione 2021-2027 e MIM. Elaborazione di Nazareno Lecis.</div>
+      </div>
+
+      <div class="selection-comment" id="pnrrComment">
+        <strong>Nota di lettura.</strong> Il valore e' una proxy territoriale: progetti PNRR clima/energia per 100 righe scuola-edificio MIM del grado selezionato.
+      </div>
+    </section>
+
     <section class="dashboard-section" id="tableSection">
       <div class="section-head">
         <span class="eyebrow">Dettaglio</span>
@@ -311,6 +362,7 @@
           <li>La quota A/C dichiarata usa come denominatore tutte le righe, compresi i valori <code>NON DEFINITO</code>, per mantenere confrontabile la base regionale.</li>
           <li>Il campo diretto è <code>CONDIZIONAMENTOVENTILAZIONE</code>, con valori SI, NO o NON DEFINITO nel dataset MIM sugli impianti.</li>
           <li>Rischio caldo e mitigazione termica sono proxy del repository. Usano indicatori MIM su impianti, doppi vetri, isolamento, riduzione dei consumi, posizione comunale e studenti esposti.</li>
+          <li>Il grafico PNRR usa un JSON aggregato regionale leggero, derivato dai progetti 2021-2027 classificati come efficientamento energetico, comfort termico o mitigazione caldo.</li>
           <li>Le classi di rischio indicano priorità di intervento. Non sono misure fisiche della temperatura dentro le aule.</li>
         </ul>
       </div>
@@ -332,244 +384,5 @@
     </div>
   </footer>
 
-  <script>
-    var state = { data: null };
-    var metrics = {
-      quota_aria_condizionata_si: {
-        label: "Quota scuole-edifici con A/C dichiarata",
-        suffix: "%",
-        color: "warning",
-        note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, su tutte le righe comprese quelle NON DEFINITO."
-      },
-      quota_aria_condizionata_si_su_definiti: {
-        label: "Quota A/C sui soli SI/NO",
-        suffix: "%",
-        color: "warning",
-        note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, escludendo le righe NON DEFINITO dal denominatore."
-      },
-      quota_aria_condizionata_non_definito: {
-        label: "Quota A/C non definita",
-        suffix: "%",
-        color: "danger",
-        note: "Righe MIM in cui il campo CONDIZIONAMENTOVENTILAZIONE è NON DEFINITO o non compilato."
-      },
-      quota_mitigazione_media_alta: {
-        label: "Quota con mitigazione termica media o alta",
-        suffix: "%",
-        color: "good",
-        note: "Proxy del repository basato su indicatori energetici e termici MIM."
-      },
-      quota_nessun_indicatore_termico: {
-        label: "Quota senza indicatori termici MIM",
-        suffix: "%",
-        color: "danger",
-        note: "Righe senza segnali MIM di mitigazione termica tra quelli disponibili."
-      },
-      quota_rischio_caldo_alto: {
-        label: "Quota in rischio caldo alto",
-        suffix: "%",
-        color: "danger",
-        note: "Indice di scenario basato su posizione, fragilità termica e studenti esposti."
-      },
-      quota_rischio_caldo_alto_medio: {
-        label: "Quota in rischio caldo medio/alto",
-        suffix: "%",
-        color: "warning",
-        note: "Perimetro ampio di priorità potenziale prima di estendere il calendario nei mesi caldi."
-      }
-    };
-
-    const interventionMetrics = {
-      quota_mitigazione_media_alta: {
-        label: 'Mitigazione termica media/alta',
-        note: 'Quota di scuole con interventi o condizioni di mitigazione termica almeno medie.'
-      },
-      quota_aria_condizionata_si: {
-        label: 'Aria condizionata dichiarata',
-        note: 'Quota di scuole per cui risulta indicata la presenza di aria condizionata.'
-      },
-      quota_rischio_caldo_alto_medio: {
-        label: 'Rischio caldo medio/alto',
-        note: 'Quota di scuole classificate con rischio caldo medio o alto.'
-      },
-      quota_nessun_indicatore_termico: {
-        label: 'Nessun indicatore termico',
-        note: 'Quota di scuole senza indicatori termici disponibili o valorizzati.'
-      }
-    };
-
-
-    function byId(id) {
-      return document.getElementById(id);
-    }
-
-    function formatNumber(value) {
-      return Number(value || 0).toLocaleString("it-IT", { maximumFractionDigits: 0 });
-    }
-
-    function formatPercent(value) {
-      return Number(value || 0).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
-    }
-
-
-    function formatCurrency(value) {
-      const number = Number(value || 0);
-      if (Math.abs(number) >= 1000000000) {
-        return `${(number / 1000000000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} mld euro`;
-      }
-      if (Math.abs(number) >= 1000000) {
-        return `${(number / 1000000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} mln euro`;
-      }
-      return `${number.toLocaleString('it-IT', { maximumFractionDigits: 0 })} euro`;
-    }
-
-    function pnrrStatusBucket(status) {
-      const text = String(status || '').toLowerCase();
-      if (text.includes('conclus') || text.includes('liquid')) return 'completati';
-      if (text.includes('corso')) return 'in_corso';
-      if (text.includes('non avvi')) return 'non_avviati';
-      return 'altro';
-    }
-
-
-    function escapeHtml(value) {
-      return String(value == null ? "" : value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function rowsForGrade(grade) {
-      return state.data.records.filter(function (row) { return row.grado === grade; });
-    }
-
-    function totalsForGrade(grade) {
-      var rows = rowsForGrade(grade);
-      return rows.reduce(function (acc, row) {
-        Object.keys(acc).forEach(function (key) { acc[key] += Number(row[key] || 0); });
-        return acc;
-      }, {
-        righe_mim: 0,
-        aria_condizionata_si: 0,
-        aria_condizionata_no: 0,
-        aria_condizionata_non_definito: 0,
-        mitigazione_alta: 0,
-        mitigazione_media: 0,
-        nessun_indicatore_termico: 0,
-        rischio_caldo_alto: 0
-      });
-    }
-
-    function updateKpis(grade) {
-      var totals = totalsForGrade(grade);
-      var righeMim = totals.righe_mim || 1;
-      var datoAc = totals.aria_condizionata_si / righeMim * 100;
-      var mitigazione = (totals.mitigazione_alta + totals.mitigazione_media) / righeMim * 100;
-      var rischio = totals.rischio_caldo_alto / righeMim * 100;
-      byId("kpiSites").textContent = formatNumber(totals.righe_mim);
-      byId("kpiAcData").textContent = formatPercent(datoAc);
-      byId("kpiMitigation").textContent = formatPercent(mitigazione);
-      byId("kpiRisk").textContent = formatPercent(rischio);
-    }
-
-    function drawChart(rows, metricId) {
-      var svg = byId("barChart");
-      var metric = metrics[metricId];
-      var width = Math.max(980, svg.parentElement.clientWidth || 980);
-      var height = 520;
-      var margin = { top: 28, right: 16, bottom: 112, left: 54 };
-      var chartWidth = width - margin.left - margin.right;
-      var chartHeight = height - margin.top - margin.bottom;
-      var sorted = rows.slice().sort(function (a, b) { return Number(b[metricId]) - Number(a[metricId]); });
-      var maxValue = Math.max.apply(null, sorted.map(function (row) { return Number(row[metricId] || 0); }).concat([1]));
-      var barGap = 7;
-      var barWidth = Math.max(20, (chartWidth - barGap * (sorted.length - 1)) / sorted.length);
-      var html = "";
-
-      [0, 25, 50, 75, 100].forEach(function (tick) {
-        var y = margin.top + chartHeight - (tick / Math.max(100, maxValue)) * chartHeight;
-        html += "<line class=\"grid-line\" x1=\"" + margin.left + "\" x2=\"" + (width - margin.right) + "\" y1=\"" + y + "\" y2=\"" + y + "\"></line>";
-        html += "<text class=\"bar-label\" x=\"10\" y=\"" + (y + 4) + "\">" + tick + "%</text>";
-      });
-
-      sorted.forEach(function (row, index) {
-        var value = Number(row[metricId] || 0);
-        var barHeight = value / Math.max(100, maxValue) * chartHeight;
-        var x = margin.left + index * (barWidth + barGap);
-        var y = margin.top + chartHeight - barHeight;
-        var label = row.regione.length > 16 ? row.regione.slice(0, 15) + "." : row.regione;
-        html += "<rect class=\"bar " + metric.color + "\" x=\"" + x + "\" y=\"" + y + "\" width=\"" + barWidth + "\" height=\"" + barHeight + "\"></rect>";
-        html += "<text class=\"value-label\" text-anchor=\"middle\" x=\"" + (x + barWidth / 2) + "\" y=\"" + (y - 6) + "\">" + formatPercent(value) + "</text>";
-        html += "<text class=\"bar-label\" text-anchor=\"end\" transform=\"translate(" + (x + barWidth / 2 + 4) + "," + (height - margin.bottom + 18) + ") rotate(-55)\">" + escapeHtml(label) + "</text>";
-      });
-
-      svg.setAttribute("viewBox", "0 0 " + width + " " + height);
-      svg.innerHTML = html;
-      byId("chartNote").textContent = metric.note;
-      byId("chartTitle").textContent = metric.label + " per regione";
-      return sorted;
-    }
-
-    function updateTable(rows) {
-      var body = byId("tableBody");
-      body.innerHTML = rows.map(function (row) {
-        return "<tr>" +
-          "<td>" + escapeHtml(row.regione) + "</td>" +
-          "<td>" + formatNumber(row.righe_mim) + "</td>" +
-          "<td>" + formatPercent(row.quota_aria_condizionata_si) + "</td>" +
-          "<td>" + formatPercent(row.quota_aria_condizionata_non_definito) + "</td>" +
-          "<td>" + formatPercent(row.quota_mitigazione_media_alta) + "</td>" +
-          "<td>" + formatPercent(row.quota_nessun_indicatore_termico) + "</td>" +
-          "<td>" + formatPercent(row.quota_rischio_caldo_alto) + "</td>" +
-          "</tr>";
-      }).join("");
-    }
-
-    function render() {
-      var grade = byId("gradeSelect").value;
-      var metricId = byId("metricSelect").value;
-      var rows = rowsForGrade(grade);
-      updateKpis(grade);
-      var sorted = drawChart(rows, metricId);
-      updateTable(sorted);
-    }
-
-    function resetFilters() {
-      byId("gradeSelect").value = "Tutti";
-      byId("metricSelect").value = "quota_aria_condizionata_si";
-      render();
-    }
-
-    function populateControls() {
-      byId("gradeSelect").innerHTML = state.data.metadata.grades.map(function (grade) {
-        return "<option value=\"" + escapeHtml(grade) + "\">" + escapeHtml(grade) + "</option>";
-      }).join("");
-      byId("metricSelect").innerHTML = Object.keys(metrics).map(function (id) {
-        return "<option value=\"" + escapeHtml(id) + "\">" + escapeHtml(metrics[id].label) + "</option>";
-      }).join("");
-      byId("metricSelect").value = "quota_aria_condizionata_si";
-      byId("gradeSelect").addEventListener("change", render);
-      byId("metricSelect").addEventListener("change", render);
-      byId("resetHeatFilters").addEventListener("click", resetFilters);
-      window.addEventListener("resize", render);
-    }
-
-    fetch("https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo.json")
-      .then(function (response) {
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        return response.json();
-      })
-      .then(function (payload) {
-        state.data = payload;
-        populateControls();
-        resetFilters();
-      })
-      .catch(function (error) {
-        byId("chartTitle").textContent = "Errore nel caricamento dei dati";
-        byId("chartNote").textContent = error.message;
-      });
-  </script>
 </body>
 </html>

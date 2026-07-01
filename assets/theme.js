@@ -77,7 +77,7 @@
     apply(saved || "dark");
     injectSocialStyle();
     removeTopGithubLink();
-    loadScriptWhenIdle("/assets/lang.js", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260701-dashboard-i18n", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

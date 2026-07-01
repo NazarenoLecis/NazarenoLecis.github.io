@@ -39,6 +39,14 @@
 
   function byId(id) { return document.getElementById(id); }
 
+  function t(value) {
+    return window.SiteLanguage && window.SiteLanguage.t ? window.SiteLanguage.t(value) : value;
+  }
+
+  function locale() {
+    return window.SiteLanguage && window.SiteLanguage.get && window.SiteLanguage.get() === "en" ? "en-US" : "it-IT";
+  }
+
   function cssColor(name, fallback) {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
   }
@@ -68,14 +76,14 @@
   function formatValue(value, unit) {
     if (!Number.isFinite(value)) return "-";
     var decimals = Math.abs(value) >= 1000 ? 0 : 1;
-    return value.toLocaleString("it-IT", { maximumFractionDigits: decimals }) + (unit ? " " + unit : "");
+    return value.toLocaleString(locale(), { maximumFractionDigits: decimals }) + (unit ? " " + t(unit) : "");
   }
 
   function renderMessage(id, message, loading) {
     var el = byId(id);
     if (!el) return;
     if (window.Plotly) window.Plotly.purge(el);
-    el.innerHTML = "<div class=\"empty-state" + (loading ? " loading-state" : "") + "\">" + escapeHtml(message) + "</div>";
+    el.innerHTML = "<div class=\"empty-state" + (loading ? " loading-state" : "") + "\">" + escapeHtml(t(message)) + "</div>";
   }
 
   function clearChartMessage(id) {
@@ -153,21 +161,23 @@
       if (isCountry(record.geo) && record.geo !== ITALY) countries.set(record.geo, record.geo_label);
     });
     return Array.from(countries.entries()).sort(function (a, b) {
-      return a[1].localeCompare(b[1], "it");
+      return a[1].localeCompare(b[1], locale().slice(0, 2));
     });
   }
 
   function populateEuropeIndicatorControl() {
+    var current = byId("europeIndicator").value;
     byId("europeIndicator").innerHTML = indicators.map(function (indicator) {
-      return "<option value=\"" + indicator.id + "\">" + escapeHtml(indicator.label) + "</option>";
+      return "<option value=\"" + indicator.id + "\">" + escapeHtml(t(indicator.label)) + "</option>";
     }).join("");
+    if (current) byId("europeIndicator").value = current;
   }
 
   function populateCountryControl(records) {
     var current = new Set(selectedHighlightCountries());
     byId("highlightCountries").innerHTML = countryOptions(records).map(function (entry) {
       var selected = current.has(entry[0]) ? " selected" : "";
-      return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(entry[1]) + "</option>";
+      return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(t(entry[1])) + "</option>";
     }).join("");
   }
 
@@ -191,10 +201,10 @@
     select.innerHTML = Array.from(countries.entries()).sort(function (a, b) {
       if (a[0] === EU27) return -1;
       if (b[0] === EU27) return 1;
-      return a[1].localeCompare(b[1], "it");
+      return a[1].localeCompare(b[1], locale().slice(0, 2));
     }).map(function (entry) {
       var selected = current.has(entry[0]) ? " selected" : "";
-      return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(entry[1] || entry[0]) + "</option>";
+      return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(t(entry[1] || entry[0])) + "</option>";
     }).join("");
   }
 
@@ -203,13 +213,13 @@
     return {
       type: "scatter",
       mode: "lines+markers",
-      name: name,
+      name: t(name),
       x: rows.map(function (record) { return record.year; }),
       y: rows.map(function (record) { return record.value; }),
       line: { color: color, width: width || 2 },
       marker: { color: color, size: width > 2 ? 7 : 5 },
       customdata: rows.map(function (record) { return record.period || record.year; }),
-      hovertemplate: "<b>%{fullData.name}</b><br>Periodo: %{customdata}<br>Valore: %{y:.1f}<extra></extra>"
+      hovertemplate: "<b>%{fullData.name}</b><br>" + t("Periodo") + ": %{customdata}<br>" + t("Valore") + ": %{y:.1f}<extra></extra>"
     };
   }
 
@@ -224,13 +234,13 @@
     return {
       type: "scatter",
       mode: "lines+markers",
-      name: "Media UE",
+      name: t("Media UE"),
       x: years,
       y: values,
       line: { color: theme.muted, width: 2, dash: "dot" },
       marker: { color: theme.muted, size: 5 },
       customdata: years,
-      hovertemplate: "<b>Media UE</b><br>Periodo: %{customdata}<br>Valore: %{y:.1f}<extra></extra>"
+      hovertemplate: "<b>" + t("Media UE") + "</b><br>" + t("Periodo") + ": %{customdata}<br>" + t("Valore") + ": %{y:.1f}<extra></extra>"
     };
   }
 
@@ -265,7 +275,7 @@
       {
         type: "scatter",
         mode: "lines",
-        name: "Massimo paesi",
+        name: t("Massimo paesi"),
         x: years,
         y: maxValues,
         line: { color: "rgba(255,255,255,0)", width: 0 },
@@ -275,7 +285,7 @@
       {
         type: "scatter",
         mode: "lines",
-        name: "Range paesi",
+        name: t("Range paesi"),
         x: years,
         y: minValues,
         fill: "tonexty",
@@ -299,17 +309,17 @@
       traces.push(traceForCountry(records, code, label ? label.geo_label : code, colors[index % colors.length], 2));
     });
 
-    byId("europeTitle").textContent = indicator.shortLabel;
-    byId("europeSubtitle").textContent = "range min-max, Italia sempre evidenziata";
+    byId("europeTitle").textContent = t(indicator.shortLabel);
+    byId("europeSubtitle").textContent = t("range min-max, Italia sempre evidenziata");
     var italyRows = records.filter(function (record) { return record.geo === ITALY; }).sort(function (a, b) { return b.year - a.year; });
     var latestItaly = italyRows[0];
     if (latestItaly) {
       var latestValues = (byYear.get(latestItaly.year) || []).map(function (record) { return record.value; }).filter(Number.isFinite);
-      byId("kpiItalyLabel").textContent = "Italia ultimo dato";
+      byId("kpiItalyLabel").textContent = t("Italia ultimo dato");
       byId("kpiItaly").textContent = formatValue(latestItaly.value, indicator.unit);
       byId("kpiRange").textContent = formatValue(Math.min.apply(null, latestValues), indicator.unit) + " - " + formatValue(Math.max.apply(null, latestValues), indicator.unit);
       byId("kpiYear").textContent = latestItaly.period || latestItaly.year;
-      byId("europeComment").innerHTML = "<strong>Come leggere:</strong> " + escapeHtml(indicator.note || "") + " La banda arancione indica il range min-max tra paesi disponibili: non e' una media europea e non misura la distribuzione interna ai singoli paesi." + (indicator.eu_average_from_countries ? " La linea Media UE e' calcolata come media semplice dei paesi disponibili nello stesso anno, quindi resta dentro il range." : (showEuAggregate ? "" : " Per gli indicatori in valori assoluti EU27 non viene disegnato: e' un aggregato e sarebbe fuori scala rispetto ai singoli paesi."));
+      byId("europeComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " + escapeHtml(t(indicator.note || "")) + " " + escapeHtml(t("La banda arancione indica il range min-max tra paesi disponibili: non e' una media europea e non misura la distribuzione interna ai singoli paesi.")) + (indicator.eu_average_from_countries ? " " + escapeHtml(t("La linea Media UE e' calcolata come media semplice dei paesi disponibili nello stesso anno, quindi resta dentro il range.")) : (showEuAggregate ? "" : " " + escapeHtml(t("Per gli indicatori in valori assoluti EU27 non viene disegnato: e' un aggregato e sarebbe fuori scala rispetto ai singoli paesi."))));
     }
 
     window.Plotly.react("europeChart", traces, {
@@ -317,8 +327,8 @@
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
       margin: { l: 72, r: 180, t: 14, b: 64 },
-      xaxis: { title: { text: "Periodo" }, gridcolor: theme.line, fixedrange: true, dtick: 1 },
-      yaxis: { title: { text: indicator.label + (indicator.unit ? " (" + indicator.unit + ")" : "") }, gridcolor: theme.line, fixedrange: true },
+      xaxis: { title: { text: t("Periodo") }, gridcolor: theme.line, fixedrange: true, dtick: 1 },
+      yaxis: { title: { text: t(indicator.label) + (indicator.unit ? " (" + t(indicator.unit) + ")" : "") }, gridcolor: theme.line, fixedrange: true },
       legend: { orientation: "v", x: 1.02, y: 1, xanchor: "left" }
     }, { responsive: true, displayModeBar: false });
   }
@@ -334,13 +344,13 @@
     var buckets = [];
     records.forEach(function (record) {
       if (!buckets.some(function (bucket) { return bucket.id === record.bucket; })) {
-        buckets.push({ id: record.bucket, label: record.bucket_label || record.bucket });
+          buckets.push({ id: record.bucket, label: t(record.bucket_label || record.bucket) });
       }
     });
     var colors = [theme.orange, theme.muted, "#4e79a7", "#59a14f", "#e15759", "#b07aa1", "#76b7b2", "#edc948"];
     var traces = countryCodes.map(function (code, index) {
       var labelRecord = records.find(function (record) { return record.geo === code; });
-      var name = code === ITALY ? "Italia" : (code === EU27 ? "EU27" : ((labelRecord && labelRecord.geo_label) || code));
+      var name = code === ITALY ? t("Italia") : (code === EU27 ? "EU27" : t((labelRecord && labelRecord.geo_label) || code));
       return {
         type: "bar",
         name: name,
@@ -354,7 +364,7 @@
           var row = records.find(function (record) { return record.geo === code && record.bucket === bucket.id; });
           return row ? [row.value, row.geo_total] : [null, null];
         }),
-        hovertemplate: "<b>%{fullData.name}</b><br>Periodo: %{x}<br>Quota stock: %{y:.1f}%<br>Abitazioni: %{customdata[0]:,.0f}<extra></extra>"
+        hovertemplate: "<b>%{fullData.name}</b><br>" + t("Periodo") + ": %{x}<br>" + t("Quota stock") + ": %{y:.1f}%<br>" + t("Abitazioni") + ": %{customdata[0]:,.0f}<extra></extra>"
       };
     });
     clearChartMessage("stockAgeChart");
@@ -364,11 +374,11 @@
       font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
       margin: { l: 72, r: 40, t: 14, b: 112 },
       barmode: "group",
-      xaxis: { title: { text: "Periodo di costruzione" }, gridcolor: theme.line, fixedrange: true, tickangle: -30 },
-      yaxis: { title: { text: "Quota dello stock abitativo (%)" }, gridcolor: theme.line, fixedrange: true, rangemode: "tozero" },
+      xaxis: { title: { text: t("Periodo di costruzione") }, gridcolor: theme.line, fixedrange: true, tickangle: -30 },
+      yaxis: { title: { text: t("Quota dello stock abitativo (%)") }, gridcolor: theme.line, fixedrange: true, rangemode: "tozero" },
       legend: { orientation: "h", x: 0, y: 1.12, xanchor: "left" }
     }, { responsive: true, displayModeBar: false });
-    byId("stockAgeComment").innerHTML = "<strong>Come leggere:</strong> questo grafico usa un unico JSON statico gia' aggregato. Le barre mostrano la composizione percentuale dello stock abitativo 2021 per periodo di costruzione; il tooltip riporta anche il numero di abitazioni.";
+    byId("stockAgeComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " + escapeHtml(t("questo grafico usa un unico JSON statico gia' aggregato. Le barre mostrano la composizione percentuale dello stock abitativo 2021 per periodo di costruzione; il tooltip riporta anche il numero di abitazioni."));
   }
 
   function loadStockAge() {
@@ -378,7 +388,7 @@
       renderStockAge(state.stockAgeData);
     }).catch(function (error) {
       renderMessage("stockAgeChart", "Non riesco a caricare il JSON sullo stock abitativo: " + error.message);
-      byId("stockAgeComment").textContent = "Verifica che estat_dwellings_by_construction_period_2021.json sia stato sincronizzato su Cloudflare R2.";
+      byId("stockAgeComment").textContent = t("Verifica che estat_dwellings_by_construction_period_2021.json sia stato sincronizzato su Cloudflare R2.");
     });
   }
 
@@ -386,7 +396,7 @@
     return fetchJson(EUROPE_INDEX_URL).then(function (payload) {
       indicators = payload.indicators || [];
       defaultEuropeIndicatorId = payload.default_indicator || (indicators[0] && indicators[0].id) || null;
-      if (!indicators.length) throw new Error("indice Eurostat vuoto");
+      if (!indicators.length) throw new Error(t("indice Eurostat vuoto"));
     });
   }
 
@@ -401,7 +411,7 @@
     }
     if (state.europeHasRendered) {
       renderMessage("europeChart", "Caricamento...", true);
-      byId("europeComment").textContent = "Caricamento in corso.";
+      byId("europeComment").textContent = t("Caricamento in corso.");
     }
     return fetchJson(staticEuropeUrl(indicator)).then(function (payload) {
       state.europeCache[indicator.id] = payload.records || [];
@@ -412,15 +422,16 @@
     }).catch(function (error) {
       state.europeData = [];
       renderMessage("europeChart", "Non riesco a caricare il JSON Eurostat statico: " + error.message);
-      byId("europeComment").textContent = "Rigenera gli export statici dal repository Crisi_abitativa o controlla che i file siano presenti in data/crisi-abitativa/eurostat/.";
+      byId("europeComment").textContent = t("Rigenera gli export statici dal repository Crisi_abitativa o controlla che i file siano presenti in data/crisi-abitativa/eurostat/.");
     });
   }
 
   function populateLocalControls(index) {
     var select = byId("localRegion");
     var regions = index.regions || [];
+    var current = select.value;
     if (!regions.length) {
-      select.innerHTML = "<option value=\"\">Export locale non disponibile</option>";
+      select.innerHTML = "<option value=\"\">" + escapeHtml(t("Export locale non disponibile")) + "</option>";
       select.disabled = true;
       byId("localMetric").disabled = true;
       return;
@@ -428,15 +439,18 @@
     select.disabled = false;
     byId("localMetric").disabled = false;
     if (!byId("localMetric").value) byId("localMetric").value = "rent_mean";
+    var selectedFile = current && regions.some(function (region) { return region.file === current; })
+      ? current
+      : ((regions.find(function (region) { return region.preload; }) || regions[0] || {}).file || "");
     select.innerHTML = regions.map(function (region) {
-      var selected = region.preload ? " selected" : "";
-      return "<option value=\"" + escapeHtml(region.file) + "\"" + selected + ">" + escapeHtml(region.label) + "</option>";
+      var selected = region.file === selectedFile ? " selected" : "";
+      return "<option value=\"" + escapeHtml(region.file) + "\"" + selected + ">" + escapeHtml(t(region.label)) + "</option>";
     }).join("");
   }
 
   function renderLocalUnavailable(index) {
     renderMessage("localChart", "Focus locale non ancora esportato. Genera i JSON regionali dal repository Crisi_abitativa e salvali in data/crisi-abitativa/regions/.");
-    byId("localComment").innerHTML = "<strong>Dataset atteso:</strong> un file per regione con geometrie comunali e record con campi <code>rent_mean</code>, <code>rent_median</code>, <code>sale_mean</code>, <code>sale_median</code>. " + escapeHtml((index.methodology || [])[0] || "");
+    byId("localComment").innerHTML = "<strong>" + escapeHtml(t("Dataset atteso:")) + "</strong> " + escapeHtml(t("un file per regione con geometrie comunali e record con campi")) + " <code>rent_mean</code>, <code>rent_median</code>, <code>sale_mean</code>, <code>sale_median</code>. " + escapeHtml(t((index.methodology || [])[0] || ""));
   }
 
 
@@ -507,9 +521,9 @@
       lat: [point.lat],
       text: [selected.comune],
       textposition: "top center",
-      name: "Comune selezionato",
+      name: t("Comune selezionato"),
       marker: { size: 16, color: theme.text, line: { color: theme.orange, width: 4 }, symbol: "circle" },
-      hovertemplate: "<b>" + escapeHtml(selected.comune) + "</b><br>Valore: " + selected.value.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "<extra></extra>",
+      hovertemplate: "<b>" + escapeHtml(selected.comune) + "</b><br>" + t("Valore") + ": " + selected.value.toLocaleString(locale(), { maximumFractionDigits: 1 }) + "<extra></extra>",
       showlegend: false
     };
   }
@@ -535,7 +549,7 @@
     var theme = plotTheme();
     var maxValue = Math.max.apply(null, valid.map(function (row) { return row.value; }));
     var minValue = Math.min.apply(null, valid.map(function (row) { return row.value; }));
-    byId("localTitle").textContent = meta.label + " - " + regionLabel;
+    byId("localTitle").textContent = t(meta.label) + " - " + t(regionLabel);
     clearChartMessage("localChart");
     var traces = [{
       type: "choropleth",
@@ -551,8 +565,8 @@
       zmin: minValue,
       zmax: maxValue,
       marker: { line: { color: "rgba(255,255,255,.55)", width: 0.35 } },
-      colorbar: { title: meta.unit, tickfont: { color: theme.text }, titlefont: { color: theme.text } },
-      hovertemplate: "<b>%{text}</b><br>Provincia: %{customdata[0]}<br>Valore: %{z:.1f}<br>Zone OMI: %{customdata[1]}<extra></extra>"
+      colorbar: { title: t(meta.unit), tickfont: { color: theme.text }, titlefont: { color: theme.text } },
+      hovertemplate: "<b>%{text}</b><br>" + t("Provincia") + ": %{customdata[0]}<br>" + t("Valore") + ": %{z:.1f}<br>" + t("Zone OMI") + ": %{customdata[1]}<extra></extra>"
     }];
     var selectedTrace = selectedMunicipalityTrace(valid, payload, theme);
     if (selectedTrace) traces.push(selectedTrace);
@@ -563,8 +577,8 @@
       margin: { l: 8, r: 8, t: 8, b: 8 },
       geo: { fitbounds: "locations", visible: false, bgcolor: "rgba(0,0,0,0)" }
     }, { responsive: true, displayModeBar: false });
-    var selectedText = selectedMunicipalityName() ? " Comune evidenziato: " + escapeHtml((valid.find(isSelectedMunicipality) || {}).comune || state.selectedLocalComune) + "." : "";
-    byId("localComment").innerHTML = "<strong>Come leggere:</strong> la mappa colora i comuni della regione per " + escapeHtml(meta.label.toLowerCase()) + ". Il valore e' una " + escapeHtml(meta.description) + "; non e' un prezzo di rogito o un canone contrattuale. Comuni caricati: " + valid.length.toLocaleString("it-IT") + "." + selectedText;
+    var selectedText = selectedMunicipalityName() ? " " + escapeHtml(t("Comune evidenziato:")) + " " + escapeHtml((valid.find(isSelectedMunicipality) || {}).comune || state.selectedLocalComune) + "." : "";
+    byId("localComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " + escapeHtml(t("la mappa colora i comuni della regione per")) + " " + escapeHtml(t(meta.label).toLowerCase()) + ". " + escapeHtml(t("Il valore e' una")) + " " + escapeHtml(t(meta.description)) + "; " + escapeHtml(t("non e' un prezzo di rogito o un canone contrattuale.")) + " " + escapeHtml(t("Comuni caricati:")) + " " + valid.length.toLocaleString(locale()) + "." + selectedText;
   }
 
   function renderLocalBar(rows, regionLabel) {
@@ -579,7 +593,7 @@
     valid = valid.sort(function (a, b) { return b.value - a.value; });
     if (!valid.length) return renderMessage("localChart", "Nessun valore comunale disponibile per questa misura.");
     var theme = plotTheme();
-    byId("localTitle").textContent = meta.label + " - " + regionLabel;
+    byId("localTitle").textContent = t(meta.label) + " - " + t(regionLabel);
     clearChartMessage("localChart");
     window.Plotly.react("localChart", [{
       type: "bar",
@@ -588,17 +602,17 @@
       y: valid.map(function (row) { return row.comune || row.name || row.label; }).reverse(),
       marker: { color: valid.map(function (row) { return isSelectedMunicipality(row) ? theme.text : theme.orange; }).reverse(), opacity: 0.84, line: { color: valid.map(function (row) { return isSelectedMunicipality(row) ? theme.orange : "rgba(0,0,0,0)"; }).reverse(), width: valid.map(function (row) { return isSelectedMunicipality(row) ? 3 : 0; }).reverse() } },
       customdata: valid.map(function (row) { return [row.provincia || row.province || "", row.value]; }).reverse(),
-      hovertemplate: "<b>%{y}</b><br>Provincia: %{customdata[0]}<br>Valore: %{customdata[1]:.1f}<extra></extra>"
+      hovertemplate: "<b>%{y}</b><br>" + t("Provincia") + ": %{customdata[0]}<br>" + t("Valore") + ": %{customdata[1]:.1f}<extra></extra>"
     }], {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 13 },
       margin: { l: 170, r: 34, t: 14, b: 62 },
-      xaxis: { title: { text: meta.unit }, gridcolor: theme.line, fixedrange: true },
+      xaxis: { title: { text: t(meta.unit) }, gridcolor: theme.line, fixedrange: true },
       yaxis: { gridcolor: "rgba(0,0,0,0)", fixedrange: true }
     }, { responsive: true, displayModeBar: false });
-    var selectedText = selectedMunicipalityName() ? " Se il comune selezionato non e' nei primi valori, viene comunque incluso nella classifica." : "";
-    byId("localComment").innerHTML = "<strong>Come leggere:</strong> il grafico mostra i primi comuni della regione per " + escapeHtml(meta.label.toLowerCase()) + ". I valori OMI sono quotazioni territoriali, non transazioni o contratti effettivi." + selectedText;
+    var selectedText = selectedMunicipalityName() ? " " + escapeHtml(t("Se il comune selezionato non e' nei primi valori, viene comunque incluso nella classifica.")) : "";
+    byId("localComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " + escapeHtml(t("il grafico mostra i primi comuni della regione per")) + " " + escapeHtml(t(meta.label).toLowerCase()) + ". " + escapeHtml(t("I valori OMI sono quotazioni territoriali, non transazioni o contratti effettivi.")) + selectedText;
   }
 
   function renderLocalRows(rows, regionLabel, payload) {
@@ -606,7 +620,7 @@
     if (payload && payload.geojson && payload.geojson.features) renderLocalMap(rows, regionLabel, payload);
     else renderLocalBar(rows, regionLabel);
     if (payload && payload.semestre_omi) {
-      byId("sourceMeta").textContent = "Eurostat da export statici. Focus locale: " + regionLabel + " OMI " + payload.semestre_omi + ".";
+      byId("sourceMeta").textContent = t("Eurostat da export statici. Focus locale:") + " " + t(regionLabel) + " OMI " + payload.semestre_omi + ".";
     }
   }
 
@@ -649,7 +663,7 @@
       }
       else renderLocalUnavailable(index);
       byId("methodologyList").innerHTML = (index.methodology || []).map(function (item) {
-        return "<li>" + escapeHtml(item) + "</li>";
+        return "<li>" + escapeHtml(t(item)) + "</li>";
       }).join("") + byId("methodologyList").innerHTML;
     }).catch(function (error) {
       renderMessage("localChart", "Non riesco a caricare l'indice locale: " + error.message);
@@ -689,6 +703,20 @@
         if (state.currentLocalRows.length) renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
       });
     }
+    window.addEventListener("site-language-change", function () {
+      populateEuropeIndicatorControl();
+      if (state.europeData) {
+        populateCountryControl(state.europeData);
+        renderEurope();
+      }
+      if (state.stockAgeData) {
+        populateStockAgeCountryControl(state.stockAgeData);
+        renderStockAge(state.stockAgeData);
+      }
+      if (state.localIndex) populateLocalControls(state.localIndex);
+      if (state.currentLocalRows.length) renderLocalRows(state.currentLocalRows, state.currentLocalLabel, state.currentLocalPayload);
+      if (window.SiteLanguage) window.SiteLanguage.refresh(document.querySelector(".housing-dashboard"));
+    });
     new MutationObserver(function () {
       if (state.europeData) renderEurope();
       if (state.stockAgeData) renderStockAge(state.stockAgeData);

@@ -73,6 +73,10 @@
   font-size: .94rem;
 }
 
+.source-panel .source-credit {
+  margin-top: 8px;
+}
+
 .related-link {
   display: inline-flex;
   margin-top: 10px;
