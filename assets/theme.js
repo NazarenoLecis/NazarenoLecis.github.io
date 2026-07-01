@@ -1,6 +1,4 @@
 (function () {
-  var R2_DATA_BASE = "https://data.nazarenolecis.com";
-
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     try {
@@ -30,34 +28,6 @@
 
   function isHeatDashboard() {
     return location.pathname.indexOf("/dashboard/ciclo-unico-caldo") >= 0;
-  }
-
-  function dataUrlToR2(input) {
-    var url = typeof input === "string" ? input : String((input && input.url) || "");
-    var parsed = null;
-    try {
-      parsed = new URL(url, window.location.href);
-    } catch (error) {
-      return null;
-    }
-    if (parsed.origin !== window.location.origin) return null;
-    if (parsed.pathname.indexOf("/data/") !== 0) return null;
-    return R2_DATA_BASE + parsed.pathname.slice("/data".length) + parsed.search;
-  }
-
-  function patchR2DataFetch() {
-    if (window.__r2DataFetchPatched || !window.fetch) return;
-    window.__r2DataFetchPatched = true;
-
-    var originalFetch = window.fetch.bind(window);
-    window.fetch = function (input, init) {
-      var r2Url = dataUrlToR2(input);
-      if (!r2Url) return originalFetch(input, init);
-      if (typeof Request !== "undefined" && input instanceof Request) {
-        return originalFetch(new Request(r2Url, input), init);
-      }
-      return originalFetch(r2Url, init);
-    };
   }
 
   function removeTopGithubLink() {
@@ -140,8 +110,6 @@
       }
     });
   }
-
-  patchR2DataFetch();
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start);
