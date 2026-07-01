@@ -83,6 +83,7 @@
     apply(saved || "dark");
     injectSocialStyle();
     removeTopGithubLink();
+    loadScript("/assets/lang.js", "language");
 
     if (isAlmaArticle()) {
       patchAlmaArticleDataFetch();
