@@ -58,19 +58,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install awscli
 
-      - name: Check data folder
+      - name: Check available runtime data
         run: |
-          test -d data
-          find data -type f | head -50
+          if [ -d data ]; then
+            find data -type f | head -50
+          else
+            echo "No local data folder. Runtime data is expected to live on Cloudflare R2."
+          fi
 
-      - name: Sync data folder to R2
+      - name: Sync local data folder to R2 when present
         run: |
-          aws s3 sync data "s3://${R2_BUCKET}/" \
-            --endpoint-url "${R2_ENDPOINT}" \
-            --no-progress \
-            --cache-control "public, max-age=3600"
+          if [ -d data ]; then
+            aws s3 sync data "s3://${R2_BUCKET}/" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --no-progress \
+              --cache-control "public, max-age=3600"
+          fi
 
-      - name: Publish dashboard runtime data to R2
+      - name: Publish dashboard runtime data to R2 when present
         run: |
           if [ -f dashboard/ciclo-unico-caldo/dashboard_caldo.json ]; then
             aws s3 cp dashboard/ciclo-unico-caldo/dashboard_caldo.json \
