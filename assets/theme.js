@@ -43,6 +43,10 @@
     return location.pathname.indexOf("/dashboard/ciclo-unico-caldo") >= 0;
   }
 
+  function isDashboardPage() {
+    return location.pathname.indexOf("/dashboard/") >= 0;
+  }
+
   function removeTopGithubLink() {
     document.querySelectorAll(".site-header .nav a").forEach(function (link) {
       var href = link.getAttribute("href") || "";
@@ -68,6 +72,138 @@
     document.head.appendChild(style);
   }
 
+  function replaceText(value, replacements) {
+    var output = value;
+    replacements.forEach(function (pair) {
+      output = output.split(pair[0]).join(pair[1]);
+    });
+    return output;
+  }
+
+  function dashboardTextReplacements() {
+    var italian = [
+      ["Grafico europeo da export statici Eurostat. Focus locale caricato da export statici regionali.", "Indicatori europei Eurostat. Focus locale su quotazioni OMI comunali."],
+      ["Nel focus Italia scegli regione e misura OMI. La Sardegna e' caricata di default; gli altri export regionali possono essere aggiunti dallo stesso repository dati.", "Nel focus Italia scegli regione e misura OMI. La Sardegna e' caricata di default; le altre regioni possono essere aggiunte quando disponibili."],
+      [", usando un JSON statico gia' aggregato.", "."],
+      ["I dati sono salvati come JSON statici per rendere la dashboard piu' veloce e non dipendere dall'API al caricamento della pagina. ", ""],
+      ["Questa sezione usa export statici regionali con quotazioni OMI comunali: la Sardegna e' pre-caricata, mentre la struttura permette di aggiungere le altre regioni generando gli stessi JSON.", "Questa sezione usa quotazioni OMI comunali. La Sardegna e' pre-caricata; le altre regioni possono essere aggiunte quando disponibili."],
+      ["questo grafico usa un unico JSON statico gia' aggregato. Le barre mostrano", "Le barre mostrano"],
+      ["Non riesco a caricare il JSON sullo stock abitativo:", "Non riesco a caricare i dati sullo stock abitativo:"],
+      ["Verifica che estat_dwellings_by_construction_period_2021.json sia stato sincronizzato su Cloudflare R2.", "Controlla che i dati sul periodo di costruzione siano disponibili."],
+      ["Non riesco a caricare il JSON Eurostat statico:", "Non riesco a caricare i dati Eurostat:"],
+      ["Non riesco a caricare l'indice Eurostat statico:", "Non riesco a caricare l'indice Eurostat:"],
+      ["Rigenera gli export statici dal repository Crisi_abitativa o controlla che i file siano presenti in data/crisi-abitativa/eurostat/.", "Controlla che i dati Eurostat siano disponibili."],
+      ["Export locale non disponibile", "Focus locale non disponibile"],
+      ["Focus locale non ancora esportato. Genera i JSON regionali dal repository Crisi_abitativa e salvali in data/crisi-abitativa/regions/.", "Focus locale non disponibile."],
+      ["Dataset atteso:", "Dati comunali necessari:"],
+      ["un file per regione con geometrie comunali e record con campi", "quotazioni comunali OMI per"],
+      ["Eurostat da export statici. Focus locale:", "Eurostat. Focus locale:"],
+      ["Il grafico PNRR usa un JSON aggregato regionale leggero, derivato dai progetti 2021-2027 classificati come efficientamento energetico, comfort termico o mitigazione caldo.", "Il grafico PNRR usa un aggregato regionale derivato dai progetti 2021-2027 classificati come efficientamento energetico, comfort termico o mitigazione caldo."],
+      ["Indicatori europei Eurostat. Focus locale su quotazioni OMI comunali.", "Indicatori europei Eurostat. Focus locale su quotazioni OMI comunali."],
+      ["Nel focus Italia scegli regione e misura OMI. La Sardegna e' caricata di default; le altre regioni possono essere aggiunte quando disponibili.", "Nel focus Italia scegli regione e misura OMI. La Sardegna e' caricata di default; le altre regioni possono essere aggiunte quando disponibili."]
+    ];
+
+    var english = [
+      ["European chart from static Eurostat exports. Local focus loaded from static regional exports.", "European indicators from Eurostat. Local focus on municipal OMI quotations."],
+      ["Indicatori europei Eurostat. Focus locale su quotazioni OMI comunali.", "European indicators from Eurostat. Local focus on municipal OMI quotations."],
+      ["In the Italy focus, choose a region and an OMI measure. Sardinia is loaded by default; the other regional exports can be added from the same data repository.", "In the Italy focus, choose a region and an OMI measure. Sardinia is loaded by default; other regions can be added when available."],
+      ["Nel focus Italia scegli regione e misura OMI. La Sardegna e' caricata di default; le altre regioni possono essere aggiunte quando disponibili.", "In the Italy focus, choose a region and an OMI measure. Sardinia is loaded by default; other regions can be added when available."],
+      [", using an already aggregated static JSON.", "."],
+      ["The data are saved as static JSON to keep the dashboard faster and avoid depending on the API at page load. ", ""],
+      ["National averages say little about what actually happens in Cagliari, Nuoro, Sassari or inland municipalities. This section uses static regional exports with municipal OMI quotations: Sardinia is preloaded, while the structure allows other regions to be added by generating the same JSON files.", "National averages say little about what actually happens in Cagliari, Nuoro, Sassari or inland municipalities. This section uses municipal OMI quotations. Sardinia is preloaded; other regions can be added when available."],
+      ["Questa sezione usa quotazioni OMI comunali. La Sardegna e' pre-caricata; le altre regioni possono essere aggiunte quando disponibili.", "This section uses municipal OMI quotations. Sardinia is preloaded; other regions can be added when available."],
+      ["this chart uses a single already aggregated static JSON. The bars show", "The bars show"],
+      ["Non riesco a caricare i dati sullo stock abitativo:", "I cannot load the housing-stock data:"],
+      ["Check that estat_dwellings_by_construction_period_2021.json has been synced to Cloudflare R2.", "Check that the construction-period data are available."],
+      ["Controlla che i dati sul periodo di costruzione siano disponibili.", "Check that the construction-period data are available."],
+      ["I cannot load the static Eurostat JSON:", "I cannot load the Eurostat data:"],
+      ["I cannot load the static Eurostat index:", "I cannot load the Eurostat index:"],
+      ["Check that the Eurostat data have been exported and are available in data/crisi-abitativa/eurostat/.", "Check that the Eurostat data are available."],
+      ["Regenerate the static exports from the Crisi_abitativa repository or check that the files are present in data/crisi-abitativa/eurostat/.", "Check that the Eurostat data are available."],
+      ["Local export not available", "Local focus not available"],
+      ["Local focus not exported yet. Generate the regional JSON files from the Crisi_abitativa repository and save them in data/crisi-abitativa/regions/.", "Local focus not available."],
+      ["Expected dataset:", "Required municipal data:"],
+      ["one file per region with municipal geometries and records with fields", "municipal OMI quotations for"],
+      ["Eurostat from static exports. Local focus:", "Eurostat. Local focus:"],
+      ["The NRRP chart uses a lightweight regional aggregate JSON, derived from 2021-2027 projects classified as energy efficiency, thermal comfort or heat mitigation.", "The NRRP chart uses a regional aggregate derived from 2021-2027 projects classified as energy efficiency, thermal comfort or heat mitigation."],
+      ["Il grafico PNRR usa un aggregato regionale derivato dai progetti 2021-2027 classificati come efficientamento energetico, comfort termico o mitigazione caldo.", "The NRRP chart uses a regional aggregate derived from 2021-2027 projects classified as energy efficiency, thermal comfort or heat mitigation."]
+    ];
+
+    return document.documentElement.lang === "en" ? english : italian;
+  }
+
+  function removeDashboardTechnicalBlocks() {
+    var patterns = [
+      "La dashboard del sito consuma dati gia' puliti o endpoint pubblici.",
+      "Per aggiornare il focus locale bisogna esportare dal repository Python i JSON regionali",
+      "The site dashboard consumes already cleaned data or public endpoints.",
+      "To update the local focus, export the regional JSON files",
+      "data/crisi-abitativa/regions/",
+      "local_index.json"
+    ];
+
+    document.querySelectorAll("p,li").forEach(function (node) {
+      var text = (node.textContent || "").replace(/\s+/g, " ").trim();
+      if (patterns.some(function (pattern) { return text.indexOf(pattern) >= 0; })) {
+        node.remove();
+      }
+    });
+  }
+
+  function cleanDashboardTechnicalText() {
+    if (!isDashboardPage() || !document.body || cleanDashboardTechnicalText.running) return;
+    cleanDashboardTechnicalText.running = true;
+    removeDashboardTechnicalBlocks();
+
+    var replacements = dashboardTextReplacements();
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        var parent = node.parentElement;
+        if (!parent || parent.closest("script,style,noscript,svg,canvas")) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      var updated = replaceText(node.nodeValue, replacements);
+      if (updated !== node.nodeValue) node.nodeValue = updated;
+    });
+    cleanDashboardTechnicalText.running = false;
+  }
+
+  function observeDashboardText() {
+    if (!isDashboardPage() || !document.body) return;
+    var scheduled = false;
+    function scheduleCleanup() {
+      if (scheduled) return;
+      scheduled = true;
+      var run = function () {
+        scheduled = false;
+        cleanDashboardTechnicalText();
+      };
+      if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+      else window.setTimeout(run, 0);
+    }
+
+    cleanDashboardTechnicalText();
+    [250, 1000, 2500, 5000].forEach(function (delay) {
+      window.setTimeout(cleanDashboardTechnicalText, delay);
+    });
+
+    new MutationObserver(scheduleCleanup).observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+
+    window.addEventListener("site-language-change", function () {
+      window.setTimeout(cleanDashboardTechnicalText, 0);
+      window.setTimeout(cleanDashboardTechnicalText, 100);
+    });
+  }
+
   function start() {
     var saved = null;
     try {
@@ -77,6 +213,7 @@
     apply(saved || "dark");
     injectSocialStyle();
     removeTopGithubLink();
+    observeDashboardText();
     loadScriptWhenIdle("/assets/lang.js?v=20260701-dashboard-i18n", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
