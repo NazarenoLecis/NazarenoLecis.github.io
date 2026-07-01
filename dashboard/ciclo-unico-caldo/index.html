@@ -379,6 +379,26 @@
       }
     };
 
+    const interventionMetrics = {
+      quota_mitigazione_media_alta: {
+        label: 'Mitigazione termica media/alta',
+        note: 'Quota di scuole con interventi o condizioni di mitigazione termica almeno medie.'
+      },
+      quota_aria_condizionata_si: {
+        label: 'Aria condizionata dichiarata',
+        note: 'Quota di scuole per cui risulta indicata la presenza di aria condizionata.'
+      },
+      quota_rischio_caldo_alto_medio: {
+        label: 'Rischio caldo medio/alto',
+        note: 'Quota di scuole classificate con rischio caldo medio o alto.'
+      },
+      quota_nessun_indicatore_termico: {
+        label: 'Nessun indicatore termico',
+        note: 'Quota di scuole senza indicatori termici disponibili o valorizzati.'
+      }
+    };
+
+
     function byId(id) {
       return document.getElementById(id);
     }
@@ -390,6 +410,27 @@
     function formatPercent(value) {
       return Number(value || 0).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
     }
+
+
+    function formatCurrency(value) {
+      const number = Number(value || 0);
+      if (Math.abs(number) >= 1000000000) {
+        return `${(number / 1000000000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} mld euro`;
+      }
+      if (Math.abs(number) >= 1000000) {
+        return `${(number / 1000000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} mln euro`;
+      }
+      return `${number.toLocaleString('it-IT', { maximumFractionDigits: 0 })} euro`;
+    }
+
+    function pnrrStatusBucket(status) {
+      const text = String(status || '').toLowerCase();
+      if (text.includes('conclus') || text.includes('liquid')) return 'completati';
+      if (text.includes('corso')) return 'in_corso';
+      if (text.includes('non avvi')) return 'non_avviati';
+      return 'altro';
+    }
+
 
     function escapeHtml(value) {
       return String(value == null ? "" : value)
