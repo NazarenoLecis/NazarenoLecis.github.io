@@ -1,5 +1,5 @@
 (function () {
-  var DATA_VERSION = "v=20260703-2";
+  var DATA_VERSION = "v=20260703-3";
   var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json?" + DATA_VERSION;
   var DASHBOARD_CHUNK_BASE = "https://data.nazarenolecis.com/almalaurea/dashboard_chunks/";
   var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json?" + DATA_VERSION;
@@ -977,6 +977,39 @@
     });
   }
 
+  function scatterResult(filters) {
+    var dimension = filters.point_dimension;
+    var rows = candidateRows(filters, dimension);
+    return {
+      filters: filters,
+      points: aggregateRows(rows, dimension),
+    };
+  }
+
+  function scatterResultWithFallback(filters) {
+    var result = scatterResult(filters);
+    if (result.points.length || filters.employment_definition !== "broad") return result;
+
+    var fallbackFilters = Object.assign({}, filters, {
+      employment_definition: "restrictive",
+    });
+    var fallbackResult = scatterResult(fallbackFilters);
+    return fallbackResult.points.length ? fallbackResult : result;
+  }
+
+  function boxRowsWithFallback(filters) {
+    var rows = distributionRows(filters);
+    if (rows.length || filters.employment_definition !== "broad") {
+      return { filters: filters, rows: rows };
+    }
+
+    var fallbackFilters = Object.assign({}, filters, {
+      employment_definition: "restrictive",
+    });
+    var fallbackRows = distributionRows(fallbackFilters);
+    return fallbackRows.length ? { filters: fallbackFilters, rows: fallbackRows } : { filters: filters, rows: rows };
+  }
+
   function splitByColor(points) {
     var groups = new Map();
     points.forEach(function (point) {
@@ -1516,9 +1549,9 @@
         filters = effectiveDetailedFilters(filters);
         updateScatterSelectOptions(filters);
         filters = effectiveDetailedFilters(getDetailedFilters("scatter"));
-        var dimension = filters.point_dimension;
-        var rows = candidateRows(filters, dimension);
-        var points = aggregateRows(rows, dimension);
+        var result = scatterResultWithFallback(filters);
+        filters = result.filters;
+        var points = result.points;
         state.lastPoints = points;
 
         updateKpis(points);
@@ -1539,7 +1572,8 @@
       .then(function () {
         if (requestId !== state.boxRequest) return;
         filters = effectiveDetailedFilters(getDetailedFilters("box"));
-        renderBox(distributionRows(filters), filters);
+        var result = boxRowsWithFallback(filters);
+        renderBox(result.rows, result.filters);
       })
       .catch(function (error) {
         if (requestId !== state.boxRequest) return;
