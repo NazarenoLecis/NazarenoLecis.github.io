@@ -438,6 +438,47 @@
       shares[row.band] = row;
     });
 
+    var chartRows = bands.map(function (row) {
+      var share = shares[row.band] || {};
+      return {
+        band: asText(row.band),
+        contributorsShare: toNumber(share.contributors_share),
+        taxShare: toNumber(share.tax_share)
+      };
+    }).filter(function (row) {
+      return row.contributorsShare !== null || row.taxShare !== null;
+    });
+
+    if (chartRows.length) {
+      plot("bpIrpefBandChart", [
+        {
+          type: "bar",
+          orientation: "h",
+          name: "Quota contribuenti",
+          x: chartRows.map(function (row) { return row.contributorsShare; }),
+          y: chartRows.map(function (row) { return row.band; }),
+          marker: { color: COLORS[1] },
+          hovertemplate: "%{y}<br>Contribuenti: %{x:.1f}%<extra></extra>"
+        },
+        {
+          type: "bar",
+          orientation: "h",
+          name: "Quota IRPEF",
+          x: chartRows.map(function (row) { return row.taxShare; }),
+          y: chartRows.map(function (row) { return row.band; }),
+          marker: { color: cssVar("--orange", COLORS[0]) },
+          hovertemplate: "%{y}<br>IRPEF: %{x:.1f}%<extra></extra>"
+        }
+      ], {
+        barmode: "group",
+        margin: { t: 20, r: 20, b: 48, l: 112 },
+        xaxis: { title: "Quota percentuale", ticksuffix: "%" },
+        yaxis: { autorange: "reversed", title: "" }
+      });
+    } else {
+      showEmptyChart("bpIrpefBandChart", "Nessun dato IRPEF disponibile");
+    }
+
     createTableRows(byId("bpIrpefBandTable"), bands, [
       { value: function (row) { return asText(row.band); } },
       { value: function (row) { return formatPlain(row.contributors, 0); } },
@@ -465,18 +506,77 @@
   }
 
   function renderRevenueFocus(payload) {
-    var rows = byValueDesc(toArray(payload.revenue_items), "value");
+    var sourceRows = toArray(payload.all_revenue_lines).length ? toArray(payload.all_revenue_lines) : toArray(payload.revenue_items);
+    var rows = sourceRows.slice().sort(function (a, b) {
+      var av = toNumber(a.latest_value_mld !== undefined ? a.latest_value_mld : a.value);
+      var bv = toNumber(b.latest_value_mld !== undefined ? b.latest_value_mld : b.value);
+      return (bv || 0) - (av || 0);
+    });
     createTableRows(byId("bpRevenueFocusRows"), rows, [
       { value: function (row) { return asText(row.label || row.code); } },
-      { value: function (row) { return row.status ? "N/D" : formatMld(row.value || row.value_mld, 1); } },
+      { value: function (row) { return asText(row.group || "-"); }, className: "is-muted" },
+      {
+        value: function (row) {
+          var value = row.latest_value_mld !== undefined ? row.latest_value_mld : (row.value || row.value_mld);
+          return row.status ? "N/D" : formatMld(value, 3);
+        }
+      },
       { value: function (row) { return asText(row.source); }, className: "is-muted" },
-      { value: function (row) { return asText(row.year); } }
+      { value: function (row) { return asText(row.latest_year || row.year); } }
     ]);
   }
 
   function renderUnder500(payload) {
     var block = payload.under_500m_revenue_summary || {};
-    var entries = toArray(block.entries);
+    var entries = toArray(block.entries).slice().sort(function (a, b) {
+      return (toNumber(b.value_mld) || 0) - (toNumber(a.value_mld) || 0);
+    });
+
+    if (entries.length) {
+      var chartRows = entries.slice(0, 24).reverse();
+      var cumulative = [];
+      var running = 0;
+      chartRows.forEach(function (row) {
+        running += toNumber(row.value_mld) || 0;
+        cumulative.push(running);
+      });
+      plot("bpUnder500Chart", [
+        {
+          type: "bar",
+          name: "Valore",
+          x: chartRows.map(function (row) { return asText(row.label || row.code); }),
+          y: chartRows.map(function (row) { return toNumber(row.value_mld); }),
+          marker: { color: cssVar("--orange", COLORS[0]) },
+          hovertemplate: "%{x}<br>%{y:.3f} mld<extra></extra>"
+        },
+        {
+          type: "scatter",
+          mode: "lines+markers",
+          name: "Cumulo",
+          x: chartRows.map(function (row) { return asText(row.label || row.code); }),
+          y: cumulative,
+          yaxis: "y2",
+          line: { color: COLORS[1], width: 3 },
+          marker: { size: 6 },
+          hovertemplate: "%{x}<br>Cumulo: %{y:.3f} mld<extra></extra>"
+        }
+      ], {
+        margin: { t: 18, r: 72, b: 112, l: 58 },
+        xaxis: { title: "", tickangle: -35 },
+        yaxis: { title: "Miliardi" },
+        yaxis2: {
+          title: "Cumulo",
+          overlaying: "y",
+          side: "right",
+          fixedrange: true,
+          gridcolor: "rgba(0,0,0,0)"
+        },
+        legend: { orientation: "h", y: -0.35 }
+      });
+    } else {
+      showEmptyChart("bpUnder500Chart", "Nessuna voce sotto 500 milioni disponibile");
+    }
+
     createTableRows(byId("bpUnder500Rows"), entries, [
       { value: function (row) { return asText(row.label || row.code); } },
       { value: function (row) { return asText(row.year || block.year); } },
@@ -492,6 +592,15 @@
     } else {
       meta.textContent = asText(block.note, "Nessuna voce sotto soglia nell'elaborazione corrente.");
     }
+  }
+
+  function renderRevenueGaps(payload) {
+    createTableRows(byId("bpRevenueGapRows"), toArray(payload.known_revenue_gaps), [
+      { value: function (row) { return asText(row.label || row.code); } },
+      { value: function (row) { return niceLabel(row.status); } },
+      { value: function (row) { return asText(row.mapped_to); } },
+      { value: function (row) { return asText(row.note); }, className: "is-muted" }
+    ]);
   }
 
   function renderSpendingFocus(payload) {
@@ -583,6 +692,7 @@
     renderTaxTypeTrend(payload);
     renderRevenueFocus(payload);
     renderUnder500(payload);
+    renderRevenueGaps(payload);
     renderSpendingFocus(payload);
     renderPeer(payload);
   }
@@ -629,7 +739,8 @@
         if (status) status.textContent = "Errore nel caricamento dei dati: " + error.message;
         [
           "bpTopTaxes", "bpTaxTrend", "bpRevenuePie", "bpSpendingPie",
-          "bpRevenueTrend", "bpSpendingTrend", "bpTaxTypeTrend", "bpPeerBars"
+          "bpRevenueTrend", "bpSpendingTrend", "bpIrpefBandChart",
+          "bpTaxTypeTrend", "bpUnder500Chart", "bpPeerBars"
         ].forEach(function (id) {
           showEmptyChart(id, "Dati non caricati");
         });

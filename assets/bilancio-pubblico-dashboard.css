@@ -113,6 +113,15 @@
   line-height: 1.5;
 }
 
+.bp-chart-credit {
+  margin: 10px 0 0 !important;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.4;
+}
+
 .bp-chart-wrap {
   min-width: 0;
 }
@@ -168,6 +177,10 @@
   padding: 10px 12px;
   text-align: right;
   vertical-align: top;
+}
+
+.bp-table td:first-child {
+  min-width: 190px;
 }
 
 .bp-table th:first-child,

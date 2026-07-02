@@ -105,6 +105,7 @@
         <div class="bp-chart-wrap">
           <div id="bpTopTaxes" class="chart bp-chart" role="img" aria-labelledby="bpTopTaxesTitle"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze, entrate tributarie erariali e territoriali. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="bp-card">
         <div class="bp-card-title">
@@ -115,6 +116,7 @@
         <div class="bp-chart-wrap">
           <div id="bpTaxTrend" class="chart bp-chart" role="img" aria-labelledby="bpPressureTitle"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_taxag, amministrazioni pubbliche S13. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -128,6 +130,7 @@
         <div class="bp-chart-wrap">
           <div id="bpRevenuePie" class="chart bp-chart" role="img" aria-label="Entrate in torta"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
@@ -151,6 +154,7 @@
         <div class="bp-chart-wrap">
           <div id="bpSpendingPie" class="chart bp-chart" role="img" aria-label="Spesa pubblica in torta"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, spesa totale S13 per funzione COFOG. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
@@ -176,6 +180,7 @@
         <div class="bp-chart-wrap">
           <div id="bpRevenueTrend" class="chart bp-chart" role="img" aria-label="Serie storiche entrate"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze. Elaborazione di Nazareno Lecis.</p>
       </article>
 
       <article class="bp-card">
@@ -187,6 +192,7 @@
         <div class="bp-chart-wrap">
           <div id="bpSpendingTrend" class="chart bp-chart" role="img" aria-label="Serie storiche spese"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, classificazione COFOG. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -197,6 +203,10 @@
           <span>Fasce di reddito</span>
         </div>
         <p>Contribuenti e quota di gettito per fascia.</p>
+        <div class="bp-chart-wrap">
+          <div id="bpIrpefBandChart" class="chart bp-chart" role="img" aria-label="Distribuzione IRPEF per fascia di reddito"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze, statistiche dichiarazioni 2025, anno d'imposta 2024. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
@@ -222,21 +232,23 @@
         <div class="bp-chart-wrap">
           <div id="bpTaxTypeTrend" class="chart bp-chart" role="img" aria-label="Tasse dirette e indirette"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze, entrate tributarie erariali. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
     <section class="bp-grid-2" id="focus-entrate">
       <article class="bp-card">
         <div class="bp-card-title">
-          <h2>Focus entrate</h2>
-          <span>Cedolare secca, IMU, TARI, successioni ecc.</span>
+          <h2>Tutte le entrate disponibili</h2>
+          <span>Voci MEF, TARI e tributi locali</span>
         </div>
-        <p>Dati delle voci di interesse in formato sintetico, pronti per confronto.</p>
+        <p>Elenco delle voci quantificate separatamente nelle fonti disponibili: imposte principali, accise, bollo, concessioni, sostitutive, tributi territoriali e altre componenti.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
               <tr>
                 <th>Voce</th>
+                <th>Gruppo</th>
                 <th>Valore</th>
                 <th>Fonte</th>
                 <th>Anno</th>
@@ -253,6 +265,10 @@
           <span>Under 500 mln euro</span>
         </div>
         <p>Voci sotto soglia e loro cumulo.</p>
+        <div class="bp-chart-wrap">
+          <div id="bpUnder500Chart" class="chart bp-chart" role="img" aria-label="Entrate sotto 500 milioni e cumulo"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze, entrate tributarie erariali e territoriali. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
@@ -267,6 +283,29 @@
           </table>
         </div>
         <p id="bpUnder500Meta" class="muted-note"></p>
+      </article>
+    </section>
+
+    <section class="bp-grid-2">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Voci non separate nelle fonti correnti</h2>
+          <span>Passaporti, tassa etica, straordinarie</span>
+        </div>
+        <p>Alcune entrate esistono ma non sono pubblicate come gettito aggregato separato nelle fonti mensili usate. Quando possibile sono ricondotte alla voce piu' ampia.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Voce</th>
+                <th>Stato</th>
+                <th>Ricondotta a</th>
+                <th>Nota</th>
+              </tr>
+            </thead>
+            <tbody id="bpRevenueGapRows"></tbody>
+          </table>
+        </div>
       </article>
     </section>
 
@@ -304,6 +343,7 @@
         <div class="bp-chart-wrap">
           <div id="bpPeerBars" class="chart bp-chart" role="img" aria-label="Confronto paesi"></div>
         </div>
+        <p class="bp-chart-credit">Fonte: Eurostat e OCSE, indicatori armonizzati per confronto internazionale. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
