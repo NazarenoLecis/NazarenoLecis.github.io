@@ -89,3 +89,21 @@ jobs:
           else
             echo "No local heat dashboard JSON to upload. Runtime data is expected to live on Cloudflare R2."
           fi
+
+          if [ -f dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_clima_regioni.json ]; then
+            aws s3 cp dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_clima_regioni.json \
+              "s3://${R2_BUCKET}/ciclo-unico-caldo/dashboard_caldo_pnrr_clima_regioni.json" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --no-progress \
+              --cache-control "public, max-age=3600" \
+              --content-type "application/json"
+          fi
+
+          if [ -f dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json ]; then
+            aws s3 cp dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json \
+              "s3://${R2_BUCKET}/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json" \
+              --endpoint-url "${R2_ENDPOINT}" \
+              --no-progress \
+              --cache-control "public, max-age=3600" \
+              --content-type "application/json"
+          fi
