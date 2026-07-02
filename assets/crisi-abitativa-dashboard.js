@@ -422,7 +422,7 @@
     }).catch(function (error) {
       state.europeData = [];
       renderMessage("europeChart", "Non riesco a caricare il JSON Eurostat statico: " + error.message);
-      byId("europeComment").textContent = t("Rigenera gli export statici dal repository Crisi_abitativa o controlla che i file siano presenti in data/crisi-abitativa/eurostat/.");
+      byId("europeComment").textContent = t("Rigenera gli export statici dal repository Crisi_abitativa o controlla che i file siano presenti su Cloudflare R2.");
     });
   }
 
@@ -449,7 +449,7 @@
   }
 
   function renderLocalUnavailable(index) {
-    renderMessage("localChart", "Focus locale non ancora esportato. Genera i JSON regionali dal repository Crisi_abitativa e salvali in data/crisi-abitativa/regions/.");
+    renderMessage("localChart", "Focus locale non ancora esportato. Genera i JSON regionali dal repository Crisi_abitativa e pubblicali su Cloudflare R2.");
     byId("localComment").innerHTML = "<strong>" + escapeHtml(t("Dataset atteso:")) + "</strong> " + escapeHtml(t("un file per regione con geometrie comunali e record con campi")) + " <code>rent_mean</code>, <code>rent_median</code>, <code>sale_mean</code>, <code>sale_median</code>. " + escapeHtml(t((index.methodology || [])[0] || ""));
   }
 
@@ -746,7 +746,6 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
-
 
 
 

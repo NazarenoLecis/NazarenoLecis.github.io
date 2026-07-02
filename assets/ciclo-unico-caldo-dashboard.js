@@ -2,7 +2,7 @@
   "use strict";
 
   var DATA_URL = "https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo.json";
-  var PNRR_URL = "dashboard_caldo_pnrr_clima_regioni.json";
+  var PNRR_URL = "https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo_pnrr_clima_regioni.json";
 
   var state = {
     data: null,

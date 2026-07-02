@@ -1,13 +1,6 @@
 name: Sync data to Cloudflare R2
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "data/**"
-      - "dashboard/**/*.json"
-      - ".github/workflows/sync-r2.yml"
   workflow_dispatch:
 
 permissions:
@@ -58,52 +51,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install awscli
 
-      - name: Check available runtime data
+      - name: Check runtime data policy
         run: |
-          if [ -d data ]; then
-            find data -type f | head -50
-          else
-            echo "No local data folder. Runtime data is expected to live on Cloudflare R2."
-          fi
-
-      - name: Sync local data folder to R2 when present
-        run: |
-          if [ -d data ]; then
-            aws s3 sync data "s3://${R2_BUCKET}/" \
-              --endpoint-url "${R2_ENDPOINT}" \
-              --no-progress \
-              --cache-control "public, max-age=3600"
-          else
-            echo "No local data folder to sync. Runtime data is expected to live on Cloudflare R2."
-          fi
-
-      - name: Publish dashboard runtime data to R2 when present
-        run: |
-          if [ -f dashboard/ciclo-unico-caldo/dashboard_caldo.json ]; then
-            aws s3 cp dashboard/ciclo-unico-caldo/dashboard_caldo.json \
-              "s3://${R2_BUCKET}/ciclo-unico-caldo/dashboard_caldo.json" \
-              --endpoint-url "${R2_ENDPOINT}" \
-              --no-progress \
-              --cache-control "public, max-age=3600" \
-              --content-type "application/json"
-          else
-            echo "No local heat dashboard JSON to upload. Runtime data is expected to live on Cloudflare R2."
-          fi
-
-          if [ -f dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_clima_regioni.json ]; then
-            aws s3 cp dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_clima_regioni.json \
-              "s3://${R2_BUCKET}/ciclo-unico-caldo/dashboard_caldo_pnrr_clima_regioni.json" \
-              --endpoint-url "${R2_ENDPOINT}" \
-              --no-progress \
-              --cache-control "public, max-age=3600" \
-              --content-type "application/json"
-          fi
-
-          if [ -f dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json ]; then
-            aws s3 cp dashboard/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json \
-              "s3://${R2_BUCKET}/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json" \
-              --endpoint-url "${R2_ENDPOINT}" \
-              --no-progress \
-              --cache-control "public, max-age=3600" \
-              --content-type "application/json"
-          fi
+          echo "Runtime datasets are served from Cloudflare R2 and should not be committed to this GitHub Pages repository."
