@@ -678,12 +678,15 @@
     return state.records.filter(function (record) {
       if (!fixedMatch(record, filters)) return false;
       if (!hasMeasures(record)) return false;
+      var hasDegreeClassFilter = filters.degree_class !== WILDCARD;
+      var hasDegreeCourseFilter = filters.degree_course !== WILDCARD;
 
       if (filters.course_type !== WILDCARD) {
         if (record.course_type !== filters.course_type) return false;
-      } else if (dimension === "degree_class") {
-        if (record.course_type === WILDCARD) return false;
-      } else if (dimension === "degree_course") {
+      } else if (dimension === "degree_class" ||
+          dimension === "degree_course" ||
+          hasDegreeClassFilter ||
+          hasDegreeCourseFilter) {
         if (record.course_type === WILDCARD) return false;
       } else if (record.course_type !== WILDCARD) {
         return false;
@@ -730,10 +733,13 @@
     return state.records.filter(function (record) {
       if (!fixedMatch(record, filters)) return false;
       if (!Number.isFinite(record.net_monthly_salary)) return false;
+      var hasDegreeClassFilter = filters.degree_class !== WILDCARD;
 
       if (filters.course_type !== WILDCARD) {
         if (record.course_type !== filters.course_type) return false;
       } else if (filters.split_dimension === "course_type") {
+        if (record.course_type === WILDCARD) return false;
+      } else if (hasDegreeClassFilter) {
         if (record.course_type === WILDCARD) return false;
       } else if (record.course_type !== WILDCARD) {
         return false;
