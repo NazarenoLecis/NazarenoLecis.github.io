@@ -40,16 +40,20 @@
         <span class="eyebrow">Finanza pubblica</span>
         <h1>Bilancio pubblico italiano</h1>
         <p class="lead">
-          Dashboard che racconta entrate e spesa pubblica con indicatori principali dal 2002 al 2025.
-          Dati da MEF, Eurostat e OCSE, normalizzati in JSON nel repo Bilancio_pubblico.
+          Dashboard su entrate e spese della finanza pubblica con due obiettivi:
+          capire la composizione (torta), seguire i trend storici e isolare le voci più leggibili
+          tra entrate, pressione fiscale e funzioni di spesa.
         </p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
           <strong>Fonte: MEF, Eurostat, OCSE</strong>
-          <span>Il JSON viene rigenerato da una pipeline separata, questo repo resta solo frontend.</span>
+          <span>Il JSON è generato dalla pipeline dati e aggiornato in Cloudflare R2.</span>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
+          <a class="related-link" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" target="_blank" rel="noopener">
+            Endpoint dati dashboard
+          </a>
         </div>
       </div>
     </section>
@@ -57,20 +61,30 @@
     <section class="workflow-grid">
       <div class="workflow-step">
         <span>1</span>
-        <h2>Input stabile</h2>
-        <p>Un endpoint JSON contiene tutti i blocchi richiesti dalla dashboard (kpi, serie e tabelle).</p>
+        <h2>Struttura</h2>
+        <p>La pagina usa un contratto dati JSON unico: KPI, torte, serie e tabelle.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
-        <h2>Interattivo</h2>
-        <p>Puoi confrontare Italia, UE e area euro con la metrica che preferisci.</p>
+        <h2>Confronto</h2>
+        <p>Per ogni blocco vediamo sezione, unità, anni e note tecniche direttamente dalla sorgente.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
         <h2>Trasparenza</h2>
-        <p>Fonte, periodo e data di aggiornamento sono visibili direttamente nel blocco metodo.</p>
+        <p>Le fonti e la data di aggiornamento sono esplicitate nei metadati del payload.</p>
       </div>
     </section>
+
+    <nav class="dashboard-jump-nav bp-jump-nav" aria-label="Sezioni dashboard bilancio">
+      <a href="#overview">Panoramica</a>
+      <a href="#distribuzione">Distribuzione</a>
+      <a href="#serie-storiche">Serie storiche</a>
+      <a href="#focus-irpef">IRPEF</a>
+      <a href="#focus-entrate">Entrate</a>
+      <a href="#focus-spese">Spese</a>
+      <a href="#metodo">Metodo</a>
+    </nav>
 
     <p id="bpStatus" class="bp-status">Caricamento in corso ...</p>
     <p id="bpUpdated" class="muted-note"></p>
@@ -79,37 +93,36 @@
       <div id="bpKpis" class="kpi-grid"></div>
     </section>
 
-    <section class="bp-grid-2">
+    <section class="bp-grid-2" id="overview">
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Entrate principali nel 2025</h2>
           <span id="bpTopTaxesTitle">Miliardi di euro</span>
         </div>
-        <p>Top voci del gettito aggregato nel 2025 e confronto tra ordini di grandezza.</p>
+        <p>Top voci dell&apos;aggregato entrate e confronto d&apos;ordine tra categorie.</p>
         <div class="bp-chart-wrap">
           <svg id="bpTopTaxes" class="bp-chart" role="img" aria-labelledby="bpTopTaxesTitle"></svg>
         </div>
       </article>
-
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Pressione fiscale e contributiva</h2>
           <span id="bpPressureTitle">% PIL</span>
         </div>
-        <p>Evoluzione complessiva della pressione fiscale e contributiva in Italia.</p>
+        <p>Evoluzione complessiva e componenti della pressione fiscale.</p>
         <div class="bp-chart-wrap">
           <svg id="bpTaxTrend" class="bp-chart" role="img" aria-labelledby="bpPressureTitle"></svg>
         </div>
       </article>
     </section>
 
-    <section class="bp-grid-2">
+    <section class="bp-grid-2" id="distribuzione">
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Entrate in torta</h2>
-          <span>Ripartizione per categoria</span>
+          <span>Ripartizione principale</span>
         </div>
-        <p>Composizione del lato entrate per le categorie disponibili a questa pipeline.</p>
+        <p>Composizione delle entrate per macro categoria.</p>
         <div class="bp-chart-wrap">
           <svg id="bpRevenuePie" class="bp-chart" role="img" aria-label="Entrate in torta"></svg>
         </div>
@@ -129,10 +142,10 @@
 
       <article class="bp-card">
         <div class="bp-card-title">
-          <h2>Spesa pubblica in torta</h2>
-          <span>Ripartizione per funzione</span>
+          <h2>Spesa in torta</h2>
+          <span>Ripartizione principale</span>
         </div>
-        <p>Distribuzione delle funzioni di spesa sul totale disponibile.</p>
+        <p>Composizione della spesa pubblica aggregata.</p>
         <div class="bp-chart-wrap">
           <svg id="bpSpendingPie" class="bp-chart" role="img" aria-label="Spesa pubblica in torta"></svg>
         </div>
@@ -151,13 +164,13 @@
       </article>
     </section>
 
-    <section class="bp-grid-2">
+    <section class="bp-grid-2" id="serie-storiche">
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Serie storiche - Entrate</h2>
-          <span>mld euro</span>
+          <span>Miliardi di euro (2002-2025)</span>
         </div>
-        <p>Andamento dei principali aggregati di entrata selezionati.</p>
+        <p>Andamento delle categorie entrate disponibili.</p>
         <div class="bp-chart-wrap">
           <svg id="bpRevenueTrend" class="bp-chart" role="img" aria-label="Serie storiche entrate"></svg>
         </div>
@@ -166,22 +179,22 @@
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Serie storiche - Spese</h2>
-          <span>mld euro</span>
+          <span>Miliardi di euro (1995-2024)</span>
         </div>
-        <p>Andamento dei principali aggregati di spesa per funzione.</p>
+        <p>Andamento dei capitoli di spesa per funzione.</p>
         <div class="bp-chart-wrap">
           <svg id="bpSpendingTrend" class="bp-chart" role="img" aria-label="Serie storiche spese"></svg>
         </div>
       </article>
     </section>
 
-    <section class="bp-grid-2">
+    <section class="bp-grid-2" id="focus-irpef">
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Focus IRPEF</h2>
           <span>Fasce di reddito</span>
         </div>
-        <p>Distribuzione dei contribuenti e quota di gettito netto per fascia.</p>
+        <p>Contribuenti e quota di gettito per fascia.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
@@ -200,10 +213,44 @@
 
       <article class="bp-card">
         <div class="bp-card-title">
-          <h2>Focus entrate minori</h2>
+          <h2>Tasse dirette e indirette</h2>
+          <span>Trend nel tempo</span>
+        </div>
+        <p>Serie comparata tra categoria, quando presente nel dataset.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpTaxTypeTrend" class="bp-chart" role="img" aria-label="Tasse dirette e indirette"></svg>
+        </div>
+      </article>
+    </section>
+
+    <section class="bp-grid-2" id="focus-entrate">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Focus entrate</h2>
+          <span>Cedolare secca, IMU, TARI, successioni ecc.</span>
+        </div>
+        <p>Dati delle voci di interesse in formato sintetico, pronti per confronto.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Voce</th>
+                <th>Valore</th>
+                <th>Fonte</th>
+                <th>Anno</th>
+              </tr>
+            </thead>
+            <tbody id="bpRevenueFocusRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Entrate sotto 500 milioni</h2>
           <span>Under 500 mln euro</span>
         </div>
-        <p>Voci sotto 500 milioni di euro annuali e loro cumulo.</p>
+        <p>Voci sotto soglia e loro cumulo.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
@@ -221,52 +268,57 @@
       </article>
     </section>
 
-    <section class="bp-card">
-      <div class="bp-card-title">
-        <h2>Altri indicatori di entrata</h2>
-        <span>Panoramica focus</span>
-      </div>
-        <p>Altri elementi usati in dashboard: TARI, IRPEF, IRAP, IRES, IVA, IMU, successioni, superbollo, cedolare secca.</p>
-      <div class="bp-table-wrap">
-        <table class="bp-table">
-          <thead>
-            <tr>
-              <th>Voce</th>
-              <th>Valore</th>
-              <th>Disponibilita</th>
-            </tr>
-          </thead>
-          <tbody id="bpRevenueFocusRows"></tbody>
-        </table>
-      </div>
+    <section class="bp-grid-2" id="focus-spese">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Focus spese principali</h2>
+          <span>Difesa, istruzione, ricerca, personale...</span>
+        </div>
+        <p>Indicatori chiave di spesa con valore assoluto e peso sul PIL.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Voce</th>
+                <th>Valore</th>
+                <th>% PIL</th>
+                <th>Quota spesa</th>
+                <th>Fonte</th>
+                <th>Anno</th>
+              </tr>
+            </thead>
+            <tbody id="bpSpendingFocusRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Italia vs europei</h2>
+          <label for="bpPeerMetric" class="bp-select-label">Metrica</label>
+          <select id="bpPeerMetric" class="bp-select"></select>
+        </div>
+        <p>Confronto per paese su metriche fiscali e di spesa.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpPeerBars" class="bp-chart" role="img" aria-label="Confronto paesi"></svg>
+        </div>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Paese</th>
+                <th>Codice</th>
+                <th>Valore</th>
+              </tr>
+            </thead>
+            <tbody id="bpPeerRows"></tbody>
+          </table>
+        </div>
+      </article>
     </section>
 
-    <section class="bp-card">
-      <div class="bp-card-title">
-        <h2>Italia vs Europa</h2>
-        <label for="bpPeerMetric">Metrica</label>
-        <select id="bpPeerMetric" class="bp-select"></select>
-      </div>
-      <p>Classifica per Paese sulla metrica scelta, con evidenza su Italia.</p>
-      <div class="bp-chart-wrap">
-        <svg id="bpPeerBars" class="bp-chart" role="img" aria-label="Confronto paesi"></svg>
-      </div>
-      <div class="bp-table-wrap">
-        <table class="bp-table">
-          <thead>
-            <tr>
-              <th>Pos</th>
-              <th>Paese</th>
-              <th>Codice</th>
-              <th>Valore</th>
-            </tr>
-          </thead>
-          <tbody id="bpPeerRows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="notes-panel">
+    <section class="notes-panel" id="metodo">
       <div>
         <h2>Note e metodo</h2>
         <ul id="bpMethodNotes">
@@ -287,7 +339,7 @@
   <footer class="footer">
     <div class="wrap footer-inner social-links">
       <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
-      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazareno-lecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
       <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
       <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
     </div>
