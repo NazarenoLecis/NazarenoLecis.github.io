@@ -73,7 +73,7 @@
       <div class="workflow-step">
         <span>3</span>
         <h2>Passa al locale</h2>
-        <p>Nel focus Italia scegli regione e misura OMI. La Sardegna e' caricata di default; gli altri export regionali possono essere aggiunti dallo stesso repository dati.</p>
+        <p>Nel focus Italia scegli regione e metrica. I valori comunali sono quotazioni territoriali: affitto in euro per metro quadro al mese, vendita in euro per metro quadro. La Sardegna e' caricata di default; gli altri export regionali possono essere aggiunti dallo stesso repository dati.</p>
       </div>
     </section>
 
@@ -94,6 +94,10 @@
         <article class="indicator-card">
           <h3>Affordability</h3>
           <p>Include sovraccarico dei costi abitativi, peso mediano dei costi sul reddito, arretrati e rischio di poverta' dopo i costi abitativi. Risponde alla domanda: quanto pesa la casa sul bilancio delle famiglie?</p>
+        </article>
+        <article class="indicator-card">
+          <h3>Cos'e' OMI</h3>
+          <p>OMI (Osservatorio del Mercato Immobiliare, Agenzia delle Entrate) raccoglie quotazioni territoriali per zone OMI. Sono valori di riferimento statistico, utili per confronti spaziali, non prezzi effettivi di contratto o di rogito.</p>
         </article>
         <article class="indicator-card">
           <h3>Qualita' e spazio</h3>
@@ -195,7 +199,7 @@
         <summary>Filtri focus locale</summary>
         <div class="filter-intro">
           <h3>Come usare i filtri locali</h3>
-          <p>Scegli una regione e una misura: affitto medio, affitto mediano, prezzo di vendita medio o prezzo di vendita mediano. Quando sono presenti le geometrie, il grafico mostra una mappa comunale; altrimenti usa una classifica dei comuni con valori disponibili.</p>
+          <p>Scegli una regione e una metrica: affitto medio, affitto mediano, prezzo di vendita medio o prezzo di vendita mediano. Gli affitti sono in euro per metro quadro al mese e i prezzi di vendita in euro per metro quadro. Quando sono presenti le geometrie, il grafico mostra una mappa comunale; altrimenti usa una classifica dei comuni con valori disponibili.</p>
         </div>
         <div class="filter-grid housing-filter-grid">
           <label>
@@ -205,10 +209,10 @@
           <label>
             <span>Misura comunale</span>
             <select id="localMetric">
-              <option value="rent_mean">Affitto medio OMI</option>
-              <option value="rent_median">Affitto mediano OMI</option>
-              <option value="sale_mean">Prezzo vendita medio OMI</option>
-              <option value="sale_median">Prezzo vendita mediano OMI</option>
+              <option value="rent_mean">Affitto medio (euro per metro quadro al mese)</option>
+              <option value="rent_median">Affitto mediano (euro per metro quadro al mese)</option>
+              <option value="sale_mean">Prezzo di vendita medio (euro per metro quadro)</option>
+              <option value="sale_median">Prezzo di vendita mediano (euro per metro quadro)</option>
             </select>
           </label>
           <label>
@@ -245,6 +249,7 @@
         <p>Il codice sorgente del progetto dati e' nel repository <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">NazarenoLecis/Crisi_abitativa</a>.</p>
         <p>La dashboard del sito consuma dati gia' puliti o endpoint pubblici. Le API e gli export pesanti non vengono eseguiti direttamente nel browser.</p>
         <p>Per aggiornare il focus locale bisogna pubblicare su Cloudflare R2 i JSON regionali in <code>crisi-abitativa/regions/</code> e aggiornare <code>local_index.json</code>.</p>
+        <p>OMI descrive una quota territoriale della rendita immobiliare locale: oltre ai livelli di prezzi/affitti, nel file comunale sono inclusi anche indicatori di sostenibilita' economica come reddito medio disponibile e rapporti affitto-reddito (anni di reddito per 80 m² e canone di 50 m²).</p>
       </div>
     </section>
   </main>

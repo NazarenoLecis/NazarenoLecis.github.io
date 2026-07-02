@@ -15,10 +15,10 @@
   var defaultEuropeIndicatorId = null;
 
   var localMetrics = {
-    rent_mean: { label: "Affitto medio OMI", unit: "euro/mq/mese", description: "media semplice delle zone OMI residenziali disponibili nel comune" },
-    rent_median: { label: "Affitto mediano OMI", unit: "euro/mq/mese", description: "mediana delle zone OMI residenziali disponibili nel comune" },
-    sale_mean: { label: "Prezzo di vendita medio OMI", unit: "euro/mq", description: "media semplice delle zone OMI residenziali disponibili nel comune" },
-    sale_median: { label: "Prezzo di vendita mediano OMI", unit: "euro/mq", description: "mediana delle zone OMI residenziali disponibili nel comune" }
+    rent_mean: { label: "Affitto medio (euro per metro quadro al mese)", unit: "euro per metro quadro al mese", description: "media semplice delle zone OMI residenziali disponibili nel comune" },
+    rent_median: { label: "Affitto mediano (euro per metro quadro al mese)", unit: "euro per metro quadro al mese", description: "mediana delle zone OMI residenziali disponibili nel comune" },
+    sale_mean: { label: "Prezzo di vendita medio (euro per metro quadro)", unit: "euro per metro quadro", description: "media semplice delle zone OMI residenziali disponibili nel comune" },
+    sale_median: { label: "Prezzo di vendita mediano (euro per metro quadro)", unit: "euro per metro quadro", description: "mediana delle zone OMI residenziali disponibili nel comune" }
   };
 
   var state = {
