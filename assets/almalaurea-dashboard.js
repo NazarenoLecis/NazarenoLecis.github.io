@@ -269,6 +269,98 @@
     }).join("");
   }
 
+  function metricRow(record) {
+    return Number.isFinite(record.employment_rate) &&
+      Number.isFinite(record.net_monthly_salary);
+  }
+
+  function degreeCourseBase(value) {
+    return asText(value).replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
+  }
+
+  function optionMatchesCurrentScatter(record, filters, key) {
+    if (!fixedMatch(record, filters)) return false;
+    if (!metricRow(record)) return false;
+    if (key !== "university" && filters.university !== WILDCARD &&
+        record.university !== filters.university) return false;
+    if (key !== "disciplinary_group" && filters.disciplinary_group !== WILDCARD &&
+        record.disciplinary_group !== filters.disciplinary_group) return false;
+    if (key !== "course_type" && filters.course_type !== WILDCARD &&
+        record.course_type !== filters.course_type) return false;
+    if (key !== "degree_class" && filters.degree_class !== WILDCARD &&
+        record.degree_class !== filters.degree_class) return false;
+    if (key !== "degree_course" && filters.degree_course !== WILDCARD &&
+        record.degree_course !== filters.degree_course) return false;
+    return true;
+  }
+
+  function dynamicScatterOptions(field, filters) {
+    var values = new Set();
+    state.records.forEach(function (record) {
+      if (!optionMatchesCurrentScatter(record, filters, field.key)) return;
+      var value = record[field.key];
+      if (value !== undefined && value !== null && value !== "") values.add(value);
+    });
+
+    return metadataOptions(field.key).filter(function (option) {
+      return values.has(option.value);
+    });
+  }
+
+  function updateScatterSelectOptions(filters) {
+    var updateOrder = [
+      "degree_course",
+      "degree_class",
+      "course_type",
+      "disciplinary_group",
+      "university",
+    ];
+    updateOrder.forEach(function (key) {
+      var field = fieldSets.scatter.find(function (item) {
+        return item.key === key;
+      });
+      if (!field) return;
+      if (["survey_year", "years_after_degree", "graduation_year", "employment_definition"].indexOf(field.key) >= 0) return;
+      if (field.key === "point_dimension") return;
+
+      var select = byId(field.id);
+      if (!select) return;
+      filters = getDetailedFilters("scatter");
+      var currentValue = select.value;
+      var options = dynamicScatterOptions(field, filters);
+      var star = field.wildcard ? { value: WILDCARD, label: field.allLabel } : null;
+      var ordered = star ? [star].concat(options) : options;
+
+      select.innerHTML = ordered.map(function (option) {
+        return "<option value=\"" + escapeHtml(option.value) + "\">" +
+          escapeHtml(optionLabel(field, option)) +
+          "</option>";
+      }).join("");
+
+      if (hasOption(select, currentValue)) {
+        select.value = currentValue;
+        return;
+      }
+
+      if (field.key === "degree_course" && currentValue !== WILDCARD) {
+        var currentBase = degreeCourseBase(currentValue);
+        var replacement = options.find(function (option) {
+          return degreeCourseBase(option.value) === currentBase;
+        });
+        if (replacement) {
+          select.value = replacement.value;
+          return;
+        }
+      }
+
+      if (star && hasOption(select, WILDCARD)) {
+        select.value = WILDCARD;
+      } else if (select.options.length) {
+        select.value = select.options[0].value;
+      }
+    });
+  }
+
   function populateTimeYearSelects() {
     var years = state.metadata.timeseries_years || [];
     ["timeStartYear", "timeEndYear"].forEach(function (id) {
@@ -1318,12 +1410,14 @@
 
   function updateScatter() {
     var filters = getDetailedFilters("scatter");
-    var dimension = filters.point_dimension;
     var requestId = state.scatterRequest += 1;
     renderMessage("scatterChart", "Caricamento dati AlmaLaurea...", true);
     return loadDetailedRecordsFor(filters.survey_year, filters.years_after_degree)
       .then(function () {
         if (requestId !== state.scatterRequest) return;
+        updateScatterSelectOptions(filters);
+        filters = getDetailedFilters("scatter");
+        var dimension = filters.point_dimension;
         var rows = candidateRows(filters, dimension);
         var points = aggregateRows(rows, dimension);
         state.lastPoints = points;
