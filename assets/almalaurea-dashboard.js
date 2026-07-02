@@ -1,10 +1,11 @@
 (function () {
-  var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json";
+  var DATA_VERSION = "v=20260703";
+  var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json?" + DATA_VERSION;
   var DASHBOARD_CHUNK_BASE = "https://data.nazarenolecis.com/almalaurea/dashboard_chunks/";
-  var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json";
-  var TIMESERIES_DETAIL_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_university_data.json";
-  var ARTICLE_DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json";
-  var ARTICLE_TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json";
+  var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json?" + DATA_VERSION;
+  var TIMESERIES_DETAIL_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_university_data.json?" + DATA_VERSION;
+  var ARTICLE_DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json?" + DATA_VERSION;
+  var ARTICLE_TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json?" + DATA_VERSION;
   var WILDCARD = "*";
   var DEFAULT_EMPLOYMENT_DEFINITION = "broad";
   var sharedData = window.AlmaLaureaData = window.AlmaLaureaData || {};
@@ -667,7 +668,7 @@
   }
 
   function detailedChunkUrl(surveyYear, yearsAfter) {
-    return DASHBOARD_CHUNK_BASE + "almalaurea_dashboard_s" + surveyYear + "_a" + yearsAfter + ".json";
+    return DASHBOARD_CHUNK_BASE + "almalaurea_dashboard_s" + surveyYear + "_a" + yearsAfter + ".json?" + DATA_VERSION;
   }
 
   function hasMeasures(record) {
