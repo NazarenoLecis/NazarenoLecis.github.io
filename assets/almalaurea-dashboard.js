@@ -25,6 +25,7 @@
       disciplinary_group: "scatterGroup",
       course_type: "scatterCourse",
       degree_class: "scatterDegree",
+      degree_course: "scatterDegreeCourse",
       point_dimension: "scatterPointDimension",
     },
     box: {
@@ -62,6 +63,7 @@
       { key: "disciplinary_group", id: "scatterGroup", wildcard: true, allLabel: "Tutti i gruppi" },
       { key: "course_type", id: "scatterCourse", wildcard: true, allLabel: "Tutti i tipi di corso" },
       { key: "degree_class", id: "scatterDegree", wildcard: true, allLabel: "Tutte le classi di laurea" },
+      { key: "degree_course", id: "scatterDegreeCourse", wildcard: true, allLabel: "Tutti i corsi di laurea" },
     ],
     box: [
       { key: "survey_year", id: "boxSurveyYear", wildcard: false },
@@ -331,6 +333,7 @@
       disciplinary_group: byId(ids.disciplinary_group).value,
       course_type: byId(ids.course_type).value,
       degree_class: ids.degree_class ? byId(ids.degree_class).value : WILDCARD,
+      degree_course: ids.degree_course ? byId(ids.degree_course).value : WILDCARD,
       point_dimension: ids.point_dimension ? byId(ids.point_dimension).value : "disciplinary_group",
       split_dimension: ids.split_dimension ? byId(ids.split_dimension).value : "disciplinary_group",
     };
@@ -370,6 +373,7 @@
     setSelect(ids.disciplinary_group, WILDCARD);
     setSelect(ids.course_type, WILDCARD);
     if (ids.degree_class) setSelect(ids.degree_class, WILDCARD);
+    if (ids.degree_course) setSelect(ids.degree_course, WILDCARD);
     if (ids.point_dimension) setSelect(ids.point_dimension, "disciplinary_group");
     if (ids.split_dimension) setSelect(ids.split_dimension, "disciplinary_group");
   }
@@ -407,6 +411,7 @@
     setSelectFromQuery(ids.disciplinary_group, [chart + "_group", "group"]);
     setSelectFromQuery(ids.course_type, [chart + "_course", "course"]);
     if (ids.degree_class) setSelectFromQuery(ids.degree_class, [chart + "_degree", "degree"]);
+    if (ids.degree_course) setSelectFromQuery(ids.degree_course, [chart + "_degree_course", "degree_course"]);
     if (ids.point_dimension) setSelectFromQuery(ids.point_dimension, [chart + "_dimension", "dimension"]);
     if (ids.split_dimension) setSelectFromQuery(ids.split_dimension, [chart + "_split", "split"]);
     if (!queryParams.has(chart + "_cohort") && !queryParams.has("cohort")) {
@@ -571,6 +576,8 @@
         if (record.course_type !== filters.course_type) return false;
       } else if (dimension === "degree_class") {
         if (record.course_type === WILDCARD) return false;
+      } else if (dimension === "degree_course") {
+        if (record.course_type === WILDCARD) return false;
       } else if (record.course_type !== WILDCARD) {
         return false;
       }
@@ -579,7 +586,17 @@
         if (record.degree_class !== filters.degree_class) return false;
       } else if (dimension === "degree_class") {
         if (record.degree_class === WILDCARD) return false;
+      } else if (dimension === "degree_course") {
+        if (record.degree_class === WILDCARD) return false;
       } else if (record.degree_class !== WILDCARD) {
+        return false;
+      }
+
+      if (filters.degree_course !== WILDCARD) {
+        if (record.degree_course !== filters.degree_course) return false;
+      } else if (dimension === "degree_course") {
+        if (record.degree_course === WILDCARD) return false;
+      } else if (record.degree_course !== WILDCARD) {
         return false;
       }
 
@@ -638,12 +655,14 @@
   }
 
   function bucketLabel(record, dimension) {
+    if (dimension === "degree_course") return record.degree_course_label;
     if (dimension === "degree_class") return record.degree_class_label;
     if (dimension === "university") return record.university_label;
     return record.disciplinary_group_label;
   }
 
   function pointDisplayLabel(record, dimension) {
+    if (dimension === "degree_course") return shortText(record.degree_course_label, 34);
     if (dimension === "degree_class") return shortDegree(record.degree_class_label);
     if (dimension === "university") return shortText(record.university_label, 26);
     return shortText(record.disciplinary_group_label, 28);
@@ -658,6 +677,7 @@
       if (degreeGroups.length === 1) return records[0].course_type_label;
       return records[0].disciplinary_group_label;
     }
+    if (dimension === "degree_course") return records[0].degree_class_label;
 
     var groups = Array.from(new Set(records.map(function (record) {
       return record.disciplinary_group_label;
@@ -1219,6 +1239,7 @@
     if (filters.disciplinary_group !== WILDCARD) parts.push("gruppo: " + filters.disciplinary_group);
     if (filters.course_type !== WILDCARD) parts.push("tipo corso: " + filters.course_type);
     if (filters.degree_class !== WILDCARD) parts.push("classe: " + shortText(filters.degree_class, 72));
+    if (filters.degree_course !== WILDCARD) parts.push("corso: " + shortText(filters.degree_course, 72));
     return parts.join(" | ");
   }
 
@@ -1227,6 +1248,7 @@
       disciplinary_group: "gruppi disciplinari",
       university: "atenei",
       degree_class: "classi di laurea",
+      degree_course: "corsi di laurea",
     }[filters.point_dimension];
 
     if (!points.length) {
@@ -1249,6 +1271,9 @@
     }
     if (filters.point_dimension === "degree_class" && filters.university !== WILDCARD) {
       caveat = " Le classi di laurea sono disponibili nella struttura esportata a livello nazionale; per gli atenei la vista piu' robusta resta per gruppo disciplinare.";
+    }
+    if (filters.point_dimension === "degree_course") {
+      caveat = " Il dettaglio per corso usa la variabile postcorso pubblicata da AlmaLaurea quando disponibile.";
     }
 
     byId("selectionComment").textContent =
@@ -1492,6 +1517,7 @@
     record.disciplinary_group_label = record.disciplinary_group_label || displayLabel(record.disciplinary_group);
     record.course_type_label = record.course_type_label || displayLabel(record.course_type);
     record.degree_class_label = record.degree_class_label || displayLabel(record.degree_class);
+    record.degree_course_label = record.degree_course_label || displayLabel(record.degree_course);
     return record;
   }
 

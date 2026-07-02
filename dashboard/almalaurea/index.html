@@ -41,7 +41,7 @@
         <h1>Occupazione e retribuzione dei laureati</h1>
         <p class="lead">
           Parti da anno e coorte, poi restringi il perimetro per ateneo,
-          gruppo disciplinare, tipo di corso e classe di laurea. La vista
+          gruppo disciplinare, tipo di corso, classe e corso di laurea. La vista
           dettagliata usa gli anni recenti; le serie storiche usano dati
           piu' aggregati e vanno piu' indietro nel tempo.
         </p>
@@ -127,11 +127,16 @@
             <select id="scatterDegree"></select>
           </label>
           <label>
+            <span>Corso di laurea</span>
+            <select id="scatterDegreeCourse"></select>
+          </label>
+          <label>
             <span>Punti</span>
             <select id="scatterPointDimension">
               <option value="disciplinary_group">Gruppi disciplinari</option>
               <option value="university">Atenei</option>
               <option value="degree_class">Classi di laurea</option>
+              <option value="degree_course">Corsi di laurea</option>
             </select>
           </label>
         </div>
