@@ -1,6 +1,8 @@
 .bp-dashboard {
   --max: 1500px;
   padding-bottom: 54px;
+  max-width: calc(100vw - 24px);
+  overflow-x: hidden;
 }
 
 .bp-dashboard .dash-head {
@@ -81,6 +83,7 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: color-mix(in srgb, var(--panel) 90%, transparent);
+  overflow: hidden;
 }
 
 .bp-card-title {
@@ -124,11 +127,25 @@
 
 .bp-chart-wrap {
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .bp-chart {
-  width: 100%;
+  width: 100% !important;
+  max-width: 100%;
+  min-width: 0;
   min-height: 360px;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.bp-chart .js-plotly-plot,
+.bp-chart .plot-container,
+.bp-chart .svg-container,
+.bp-chart .main-svg {
+  max-width: 100% !important;
 }
 
 .bp-empty-chart {
@@ -235,7 +252,7 @@
   display: none !important;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1280px), (pointer: coarse) {
   .bp-dashboard .dash-head {
     grid-template-columns: 1fr;
     align-items: start;
@@ -246,7 +263,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 760px), (pointer: coarse) {
   .bp-dashboard .source-panel {
     grid-template-columns: 64px minmax(0, 1fr);
   }
@@ -273,7 +290,17 @@
   }
 
   .bp-chart {
-    min-height: 330px;
+    min-height: 320px;
+  }
+
+  #bpRevenuePie,
+  #bpSpendingPie {
+    min-height: 300px;
+  }
+
+  #bpRevenuePie .legend,
+  #bpSpendingPie .legend {
+    display: none !important;
   }
 
   .bp-select {
