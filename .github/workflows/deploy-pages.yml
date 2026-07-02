@@ -44,4 +44,4 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
         with:
-          timeout: 2400000
+          timeout: 600000
