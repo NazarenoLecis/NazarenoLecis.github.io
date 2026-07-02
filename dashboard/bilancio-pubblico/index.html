@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
   <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css">
-  <link rel="preload" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
@@ -51,11 +50,11 @@
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonte: MEF, Eurostat, OCSE</strong>
-          <span id="bpSourceMeta">Il JSON e' generato dalla pipeline dati e aggiornato in Cloudflare R2.</span>
+          <strong>Fonti: MEF, Eurostat, OCSE, Banca d'Italia</strong>
+          <span id="bpSourceMeta">Dati elaborati a partire da fonti ufficiali sulla finanza pubblica italiana ed europea.</span>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
-          <a class="related-link" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" target="_blank" rel="noopener">
-            Endpoint dati dashboard
+          <a class="related-link" href="https://github.com/NazarenoLecis/Bilancio_pubblico" target="_blank" rel="noopener">
+            Apri repository Bilancio_pubblico
           </a>
         </div>
       </div>
@@ -64,8 +63,8 @@
     <section class="workflow-grid">
       <div class="workflow-step">
         <span>1</span>
-        <h2>Struttura</h2>
-        <p>La pagina usa un contratto dati JSON unico: KPI, torte, serie e tabelle.</p>
+        <h2>Entrate e spese</h2>
+        <p>La pagina separa composizione, serie storiche e focus sulle principali voci fiscali e di spesa.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
@@ -74,8 +73,8 @@
       </div>
       <div class="workflow-step">
         <span>3</span>
-        <h2>Trasparenza</h2>
-        <p>Le fonti e la data di aggiornamento sono esplicitate nei metadati del payload.</p>
+        <h2>Metodo</h2>
+        <p>Le note distinguono valori assoluti, quote sul PIL, classificazioni COFOG e distribuzione IRPEF per fascia.</p>
       </div>
     </section>
 
@@ -325,16 +324,23 @@
       <div>
         <h2>Note e metodo</h2>
         <ul id="bpMethodNotes">
-          <li>In attesa dei dati aggiornati del file JSON, la dashboard mostra stato e messaggio di caricamento.</li>
+          <li>Dati in caricamento dalle fonti elaborate nel repository Bilancio_pubblico.</li>
         </ul>
       </div>
       <div>
-        <h2>Endpoint</h2>
+        <h2>Repository e fonti</h2>
         <p>
-          <a class="related-link" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" target="_blank" rel="noopener">
-            https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json
+          <a class="related-link" href="https://github.com/NazarenoLecis/Bilancio_pubblico" target="_blank" rel="noopener">
+            Repository Bilancio_pubblico
           </a>
         </p>
+        <ul class="bp-source-links">
+          <li><a href="https://www.finanze.gov.it/it/statistiche-fiscali/DichiarazioniFiscali-/" target="_blank" rel="noopener">MEF Dipartimento delle Finanze - Statistiche dichiarazioni fiscali</a></li>
+          <li><a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_taxag/default/table?lang=en" target="_blank" rel="noopener">Eurostat - Main national accounts tax aggregates</a></li>
+          <li><a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table?lang=en" target="_blank" rel="noopener">Eurostat - General government expenditure by function (COFOG)</a></li>
+          <li><a href="https://www.bancaditalia.it/statistiche/tematiche/conti-patrimoniali/conti-distributivi/index.html" target="_blank" rel="noopener">Banca d'Italia - Conti distributivi sulla ricchezza delle famiglie</a></li>
+          <li><a href="https://www.oecd.org/en/data/datasets/global-revenue-statistics-database.html" target="_blank" rel="noopener">OECD - Global Revenue Statistics Database</a></li>
+        </ul>
       </div>
     </section>
   </main>

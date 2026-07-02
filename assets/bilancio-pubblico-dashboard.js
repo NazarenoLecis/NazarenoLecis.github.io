@@ -257,16 +257,19 @@
     var notes = byId("bpMethodNotes");
     var generatedAt = payload.meta && (payload.meta.updated_at || payload.meta.generated_at);
 
-    if (status) status.textContent = "Dati caricati dal JSON pubblico su Cloudflare R2.";
+    if (status) status.textContent = "Dati caricati dalle elaborazioni del repository Bilancio_pubblico.";
     if (updated && generatedAt) updated.textContent = "Ultimo aggiornamento dati: " + formatDate(generatedAt);
-    if (sourceMeta && generatedAt) sourceMeta.textContent = "JSON aggiornato il " + formatDate(generatedAt) + " e servito da Cloudflare R2.";
+    if (sourceMeta && generatedAt) sourceMeta.textContent = "Fonti ufficiali elaborate nel repository Bilancio_pubblico. Aggiornamento dati: " + formatDate(generatedAt) + ".";
 
     if (!notes) return;
     clear(notes);
     [
-      "La dashboard consuma un unico payload JSON prodotto dalla pipeline dati.",
+      "Repository di elaborazione: NazarenoLecis/Bilancio_pubblico.",
       "Entrate e uscite sono in miliardi di euro quando non indicato diversamente.",
-      payload.meta && payload.meta.manifest_rows ? "File sorgente censiti dalla pipeline: " + payload.meta.manifest_rows + "." : null
+      "Pressione fiscale e contributiva: entrate da imposte e contributi sociali rapportate al PIL.",
+      "COFOG: classificazione internazionale delle funzioni della spesa pubblica, usata da Eurostat per rendere confrontabili i paesi.",
+      "Distribuzione IRPEF: contribuenti e imposta netta sono aggregati per fascia di reddito dichiarato.",
+      payload.meta && payload.meta.manifest_rows ? "Serie e tavole sorgente censite nell'elaborazione: " + payload.meta.manifest_rows + "." : null
     ].filter(Boolean).forEach(function (text) {
       var li = document.createElement("li");
       li.textContent = text;
@@ -487,7 +490,7 @@
       meta.textContent = "Totale sotto 500 milioni: " + formatMld(block.under_500_total_mld, 2) +
         " (" + formatPercent(block.under_500_share_of_total_percent, 2) + " del totale).";
     } else {
-      meta.textContent = asText(block.note, "Nessuna voce sotto soglia nel payload corrente.");
+      meta.textContent = asText(block.note, "Nessuna voce sotto soglia nell'elaborazione corrente.");
     }
   }
 

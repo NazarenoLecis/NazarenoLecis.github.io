@@ -197,6 +197,22 @@
   margin-bottom: 8px;
 }
 
+.bp-source-links {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.bp-source-links a {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.bp-source-links a:hover {
+  color: var(--orange);
+}
+
 .bp-dashboard .related-link {
   color: var(--orange);
   font-weight: 800;
