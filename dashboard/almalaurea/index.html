@@ -106,10 +106,7 @@
             <span>Coorte</span>
             <select id="scatterGraduationYear"></select>
           </label>
-          <label>
-            <span>Definizione occupazione</span>
-            <select id="scatterDefinition"></select>
-          </label>
+          <select class="is-hidden" id="scatterDefinition" aria-hidden="true"></select>
           <label>
             <span>Ateneo</span>
             <select id="scatterUniversity"></select>
@@ -186,10 +183,7 @@
             <span>Coorte</span>
             <select id="boxGraduationYear"></select>
           </label>
-          <label>
-            <span>Definizione occupazione</span>
-            <select id="boxDefinition"></select>
-          </label>
+          <select class="is-hidden" id="boxDefinition" aria-hidden="true"></select>
           <label>
             <span>Ateneo</span>
             <select id="boxUniversity"></select>
@@ -240,7 +234,7 @@
         </div>
         <div>
           <h3>Perimetro</h3>
-          <p>La definizione restrittiva e' usata come default per le serie lunghe perche' e' la piu' continua negli anni storici. La definizione meno restrittiva resta disponibile dove AlmaLaurea pubblica le metriche.</p>
+          <p>La dashboard usa una definizione unica di occupazione per mantenere confronti leggibili tra scatterplot, boxplot e serie storiche.</p>
         </div>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri serie storica">
@@ -274,10 +268,7 @@
             <span>Coorte</span>
             <select id="timeCohort"></select>
           </label>
-          <label>
-            <span>Definizione occupazione</span>
-            <select id="timeDefinition"></select>
-          </label>
+          <select class="is-hidden" id="timeDefinition" aria-hidden="true"></select>
           <label>
             <span>Ateneo</span>
             <select id="timeUniversity"></select>

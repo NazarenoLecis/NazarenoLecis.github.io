@@ -6,6 +6,7 @@
   var ARTICLE_DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json";
   var ARTICLE_TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json";
   var WILDCARD = "*";
+  var DEFAULT_EMPLOYMENT_DEFINITION = "broad";
   var sharedData = window.AlmaLaureaData = window.AlmaLaureaData || {};
   sharedData.cache = sharedData.cache || {};
   var queryParams = new URLSearchParams(window.location.search);
@@ -435,7 +436,7 @@
       survey_year: toNumber(byId(ids.survey_year).value),
       years_after_degree: toNumber(byId(ids.years_after_degree).value),
       graduation_year: toNumber(byId(ids.graduation_year).value),
-      employment_definition: byId(ids.employment_definition).value,
+      employment_definition: DEFAULT_EMPLOYMENT_DEFINITION,
       university: byId(ids.university).value,
       disciplinary_group: byId(ids.disciplinary_group).value,
       course_type: byId(ids.course_type).value,
@@ -461,7 +462,7 @@
       end_year: endYear,
       years_after_degree: toNumber(byId(ids.years_after_degree).value),
       graduation_year: toNumber(byId(ids.graduation_year).value),
-      employment_definition: byId(ids.employment_definition).value,
+      employment_definition: DEFAULT_EMPLOYMENT_DEFINITION,
       university: byId(ids.university).value,
       disciplinary_group: byId(ids.disciplinary_group).value,
       course_type: byId(ids.course_type).value,
@@ -475,7 +476,7 @@
     setSelect(ids.survey_year, latestDetailedYear());
     setSelect(ids.years_after_degree, defaultYearsAfter());
     syncGraduationYear(chart);
-    setSelect(ids.employment_definition, "broad");
+    setSelect(ids.employment_definition, DEFAULT_EMPLOYMENT_DEFINITION);
     setSelect(ids.university, WILDCARD);
     setSelect(ids.disciplinary_group, WILDCARD);
     setSelect(ids.course_type, WILDCARD);
@@ -493,7 +494,7 @@
     setSelect(ids.end_year, years.length ? years[years.length - 1] : firstOptionValue(ids.end_year));
     setSelect(ids.years_after_degree, defaultYearsAfter());
     setSelect(ids.graduation_year, state.metadata.latest_survey_year - 5);
-    setSelect(ids.employment_definition, "restrictive");
+    setSelect(ids.employment_definition, DEFAULT_EMPLOYMENT_DEFINITION);
     setSelect(ids.university, WILDCARD);
     setSelect(ids.disciplinary_group, WILDCARD);
     setSelect(ids.course_type, WILDCARD);
@@ -513,7 +514,7 @@
     setSelectFromQuery(ids.survey_year, [chart + "_survey", "survey"]);
     setSelectFromQuery(ids.years_after_degree, [chart + "_years", "years"]);
     setSelectFromQuery(ids.graduation_year, [chart + "_cohort", "cohort"]);
-    setSelectFromQuery(ids.employment_definition, [chart + "_definition", "definition"]);
+    setSelect(ids.employment_definition, DEFAULT_EMPLOYMENT_DEFINITION);
     setSelectFromQuery(ids.university, [chart + "_university", "university"]);
     setSelectFromQuery(ids.disciplinary_group, [chart + "_group", "group"]);
     setSelectFromQuery(ids.course_type, [chart + "_course", "course"]);
@@ -534,7 +535,7 @@
     setSelectFromQuery(ids.end_year, ["time_end", "end"]);
     setSelectFromQuery(ids.years_after_degree, ["time_years", "years"]);
     setSelectFromQuery(ids.graduation_year, ["time_cohort", "cohort"]);
-    setSelectFromQuery(ids.employment_definition, ["time_definition", "definition"]);
+    setSelect(ids.employment_definition, DEFAULT_EMPLOYMENT_DEFINITION);
     setSelectFromQuery(ids.university, ["time_university", "university"]);
     setSelectFromQuery(ids.disciplinary_group, ["time_group", "group"]);
     setSelectFromQuery(ids.course_type, ["time_course", "course"]);
@@ -1352,13 +1353,9 @@
 
   function detailedFilterDescription(filters) {
     var parts = [];
-    var definition = metadataOptions("employment_definition").find(function (item) {
-      return item.value === filters.employment_definition;
-    });
     parts.push("indagine " + publicSurveyYear(filters.survey_year));
     parts.push("coorte " + filters.graduation_year);
     parts.push(filters.years_after_degree === 1 ? "1 anno dalla laurea" : filters.years_after_degree + " anni dalla laurea");
-    if (definition) parts.push(definition.label.toLowerCase());
     if (filters.university !== WILDCARD) parts.push("ateneo: " + filters.university);
     if (filters.disciplinary_group !== WILDCARD) parts.push("gruppo: " + filters.disciplinary_group);
     if (filters.course_type !== WILDCARD) parts.push("tipo corso: " + filters.course_type);
