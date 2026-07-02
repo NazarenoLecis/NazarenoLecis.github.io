@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bilancio pubblico | Nazareno Lecis</title>
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css">
+  <link rel="preload" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" as="fetch" crossorigin>
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="../../assets/bilancio-pubblico-dashboard.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html">
+        <span class="logo"></span>
+        <span>
+          <span class="brand-name">Nazareno Lecis</span>
+          <span class="brand-tag">Data &amp; Risk Analysis</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap alm-dashboard bp-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Finanza pubblica</span>
+        <h1>Bilancio pubblico italiano</h1>
+        <p class="lead">
+          Dashboard che racconta entrate e spesa pubblica con indicatori principali dal 2002 al 2025.
+          Dati da MEF, Eurostat e OCSE, normalizzati in JSON nel repo Bilancio_pubblico.
+        </p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonte: MEF, Eurostat, OCSE</strong>
+          <span>Il JSON viene rigenerato da una pipeline separata, questo repo resta solo frontend.</span>
+          <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-grid">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Input stabile</h2>
+        <p>Un endpoint JSON contiene tutti i blocchi richiesti dalla dashboard (kpi, serie e tabelle).</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Interattivo</h2>
+        <p>Puoi confrontare Italia, UE e area euro con la metrica che preferisci.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Trasparenza</h2>
+        <p>Fonte, periodo e data di aggiornamento sono visibili direttamente nel blocco metodo.</p>
+      </div>
+    </section>
+
+    <p id="bpStatus" class="bp-status">Caricamento in corso ...</p>
+    <p id="bpUpdated" class="muted-note"></p>
+
+    <section class="bp-kpi-wrap">
+      <div id="bpKpis" class="kpi-grid"></div>
+    </section>
+
+    <section class="bp-grid-2">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Entrate principali nel 2025</h2>
+          <span id="bpTopTaxesTitle">Miliardi di euro</span>
+        </div>
+        <p>Top voci del gettito aggregato nel 2025 e confronto tra ordini di grandezza.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpTopTaxes" class="bp-chart" role="img" aria-labelledby="bpTopTaxesTitle"></svg>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Pressione fiscale e contributiva</h2>
+          <span id="bpPressureTitle">% PIL</span>
+        </div>
+        <p>Evoluzione complessiva della pressione fiscale e contributiva in Italia.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpTaxTrend" class="bp-chart" role="img" aria-labelledby="bpPressureTitle"></svg>
+        </div>
+      </article>
+    </section>
+
+    <section class="bp-grid-2">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Entrate in torta</h2>
+          <span>Ripartizione per categoria</span>
+        </div>
+        <p>Composizione del lato entrate per le categorie disponibili a questa pipeline.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpRevenuePie" class="bp-chart" role="img" aria-label="Entrate in torta"></svg>
+        </div>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Voce</th>
+                <th>Valore</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody id="bpRevenuePieRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Spesa pubblica in torta</h2>
+          <span>Ripartizione per funzione</span>
+        </div>
+        <p>Distribuzione delle funzioni di spesa sul totale disponibile.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpSpendingPie" class="bp-chart" role="img" aria-label="Spesa pubblica in torta"></svg>
+        </div>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Funzione</th>
+                <th>Valore</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody id="bpSpendingPieRows"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="bp-grid-2">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Serie storiche - Entrate</h2>
+          <span>mld euro</span>
+        </div>
+        <p>Andamento dei principali aggregati di entrata selezionati.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpRevenueTrend" class="bp-chart" role="img" aria-label="Serie storiche entrate"></svg>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Serie storiche - Spese</h2>
+          <span>mld euro</span>
+        </div>
+        <p>Andamento dei principali aggregati di spesa per funzione.</p>
+        <div class="bp-chart-wrap">
+          <svg id="bpSpendingTrend" class="bp-chart" role="img" aria-label="Serie storiche spese"></svg>
+        </div>
+      </article>
+    </section>
+
+    <section class="bp-grid-2">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Focus IRPEF</h2>
+          <span>Fasce di reddito</span>
+        </div>
+        <p>Distribuzione dei contribuenti e quota di gettito netto per fascia.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Fascia</th>
+                <th>Contribuenti</th>
+                <th>Quota contribuenti</th>
+                <th>IRPEF</th>
+                <th>Quota IRPEF</th>
+              </tr>
+            </thead>
+            <tbody id="bpIrpefBandTable"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Focus entrate minori</h2>
+          <span>Under 500 mln euro</span>
+        </div>
+        <p>Voci sotto 500 milioni di euro annuali e loro cumulo.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Voce</th>
+                <th>Anno</th>
+                <th>Valore</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody id="bpUnder500Rows"></tbody>
+          </table>
+        </div>
+        <p id="bpUnder500Meta" class="muted-note"></p>
+      </article>
+    </section>
+
+    <section class="bp-card">
+      <div class="bp-card-title">
+        <h2>Altri indicatori di entrata</h2>
+        <span>Panoramica focus</span>
+      </div>
+        <p>Altri elementi usati in dashboard: TARI, IRPEF, IRAP, IRES, IVA, IMU, successioni, superbollo, cedolare secca.</p>
+      <div class="bp-table-wrap">
+        <table class="bp-table">
+          <thead>
+            <tr>
+              <th>Voce</th>
+              <th>Valore</th>
+              <th>Disponibilita</th>
+            </tr>
+          </thead>
+          <tbody id="bpRevenueFocusRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bp-card">
+      <div class="bp-card-title">
+        <h2>Italia vs Europa</h2>
+        <label for="bpPeerMetric">Metrica</label>
+        <select id="bpPeerMetric" class="bp-select"></select>
+      </div>
+      <p>Classifica per Paese sulla metrica scelta, con evidenza su Italia.</p>
+      <div class="bp-chart-wrap">
+        <svg id="bpPeerBars" class="bp-chart" role="img" aria-label="Confronto paesi"></svg>
+      </div>
+      <div class="bp-table-wrap">
+        <table class="bp-table">
+          <thead>
+            <tr>
+              <th>Pos</th>
+              <th>Paese</th>
+              <th>Codice</th>
+              <th>Valore</th>
+            </tr>
+          </thead>
+          <tbody id="bpPeerRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="notes-panel">
+      <div>
+        <h2>Note e metodo</h2>
+        <ul id="bpMethodNotes">
+          <li>In attesa dei dati aggiornati del file JSON, la dashboard mostra stato e messaggio di caricamento.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Endpoint</h2>
+        <p>
+          <a class="related-link" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" target="_blank" rel="noopener">
+            https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json
+          </a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner social-links">
+      <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+      <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+    </div>
+  </footer>
+</body>
+</html>
