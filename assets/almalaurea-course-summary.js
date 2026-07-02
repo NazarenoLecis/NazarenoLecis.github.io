@@ -1,5 +1,5 @@
 (function () {
-  var DATA_VERSION = "v=20260703";
+  var DATA_VERSION = "v=20260703-2";
   var DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json?" + DATA_VERSION;
   var WILDCARD = "*";
   var records = [];
