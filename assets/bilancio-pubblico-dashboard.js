@@ -264,6 +264,7 @@
       "Repository di elaborazione: NazarenoLecis/Bilancio_pubblico.",
       "Entrate e uscite sono in miliardi di euro quando non indicato diversamente.",
       "Pressione fiscale e contributiva: entrate da imposte e contributi sociali rapportate al PIL.",
+      "Contributi sociali netti: serie Eurostat gov_10a_taxag; i valori in miliardi sono ricavati dalla quota sul PIL e dal PIL implicito nelle serie Eurostat di spesa pubblica.",
       "COFOG: classificazione internazionale delle funzioni della spesa pubblica, usata da Eurostat per rendere confrontabili i paesi.",
       "Distribuzione IRPEF: contribuenti e imposta netta sono aggregati per fascia di reddito dichiarato.",
       payload.meta && payload.meta.manifest_rows ? "Serie e tavole sorgente censite nell'elaborazione: " + payload.meta.manifest_rows + "." : null
