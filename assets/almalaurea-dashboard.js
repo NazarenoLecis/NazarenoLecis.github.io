@@ -329,7 +329,9 @@
       if (!select) return;
       filters = getDetailedFilters("scatter");
       var currentValue = select.value;
-      var options = dynamicScatterOptions(field, filters);
+      var options = field.key === "university"
+        ? metadataOptions(field.key)
+        : dynamicScatterOptions(field, filters);
       var star = field.wildcard ? { value: WILDCARD, label: field.allLabel } : null;
       var ordered = star ? [star].concat(options) : options;
 
@@ -684,6 +686,8 @@
 
       if (filters.course_type !== WILDCARD) {
         if (record.course_type !== filters.course_type) return false;
+      } else if (dimension === "course_type") {
+        if (record.course_type === WILDCARD) return false;
       } else if (dimension === "degree_class" ||
           dimension === "degree_course" ||
           hasDegreeClassFilter ||
@@ -709,6 +713,8 @@
         if (record.degree_course !== filters.degree_course) return false;
       } else if (dimension === "degree_course") {
         if (record.degree_course === WILDCARD) return false;
+      } else if (record.degree_class !== WILDCARD) {
+        if (record.degree_course !== WILDCARD) return false;
       } else if (record.degree_course !== WILDCARD) {
         return false;
       }
@@ -746,7 +752,19 @@
         return false;
       }
 
-      if (record.degree_class !== WILDCARD) return false;
+      if (filters.split_dimension !== "degree_class" && !hasDegreeClassFilter &&
+          record.degree_class !== WILDCARD) {
+        return false;
+      }
+      if (filters.split_dimension === "degree_class" &&
+          record.degree_class === WILDCARD) {
+        return false;
+      }
+      if (record.degree_class !== WILDCARD && filters.split_dimension === "course_type") {
+        if (record.degree_course !== WILDCARD) {
+          return false;
+        }
+      }
 
       if (filters.disciplinary_group !== WILDCARD) {
         if (record.disciplinary_group !== filters.disciplinary_group) return false;
@@ -774,6 +792,7 @@
     if (dimension === "degree_course") return record.degree_course_label;
     if (dimension === "degree_class") return record.degree_class_label;
     if (dimension === "university") return record.university_label;
+    if (dimension === "course_type") return record.course_type_label;
     return record.disciplinary_group_label;
   }
 
@@ -871,6 +890,9 @@
       var graduates = bucketRows.reduce(function (sum, record) {
         return sum + (Number.isFinite(record.graduates) ? record.graduates : 0);
       }, 0);
+      var bucketSalaries = bucketRows.map(function (record) {
+        return toNumber(record.net_monthly_salary);
+      }).filter(Number.isFinite);
 
       return {
         key: entry[0],
@@ -883,6 +905,7 @@
         graduates: graduates,
         employment_rate: weightedAverage(bucketRows, "employment_rate"),
         net_monthly_salary: weightedAverage(bucketRows, "net_monthly_salary"),
+        net_monthly_salary_median: medianValue(bucketSalaries),
         second_level_enrollment_rate: weightedAverage(bucketRows, "second_level_enrollment_rate"),
         current_second_level_enrollment_rate: weightedAverage(
           bucketRows,
@@ -972,6 +995,12 @@
     var traces = splitByColor(points).map(function (entry) {
       var colorKey = entry[0];
       var tracePoints = entry[1];
+      var chartMeanSalary = meanValue(points.map(function (point) {
+        return point.net_monthly_salary;
+      }));
+      var chartMedianSalary = medianValue(points.map(function (point) {
+        return point.net_monthly_salary;
+      }));
       var salaryValues = tracePoints.map(function (point) {
         return point.net_monthly_salary;
       });
@@ -1003,7 +1032,7 @@
             point.graduates,
             formatPercent(point.second_level_enrollment_rate),
             traceMeanSalary,
-            traceMedianSalary,
+            Number.isFinite(traceMedianSalary) ? traceMedianSalary : chartMedianSalary,
           ];
         }),
         hovertemplate: "<b>%{customdata[0]}</b><br>" +
@@ -1012,8 +1041,8 @@
           "Retribuzione media del punto: %{x:.0f} euro<br>" +
           "Occupazione: %{y:.1f}%<br>" +
           "Iscritti a magistrale: %{customdata[4]}<br>" +
-          "Media della serie: %{customdata[5]:.0f} euro<br>" +
-          "Mediana della serie: %{customdata[6]:.0f} euro<br>" +
+          "Media della serie: " + (Number.isFinite(chartMeanSalary) ? "%{customdata[5]:.0f}" : "-") + " euro<br>" +
+          "Mediana della serie: " + (Number.isFinite(chartMedianSalary) ? "%{customdata[6]:.0f}" : "-") + " euro<br>" +
           "Laureati: %{customdata[3]:,.0f}<extra></extra>",
       };
     });
@@ -1367,6 +1396,7 @@
 
   function updateComment(points, filters) {
     var dimensionLabel = {
+      course_type: "tipi di corso",
       disciplinary_group: "gruppi disciplinari",
       university: "atenei",
       degree_class: "classi di laurea",
