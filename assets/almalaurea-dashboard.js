@@ -132,6 +132,7 @@
   }
 
   function toNumber(value) {
+    if (value === null || value === undefined || value === "") return null;
     var parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
   }
@@ -270,8 +271,8 @@
   }
 
   function metricRow(record) {
-    return Number.isFinite(record.employment_rate) &&
-      Number.isFinite(record.net_monthly_salary);
+    return Number.isFinite(record.employment_rate) && record.employment_rate > 0 &&
+      Number.isFinite(record.net_monthly_salary) && record.net_monthly_salary > 0;
   }
 
   function degreeCourseBase(value) {
@@ -303,7 +304,7 @@
     });
 
     return metadataOptions(field.key).filter(function (option) {
-      return values.has(option.value);
+      return option.value !== WILDCARD && values.has(option.value);
     });
   }
 
@@ -873,7 +874,8 @@
         ),
       };
     }).filter(function (point) {
-      return Number.isFinite(point.employment_rate) && Number.isFinite(point.net_monthly_salary);
+      return Number.isFinite(point.employment_rate) && point.employment_rate > 0 &&
+        Number.isFinite(point.net_monthly_salary) && point.net_monthly_salary > 0;
     });
   }
 
