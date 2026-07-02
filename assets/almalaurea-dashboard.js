@@ -141,6 +141,19 @@
     return Math.round(value).toLocaleString("it-IT");
   }
 
+  function publicSurveyYear(value) {
+    var year = toNumber(value);
+    return Number.isFinite(year) ? year + 1 : value;
+  }
+
+  function publicSurveyYearRange(years, fallback) {
+    years = (years || []).map(toNumber).filter(Number.isFinite);
+    if (years.length > 1) {
+      return publicSurveyYear(years[0]) + "-" + publicSurveyYear(years[years.length - 1]);
+    }
+    return publicSurveyYear(years.length ? years[0] : fallback);
+  }
+
   function formatPercent(value) {
     if (!Number.isFinite(value)) return "-";
     return value.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
@@ -230,6 +243,7 @@
 
   function optionLabel(field, option) {
     if (field.wildcard && asText(option.value) === WILDCARD) return field.allLabel;
+    if (field.key === "survey_year") return publicSurveyYear(option.value);
     return option.label;
   }
 
@@ -261,7 +275,7 @@
       var select = byId(id);
       if (!select) return;
       select.innerHTML = years.map(function (year) {
-        return "<option value=\"" + year + "\">" + year + "</option>";
+        return "<option value=\"" + year + "\">" + publicSurveyYear(year) + "</option>";
       }).join("");
     });
   }
@@ -1045,7 +1059,7 @@
 
   function timeseriesAxisValue(record, filters) {
     if (filters.mode === "cohort_path") return record.years_after_degree;
-    return record.survey_year;
+    return publicSurveyYear(record.survey_year);
   }
 
   function aggregateTimeseriesRows(rows, filters) {
@@ -1137,7 +1151,7 @@
         line: { color: colorFor(traceLabel), width: 2 },
         customdata: traceRows.map(function (record) {
           return [
-            record.survey_year,
+            publicSurveyYear(record.survey_year),
             record.graduation_year,
             record.years_after_degree,
             record.graduates,
@@ -1231,7 +1245,7 @@
     var definition = metadataOptions("employment_definition").find(function (item) {
       return item.value === filters.employment_definition;
     });
-    parts.push("indagine " + filters.survey_year);
+    parts.push("indagine " + publicSurveyYear(filters.survey_year));
     parts.push("coorte " + filters.graduation_year);
     parts.push(filters.years_after_degree === 1 ? "1 anno dalla laurea" : filters.years_after_degree + " anni dalla laurea");
     if (definition) parts.push(definition.label.toLowerCase());
@@ -1285,15 +1299,11 @@
   }
 
   function updateSourceAndNotes() {
-    byId("sourceTitle").textContent = "Fonte: AlmaLaurea " + state.metadata.latest_survey_year;
+    byId("sourceTitle").textContent = "Fonte: AlmaLaurea " + publicSurveyYear(state.metadata.latest_survey_year);
     var dashboardYears = state.metadata.survey_years || [];
     var timeseriesYears = state.metadata.timeseries_years || [];
-    var dashboardText = dashboardYears.length > 1 ?
-      dashboardYears[0] + "-" + dashboardYears[dashboardYears.length - 1] :
-      state.metadata.latest_survey_year;
-    var timeseriesText = timeseriesYears.length > 1 ?
-      timeseriesYears[0] + "-" + timeseriesYears[timeseriesYears.length - 1] :
-      dashboardText;
+    var dashboardText = publicSurveyYearRange(dashboardYears, state.metadata.latest_survey_year);
+    var timeseriesText = publicSurveyYearRange(timeseriesYears, state.metadata.latest_survey_year);
     byId("sourceMeta").textContent =
       "Dashboard dettagliata: " + formatInt(state.metadata.record_count) +
       " osservazioni, anni " + dashboardText + ". Serie storiche: " +
