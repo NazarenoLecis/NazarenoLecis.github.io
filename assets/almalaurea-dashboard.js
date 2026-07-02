@@ -777,6 +777,13 @@
     return shortText(record.disciplinary_group_label, 28);
   }
 
+  function selectedCourseLabel(records) {
+    var courses = Array.from(new Set(records.map(function (record) {
+      return record.degree_course === WILDCARD ? "" : record.degree_course_label;
+    }).filter(Boolean)));
+    return courses.length === 1 ? courses[0] : "";
+  }
+
   function colorKeyForBucket(records, dimension) {
     if (dimension === "disciplinary_group") return records[0].disciplinary_group_label;
     if (dimension === "degree_class") {
@@ -852,14 +859,15 @@
     return Array.from(buckets.entries()).map(function (entry) {
       var bucketRows = entry[1];
       var first = bucketRows[0];
+      var courseLabel = selectedCourseLabel(bucketRows);
       var graduates = bucketRows.reduce(function (sum, record) {
         return sum + (Number.isFinite(record.graduates) ? record.graduates : 0);
       }, 0);
 
       return {
         key: entry[0],
-        label: bucketLabel(first, dimension),
-        display_label: pointDisplayLabel(first, dimension),
+        label: courseLabel || bucketLabel(first, dimension),
+        display_label: courseLabel ? shortText(courseLabel, 34) : pointDisplayLabel(first, dimension),
         disciplinary_group: first.disciplinary_group,
         group_label: first.disciplinary_group_label,
         course_type_label: first.course_type_label,
