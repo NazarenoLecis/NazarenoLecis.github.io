@@ -602,6 +602,8 @@
         if (record.degree_class === WILDCARD) return false;
       } else if (dimension === "degree_course") {
         if (record.degree_class === WILDCARD) return false;
+      } else if (filters.degree_course !== WILDCARD) {
+        if (record.degree_class === WILDCARD) return false;
       } else if (record.degree_class !== WILDCARD) {
         return false;
       }
