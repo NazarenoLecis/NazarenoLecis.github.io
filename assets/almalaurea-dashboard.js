@@ -801,7 +801,7 @@
       return records[0].disciplinary_group_label;
     }
     if (dimension === "degree_course") return records[0].degree_class_label;
-    if (dimension === "university") return "Atenei";
+    if (dimension === "university") return records[0].university_label;
 
     var groups = Array.from(new Set(records.map(function (record) {
       return record.disciplinary_group_label;
