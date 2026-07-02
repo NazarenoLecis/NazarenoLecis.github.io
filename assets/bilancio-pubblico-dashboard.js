@@ -252,14 +252,11 @@
 
   function renderMeta(payload) {
     var status = byId("bpStatus");
-    var updated = byId("bpUpdated");
     var sourceMeta = byId("bpSourceMeta");
     var notes = byId("bpMethodNotes");
-    var generatedAt = payload.meta && (payload.meta.updated_at || payload.meta.generated_at);
 
     if (status) status.textContent = "Dati caricati dalle elaborazioni del repository Bilancio_pubblico.";
-    if (updated && generatedAt) updated.textContent = "Ultimo aggiornamento dati: " + formatDate(generatedAt);
-    if (sourceMeta && generatedAt) sourceMeta.textContent = "Fonti ufficiali elaborate nel repository Bilancio_pubblico. Aggiornamento dati: " + formatDate(generatedAt) + ".";
+    if (sourceMeta) sourceMeta.textContent = "Fonti ufficiali elaborate nel repository Bilancio_pubblico.";
 
     if (!notes) return;
     clear(notes);
