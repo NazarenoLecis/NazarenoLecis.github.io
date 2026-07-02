@@ -7,9 +7,12 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
   <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css">
   <link rel="preload" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
   <script defer src="../../assets/bilancio-pubblico-dashboard.js"></script>
 </head>
 <body>
@@ -41,7 +44,7 @@
         <h1>Bilancio pubblico italiano</h1>
         <p class="lead">
           Dashboard su entrate e spese della finanza pubblica con due obiettivi:
-          capire la composizione (torta), seguire i trend storici e isolare le voci più leggibili
+          capire la composizione (torta), seguire i trend storici e isolare le voci piu' leggibili
           tra entrate, pressione fiscale e funzioni di spesa.
         </p>
       </div>
@@ -49,7 +52,7 @@
         <span class="logo"></span>
         <div>
           <strong>Fonte: MEF, Eurostat, OCSE</strong>
-          <span>Il JSON è generato dalla pipeline dati e aggiornato in Cloudflare R2.</span>
+          <span id="bpSourceMeta">Il JSON e' generato dalla pipeline dati e aggiornato in Cloudflare R2.</span>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
           <a class="related-link" href="https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json" target="_blank" rel="noopener">
             Endpoint dati dashboard
@@ -67,7 +70,7 @@
       <div class="workflow-step">
         <span>2</span>
         <h2>Confronto</h2>
-        <p>Per ogni blocco vediamo sezione, unità, anni e note tecniche direttamente dalla sorgente.</p>
+        <p>Per ogni blocco vediamo sezione, unita', anni e note tecniche direttamente dalla sorgente.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
@@ -101,7 +104,7 @@
         </div>
         <p>Top voci dell&apos;aggregato entrate e confronto d&apos;ordine tra categorie.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpTopTaxes" class="bp-chart" role="img" aria-labelledby="bpTopTaxesTitle"></svg>
+          <div id="bpTopTaxes" class="chart bp-chart" role="img" aria-labelledby="bpTopTaxesTitle"></div>
         </div>
       </article>
       <article class="bp-card">
@@ -111,7 +114,7 @@
         </div>
         <p>Evoluzione complessiva e componenti della pressione fiscale.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpTaxTrend" class="bp-chart" role="img" aria-labelledby="bpPressureTitle"></svg>
+          <div id="bpTaxTrend" class="chart bp-chart" role="img" aria-labelledby="bpPressureTitle"></div>
         </div>
       </article>
     </section>
@@ -124,7 +127,7 @@
         </div>
         <p>Composizione delle entrate per macro categoria.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpRevenuePie" class="bp-chart" role="img" aria-label="Entrate in torta"></svg>
+          <div id="bpRevenuePie" class="chart bp-chart" role="img" aria-label="Entrate in torta"></div>
         </div>
         <div class="bp-table-wrap">
           <table class="bp-table">
@@ -147,7 +150,7 @@
         </div>
         <p>Composizione della spesa pubblica aggregata.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpSpendingPie" class="bp-chart" role="img" aria-label="Spesa pubblica in torta"></svg>
+          <div id="bpSpendingPie" class="chart bp-chart" role="img" aria-label="Spesa pubblica in torta"></div>
         </div>
         <div class="bp-table-wrap">
           <table class="bp-table">
@@ -172,7 +175,7 @@
         </div>
         <p>Andamento delle categorie entrate disponibili.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpRevenueTrend" class="bp-chart" role="img" aria-label="Serie storiche entrate"></svg>
+          <div id="bpRevenueTrend" class="chart bp-chart" role="img" aria-label="Serie storiche entrate"></div>
         </div>
       </article>
 
@@ -183,7 +186,7 @@
         </div>
         <p>Andamento dei capitoli di spesa per funzione.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpSpendingTrend" class="bp-chart" role="img" aria-label="Serie storiche spese"></svg>
+          <div id="bpSpendingTrend" class="chart bp-chart" role="img" aria-label="Serie storiche spese"></div>
         </div>
       </article>
     </section>
@@ -218,7 +221,7 @@
         </div>
         <p>Serie comparata tra categoria, quando presente nel dataset.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpTaxTypeTrend" class="bp-chart" role="img" aria-label="Tasse dirette e indirette"></svg>
+          <div id="bpTaxTypeTrend" class="chart bp-chart" role="img" aria-label="Tasse dirette e indirette"></div>
         </div>
       </article>
     </section>
@@ -300,7 +303,7 @@
         </div>
         <p>Confronto per paese su metriche fiscali e di spesa.</p>
         <div class="bp-chart-wrap">
-          <svg id="bpPeerBars" class="bp-chart" role="img" aria-label="Confronto paesi"></svg>
+          <div id="bpPeerBars" class="chart bp-chart" role="img" aria-label="Confronto paesi"></div>
         </div>
         <div class="bp-table-wrap">
           <table class="bp-table">
