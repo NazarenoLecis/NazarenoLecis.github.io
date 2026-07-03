@@ -16,7 +16,7 @@
   function byId(id) { return document.getElementById(id); }
   function arr(value) { return Array.isArray(value) ? value : []; }
   function num(value) { var parsed = Number(value); return Number.isFinite(parsed) ? parsed : null; }
-  function text(value, fallback) { return value === null || value === undefined || value === "" ? fallback || "-" : String(value); }
+  function text(value, fallback) { return value === null || value === undefined || value === "" ? fallback || "ND" : String(value); }
   function css(name, fallback) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
   function mobile() { return window.matchMedia && window.matchMedia("(max-width: 760px)").matches; }
   function compact(value, maxLength) {
@@ -27,11 +27,11 @@
 
   function formatValue(value, metric) {
     var n = num(value);
-    if (n === null) return "-";
+    if (n === null) return "ND";
     if (metric.unit === "euro" || metric.unit === "euro_km2") {
       return n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) + " euro";
     }
-    return n.toLocaleString("it-IT", { maximumFractionDigits: 2, minimumFractionDigits: 0 }) + " mld";
+    return n.toLocaleString("it-IT", { maximumFractionDigits: 2, minimumFractionDigits: 0 }) + " miliardi di euro";
   }
 
   function metricAxis(metric) {
@@ -52,6 +52,7 @@
       ".bp-region-option{min-width:0;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;color:var(--text);background:color-mix(in srgb,var(--card) 78%,transparent);font-size:.9rem;font-weight:700}",
       ".bp-region-option input{accent-color:var(--orange)}",
       ".bp-region-option span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      ".bp-openbdap-note{margin:8px 0 0;color:var(--muted);font-size:.9rem;line-height:1.4}",
       "@media (max-width:760px),(pointer:coarse){.bp-openbdap-controls{grid-template-columns:1fr}.bp-openbdap-region-grid{grid-template-columns:1fr 1fr}.bp-region-option{font-size:.84rem;padding:8px}}"
     ].join("");
     document.head.appendChild(style);
@@ -75,8 +76,9 @@
       '<div><span class="bp-filter-label">Regioni</span><div id="bpOpenbdapRegions" class="bp-openbdap-region-grid"></div></div>',
       '</div>',
       '<div class="bp-chart-wrap"><div id="bpOpenbdapMissionChart" class="chart bp-chart" role="img" aria-label="Confronto OpenBDAP 2024 per missione"></div></div>',
+      '<p id="bpOpenbdapNote" class="bp-openbdap-note"></p>',
       '<p class="bp-chart-credit">Fonte: RGS - OpenBDAP, rendiconto della gestione delle Regioni e province autonome. Elaborazione di Nazareno Lecis.</p>',
-      '<div class="bp-table-wrap"><table class="bp-table"><thead><tr><th>Regione</th><th>Missione</th><th>Valore</th></tr></thead><tbody id="bpOpenbdapMissionRows"></tbody></table></div>'
+      '<div class="bp-table-wrap"><table class="bp-table"><thead><tr><th>Regione</th><th>Missione</th><th>Miliardi di euro</th></tr></thead><tbody id="bpOpenbdapMissionRows"></tbody></table></div>'
     ].join("");
     article.appendChild(panel);
     return panel;
@@ -102,10 +104,31 @@
     });
   }
 
-  function allRegions(rows) {
-    return Array.from(new Set(rows.map(function (row) { return text(row.regione); }))).sort(function (a, b) {
+  function allRegions(payload, rows) {
+    var regions = [];
+    var regionalBudget = payload && payload.regional_budgets ? payload.regional_budgets : {};
+    var regionSet = {};
+
+    function pushRegion(region) {
+      if (region === null || region === undefined || region === "") return;
+      region = String(region).trim();
+      if (region === "ND" || regionSet[region]) return;
+      regionSet[region] = true;
+      regions.push(region);
+    }
+
+    arr(regionalBudget.regional_denominators).forEach(function (row) {
+      pushRegion(row && row.regione);
+    });
+
+    rows.forEach(function (row) {
+      pushRegion(row && row.regione);
+    });
+
+    regions.sort(function (a, b) {
       return a.localeCompare(b, "it");
     });
+    return Array.from(new Set(regions));
   }
 
   function defaultRegions(rows) {
@@ -117,8 +140,8 @@
     return Object.keys(totals).sort(function (a, b) { return totals[b] - totals[a]; }).slice(0, 4);
   }
 
-  function selectedRegions(rows) {
-    var available = allRegions(rows);
+  function selectedRegions(payload, rows) {
+    var available = allRegions(payload, rows);
     state.regions = state.regions.filter(function (region) { return available.indexOf(region) >= 0; });
     if (!state.regions.length) state.regions = defaultRegions(rows);
     return state.regions;
@@ -146,9 +169,9 @@
 
     var regionGrid = byId("bpOpenbdapRegions");
     if (!regionGrid) return;
-    var regions = selectedRegions(rows);
+    var regions = selectedRegions(payload, rows);
     regionGrid.innerHTML = "";
-    allRegions(rows).forEach(function (region) {
+    allRegions(payload, rows).forEach(function (region) {
       var label = document.createElement("label");
       label.className = "bp-region-option";
       var checkbox = document.createElement("input");
@@ -179,10 +202,10 @@
     return Object.keys(totals).sort(function (a, b) { return totals[b] - totals[a]; }).slice(0, mobile() ? 6 : 8);
   }
 
-  function plotMissionChart(rows, metric) {
+  function plotMissionChart(payload, rows, metric) {
     var node = byId("bpOpenbdapMissionChart");
     if (!node || !window.Plotly) return;
-    var regions = selectedRegions(rows);
+    var regions = selectedRegions(payload, rows);
     var missions = topMissions(rows, regions, metric);
     if (!regions.length || !missions.length) {
       node.textContent = "Nessun dato OpenBDAP disponibile";
@@ -222,11 +245,11 @@
     }, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false }).catch(function () {});
   }
 
-  function renderTable(rows, metric) {
+  function renderTable(payload, rows, metric) {
     var tbody = byId("bpOpenbdapMissionRows");
     if (!tbody) return;
     tbody.innerHTML = "";
-    var regions = selectedRegions(rows);
+    var regions = selectedRegions(payload, rows);
     rows.filter(function (row) {
       return regions.indexOf(text(row.regione)) >= 0 && num(row[metric.field]) !== null;
     }).sort(function (a, b) {
@@ -250,17 +273,10 @@
     }
   }
 
-  function addMethodNote() {
-    var notes = byId("bpMethodNotes");
-    if (!notes) return;
-    var note = "OpenBDAP 2024 aggiunge un dettaglio dei rendiconti regionali per missione. Euro pro capite ed euro per kmq sono normalizzazioni derivate.";
-    var exists = Array.prototype.some.call(notes.querySelectorAll("li"), function (item) {
-      return item.textContent === note;
-    });
-    if (exists) return;
-    var li = document.createElement("li");
-    li.textContent = note;
-    notes.appendChild(li);
+  function setOpenbdapNote() {
+    var note = byId("bpOpenbdapNote");
+    if (!note) return;
+    note.textContent = "Confronto OpenBDAP 2024: dettaglio regionale per missione. Elaborazione di Nazareno Lecis.";
   }
 
   function render(payload) {
@@ -271,9 +287,9 @@
     if (!metric) return;
     state.metric = metric.id;
     setupControls(payload || {}, rows, metricList);
-    plotMissionChart(rows, metric);
-    renderTable(rows, metric);
-    addMethodNote();
+    plotMissionChart(payload, rows, metric);
+    renderTable(payload, rows, metric);
+    setOpenbdapNote();
   }
 
   function load() {
@@ -293,3 +309,4 @@
     load();
   }
 })();
+

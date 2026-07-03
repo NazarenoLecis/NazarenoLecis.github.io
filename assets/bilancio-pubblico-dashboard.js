@@ -1,7 +1,8 @@
-(function () {
+﻿(function () {
   "use strict";
 
   var DATA_URL = "../../data/bilancio-pubblico/dashboard.json?v=20260703-cofog-detail";
+  var MISSING_VALUE = "ND";
   var STATE = {
     payload: null,
     peerMetric: "tax_pressure",
@@ -47,7 +48,7 @@
   }
 
   function asText(value, fallback) {
-    if (value === null || value === undefined || value === "") return fallback || "-";
+    if (value === null || value === undefined || value === "") return fallback || MISSING_VALUE;
     return String(value);
   }
 
@@ -64,7 +65,7 @@
 
   function formatPlain(value, digits) {
     var n = toNumber(value);
-    if (n === null) return "-";
+    if (n === null) return MISSING_VALUE;
     return n.toLocaleString("it-IT", {
       maximumFractionDigits: Number.isFinite(digits) ? digits : 0,
       minimumFractionDigits: 0
@@ -73,7 +74,7 @@
 
   function formatDecimal(value, digits) {
     var n = toNumber(value);
-    if (n === null) return "-";
+    if (n === null) return MISSING_VALUE;
     digits = Number.isFinite(digits) ? digits : 1;
     return n.toLocaleString("it-IT", {
       maximumFractionDigits: digits,
@@ -83,18 +84,18 @@
 
   function formatPercent(value, digits) {
     var n = toNumber(value);
-    if (n === null) return "-";
+    if (n === null) return MISSING_VALUE;
     return formatDecimal(n, Number.isFinite(digits) ? digits : 1) + "%";
   }
 
   function formatMld(value, digits) {
     var n = toNumber(value);
-    if (n === null) return "-";
+    if (n === null) return MISSING_VALUE;
     digits = Number.isFinite(digits) ? digits : 1;
     return n.toLocaleString("it-IT", {
       maximumFractionDigits: digits,
       minimumFractionDigits: digits
-    }) + " mld";
+    }) + " miliardi di euro";
   }
 
   function niceLabel(value) {
@@ -299,8 +300,40 @@
 
   function formatRegionalMld(value) {
     var n = toNumber(value);
-    if (n === null) return "-";
+    if (n === null) return MISSING_VALUE;
     return formatMld(n, Math.abs(n) < 1 ? 3 : 2);
+  }
+
+  function regionalAvailableRegions(block, year) {
+    var denominatorRows = toArray(block && block.regional_denominators);
+    var denominatorsByYear = uniqueSorted(
+      denominatorRows
+        .filter(function (row) {
+          return row && row.regione && (year === null || year === undefined || toNumber(row.anno) === year);
+        })
+        .map(function (row) { return String(row.regione); }),
+      false
+    );
+    if (denominatorsByYear.length) return denominatorsByYear;
+
+    var denominators = uniqueSorted(
+      denominatorRows
+        .filter(function (row) { return row && row.regione; })
+        .map(function (row) { return String(row.regione); }),
+      false
+    );
+    if (denominators.length) return denominators;
+
+    return uniqueSorted(
+      toArray(block && block.spending_by_region)
+        .concat(toArray(block && block.revenue_by_region))
+        .concat(toArray(block && block.balances_by_region))
+        .filter(function (row) {
+          return (year === null || year === undefined || toNumber(row.anno) === year) && regionalRowRegion(row);
+        })
+        .map(regionalRowRegion),
+      false
+    );
   }
 
   function availableYearsFromRows(rows, key) {
@@ -454,7 +487,9 @@
       li.textContent = text;
       notes.appendChild(li);
     });
-    toArray(payload.meta && payload.meta.sources).slice(0, 5).forEach(function (source) {
+    toArray(payload.meta && payload.meta.sources).filter(function (source) {
+      return !(typeof source === "string" && source.toLowerCase().indexOf("siope") >= 0);
+    }).slice(0, 5).forEach(function (source) {
       var li = document.createElement("li");
       li.textContent = source;
       notes.appendChild(li);
@@ -493,7 +528,7 @@
       },
       text: rows.map(function (row) { return formatMld(row.value_mld || row.value, 1); }),
       textposition: "auto",
-      hovertemplate: "%{y}<br>%{x:.1f} mld<extra></extra>"
+      hovertemplate: "%{y}<br>%{x:.1f} miliardi di euro<extra></extra>"
     }], {
       margin: { t: 18, r: 24, b: 44, l: 132 },
       xaxis: { title: "Miliardi di euro" },
@@ -554,6 +589,23 @@
     return labels[String(key).toLowerCase()] || niceLabel(key);
   }
 
+  function normalizeTaxComponentKey(key) {
+    var value = String(key || "").toLowerCase().trim();
+    var map = {
+      "produzione e importazioni": "imposte su produzione e importazioni",
+      "imposte su produzione e importazioni": "imposte su produzione e importazioni",
+      "reddito": "imposte su reddito",
+      "imposte su reddito": "imposte su reddito",
+      "patrimonio": "imposte su patrimonio",
+      "imposte su patrimonio": "imposte su patrimonio",
+      "reddito e patrimonio": "imposte su reddito e patrimonio",
+      "imposte su reddito e patrimonio": "imposte su reddito e patrimonio",
+      "contributi sociali netti": "contributi sociali netti",
+      "imposte in conto capitale": "imposte in conto capitale"
+    };
+    return map[value] || null;
+  }
+
   function hasSplitIncomeCapitalComponents(rows) {
     return rows.some(function (row) {
       return toNumber(row["imposte su reddito"]) !== null
@@ -569,11 +621,14 @@
       var next = {};
       Object.keys(row).forEach(function (key) {
         if (key !== "year" && key !== "value") {
-          var normalized = String(key).toLowerCase();
-          if (normalized === "imposte su reddito e patrimonio" && useSplitComponents) {
+          var normalized = normalizeTaxComponentKey(key);
+          if (normalized === "imposte su reddito e patrimonio") {
             return;
           }
-          next[key] = row[key];
+          if (!normalized) return;
+          var value = toNumber(row[key]);
+          if (value === null) return;
+          next[normalized] = value;
         }
       });
       if (useSplitComponents) {
@@ -608,12 +663,19 @@
         note.style.display = "none";
       } else {
         note.style.display = "block";
-        note.textContent = "Nota metodologica: in questa versione i dati sono aggregati in 'imposte su reddito e patrimonio'. Per la separazione servono serie distinte di fonte (reddito, patrimonio).";
+        note.textContent = "Nota metodologica: la separazione tra imposte su reddito e patrimonio è applicata solo se il dataset upstream espone entrambe le serie in modo esplicito. Nel file corrente è disponibile solo la voce aggregata \"imposte su reddito e patrimonio\", quindi non viene mostrata separata.";
       }
     }
     rows = taxComponentRows(rows);
-    var keys = Object.keys(rows[0]).filter(function (key) {
-      return key !== "year" && key !== "value" && rows.some(function (row) { return toNumber(row[key]) !== null; });
+    var keys = [];
+    var keySet = {};
+    rows.forEach(function (row) {
+      Object.keys(row).forEach(function (key) {
+        if (key === "year" || key === "value" || keySet[key]) return;
+        if (toNumber(row[key]) === null) return;
+        keySet[key] = true;
+        keys.push(key);
+      });
     });
     if (!keys.length) {
       showEmptyChart("bpTaxCompositionTrend", "Componenti non disponibili nel dataset caricato");
@@ -623,7 +685,6 @@
       return {
         type: "scatter",
         mode: "lines",
-        stackgroup: "pressione",
         name: taxComponentLabel(key),
         x: rows.map(function (row) { return toNumber(row.year); }),
         y: rows.map(function (row) { return toNumber(row[key]); }),
@@ -654,7 +715,7 @@
         colors: rows.map(function (row, index) { return COLORS[index % COLORS.length]; }),
         line: { color: cssVar("--panel", "#090909"), width: 1 }
       },
-      hovertemplate: "%{label}<br>%{value:.1f} mld<br>%{percent}<extra></extra>"
+      hovertemplate: "%{label}<br>%{value:.1f} miliardi di euro<br>%{percent}<extra></extra>"
     }], {
       margin: { t: 18, r: 16, b: 18, l: 16 },
       showlegend: true,
@@ -698,7 +759,7 @@
         y: points.map(function (point) { return toNumber(point.value_mld); }),
         line: { color: COLORS[index % COLORS.length], width: index === 0 ? 3 : 2 },
         marker: { size: 5 },
-        hovertemplate: "%{x}<br>%{fullData.name}: %{y:.1f} mld<extra></extra>"
+        hovertemplate: "%{x}<br>%{fullData.name}: %{y:.1f} miliardi di euro<extra></extra>"
       };
     }).filter(function (trace) { return trace.x.length > 1; });
 
@@ -785,7 +846,7 @@
     var keys = Object.keys(rows[0]).filter(function (key) {
       return key !== "year" && rows.some(function (row) { return toNumber(row[key]) !== null; });
     }).slice(0, 6);
-    plot("bpTaxTypeTrend", lineSeriesFromRows(rows, keys, { suffix: " mld" }), {
+    plot("bpTaxTypeTrend", lineSeriesFromRows(rows, keys, { suffix: " miliardi di euro" }), {
       yaxis: { title: "Miliardi di euro" },
       xaxis: { title: "" }
     });
@@ -800,11 +861,11 @@
     });
     createTableRows(byId("bpRevenueFocusRows"), rows, [
       { value: function (row) { return asText(row.label || row.code); } },
-      { value: function (row) { return asText(row.group || "-"); }, className: "is-muted" },
+      { value: function (row) { return asText(row.group || MISSING_VALUE); }, className: "is-muted" },
       {
         value: function (row) {
           var value = row.latest_value_mld !== undefined ? row.latest_value_mld : (row.value || row.value_mld);
-          return row.status ? "N/D" : formatMld(value, 3);
+          return row.status ? MISSING_VALUE : formatMld(value, 3);
         }
       },
       { value: function (row) { return asText(row.source); }, className: "is-muted" },
@@ -1045,7 +1106,6 @@
       return {
         type: "scatter",
         mode: "lines",
-        stackgroup: "spesa",
         name: asText(row.label || row.code),
         x: points.map(function (point) { return toNumber(point.year); }),
         y: points.map(function (point) { return toNumber(point.value_pil); }),
@@ -1120,7 +1180,6 @@
 
     if (!missionRows.length && !spendingRows.length) {
       showEmptyChart("bpRegionalMissionChart", "Nessun dato regionale disponibile");
-      showEmptyChart("bpRegionalBalanceChart", "Nessun dato regionale disponibile");
       createTableRows(byId("bpRegionalMissionRows"), [], tableColumns);
       renderRegionalSummary([]);
       var emptyCoverage = byId("bpRegionalCoverage");
@@ -1142,26 +1201,26 @@
 
     if (selectedYear === null) {
       showEmptyChart("bpRegionalMissionChart", "Nessun anno regionale disponibile");
-      showEmptyChart("bpRegionalBalanceChart", "Nessun anno regionale disponibile");
       createTableRows(byId("bpRegionalMissionRows"), [], tableColumns);
       renderRegionalSummary([]);
       return;
     }
 
+    var availableRegions = regionalAvailableRegions(block, selectedYear);
     var detailRegions = uniqueSorted(missionRows
       .filter(function (row) { return toNumber(row.anno) === selectedYear; })
       .map(regionalRowRegion), false);
     var totalRegions = uniqueSorted(spendingRows
       .filter(function (row) { return toNumber(row.anno) === selectedYear; })
       .map(regionalRowRegion), false);
-    var regions = detailRegions.length ? detailRegions : totalRegions;
+    var regions = availableRegions.length ? availableRegions : (detailRegions.length ? detailRegions : totalRegions);
     var largestRegion = spendingRows
       .filter(function (row) { return toNumber(row.anno) === selectedYear; })
       .sort(function (a, b) { return (toNumber(b.mld) || 0) - (toNumber(a.mld) || 0); })[0];
     var selectedRegion = setSelectOptions(
       byId("bpRegionalRegion"),
       regions,
-      STATE.regionalRegion || (largestRegion && regionalRowRegion(largestRegion)) || regions[0],
+      STATE.regionalRegion || (largestRegion && regionalRowRegion(largestRegion)) || (regions[0] || null),
       function (value) { return String(value); }
     );
     STATE.regionalRegion = selectedRegion;
@@ -1234,31 +1293,6 @@
       });
     } else {
       showEmptyChart("bpRegionalMissionChart", "Nessun dettaglio per missione disponibile per la selezione");
-    }
-
-    var balanceItems = [
-      { label: "Entrate", value: revenueValue, color: COLORS[2] },
-      { label: "Spese", value: spendingValue, color: cssVar("--orange", COLORS[0]) },
-      { label: "Saldo", value: balanceValue, color: (balanceValue || 0) >= 0 ? COLORS[1] : COLORS[5] }
-    ].filter(function (item) { return toNumber(item.value) !== null; });
-    if (balanceItems.length) {
-      plot("bpRegionalBalanceChart", [{
-        type: "bar",
-        orientation: "h",
-        x: balanceItems.map(function (item) { return toNumber(item.value); }),
-        y: balanceItems.map(function (item) { return item.label; }),
-        marker: { color: balanceItems.map(function (item) { return item.color; }) },
-        text: balanceItems.map(function (item) { return formatRegionalMld(item.value); }),
-        textposition: "auto",
-        hovertemplate: "%{y}<br>%{x:.3f} mld<extra></extra>"
-      }], {
-        margin: { t: 18, r: 28, b: 52, l: 82 },
-        xaxis: { title: "Miliardi di euro", zeroline: true },
-        yaxis: { title: "", autorange: "reversed", showgrid: false },
-        showlegend: false
-      });
-    } else {
-      showEmptyChart("bpRegionalBalanceChart", "Nessun totale regionale disponibile per la selezione");
     }
 
     createTableRows(byId("bpRegionalMissionRows"), selectedMissionRows, tableColumns);
@@ -1402,6 +1436,9 @@
       });
     }
 
+    var peerHeader = byId("bpPeerMetricHeader");
+    if (peerHeader) peerHeader.textContent = metric.unit;
+
     createTableRows(byId("bpPeerRows"), rows, [
       { value: function (row, index) { return String(index + 1); } },
       { value: function (row) { return row.country; } },
@@ -1503,7 +1540,7 @@
           "bpTopTaxes", "bpTaxTrend", "bpTaxCompositionTrend", "bpRevenuePie", "bpSpendingPie",
           "bpRevenueTrend", "bpSpendingTrend", "bpIrpefBandChart",
           "bpTaxTypeTrend", "bpUnder500Chart", "bpRegionalMissionChart",
-          "bpSpendingDetailTrend", "bpRegionalBalanceChart", "bpPeerBars"
+          "bpSpendingDetailTrend", "bpPeerBars"
         ].forEach(function (id) {
           showEmptyChart(id, "Dati non caricati");
         });
@@ -1516,3 +1553,4 @@
     init();
   }
 })();
+

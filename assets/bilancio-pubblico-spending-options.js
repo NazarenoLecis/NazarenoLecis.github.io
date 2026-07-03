@@ -2,7 +2,7 @@
   "use strict";
 
   var DATA_URL = "../../data/bilancio-pubblico/dashboard.json?v=20260703-cofog-detail";
-  var state = { metric: "mld" };
+  var state = { metric: "mld", yearWindow: "all" };
   var fallbackOptions = [
     { id: "mld", label: "Miliardi correnti", field: "mld", unit: "mld", axis: "Miliardi di euro correnti", source: "Fonte: Eurostat gov_10a_exp, classificazione COFOG" },
     { id: "mld_2024", label: "Miliardi reali", field: "mld_2024", unit: "mld", axis: "Miliardi di euro a prezzi 2024", source: "Fonte: Eurostat gov_10a_exp e HICP all-items" },
@@ -11,13 +11,103 @@
     { id: "euro_2024_per_capita", label: "Euro reali pro capite", field: "euro_2024_per_capita", unit: "euro", axis: "Euro 2024 per abitante", source: "Fonte: Eurostat gov_10a_exp, HICP all-items e demo_pjan" }
   ];
 
+  var SERIES_WINDOW_OPTIONS = [
+    { id: "all", label: "Tutti gli anni", years: null },
+    { id: "20", label: "Ultimi 20 anni", years: 20 },
+    { id: "10", label: "Ultimi 10 anni", years: 10 },
+    { id: "5", label: "Ultimi 5 anni", years: 5 }
+  ];
+
   function byId(id) { return document.getElementById(id); }
   function arr(value) { return Array.isArray(value) ? value : []; }
   function num(value) { var parsed = Number(value); return Number.isFinite(parsed) ? parsed : null; }
-  function text(value, fallback) { return value === null || value === undefined || value === "" ? fallback || "-" : String(value); }
+  function text(value, fallback) { return value === null || value === undefined || value === "" ? fallback || "ND" : String(value); }
   function css(name, fallback) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; }
   function compact(value) { var s = text(value).replace(/\s+/g, " ").trim(); return s.length <= 30 ? s : s.slice(0, 27).trim() + "..."; }
   function mobile() { return window.matchMedia && window.matchMedia("(max-width: 760px)").matches; }
+
+  function selectedYearWindow() {
+    return state.yearWindow || "all";
+  }
+
+  function availableYears(points) {
+    return arr(points).map(function (point) { return num(point.year); }).filter(function (year) {
+      return year !== null;
+    }).filter(function (value, index, values) {
+      return values.indexOf(value) === index;
+    }).sort(function (a, b) { return a - b; });
+  }
+
+  function yearWindowStart(years) {
+    var selected = SERIES_WINDOW_OPTIONS.find(function (option) {
+      return option.id === selectedYearWindow();
+    });
+    if (!selected || !selected.years || !years.length) return null;
+    return Math.max.apply(null, years) - selected.years + 1;
+  }
+
+  function filterPointsByYearWindow(points) {
+    var years = availableYears(points);
+    var start = yearWindowStart(years);
+    if (start === null) return points;
+    return arr(points).filter(function (point) {
+      var year = num(point.year);
+      return year !== null && year >= start;
+    });
+  }
+
+  function ensureYearWindowControl(chartId, years) {
+    var chart = byId(chartId);
+    if (!chart) return;
+    var card = chart.closest ? chart.closest(".bp-card") : null;
+    if (!card) return;
+    var controlId = chartId + "YearWindow";
+    var existing = byId(controlId);
+    if (!existing) {
+      var row = document.createElement("div");
+      row.className = "bp-inline-controls bp-series-controls";
+
+      var label = document.createElement("label");
+      label.className = "bp-filter-label";
+      label.setAttribute("for", controlId);
+      label.textContent = "Periodo";
+
+      var select = document.createElement("select");
+      select.id = controlId;
+      select.className = "bp-select bp-select-small";
+      select.addEventListener("change", function () {
+        state.yearWindow = select.value;
+        load();
+      });
+      label.appendChild(select);
+      row.appendChild(label);
+
+      var wrap = chart.closest ? chart.closest(".bp-chart-wrap") : null;
+      if (wrap && wrap.parentNode) {
+        wrap.parentNode.insertBefore(row, wrap);
+      } else {
+        card.appendChild(row);
+      }
+      existing = select;
+    }
+    while (existing.firstChild) existing.removeChild(existing.firstChild);
+    SERIES_WINDOW_OPTIONS.forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.label;
+      item.disabled = option.years !== null && years.length > 0 && years.length < option.years;
+      existing.appendChild(item);
+    });
+
+    var current = selectedYearWindow();
+    if (!Array.prototype.some.call(existing.options, function (option) {
+      return option.value === current && !option.disabled;
+    })) {
+      current = "all";
+      state.yearWindow = current;
+    }
+    existing.value = current;
+  }
 
   function availableOptions(payload, rows) {
     var options = arr(payload.spending_metric_options).length ? arr(payload.spending_metric_options) : fallbackOptions;
@@ -40,7 +130,7 @@
     rows.forEach(function (row) {
       var year = num(row.anno || row.year);
       var value = num(row[option.field]);
-      var code = text(row.codice || row.code, "-");
+      var code = text(row.codice || row.code, "ND");
       if (year === null || value === null) return;
       if (!groups[code]) groups[code] = { code: code, label: text(row.funzione || row.label || code), points: [] };
       groups[code].points.push({ year: year, value: value });
@@ -57,10 +147,10 @@
 
   function formatValue(value, option) {
     var n = num(value);
-    if (n === null) return "-";
+    if (n === null) return "ND";
     if (option.unit === "%" || option.unit === "% PIL") return n.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
     if (option.unit === "euro" || option.unit === "euro_2024") return n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) + " euro";
-    return n.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mld";
+    return n.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " miliardi di euro";
   }
 
   function layout(option) {
@@ -114,7 +204,12 @@
     if (!options.length) return;
     var option = options.find(function (item) { return item.id === state.metric; }) || options[0];
     state.metric = option.id;
-    var groups = groupedRows(rows, option);
+    var groups = groupedRows(rows, option).map(function (group) {
+      return Object.assign({}, group, { points: filterPointsByYearWindow(group.points) });
+    }).filter(function (group) { return group.points.length > 1; });
+    ensureYearWindowControl("bpSpendingTrend", availableYears(Array.prototype.concat.apply([], groups.map(function (group) {
+      return group.points;
+    }))));
     if (!groups.length) return;
     var traces = groups.map(function (group, index) {
       return {
