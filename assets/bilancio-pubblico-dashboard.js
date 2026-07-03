@@ -1484,8 +1484,8 @@
       var label = asText(item.label || item.cofog_label || code);
       options.push({
         id: "cofog:" + code,
-        label: level === 2 && parent ? parent + " - " + label : label,
-        group: level === 2 ? "Spesa COFOG - dettagli" : "Spesa COFOG - macro voci",
+        label: level === 2 && parent ? parent + " - " + label : "Aggregata - " + label,
+        group: level === 2 ? "Spesa COFOG - voci granulari" : "Spesa COFOG - macro aggregate",
         unit: item.unit || "% PIL",
         year: "year",
         cofogCode: code
@@ -1519,7 +1519,7 @@
       if (!byGroup[option.group]) byGroup[option.group] = [];
       byGroup[option.group].push(option);
     });
-    ["Indicatori principali", "Spesa COFOG - macro voci", "Spesa COFOG - dettagli"].forEach(function (groupName) {
+    ["Indicatori principali", "Spesa COFOG - macro aggregate", "Spesa COFOG - voci granulari"].forEach(function (groupName) {
       var groupOptions = byGroup[groupName] || [];
       if (!groupOptions.length) return;
       var group = document.createElement("optgroup");
