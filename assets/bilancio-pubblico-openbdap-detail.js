@@ -75,8 +75,8 @@
       '<div><span class="bp-filter-label">Regioni</span><div id="bpOpenbdapRegions" class="bp-openbdap-region-grid"></div></div>',
       '</div>',
       '<div class="bp-chart-wrap"><div id="bpOpenbdapMissionChart" class="chart bp-chart" role="img" aria-label="Confronto OpenBDAP 2024 per missione"></div></div>',
-      '<div class="bp-table-wrap"><table class="bp-table"><thead><tr><th>Regione</th><th>Missione</th><th>Valore</th></tr></thead><tbody id="bpOpenbdapMissionRows"></tbody></table></div>',
-      '<p class="bp-chart-credit">Fonte: RGS - OpenBDAP, rendiconto della gestione delle Regioni e province autonome. Elaborazione di Nazareno Lecis.</p>'
+      '<p class="bp-chart-credit">Fonte: RGS - OpenBDAP, rendiconto della gestione delle Regioni e province autonome. Elaborazione di Nazareno Lecis.</p>',
+      '<div class="bp-table-wrap"><table class="bp-table"><thead><tr><th>Regione</th><th>Missione</th><th>Valore</th></tr></thead><tbody id="bpOpenbdapMissionRows"></tbody></table></div>'
     ].join("");
     article.appendChild(panel);
     return panel;
