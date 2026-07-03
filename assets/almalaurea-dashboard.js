@@ -1,10 +1,11 @@
 (function () {
-  var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json";
+  var DATA_VERSION = "v=20260703-3";
+  var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json?" + DATA_VERSION;
   var DASHBOARD_CHUNK_BASE = "https://data.nazarenolecis.com/almalaurea/dashboard_chunks/";
-  var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json";
-  var TIMESERIES_DETAIL_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_university_data.json";
-  var ARTICLE_DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json";
-  var ARTICLE_TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json";
+  var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json?" + DATA_VERSION;
+  var TIMESERIES_DETAIL_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_university_data.json?" + DATA_VERSION;
+  var ARTICLE_DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json?" + DATA_VERSION;
+  var ARTICLE_TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json?" + DATA_VERSION;
   var WILDCARD = "*";
   var DEFAULT_EMPLOYMENT_DEFINITION = "broad";
   var sharedData = window.AlmaLaureaData = window.AlmaLaureaData || {};
@@ -121,6 +122,12 @@
 
   function displayLabel(value) {
     return asText(value) === WILDCARD ? "Totale" : asText(value);
+  }
+
+  function universityDisplayLabel(value) {
+    var text = displayLabel(value);
+    if (text === "Scienze Gastronomiche") return "Universita' di Scienze Gastronomiche";
+    return text;
   }
 
   function escapeHtml(value) {
@@ -276,6 +283,39 @@
       Number.isFinite(record.net_monthly_salary) && record.net_monthly_salary > 0;
   }
 
+  function selectionMatch(record, filters) {
+    if (record.survey_year !== filters.survey_year ||
+        record.years_after_degree !== filters.years_after_degree ||
+        record.graduation_year !== filters.graduation_year) {
+      return false;
+    }
+    if (filters.university !== WILDCARD && record.university !== filters.university) return false;
+    if (filters.disciplinary_group !== WILDCARD &&
+        record.disciplinary_group !== filters.disciplinary_group) return false;
+    if (filters.course_type !== WILDCARD && record.course_type !== filters.course_type) return false;
+    if (filters.degree_class !== WILDCARD && record.degree_class !== filters.degree_class) return false;
+    if (filters.degree_course !== WILDCARD && record.degree_course !== filters.degree_course) return false;
+    return true;
+  }
+
+  function definitionHasMetrics(filters, definition) {
+    return state.records.some(function (record) {
+      return record.employment_definition === definition &&
+        selectionMatch(record, filters) &&
+        metricRow(record);
+    });
+  }
+
+  function effectiveDetailedFilters(filters) {
+    var resolved = Object.assign({}, filters);
+    if (resolved.employment_definition === "broad" &&
+        !definitionHasMetrics(resolved, "broad") &&
+        definitionHasMetrics(resolved, "restrictive")) {
+      resolved.employment_definition = "restrictive";
+    }
+    return resolved;
+  }
+
   function degreeCourseBase(value) {
     return asText(value).replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
   }
@@ -327,9 +367,11 @@
 
       var select = byId(field.id);
       if (!select) return;
-      filters = getDetailedFilters("scatter");
+      filters = effectiveDetailedFilters(getDetailedFilters("scatter"));
       var currentValue = select.value;
-      var options = dynamicScatterOptions(field, filters);
+      var options = field.key === "university"
+        ? metadataOptions(field.key)
+        : dynamicScatterOptions(field, filters);
       var star = field.wildcard ? { value: WILDCARD, label: field.allLabel } : null;
       var ordered = star ? [star].concat(options) : options;
 
@@ -665,7 +707,7 @@
   }
 
   function detailedChunkUrl(surveyYear, yearsAfter) {
-    return DASHBOARD_CHUNK_BASE + "almalaurea_dashboard_s" + surveyYear + "_a" + yearsAfter + ".json";
+    return DASHBOARD_CHUNK_BASE + "almalaurea_dashboard_s" + surveyYear + "_a" + yearsAfter + ".json?" + DATA_VERSION;
   }
 
   function hasMeasures(record) {
@@ -684,6 +726,8 @@
 
       if (filters.course_type !== WILDCARD) {
         if (record.course_type !== filters.course_type) return false;
+      } else if (dimension === "course_type") {
+        if (record.course_type === WILDCARD) return false;
       } else if (dimension === "degree_class" ||
           dimension === "degree_course" ||
           hasDegreeClassFilter ||
@@ -709,6 +753,8 @@
         if (record.degree_course !== filters.degree_course) return false;
       } else if (dimension === "degree_course") {
         if (record.degree_course === WILDCARD) return false;
+      } else if (record.degree_class !== WILDCARD) {
+        if (record.degree_course !== WILDCARD) return false;
       } else if (record.degree_course !== WILDCARD) {
         return false;
       }
@@ -746,7 +792,19 @@
         return false;
       }
 
-      if (record.degree_class !== WILDCARD) return false;
+      if (filters.split_dimension !== "degree_class" && !hasDegreeClassFilter &&
+          record.degree_class !== WILDCARD) {
+        return false;
+      }
+      if (filters.split_dimension === "degree_class" &&
+          record.degree_class === WILDCARD) {
+        return false;
+      }
+      if (record.degree_class !== WILDCARD && filters.split_dimension === "course_type") {
+        if (record.degree_course !== WILDCARD) {
+          return false;
+        }
+      }
 
       if (filters.disciplinary_group !== WILDCARD) {
         if (record.disciplinary_group !== filters.disciplinary_group) return false;
@@ -774,6 +832,7 @@
     if (dimension === "degree_course") return record.degree_course_label;
     if (dimension === "degree_class") return record.degree_class_label;
     if (dimension === "university") return record.university_label;
+    if (dimension === "course_type") return record.course_type_label;
     return record.disciplinary_group_label;
   }
 
@@ -807,6 +866,15 @@
       return record.disciplinary_group_label;
     })));
     return groups.length === 1 ? groups[0] : "Atenei";
+  }
+
+  function aggregateFieldLabel(records, valueField, labelField, mixedLabel) {
+    var labels = Array.from(new Set(records.map(function (record) {
+      if (record[valueField] === WILDCARD) return "";
+      return record[labelField];
+    }).filter(Boolean)));
+    if (labels.length === 1) return labels[0];
+    return mixedLabel;
   }
 
   function weightedAverage(records, field) {
@@ -871,18 +939,32 @@
       var graduates = bucketRows.reduce(function (sum, record) {
         return sum + (Number.isFinite(record.graduates) ? record.graduates : 0);
       }, 0);
+      var bucketSalaries = bucketRows.map(function (record) {
+        return toNumber(record.net_monthly_salary);
+      }).filter(Number.isFinite);
 
       return {
         key: entry[0],
         label: courseLabel || bucketLabel(first, dimension),
         display_label: courseLabel ? shortText(courseLabel, 34) : pointDisplayLabel(first, dimension),
         disciplinary_group: first.disciplinary_group,
-        group_label: first.disciplinary_group_label,
-        course_type_label: first.course_type_label,
+        group_label: aggregateFieldLabel(
+          bucketRows,
+          "disciplinary_group",
+          "disciplinary_group_label",
+          "Tutti i gruppi"
+        ),
+        course_type_label: aggregateFieldLabel(
+          bucketRows,
+          "course_type",
+          "course_type_label",
+          "Tutti i tipi di corso"
+        ),
         color_key: colorKeyForBucket(bucketRows, dimension),
         graduates: graduates,
         employment_rate: weightedAverage(bucketRows, "employment_rate"),
         net_monthly_salary: weightedAverage(bucketRows, "net_monthly_salary"),
+        net_monthly_salary_median: medianValue(bucketSalaries),
         second_level_enrollment_rate: weightedAverage(bucketRows, "second_level_enrollment_rate"),
         current_second_level_enrollment_rate: weightedAverage(
           bucketRows,
@@ -893,6 +975,39 @@
       return Number.isFinite(point.employment_rate) && point.employment_rate > 0 &&
         Number.isFinite(point.net_monthly_salary) && point.net_monthly_salary > 0;
     });
+  }
+
+  function scatterResult(filters) {
+    var dimension = filters.point_dimension;
+    var rows = candidateRows(filters, dimension);
+    return {
+      filters: filters,
+      points: aggregateRows(rows, dimension),
+    };
+  }
+
+  function scatterResultWithFallback(filters) {
+    var result = scatterResult(filters);
+    if (result.points.length || filters.employment_definition !== "broad") return result;
+
+    var fallbackFilters = Object.assign({}, filters, {
+      employment_definition: "restrictive",
+    });
+    var fallbackResult = scatterResult(fallbackFilters);
+    return fallbackResult.points.length ? fallbackResult : result;
+  }
+
+  function boxRowsWithFallback(filters) {
+    var rows = distributionRows(filters);
+    if (rows.length || filters.employment_definition !== "broad") {
+      return { filters: filters, rows: rows };
+    }
+
+    var fallbackFilters = Object.assign({}, filters, {
+      employment_definition: "restrictive",
+    });
+    var fallbackRows = distributionRows(fallbackFilters);
+    return fallbackRows.length ? { filters: fallbackFilters, rows: fallbackRows } : { filters: filters, rows: rows };
   }
 
   function splitByColor(points) {
@@ -968,15 +1083,16 @@
       return point.graduates || 0;
     })) || 1;
     var showLabels = points.length <= 38;
+    var chartMeanSalary = meanValue(points.map(function (point) {
+      return point.net_monthly_salary;
+    }));
+    var chartMedianSalary = medianValue(points.map(function (point) {
+      return point.net_monthly_salary;
+    }));
 
     var traces = splitByColor(points).map(function (entry) {
       var colorKey = entry[0];
       var tracePoints = entry[1];
-      var salaryValues = tracePoints.map(function (point) {
-        return point.net_monthly_salary;
-      });
-      var traceMeanSalary = meanValue(salaryValues);
-      var traceMedianSalary = medianValue(salaryValues);
       return {
         type: "scatter",
         mode: showLabels ? "markers+text" : "markers",
@@ -1002,8 +1118,8 @@
             point.course_type_label,
             point.graduates,
             formatPercent(point.second_level_enrollment_rate),
-            traceMeanSalary,
-            traceMedianSalary,
+            chartMeanSalary,
+            chartMedianSalary,
           ];
         }),
         hovertemplate: "<b>%{customdata[0]}</b><br>" +
@@ -1012,8 +1128,8 @@
           "Retribuzione media del punto: %{x:.0f} euro<br>" +
           "Occupazione: %{y:.1f}%<br>" +
           "Iscritti a magistrale: %{customdata[4]}<br>" +
-          "Media della serie: %{customdata[5]:.0f} euro<br>" +
-          "Mediana della serie: %{customdata[6]:.0f} euro<br>" +
+          "Media della serie: " + (Number.isFinite(chartMeanSalary) ? "%{customdata[5]:.0f}" : "-") + " euro<br>" +
+          "Mediana della serie: " + (Number.isFinite(chartMedianSalary) ? "%{customdata[6]:.0f}" : "-") + " euro<br>" +
           "Laureati: %{customdata[3]:,.0f}<extra></extra>",
       };
     });
@@ -1367,6 +1483,7 @@
 
   function updateComment(points, filters) {
     var dimensionLabel = {
+      course_type: "tipi di corso",
       disciplinary_group: "gruppi disciplinari",
       university: "atenei",
       degree_class: "classi di laurea",
@@ -1429,11 +1546,12 @@
     return loadDetailedRecordsFor(filters.survey_year, filters.years_after_degree)
       .then(function () {
         if (requestId !== state.scatterRequest) return;
+        filters = effectiveDetailedFilters(filters);
         updateScatterSelectOptions(filters);
-        filters = getDetailedFilters("scatter");
-        var dimension = filters.point_dimension;
-        var rows = candidateRows(filters, dimension);
-        var points = aggregateRows(rows, dimension);
+        filters = effectiveDetailedFilters(getDetailedFilters("scatter"));
+        var result = scatterResultWithFallback(filters);
+        filters = result.filters;
+        var points = result.points;
         state.lastPoints = points;
 
         updateKpis(points);
@@ -1453,7 +1571,9 @@
     return loadDetailedRecordsFor(filters.survey_year, filters.years_after_degree)
       .then(function () {
         if (requestId !== state.boxRequest) return;
-        renderBox(distributionRows(filters), filters);
+        filters = effectiveDetailedFilters(getDetailedFilters("box"));
+        var result = boxRowsWithFallback(filters);
+        renderBox(result.rows, result.filters);
       })
       .catch(function (error) {
         if (requestId !== state.boxRequest) return;
@@ -1633,7 +1753,7 @@
     record.survey_year = toNumber(record.survey_year);
     record.years_after_degree = toNumber(record.years_after_degree);
     record.graduation_year = toNumber(record.graduation_year);
-    record.university_label = record.university_label || displayLabel(record.university);
+    record.university_label = record.university_label || universityDisplayLabel(record.university);
     record.disciplinary_group_label = record.disciplinary_group_label || displayLabel(record.disciplinary_group);
     record.course_type_label = record.course_type_label || displayLabel(record.course_type);
     record.degree_class_label = record.degree_class_label || displayLabel(record.degree_class);
@@ -1650,7 +1770,7 @@
     record.survey_year = toNumber(record.survey_year);
     record.years_after_degree = toNumber(record.years_after_degree);
     record.graduation_year = toNumber(record.graduation_year);
-    record.university_label = record.university_label || displayLabel(record.university);
+    record.university_label = record.university_label || universityDisplayLabel(record.university);
     record.disciplinary_group_label = record.disciplinary_group_label || displayLabel(record.disciplinary_group);
     record.course_type_label = record.course_type_label || displayLabel(record.course_type);
     return record;
