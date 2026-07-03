@@ -201,7 +201,7 @@
       showEmptyChart(id, "Nessun dato disponibile");
       return;
     }
-    window.Plotly.react(node, traces, baseLayout(layout), PLOT_CONFIG).catch(function () {
+    return window.Plotly.react(node, traces, baseLayout(layout), PLOT_CONFIG).catch(function () {
       showEmptyChart(id, "Errore nella costruzione del grafico");
     });
   }
@@ -773,18 +773,23 @@
       return;
     }
     STATE.categoryTrendRows[id] = rowIndexMap;
-    if (id === "bpSpendingTrend") {
-      bindSpendingTrendSelector();
-    }
-    plot(id, traces, {
+    var plotted = plot(id, traces, {
       yaxis: { title: "Miliardi di euro" },
       xaxis: { title: "" }
     });
+    if (id === "bpSpendingTrend") {
+      if (plotted && typeof plotted.then === "function") {
+        plotted.then(bindSpendingTrendSelector);
+      } else {
+        bindSpendingTrendSelector();
+      }
+    }
   }
 
   function bindSpendingTrendSelector() {
     var node = byId("bpSpendingTrend");
     if (!node || !window.Plotly || node.__bpSpendingTrendBinding) return;
+    if (typeof node.on !== "function") return;
     node.__bpSpendingTrendBinding = true;
     node.on("plotly_click", function (eventData) {
       var point = eventData && eventData.points && eventData.points[0];
