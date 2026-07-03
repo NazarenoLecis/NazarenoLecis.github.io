@@ -1,5 +1,5 @@
 (function () {
-  var DATA_VERSION = "v=20260704-3";
+  var DATA_VERSION = "v=20260704-4";
   var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json?" + DATA_VERSION;
   var DASHBOARD_CHUNK_BASE = "https://data.nazarenolecis.com/almalaurea/dashboard_chunks/";
   var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json?" + DATA_VERSION;
@@ -829,7 +829,7 @@
         if (record.degree_class === WILDCARD) return false;
       } else if (dimension === "degree_course") {
         if (record.degree_class === WILDCARD) return false;
-      } else if (record.degree_class !== WILDCARD) {
+      } else if (!hasDegreeCourseFilter && record.degree_class !== WILDCARD) {
         return false;
       }
 
