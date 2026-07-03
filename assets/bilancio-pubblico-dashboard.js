@@ -10,7 +10,8 @@
     spendingDetailFunction: "GF01",
     regionalYear: null,
     regionalRegion: null,
-    yearWindows: {}
+    yearWindows: {},
+    categoryTrendRows: {}
   };
 
   var COLORS = [
@@ -746,11 +747,14 @@
       });
     });
     ensureYearWindowControl(id, uniqueSorted(allYears, false));
+    var rowIndexMap = [];
     var traces = rows.map(function (row, index) {
       var points = toArray(row.series).filter(function (point) {
         return toNumber(point.year) !== null && toNumber(point.value_mld) !== null;
       });
       points = filterPointsByYearWindow(id, points);
+      if (points.length <= 1) return null;
+      rowIndexMap.push(row);
       return {
         type: "scatter",
         mode: "lines+markers",
@@ -761,15 +765,37 @@
         marker: { size: 5 },
         hovertemplate: "%{x}<br>%{fullData.name}: %{y:.1f} miliardi di euro<extra></extra>"
       };
-    }).filter(function (trace) { return trace.x.length > 1; });
+    }).filter(function (trace) { return trace; });
 
     if (!traces.length) {
       showEmptyChart(id, emptyMessage);
+      STATE.categoryTrendRows[id] = [];
       return;
+    }
+    STATE.categoryTrendRows[id] = rowIndexMap;
+    if (id === "bpSpendingTrend") {
+      bindSpendingTrendSelector();
     }
     plot(id, traces, {
       yaxis: { title: "Miliardi di euro" },
       xaxis: { title: "" }
+    });
+  }
+
+  function bindSpendingTrendSelector() {
+    var node = byId("bpSpendingTrend");
+    if (!node || !window.Plotly || node.__bpSpendingTrendBinding) return;
+    node.__bpSpendingTrendBinding = true;
+    node.on("plotly_click", function (eventData) {
+      var point = eventData && eventData.points && eventData.points[0];
+      if (!point) return;
+      var rows = toArray(STATE.categoryTrendRows.bpSpendingTrend);
+      var selected = rows && rows[point.curveNumber];
+      if (!selected || !selected.code) return;
+      if (STATE.spendingDetailFunction !== selected.code) {
+        STATE.spendingDetailFunction = selected.code;
+      }
+      if (STATE.payload) renderSpendingFunctionDetail(STATE.payload);
     });
   }
 
