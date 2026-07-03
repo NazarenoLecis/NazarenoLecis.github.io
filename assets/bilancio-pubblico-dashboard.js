@@ -5,8 +5,10 @@
   var STATE = {
     payload: null,
     peerMetric: "tax_pressure",
+    peerCountries: null,
     regionalYear: null,
-    regionalRegion: null
+    regionalRegion: null,
+    yearWindows: {}
   };
 
   var COLORS = [
@@ -19,6 +21,13 @@
     public_spending: { label: "Spesa pubblica", unit: "% PIL", year: "spending_year" },
     social_spending: { label: "Spesa sociale", unit: "% PIL", year: "social_year" }
   };
+
+  var SERIES_WINDOW_OPTIONS = [
+    { id: "all", label: "Tutti gli anni", years: null },
+    { id: "20", label: "Ultimi 20 anni", years: 20 },
+    { id: "10", label: "Ultimi 10 anni", years: 10 },
+    { id: "5", label: "Ultimi 5 anni", years: 5 }
+  ];
 
   var PLOT_CONFIG = {
     responsive: true,
@@ -293,6 +302,101 @@
     return formatMld(n, Math.abs(n) < 1 ? 3 : 2);
   }
 
+  function availableYearsFromRows(rows, key) {
+    key = key || "year";
+    return uniqueSorted(toArray(rows).map(function (row) { return toNumber(row[key]); }), false);
+  }
+
+  function selectedYearWindow(chartId) {
+    return STATE.yearWindows[chartId] || "all";
+  }
+
+  function yearWindowStart(chartId, years) {
+    var selected = SERIES_WINDOW_OPTIONS.find(function (item) {
+      return item.id === selectedYearWindow(chartId);
+    });
+    if (!selected || !selected.years || !years.length) return null;
+    var maxYear = Math.max.apply(null, years);
+    return maxYear - selected.years + 1;
+  }
+
+  function filterRowsByYearWindow(chartId, rows, key) {
+    key = key || "year";
+    var years = availableYearsFromRows(rows, key);
+    var start = yearWindowStart(chartId, years);
+    ensureYearWindowControl(chartId, years);
+    if (start === null) return rows;
+    return toArray(rows).filter(function (row) {
+      var year = toNumber(row[key]);
+      return year !== null && year >= start;
+    });
+  }
+
+  function filterPointsByYearWindow(chartId, points) {
+    var years = availableYearsFromRows(points, "year");
+    var start = yearWindowStart(chartId, years);
+    ensureYearWindowControl(chartId, years);
+    if (start === null) return points;
+    return toArray(points).filter(function (point) {
+      var year = toNumber(point.year);
+      return year !== null && year >= start;
+    });
+  }
+
+  function ensureYearWindowControl(chartId, years) {
+    var chart = byId(chartId);
+    if (!chart) return;
+    var card = chart.closest ? chart.closest(".bp-card") : null;
+    if (!card) return;
+    var controlId = chartId + "YearWindow";
+    var existing = byId(controlId);
+    if (!existing) {
+      var row = document.createElement("div");
+      row.className = "bp-inline-controls bp-series-controls";
+
+      var label = document.createElement("label");
+      label.className = "bp-filter-label";
+      label.setAttribute("for", controlId);
+      label.textContent = "Periodo";
+
+      var select = document.createElement("select");
+      select.id = controlId;
+      select.className = "bp-select bp-select-small";
+      select.addEventListener("change", function () {
+        STATE.yearWindows[chartId] = select.value;
+        if (STATE.payload) renderAll(STATE.payload);
+      });
+
+      label.appendChild(select);
+      row.appendChild(label);
+
+      var wrap = chart.closest ? chart.closest(".bp-chart-wrap") : null;
+      if (wrap && wrap.parentNode) {
+        wrap.parentNode.insertBefore(row, wrap);
+      } else {
+        card.appendChild(row);
+      }
+      existing = select;
+    }
+
+    var current = selectedYearWindow(chartId);
+    clear(existing);
+    SERIES_WINDOW_OPTIONS.forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.label;
+      item.disabled = option.years !== null && years.length > 0 && years.length < option.years;
+      existing.appendChild(item);
+    });
+    if (!Array.prototype.some.call(existing.options, function (option) {
+      return option.value === current && !option.disabled;
+    })) {
+      current = "all";
+      STATE.yearWindows[chartId] = current;
+    }
+    existing.value = current;
+  }
+
   function renderKpis(payload) {
     var container = byId("bpKpis");
     if (!container) return;
@@ -416,6 +520,7 @@
   function renderTaxTrend(payload) {
     var rows = firstRows(payload, ["pressureTrend", "tax_pressure_trend", "pressure_trend", "fiscal_trend"]);
     rows = toArray(rows).filter(function (row) { return toNumber(row.year) !== null; });
+    rows = filterRowsByYearWindow("bpTaxTrend", rows, "year");
     if (!rows.length) {
       showEmptyChart("bpTaxTrend", "Nessuna serie sulla pressione fiscale disponibile");
       return;
@@ -472,10 +577,21 @@
 
   function renderCategoryTrend(id, rows, emptyMessage) {
     rows = byValueDesc(rows, "latest_value_mld").slice(0, 6);
+    var allYears = [];
+    rows.slice().sort(function (a, b) {
+      return a.country.localeCompare(b.country, "it");
+    }).forEach(function (row) {
+      toArray(row.series).forEach(function (point) {
+        var year = toNumber(point.year);
+        if (year !== null) allYears.push(year);
+      });
+    });
+    ensureYearWindowControl(id, uniqueSorted(allYears, false));
     var traces = rows.map(function (row, index) {
       var points = toArray(row.series).filter(function (point) {
         return toNumber(point.year) !== null && toNumber(point.value_mld) !== null;
       });
+      points = filterPointsByYearWindow(id, points);
       return {
         type: "scatter",
         mode: "lines+markers",
@@ -563,6 +679,7 @@
     var rows = toArray(payload.tax_revenue_by_type).filter(function (row) {
       return toNumber(row.year) !== null;
     });
+    rows = filterRowsByYearWindow("bpTaxTypeTrend", rows, "year");
     if (!rows.length) {
       showEmptyChart("bpTaxTypeTrend", "Nessuna serie dirette/indirette disponibile");
       return;
@@ -734,10 +851,14 @@
   }
 
   function renderSpendingFocus(payload) {
-    var rows = byValueDesc(toArray(payload.spending_focus), "value");
+    var rows = byValueDesc(toArray(payload.spending_focus).filter(function (row) {
+      return toNumber(row.value || row.value_mld) !== null ||
+        toNumber(row.value_pil_percent) !== null ||
+        toNumber(row.share_spesa_totale) !== null;
+    }), "value");
     createTableRows(byId("bpSpendingFocusRows"), rows, [
       { value: function (row) { return asText(row.label || row.code); } },
-      { value: function (row) { return row.status ? "N/D" : formatMld(row.value || row.value_mld, 1); } },
+      { value: function (row) { return formatMld(row.value || row.value_mld, 1); } },
       { value: function (row) { return formatPercent(row.value_pil_percent, 1); } },
       { value: function (row) { return formatPercent(row.share_spesa_totale, 1); } },
       { value: function (row) { return asText(row.source); }, className: "is-muted" },
@@ -950,6 +1071,85 @@
       .sort(function (a, b) { return b.value - a.value; });
   }
 
+  function selectedPeerRows(rows) {
+    rows = toArray(rows);
+    if (STATE.peerCountries === null) {
+      return rows;
+    }
+    var selected = STATE.peerCountries;
+    return rows.filter(function (row) {
+      return selected.indexOf(row.code) >= 0;
+    });
+  }
+
+  function ensurePeerCountryControls(rows) {
+    var chart = byId("bpPeerBars");
+    if (!chart) return;
+    var card = chart.closest ? chart.closest(".bp-card") : null;
+    if (!card) return;
+
+    var panel = byId("bpPeerCountryPanel");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "bpPeerCountryPanel";
+      panel.className = "bp-peer-country-panel";
+      panel.innerHTML = [
+        '<div class="bp-peer-country-head">',
+        '<span class="bp-filter-label">Paesi</span>',
+        '<div class="bp-peer-actions">',
+        '<button type="button" data-peer-action="all">Tutti</button>',
+        '<button type="button" data-peer-action="it">Italia</button>',
+        '<button type="button" data-peer-action="clear">Nessuno</button>',
+        '</div>',
+        '</div>',
+        '<div id="bpPeerCountries" class="bp-peer-country-grid"></div>'
+      ].join("");
+      var wrap = chart.closest ? chart.closest(".bp-chart-wrap") : null;
+      if (wrap && wrap.parentNode) {
+        wrap.parentNode.insertBefore(panel, wrap);
+      } else {
+        card.appendChild(panel);
+      }
+      panel.querySelectorAll("[data-peer-action]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var action = button.getAttribute("data-peer-action");
+          if (action === "all") STATE.peerCountries = null;
+          if (action === "it") STATE.peerCountries = ["IT"];
+          if (action === "clear") STATE.peerCountries = [];
+          if (STATE.payload) renderPeer(STATE.payload);
+        });
+      });
+    }
+
+    var grid = byId("bpPeerCountries");
+    if (!grid) return;
+    var selected = STATE.peerCountries === null ? rows.map(function (row) { return row.code; }) : STATE.peerCountries;
+    clear(grid);
+    rows.forEach(function (row) {
+      var label = document.createElement("label");
+      label.className = "bp-country-option";
+
+      var input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = row.code;
+      input.checked = selected.indexOf(row.code) >= 0;
+      input.addEventListener("change", function () {
+        var checked = Array.prototype.slice.call(grid.querySelectorAll("input:checked")).map(function (item) {
+          return item.value;
+        });
+        STATE.peerCountries = checked;
+        if (STATE.payload) renderPeer(STATE.payload);
+      });
+
+      var name = document.createElement("span");
+      name.textContent = row.country + " (" + row.code + ")";
+
+      label.appendChild(input);
+      label.appendChild(name);
+      grid.appendChild(label);
+    });
+  }
+
   function renderPeer(payload) {
     var select = byId("bpPeerMetric");
     if (select && !select.options.length) {
@@ -964,10 +1164,12 @@
     if (select && select.value) STATE.peerMetric = select.value;
 
     var metric = PEER_METRICS[STATE.peerMetric] || PEER_METRICS.tax_pressure;
-    var rows = normalizePeerRows(payload).slice(0, 12);
+    var allRows = normalizePeerRows(payload);
+    ensurePeerCountryControls(allRows);
+    var rows = selectedPeerRows(allRows);
     var chartRows = rows.slice().reverse();
     if (!chartRows.length) {
-      showEmptyChart("bpPeerBars", "Nessun confronto paese disponibile");
+      showEmptyChart("bpPeerBars", "Seleziona almeno un paese");
     } else {
       plot("bpPeerBars", [{
         type: "bar",
@@ -984,6 +1186,7 @@
         customdata: chartRows.map(function (row) { return row.country; }),
         hovertemplate: "%{customdata}<br>%{x:.1f} " + metric.unit + "<extra></extra>"
       }], {
+        height: Math.min(980, Math.max(isMobileViewport() ? 500 : 560, rows.length * (isMobileViewport() ? 28 : 24) + 130)),
         margin: { t: 18, r: 24, b: 44, l: 92 },
         xaxis: { title: metric.unit },
         yaxis: { title: "" },

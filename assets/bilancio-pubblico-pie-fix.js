@@ -68,9 +68,8 @@
   function tuneAll() { PIE_IDS.forEach(tunePie); tuneUnder500(); }
   function schedule() { tuneAll(); [250, 800, 1500, 2500].forEach(function (delay) { window.setTimeout(tuneAll, delay); }); }
   function loadExternalScript(flag, src) { if (document.querySelector("script[" + flag + "]")) return; var script = document.createElement("script"); script.defer = true; script.setAttribute(flag, "true"); script.src = src; document.body.appendChild(script); }
-  function loadSpendingOptionsScript() { loadExternalScript("data-bp-spending-options", "../../assets/bilancio-pubblico-spending-options.js"); }
-  function loadOpenbdapDetailScript() { loadExternalScript("data-bp-openbdap-detail", "../../assets/bilancio-pubblico-openbdap-detail.js"); }
-  function loadPeerScript() { loadExternalScript("data-bp-peer-all", "../../assets/bilancio-pubblico-peer-all.js"); }
+  function loadSpendingOptionsScript() { loadExternalScript("data-bp-spending-options", "../../assets/bilancio-pubblico-spending-options.js?v=20260703-peer-filter"); }
+  function loadOpenbdapDetailScript() { loadExternalScript("data-bp-openbdap-detail", "../../assets/bilancio-pubblico-openbdap-detail.js?v=20260703-peer-filter"); }
 
   function observeCharts() {
     if (!window.MutationObserver) return;
@@ -83,8 +82,8 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { schedule(); observeCharts(); loadSpendingOptionsScript(); loadOpenbdapDetailScript(); loadPeerScript(); });
-  } else { schedule(); observeCharts(); loadSpendingOptionsScript(); loadOpenbdapDetailScript(); loadPeerScript(); }
+    document.addEventListener("DOMContentLoaded", function () { schedule(); observeCharts(); loadSpendingOptionsScript(); loadOpenbdapDetailScript(); });
+  } else { schedule(); observeCharts(); loadSpendingOptionsScript(); loadOpenbdapDetailScript(); }
 
   window.addEventListener("resize", function () { var under500 = document.getElementById("bpUnder500Chart"); if (under500) under500.__bpUnder500Tuned = false; schedule(); });
 })();
