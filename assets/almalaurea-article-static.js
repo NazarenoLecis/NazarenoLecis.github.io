@@ -1,5 +1,5 @@
 (function () {
-  var DATA_VERSION = "v=20260704-1";
+  var DATA_VERSION = "v=20260704-2";
   var DATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_data.json?" + DATA_VERSION;
   var TIMESERIES_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_article_timeseries_data.json?" + DATA_VERSION;
   var WILDCARD = "*";
