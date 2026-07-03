@@ -1,7 +1,7 @@
 ﻿(function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-pressure-split";
+  var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-eu-cofog-detail";
   var MISSING_VALUE = "ND";
   var STATE = {
     payload: null,
@@ -266,6 +266,23 @@
     return out;
   }
 
+  function itemYear(row) {
+    return row ? toNumber(row.latest_year || row.year || row.anno) : null;
+  }
+
+  function yearsFromRows(rows) {
+    return uniqueSorted(toArray(rows).map(itemYear).filter(function (year) {
+      return year !== null;
+    }), false);
+  }
+
+  function yearSummary(rows) {
+    var years = yearsFromRows(rows);
+    if (!years.length) return "Anno non disponibile";
+    if (years.length === 1) return "Anno " + years[0];
+    return "Anni " + years.join("/");
+  }
+
   function setSelectOptions(select, values, current, labelFormatter) {
     if (!select) return current || null;
     clear(select);
@@ -517,6 +534,8 @@
       showEmptyChart("bpTopTaxes", "Nessuna entrata principale disponibile");
       return;
     }
+    var topTaxesTitle = byId("bpTopTaxesTitle");
+    if (topTaxesTitle) topTaxesTitle.textContent = "Miliardi di euro - " + yearSummary(rows).toLowerCase();
     plot("bpTopTaxes", [{
       type: "bar",
       orientation: "h",
@@ -704,6 +723,10 @@
       showEmptyChart(id, "Nessuna ripartizione disponibile");
       return;
     }
+    var node = byId(id);
+    var card = node && node.closest ? node.closest(".bp-card") : null;
+    var subtitle = card ? card.querySelector(".bp-card-title span") : null;
+    if (subtitle) subtitle.textContent = "Ripartizione - " + yearSummary(rows).toLowerCase();
     plot(id, [{
       type: "pie",
       labels: rows.map(function (row) { return asText(row.label || row.code); }),
@@ -1025,7 +1048,7 @@
         ? " (" + formatPercent(block.under_500_share_of_total_percent, 2) + " del totale)"
         : "";
       meta.textContent = "Voci sotto 500 milioni nel dataset caricato: " + entries.length +
-        ". Totale: " + formatMld(total, 2) + shareText + ".";
+        ". " + yearSummary(entries) + ". Totale: " + formatMld(total, 2) + shareText + ".";
     } else {
       meta.textContent = asText(block.note, "Nessuna voce sotto soglia nell'elaborazione corrente.");
     }
@@ -1237,6 +1260,16 @@
       return;
     }
 
+    var regionalTitle = byId("bpRegionalTitle");
+    var regionalSubtitle = byId("bpRegionalSubtitle");
+    var regionalCredit = byId("bpRegionalCredit");
+    if (regionalTitle) regionalTitle.textContent = "Rendiconti regionali " + selectedYear + " - OpenBDAP/FET";
+    if (regionalSubtitle) regionalSubtitle.textContent = "Rendiconto " + selectedYear;
+    if (regionalCredit) {
+      regionalCredit.textContent = "Rendiconto " + selectedYear +
+        ". Spese, entrate e saldi da rendiconto della gestione delle Regioni e province autonome. Fonte: RGS-OpenBDAP, Finanza degli Enti Territoriali. Valori in miliardi di euro correnti, arrotondati.";
+    }
+
     var availableRegions = regionalAvailableRegions(block, selectedYear);
     var detailRegions = uniqueSorted(missionRows
       .filter(function (row) { return toNumber(row.anno) === selectedYear; })
@@ -1330,13 +1363,29 @@
   }
 
   function normalizePeerRows(payload) {
-    var metric = PEER_METRICS[STATE.peerMetric] || PEER_METRICS.tax_pressure;
+    var metric = currentPeerMetric(payload);
+    if (metric.cofogCode) {
+      return toArray(payload.peer_spending_functions)
+        .filter(function (row) {
+          return row.cofog_code === metric.cofogCode;
+        })
+        .map(function (row) {
+          return {
+            country: asText(row.country || row.paese || row.code),
+            code: asText(row.code || row.paese),
+            value: toNumber(row.value),
+            year: row.year
+          };
+        })
+        .filter(function (row) { return row.value !== null; })
+        .sort(function (a, b) { return b.value - a.value; });
+    }
     return toArray(payload.peer)
       .map(function (row) {
         return {
           country: asText(row.country || row.paese || row.code),
           code: asText(row.code || row.paese),
-          value: toNumber(row[STATE.peerMetric]),
+          value: toNumber(row[metric.id]),
           year: row[metric.year] || row.year
         };
       })
@@ -1423,23 +1472,84 @@
     });
   }
 
+  function peerMetricOptions(payload) {
+    var options = Object.keys(PEER_METRICS).map(function (key) {
+      return Object.assign({ id: key, group: "Indicatori principali" }, PEER_METRICS[key]);
+    });
+    toArray(payload.peer_spending_function_options).forEach(function (item) {
+      var code = asText(item.id || item.cofog_code, "");
+      if (!code) return;
+      var level = toNumber(item.level || item.cofog_level);
+      var parent = asText(item.parent_label, "");
+      var label = asText(item.label || item.cofog_label || code);
+      options.push({
+        id: "cofog:" + code,
+        label: level === 2 && parent ? parent + " - " + label : label,
+        group: level === 2 ? "Spesa COFOG - dettagli" : "Spesa COFOG - macro voci",
+        unit: item.unit || "% PIL",
+        year: "year",
+        cofogCode: code
+      });
+    });
+    return options;
+  }
+
+  function currentPeerMetric(payload) {
+    var options = peerMetricOptions(payload || {});
+    return options.find(function (option) {
+      return option.id === STATE.peerMetric;
+    }) || PEER_METRICS.tax_pressure;
+  }
+
+  function populatePeerMetricSelect(payload) {
+    var select = byId("bpPeerMetric");
+    var options = peerMetricOptions(payload);
+    var current = STATE.peerMetric;
+    if (!options.some(function (option) { return option.id === current; })) {
+      current = "tax_pressure";
+      STATE.peerMetric = current;
+    }
+    if (!select) {
+      return currentPeerMetric(payload);
+    }
+
+    clear(select);
+    var byGroup = {};
+    options.forEach(function (option) {
+      if (!byGroup[option.group]) byGroup[option.group] = [];
+      byGroup[option.group].push(option);
+    });
+    ["Indicatori principali", "Spesa COFOG - macro voci", "Spesa COFOG - dettagli"].forEach(function (groupName) {
+      var groupOptions = byGroup[groupName] || [];
+      if (!groupOptions.length) return;
+      var group = document.createElement("optgroup");
+      group.label = groupName;
+      groupOptions.forEach(function (item) {
+        var option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.label;
+        group.appendChild(option);
+      });
+      select.appendChild(group);
+    });
+    select.value = current;
+    return currentPeerMetric(payload);
+  }
+
   function renderPeer(payload) {
     var select = byId("bpPeerMetric");
-    if (select && !select.options.length) {
-      Object.keys(PEER_METRICS).forEach(function (key) {
-        var option = document.createElement("option");
-        option.value = key;
-        option.textContent = PEER_METRICS[key].label;
-        select.appendChild(option);
-      });
-      select.value = STATE.peerMetric;
-    }
+    var metric = populatePeerMetricSelect(payload);
     if (select && select.value) STATE.peerMetric = select.value;
 
-    var metric = PEER_METRICS[STATE.peerMetric] || PEER_METRICS.tax_pressure;
+    metric = currentPeerMetric(payload);
     var allRows = normalizePeerRows(payload);
     ensurePeerCountryControls(allRows);
     var rows = selectedPeerRows(allRows);
+    var peerCredit = byId("bpPeerCredit");
+    if (peerCredit) {
+      peerCredit.textContent = "Fonte: Eurostat, indicatori armonizzati per confronto internazionale. " +
+        yearSummary(allRows) + ". Elaborazione di Nazareno Lecis.";
+    }
     var chartRows = rows.slice().reverse();
     if (!chartRows.length) {
       showEmptyChart("bpPeerBars", "Seleziona almeno un paese");

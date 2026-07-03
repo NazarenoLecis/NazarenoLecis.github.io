@@ -161,6 +161,7 @@
 
 .bp-select {
   min-width: 220px;
+  max-width: 100%;
   min-height: 40px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -169,6 +170,10 @@
   color: var(--text);
   font: inherit;
   font-weight: 700;
+}
+
+#bpPeerMetric {
+  width: min(100%, 460px);
 }
 
 .bp-select:focus {

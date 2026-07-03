@@ -4,7 +4,7 @@
   if (window.__bpPeerAllLoaded) return;
   window.__bpPeerAllLoaded = true;
 
-  var URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-pressure-split";
+  var URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-eu-cofog-detail";
   var current = "tax_pressure";
   var payloadPromise = null;
   var latestPayload = null;

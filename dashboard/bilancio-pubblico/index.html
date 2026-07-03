@@ -8,12 +8,12 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260703-pressure-split">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260703-eu-cofog-detail">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260703-spending-click-fix"></script>
-  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260703-pressure-split"></script>
+  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260703-eu-cofog-detail"></script>
+  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260703-eu-cofog-detail"></script>
 </head>
 <body>
   <header class="site-header">
@@ -210,8 +210,8 @@
     <section class="bp-grid-2" id="bilanci-regionali">
       <article class="bp-card">
         <div class="bp-card-title">
-          <h2>Rendiconti regionali 2024 - OpenBDAP/FET</h2>
-          <span>OpenBDAP/FET</span>
+          <h2 id="bpRegionalTitle">Rendiconti regionali - OpenBDAP/FET</h2>
+          <span id="bpRegionalSubtitle">Anno selezionabile</span>
         </div>
         <p>Spese, entrate e saldi da rendiconto della gestione delle Regioni e province autonome. Fonte RGS-OpenBDAP, Finanza degli Enti Territoriali. Valori in miliardi di euro correnti, arrotondati.</p>
 
@@ -232,7 +232,7 @@
         <div class="bp-chart-wrap">
           <div id="bpRegionalMissionChart" class="chart bp-chart bp-chart-tall" role="img" aria-label="Composizione della spesa regionale per missione"></div>
         </div>
-        <p class="bp-chart-credit">Spese, entrate e saldi da rendiconto della gestione delle Regioni e province autonome. Fonte: RGS-OpenBDAP, Finanza degli Enti Territoriali. Valori in miliardi di euro correnti, arrotondati.</p>
+        <p id="bpRegionalCredit" class="bp-chart-credit">Spese, entrate e saldi da rendiconto della gestione delle Regioni e province autonome. Fonte: RGS-OpenBDAP, Finanza degli Enti Territoriali. Valori in miliardi di euro correnti, arrotondati.</p>
 
         <div class="bp-table-wrap">
           <table class="bp-table">
@@ -395,11 +395,11 @@
           <label for="bpPeerMetric" class="bp-select-label">Metrica</label>
           <select id="bpPeerMetric" class="bp-select"></select>
         </div>
-        <p>Confronto per paese su metriche fiscali e di spesa.</p>
+        <p>Confronto per paese su pressione fiscale, aggregati di spesa e macro/sotto-voci COFOG.</p>
         <div class="bp-chart-wrap">
           <div id="bpPeerBars" class="chart bp-chart" role="img" aria-label="Confronto paesi"></div>
         </div>
-        <p class="bp-chart-credit">Fonte: Eurostat e OCSE, indicatori armonizzati per confronto internazionale. Elaborazione di Nazareno Lecis.</p>
+        <p id="bpPeerCredit" class="bp-chart-credit">Fonte: Eurostat, indicatori armonizzati per confronto internazionale. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>

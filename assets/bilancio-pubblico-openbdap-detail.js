@@ -4,7 +4,7 @@
   if (window.__bpOpenbdapDetailLoaded) return;
   window.__bpOpenbdapDetailLoaded = true;
 
-  var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-pressure-split";
+  var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-eu-cofog-detail";
   var state = { regions: [], metric: "mld", payloadPromise: null };
 
   var fallbackMetrics = [
