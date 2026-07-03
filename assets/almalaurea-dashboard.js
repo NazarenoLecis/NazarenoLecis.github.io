@@ -1,5 +1,5 @@
 (function () {
-  var DATA_VERSION = "v=20260704-4";
+  var DATA_VERSION = "v=20260704-5";
   var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json?" + DATA_VERSION;
   var DASHBOARD_CHUNK_BASE = "https://data.nazarenolecis.com/almalaurea/dashboard_chunks/";
   var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json?" + DATA_VERSION;
@@ -803,60 +803,87 @@
       Number.isFinite(record.second_level_enrollment_rate);
   }
 
+  function matchesSelectedFilter(record, filters, field) {
+    return filters[field] === WILDCARD || record[field] === filters[field];
+  }
+
+  function specificValue(value) {
+    return value !== WILDCARD && value !== "" && value !== null && value !== undefined;
+  }
+
+  function needsDisciplinaryGroupDetail(filters, dimension) {
+    return dimension === "disciplinary_group" ||
+      dimension === "degree_class" ||
+      dimension === "degree_course" ||
+      filters.degree_class !== WILDCARD ||
+      filters.degree_course !== WILDCARD;
+  }
+
+  function needsCourseTypeDetail(filters, dimension) {
+    return dimension === "course_type" ||
+      dimension === "degree_class" ||
+      dimension === "degree_course" ||
+      filters.degree_class !== WILDCARD ||
+      filters.degree_course !== WILDCARD;
+  }
+
+  function passesGranularity(record, filters, dimension) {
+    if (filters.university === WILDCARD) {
+      if (dimension === "university") {
+        if (!specificValue(record.university)) return false;
+      } else if (record.university !== WILDCARD) {
+        return false;
+      }
+    }
+
+    if (filters.disciplinary_group === WILDCARD) {
+      if (needsDisciplinaryGroupDetail(filters, dimension)) {
+        if (!specificValue(record.disciplinary_group)) return false;
+      } else if (record.disciplinary_group !== WILDCARD) {
+        return false;
+      }
+    }
+
+    if (filters.course_type === WILDCARD) {
+      if (needsCourseTypeDetail(filters, dimension)) {
+        if (!specificValue(record.course_type)) return false;
+      } else if (record.course_type !== WILDCARD) {
+        return false;
+      }
+    }
+
+    if (filters.degree_class === WILDCARD) {
+      if (dimension === "degree_class") {
+        if (!specificValue(record.degree_class)) return false;
+      } else if (dimension === "degree_course" || filters.degree_course !== WILDCARD) {
+        // AlmaLaurea may publish the same course with either a specific class
+        // or "*" depending on the year/view. The course filter below decides.
+      } else if (record.degree_class !== WILDCARD) {
+        return false;
+      }
+    }
+
+    if (filters.degree_course === WILDCARD) {
+      if (dimension === "degree_course") {
+        if (!specificValue(record.degree_course)) return false;
+      } else if (record.degree_course !== WILDCARD) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   function candidateRows(filters, dimension) {
     return state.records.filter(function (record) {
       if (!fixedMatch(record, filters)) return false;
       if (!hasMeasures(record)) return false;
-      var hasDegreeClassFilter = filters.degree_class !== WILDCARD;
-      var hasDegreeCourseFilter = filters.degree_course !== WILDCARD;
-
-      if (filters.course_type !== WILDCARD) {
-        if (record.course_type !== filters.course_type) return false;
-      } else if (dimension === "course_type") {
-        if (record.course_type === WILDCARD) return false;
-      } else if (dimension === "degree_class" ||
-          dimension === "degree_course" ||
-          hasDegreeClassFilter ||
-          hasDegreeCourseFilter) {
-        if (record.course_type === WILDCARD) return false;
-      } else if (record.course_type !== WILDCARD) {
-        return false;
-      }
-
-      if (filters.degree_class !== WILDCARD) {
-        if (record.degree_class !== filters.degree_class) return false;
-      } else if (dimension === "degree_class") {
-        if (record.degree_class === WILDCARD) return false;
-      } else if (dimension === "degree_course") {
-        if (record.degree_class === WILDCARD) return false;
-      } else if (!hasDegreeCourseFilter && record.degree_class !== WILDCARD) {
-        return false;
-      }
-
-      if (filters.degree_course !== WILDCARD) {
-        if (record.degree_course !== filters.degree_course) return false;
-      } else if (dimension === "degree_course") {
-        if (record.degree_course === WILDCARD) return false;
-      } else if (record.degree_class !== WILDCARD) {
-        if (record.degree_course !== WILDCARD) return false;
-      } else if (record.degree_course !== WILDCARD) {
-        return false;
-      }
-
-      if (filters.disciplinary_group !== WILDCARD &&
-          record.disciplinary_group !== filters.disciplinary_group) {
-        return false;
-      }
-
-      if (filters.university !== WILDCARD) {
-        if (record.university !== filters.university) return false;
-      } else if (dimension === "university") {
-        if (record.university === WILDCARD) return false;
-      } else if (record.university !== WILDCARD) {
-        return false;
-      }
-
-      return true;
+      return matchesSelectedFilter(record, filters, "university") &&
+        matchesSelectedFilter(record, filters, "disciplinary_group") &&
+        matchesSelectedFilter(record, filters, "course_type") &&
+        matchesSelectedFilter(record, filters, "degree_class") &&
+        matchesSelectedFilter(record, filters, "degree_course") &&
+        passesGranularity(record, filters, dimension);
     });
   }
 
