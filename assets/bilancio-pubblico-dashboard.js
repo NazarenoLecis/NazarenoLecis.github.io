@@ -541,6 +541,10 @@
   function taxComponentLabel(key) {
     var labels = {
       "produzione e importazioni": "Imposte su produzione e importazioni",
+      "reddito": "Imposte su reddito",
+      "patrimonio": "Imposte su patrimonio",
+      "imposte su reddito": "Imposte su reddito",
+      "imposte su patrimonio": "Imposte su patrimonio",
       "reddito e patrimonio": "Imposte su reddito e patrimonio",
       "imposte su produzione e importazioni": "Imposte su produzione e importazioni",
       "imposte su reddito e patrimonio": "Imposte su reddito e patrimonio",
@@ -550,14 +554,64 @@
     return labels[String(key).toLowerCase()] || niceLabel(key);
   }
 
+  function hasSplitIncomeCapitalComponents(rows) {
+    return rows.some(function (row) {
+      return toNumber(row["imposte su reddito"]) !== null
+        || toNumber(row["reddito"]) !== null
+        || toNumber(row["imposte su patrimonio"]) !== null
+        || toNumber(row["patrimonio"]) !== null;
+    });
+  }
+
+  function taxComponentRows(rows) {
+    var useSplitComponents = hasSplitIncomeCapitalComponents(rows);
+    return rows.map(function (row) {
+      var next = {};
+      Object.keys(row).forEach(function (key) {
+        if (key !== "year" && key !== "value") {
+          var normalized = String(key).toLowerCase();
+          if (normalized === "imposte su reddito e patrimonio" && useSplitComponents) {
+            return;
+          }
+          next[key] = row[key];
+        }
+      });
+      if (useSplitComponents) {
+        if (toNumber(next["imposte su reddito"]) === null) {
+          next["imposte su reddito"] = toNumber(row["reddito"]) || toNumber(row["imposte su reddito"]);
+        }
+        if (toNumber(next["imposte su patrimonio"]) === null) {
+          next["imposte su patrimonio"] = toNumber(row["patrimonio"]) || toNumber(row["imposte su patrimonio"]);
+        }
+      }
+      next.year = row.year;
+      next.value = row.value;
+      return next;
+    });
+  }
+
   function renderTaxCompositionTrend(payload) {
     var rows = firstRows(payload, ["pressure_components", "tax_pressure_trend", "pressureTrend", "pressure_trend", "fiscal_trend"]);
+    var note = byId("bpTaxCompositionNote");
     rows = toArray(rows).filter(function (row) { return toNumber(row.year) !== null; });
     rows = filterRowsByYearWindow("bpTaxCompositionTrend", rows, "year");
     if (!rows.length) {
       showEmptyChart("bpTaxCompositionTrend", "Nessuna componente della pressione fiscale disponibile");
+      if (note) {
+        note.style.display = "none";
+      }
       return;
     }
+    var hasSplit = hasSplitIncomeCapitalComponents(rows);
+    if (note) {
+      if (hasSplit) {
+        note.style.display = "none";
+      } else {
+        note.style.display = "block";
+        note.textContent = "Nota metodologica: in questa versione i dati sono aggregati in 'imposte su reddito e patrimonio'. Per la separazione servono serie distinte di fonte (reddito, patrimonio).";
+      }
+    }
+    rows = taxComponentRows(rows);
     var keys = Object.keys(rows[0]).filter(function (key) {
       return key !== "year" && key !== "value" && rows.some(function (row) { return toNumber(row[key]) !== null; });
     });
