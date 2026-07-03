@@ -1,11 +1,12 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json";
+  var DATA_URL = "../../data/bilancio-pubblico/dashboard.json?v=20260703-cofog-detail";
   var STATE = {
     payload: null,
     peerMetric: "tax_pressure",
     peerCountries: null,
+    spendingDetailFunction: "GF01",
     regionalYear: null,
     regionalRegion: null,
     yearWindows: {}
@@ -441,8 +442,12 @@
       "Repository di elaborazione: NazarenoLecis/Bilancio_pubblico.",
       "Entrate e uscite sono in miliardi di euro quando non indicato diversamente.",
       "Pressione fiscale e contributiva: entrate da imposte e contributi sociali rapportate al PIL.",
-      "Contributi sociali netti: serie Eurostat gov_10a_taxag; i valori in miliardi sono ricavati dalla quota sul PIL e dal PIL implicito nelle serie Eurostat di spesa pubblica.",
-      "COFOG: classificazione internazionale delle funzioni della spesa pubblica, usata da Eurostat per rendere confrontabili i paesi.",
+      "Contributi sociali netti: classificazione Eurostat dei conti nazionali; non indica contributi al netto delle prestazioni sociali pagate.",
+      "COFOG: classificazione internazionale delle funzioni della spesa pubblica, usata da Eurostat per rendere confrontabili i paesi. Il secondo livello COFOG mostra cosa compone le macro voci.",
+      "OpenBDAP e Eurostat COFOG hanno perimetri diversi: OpenBDAP serve per il dettaglio dei rendiconti regionali, Eurostat COFOG per i confronti armonizzati per funzione.",
+      "Le metriche euro pro capite ed euro per kmq sono normalizzazioni derivate; il dato originale OpenBDAP resta espresso in euro o miliardi di euro.",
+      "L'imposta su successioni e donazioni aggrega trasferimenti patrimoniali per causa di morte e trasferimenti gratuiti tra vivi.",
+      "SIOPE misura incassi e pagamenti degli enti pubblici. In questa versione e' indicato come fonte di riferimento per future analisi sui flussi di cassa; i grafici correnti usano MEF, Eurostat, OCSE e OpenBDAP.",
       "Distribuzione IRPEF: contribuenti e imposta netta sono aggregati per fascia di reddito dichiarato.",
       payload.meta && payload.meta.manifest_rows ? "Serie e tavole sorgente censite nell'elaborazione: " + payload.meta.manifest_rows + "." : null
     ].filter(Boolean).forEach(function (text) {
@@ -525,13 +530,53 @@
       showEmptyChart("bpTaxTrend", "Nessuna serie sulla pressione fiscale disponibile");
       return;
     }
-    var keys = Object.keys(rows[0]).filter(function (key) {
-      return key !== "year" && rows.some(function (row) { return toNumber(row[key]) !== null; });
-    });
-    keys = ["value"].concat(keys.filter(function (key) { return key !== "value"; })).slice(0, 5);
-    plot("bpTaxTrend", lineSeriesFromRows(rows, keys, {
+    plot("bpTaxTrend", lineSeriesFromRows(rows, ["value"], {
       labels: { value: "Totale" },
       suffix: "%"
+    }), {
+      yaxis: { title: "% PIL", ticksuffix: "%" },
+      xaxis: { title: "" }
+    });
+  }
+
+  function taxComponentLabel(key) {
+    var labels = {
+      "produzione e importazioni": "Imposte su produzione e importazioni",
+      "reddito e patrimonio": "Imposte su reddito e patrimonio",
+      "imposte su produzione e importazioni": "Imposte su produzione e importazioni",
+      "imposte su reddito e patrimonio": "Imposte su reddito e patrimonio",
+      "contributi sociali netti": "Contributi sociali netti",
+      "imposte in conto capitale": "Imposte in conto capitale"
+    };
+    return labels[String(key).toLowerCase()] || niceLabel(key);
+  }
+
+  function renderTaxCompositionTrend(payload) {
+    var rows = firstRows(payload, ["pressure_components", "tax_pressure_trend", "pressureTrend", "pressure_trend", "fiscal_trend"]);
+    rows = toArray(rows).filter(function (row) { return toNumber(row.year) !== null; });
+    rows = filterRowsByYearWindow("bpTaxCompositionTrend", rows, "year");
+    if (!rows.length) {
+      showEmptyChart("bpTaxCompositionTrend", "Nessuna componente della pressione fiscale disponibile");
+      return;
+    }
+    var keys = Object.keys(rows[0]).filter(function (key) {
+      return key !== "year" && key !== "value" && rows.some(function (row) { return toNumber(row[key]) !== null; });
+    });
+    if (!keys.length) {
+      showEmptyChart("bpTaxCompositionTrend", "Componenti non disponibili nel dataset caricato");
+      return;
+    }
+    plot("bpTaxCompositionTrend", keys.map(function (key, index) {
+      return {
+        type: "scatter",
+        mode: "lines",
+        stackgroup: "pressione",
+        name: taxComponentLabel(key),
+        x: rows.map(function (row) { return toNumber(row.year); }),
+        y: rows.map(function (row) { return toNumber(row[key]); }),
+        line: { color: COLORS[index % COLORS.length], width: 1.5 },
+        hovertemplate: "%{x}<br>%{fullData.name}: %{y:.2f}% PIL<extra></extra>"
+      };
     }), {
       yaxis: { title: "% PIL", ticksuffix: "%" },
       xaxis: { title: "" }
@@ -579,7 +624,7 @@
     rows = byValueDesc(rows, "latest_value_mld").slice(0, 6);
     var allYears = [];
     rows.slice().sort(function (a, b) {
-      return a.country.localeCompare(b.country, "it");
+      return asText(a.country || a.label || a.code, "").localeCompare(asText(b.country || b.label || b.code, ""), "it");
     }).forEach(function (row) {
       toArray(row.series).forEach(function (point) {
         var year = toNumber(point.year);
@@ -863,6 +908,116 @@
       { value: function (row) { return formatPercent(row.share_spesa_totale, 1); } },
       { value: function (row) { return asText(row.source); }, className: "is-muted" },
       { value: function (row) { return asText(row.year || row.year_to); } }
+    ]);
+  }
+
+  function spendingDetailParents(rows) {
+    var byCode = {};
+    toArray(rows).forEach(function (row) {
+      var parentCode = asText(row.parent_code, "");
+      if (!parentCode) return;
+      if (!byCode[parentCode]) {
+        byCode[parentCode] = {
+          code: parentCode,
+          label: asText(row.parent_label || parentCode),
+          total: 0
+        };
+      }
+      byCode[parentCode].total += toNumber(row.latest_value_mld) || 0;
+    });
+    return Object.keys(byCode).map(function (code) {
+      return byCode[code];
+    }).sort(function (a, b) {
+      return a.code.localeCompare(b.code, "it");
+    });
+  }
+
+  function renderSpendingFunctionDetail(payload) {
+    var rows = toArray(payload.spending_function_detail_series).filter(function (row) {
+      return row.parent_code && toArray(row.series).some(function (point) {
+        return toNumber(point.year) !== null && toNumber(point.value_pil) !== null;
+      });
+    });
+    var select = byId("bpSpendingDetailFunction");
+    var tbody = byId("bpSpendingDetailRows");
+    var parents = spendingDetailParents(rows);
+
+    if (!rows.length || !parents.length) {
+      showEmptyChart("bpSpendingDetailTrend", "Dettaglio COFOG non disponibile nel dataset caricato");
+      createTableRows(tbody, [], [
+        { value: function (row) { return row.label; } },
+        { value: function (row) { return formatMld(row.latest_value_mld, 1); } },
+        { value: function (row) { return formatPercent(row.latest_value_pil, 2); } },
+        { value: function (row) { return formatPercent(row.latest_share_parent_percent, 1); } }
+      ]);
+      return;
+    }
+
+    if (select) {
+      clear(select);
+      parents.forEach(function (parent) {
+        var option = document.createElement("option");
+        option.value = parent.code;
+        option.textContent = parent.label;
+        select.appendChild(option);
+      });
+      if (!parents.some(function (parent) { return parent.code === STATE.spendingDetailFunction; })) {
+        STATE.spendingDetailFunction = parents.some(function (parent) { return parent.code === "GF01"; })
+          ? "GF01"
+          : parents[0].code;
+      }
+      select.value = STATE.spendingDetailFunction;
+    }
+
+    var selectedRows = rows.filter(function (row) {
+      return row.parent_code === STATE.spendingDetailFunction;
+    }).sort(function (a, b) {
+      return (toNumber(b.latest_value_pil) || 0) - (toNumber(a.latest_value_pil) || 0);
+    });
+
+    var allYears = [];
+    selectedRows.forEach(function (row) {
+      toArray(row.series).forEach(function (point) {
+        var year = toNumber(point.year);
+        if (year !== null) allYears.push(year);
+      });
+    });
+    ensureYearWindowControl("bpSpendingDetailTrend", uniqueSorted(allYears, false));
+
+    var traces = selectedRows.map(function (row, index) {
+      var points = toArray(row.series).filter(function (point) {
+        return toNumber(point.year) !== null && toNumber(point.value_pil) !== null;
+      });
+      points = filterPointsByYearWindow("bpSpendingDetailTrend", points);
+      return {
+        type: "scatter",
+        mode: "lines",
+        stackgroup: "spesa",
+        name: asText(row.label || row.code),
+        x: points.map(function (point) { return toNumber(point.year); }),
+        y: points.map(function (point) { return toNumber(point.value_pil); }),
+        line: { color: COLORS[index % COLORS.length], width: 1.4 },
+        hovertemplate: "%{x}<br>%{fullData.name}: %{y:.2f}% PIL<extra></extra>"
+      };
+    }).filter(function (trace) {
+      return trace.x.length > 1;
+    });
+
+    if (traces.length) {
+      plot("bpSpendingDetailTrend", traces, {
+        yaxis: { title: "% del PIL", ticksuffix: "%" },
+        xaxis: { title: "" },
+        margin: { t: 20, r: 22, b: 58, l: 70 }
+      });
+    } else {
+      showEmptyChart("bpSpendingDetailTrend", "Nessuna serie disponibile per la macro voce selezionata");
+    }
+
+    createTableRows(tbody, selectedRows, [
+      { value: function (row) { return asText(row.label || row.code); } },
+      { value: function (row) { return formatMld(row.latest_value_mld, 2); } },
+      { value: function (row) { return formatPercent(row.latest_value_pil, 2); } },
+      { value: function (row) { return formatPercent(row.latest_share_parent_percent, 1); } }
     ]);
   }
 
@@ -1207,6 +1362,7 @@
     renderKpis(payload);
     renderTopTaxes(payload);
     renderTaxTrend(payload);
+    renderTaxCompositionTrend(payload);
     renderPie("bpRevenuePie", toArray(payload.revenue_pie), "Entrate", "bpRevenuePieRows");
     renderPie("bpSpendingPie", toArray(payload.spending_pie), "Spese", "bpSpendingPieRows");
     renderCategoryTrend("bpRevenueTrend", toArray(payload.revenue_category_series), "Nessuna serie entrate disponibile");
@@ -1217,6 +1373,7 @@
     renderUnder500(payload);
     renderRevenueGaps(payload);
     renderSpendingFocus(payload);
+    renderSpendingFunctionDetail(payload);
     renderRegionalBudgets(payload);
     renderPeer(payload);
   }
@@ -1247,6 +1404,15 @@
     }
   }
 
+  function initSpendingDetailControl() {
+    var select = byId("bpSpendingDetailFunction");
+    if (!select) return;
+    select.addEventListener("change", function () {
+      STATE.spendingDetailFunction = select.value;
+      if (STATE.payload) renderSpendingFunctionDetail(STATE.payload);
+    });
+  }
+
   function initThemeObserver() {
     if (!window.MutationObserver) return;
     var observer = new MutationObserver(function () {
@@ -1263,6 +1429,7 @@
   function init() {
     initPeerControl();
     initRegionalControls();
+    initSpendingDetailControl();
     initThemeObserver();
 
     var status = byId("bpStatus");
@@ -1280,10 +1447,10 @@
       .catch(function (error) {
         if (status) status.textContent = "Errore nel caricamento dei dati: " + error.message;
         [
-          "bpTopTaxes", "bpTaxTrend", "bpRevenuePie", "bpSpendingPie",
+          "bpTopTaxes", "bpTaxTrend", "bpTaxCompositionTrend", "bpRevenuePie", "bpSpendingPie",
           "bpRevenueTrend", "bpSpendingTrend", "bpIrpefBandChart",
           "bpTaxTypeTrend", "bpUnder500Chart", "bpRegionalMissionChart",
-          "bpRegionalBalanceChart", "bpPeerBars"
+          "bpSpendingDetailTrend", "bpRegionalBalanceChart", "bpPeerBars"
         ].forEach(function (id) {
           showEmptyChart(id, "Dati non caricati");
         });

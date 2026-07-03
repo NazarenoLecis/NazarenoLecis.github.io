@@ -8,12 +8,12 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260703-peer-filter">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260703-cofog-detail">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260703-peer-filter"></script>
-  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260703-peer-filter"></script>
+  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260703-cofog-detail"></script>
+  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260703-cofog-detail"></script>
 </head>
 <body>
   <header class="site-header">
@@ -43,15 +43,15 @@
         <span class="eyebrow">Finanza pubblica</span>
         <h1>Bilancio pubblico italiano</h1>
         <p class="lead">
-          Dashboard su entrate e spese della finanza pubblica con due obiettivi:
-          capire la composizione (torta), seguire i trend storici e isolare le voci piu' leggibili
-          tra imposte, contributi sociali, pressione fiscale e funzioni di spesa.
+          Dashboard su entrate fiscali e contributive, spesa pubblica, confronti europei
+          e rendiconti regionali. Il percorso parte dal quadro Italia, entra nei dettagli
+          di entrate e uscite, poi passa a confronti e metodo.
         </p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonti: MEF, Eurostat, OCSE, Banca d'Italia</strong>
+          <strong>Fonti: MEF, Eurostat, OCSE, OpenBDAP, Banca d'Italia</strong>
           <span id="bpSourceMeta">Dati elaborati a partire da fonti ufficiali sulla finanza pubblica italiana ed europea.</span>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Bilancio_pubblico" target="_blank" rel="noopener">
@@ -64,38 +64,36 @@
     <section class="workflow-grid">
       <div class="workflow-step">
         <span>1</span>
-        <h2>Entrate e spese</h2>
-        <p>La pagina separa composizione, serie storiche e focus sulle principali voci fiscali e di spesa.</p>
+        <h2>Italia</h2>
+        <p>Prima il quadro aggregato: KPI, pressione fiscale e contributiva, spesa pubblica e indicatori generali.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
-        <h2>Confronto</h2>
-        <p>Per ogni blocco vediamo sezione, unita', anni e note tecniche direttamente dalla sorgente.</p>
+        <h2>Dettaglio</h2>
+        <p>Entrate e uscite sono separate, con composizione, serie storiche e tabelle delle voci disponibili.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
-        <h2>Metodo</h2>
-        <p>Le note distinguono valori assoluti, quote sul PIL, classificazioni COFOG e distribuzione IRPEF per fascia.</p>
+        <h2>Confronti</h2>
+        <p>Europa, regioni e note metodologiche chiariscono perimetri, normalizzazioni e fonti.</p>
       </div>
     </section>
 
     <nav class="dashboard-jump-nav bp-jump-nav" aria-label="Sezioni dashboard bilancio">
-      <a href="#overview">Panoramica</a>
-      <a href="#distribuzione">Distribuzione</a>
-      <a href="#serie-storiche">Serie storiche</a>
-      <a href="#bilanci-regionali">Regioni</a>
-      <a href="#focus-irpef">IRPEF</a>
-      <a href="#focus-entrate">Entrate</a>
-      <a href="#focus-spese">Spese</a>
-      <a href="#metodo">Metodo</a>
+      <a href="#italia">Italia</a>
+      <a href="#entrate">Entrate</a>
+      <a href="#uscite">Uscite</a>
+      <a href="#confronto-europeo">Confronto europeo</a>
+      <a href="#bilanci-regionali">Focus regionale</a>
+      <a href="#metodo">Metodo e fonti</a>
     </nav>
 
     <p id="bpStatus" class="bp-status">Caricamento in corso ...</p>
-    <section class="bp-kpi-wrap">
+    <section class="bp-kpi-wrap" id="italia">
       <div id="bpKpis" class="kpi-grid"></div>
     </section>
 
-    <section class="bp-grid-2" id="overview">
+    <section class="bp-grid-2" id="entrate">
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Entrate principali disponibili</h2>
@@ -110,11 +108,23 @@
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Pressione fiscale e contributiva</h2>
-          <span id="bpPressureTitle">% PIL</span>
+          <span id="bpPressureTitle">% PIL, totale</span>
         </div>
-        <p>Evoluzione complessiva e componenti della pressione fiscale.</p>
+        <p>Entrate fiscali e contributive in % del PIL. Il totale e' mostrato separatamente dalle componenti Eurostat.</p>
         <div class="bp-chart-wrap">
           <div id="bpTaxTrend" class="chart bp-chart" role="img" aria-labelledby="bpPressureTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_taxag, amministrazioni pubbliche S13. Elaborazione di Nazareno Lecis.</p>
+        <p class="muted-note">Il totale somma imposte su produzione e importazioni, imposte su reddito e patrimonio, contributi sociali netti e imposte in conto capitale.</p>
+      </article>
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Composizione della pressione fiscale e contributiva</h2>
+          <span>Componenti Eurostat in % PIL</span>
+        </div>
+        <p>Dettaglio delle componenti Eurostat della pressione fiscale e contributiva.</p>
+        <div class="bp-chart-wrap">
+          <div id="bpTaxCompositionTrend" class="chart bp-chart" role="img" aria-label="Composizione della pressione fiscale e contributiva"></div>
         </div>
         <p class="bp-chart-credit">Fonte: Eurostat gov_10a_taxag, amministrazioni pubbliche S13. Elaborazione di Nazareno Lecis.</p>
       </article>
@@ -355,7 +365,7 @@
       </article>
     </section>
 
-    <section class="bp-grid-2" id="focus-spese">
+    <section class="bp-grid-2" id="uscite">
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Focus spese principali</h2>
@@ -380,6 +390,32 @@
       </article>
 
       <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Scomposizione delle macro voci di spesa</h2>
+          <label for="bpSpendingDetailFunction" class="bp-select-label">Macro voce</label>
+          <select id="bpSpendingDetailFunction" class="bp-select"></select>
+        </div>
+        <p>Dettaglio COFOG di secondo livello: mostra cosa e' compreso nelle macro voci e come cambia il peso sul PIL.</p>
+        <div class="bp-chart-wrap">
+          <div id="bpSpendingDetailTrend" class="chart bp-chart" role="img" aria-label="Scomposizione COFOG della spesa in percentuale del PIL"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, classificazione COFOG di secondo livello. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Voce COFOG</th>
+                <th>Mld euro</th>
+                <th>% PIL</th>
+                <th>Quota macro voce</th>
+              </tr>
+            </thead>
+            <tbody id="bpSpendingDetailRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card" id="confronto-europeo">
         <div class="bp-card-title">
           <h2>Italia vs europei</h2>
           <label for="bpPeerMetric" class="bp-select-label">Metrica</label>

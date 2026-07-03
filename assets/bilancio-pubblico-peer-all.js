@@ -4,7 +4,7 @@
   if (window.__bpPeerAllLoaded) return;
   window.__bpPeerAllLoaded = true;
 
-  var URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json";
+  var URL = "../../data/bilancio-pubblico/dashboard.json?v=20260703-cofog-detail";
   var current = "tax_pressure";
   var payloadPromise = null;
   var latestPayload = null;

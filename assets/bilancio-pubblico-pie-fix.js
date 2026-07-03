@@ -68,8 +68,8 @@
   function tuneAll() { PIE_IDS.forEach(tunePie); tuneUnder500(); }
   function schedule() { tuneAll(); [250, 800, 1500, 2500].forEach(function (delay) { window.setTimeout(tuneAll, delay); }); }
   function loadExternalScript(flag, src) { if (document.querySelector("script[" + flag + "]")) return; var script = document.createElement("script"); script.defer = true; script.setAttribute(flag, "true"); script.src = src; document.body.appendChild(script); }
-  function loadSpendingOptionsScript() { loadExternalScript("data-bp-spending-options", "../../assets/bilancio-pubblico-spending-options.js?v=20260703-peer-filter"); }
-  function loadOpenbdapDetailScript() { loadExternalScript("data-bp-openbdap-detail", "../../assets/bilancio-pubblico-openbdap-detail.js?v=20260703-peer-filter"); }
+  function loadSpendingOptionsScript() { loadExternalScript("data-bp-spending-options", "../../assets/bilancio-pubblico-spending-options.js?v=20260703-cofog-detail"); }
+  function loadOpenbdapDetailScript() { loadExternalScript("data-bp-openbdap-detail", "../../assets/bilancio-pubblico-openbdap-detail.js?v=20260703-cofog-detail"); }
 
   function observeCharts() {
     if (!window.MutationObserver) return;
