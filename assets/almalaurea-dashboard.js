@@ -1,5 +1,5 @@
 (function () {
-  var DATA_VERSION = "v=20260704-2";
+  var DATA_VERSION = "v=20260704-3";
   var METADATA_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_metadata.json?" + DATA_VERSION;
   var DASHBOARD_CHUNK_BASE = "https://data.nazarenolecis.com/almalaurea/dashboard_chunks/";
   var TIMESERIES_AGG_URL = "https://data.nazarenolecis.com/almalaurea/almalaurea_timeseries_aggregated_data.json?" + DATA_VERSION;
