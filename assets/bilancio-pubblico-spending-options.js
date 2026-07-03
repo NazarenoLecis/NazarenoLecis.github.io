@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   var DATA_URL = "../../data/bilancio-pubblico/dashboard.json?v=20260703-cofog-detail";
@@ -145,9 +145,8 @@
   }
 
   function addNotes() {
-    addNote("Le serie di spesa in miliardi sono valori nominali in euro correnti quando non è selezionata una metrica reale o pro capite.");
+    addNote("Le serie di spesa in miliardi sono valori nominali in euro correnti quando non Ã¨ selezionata una metrica reale o pro capite.");
     addNote("Le metriche reali usano HICP all-items Eurostat; le metriche pro capite usano la popolazione residente Eurostat al 1 gennaio.");
-    addNote("SIOPE è una fonte sui flussi di cassa degli enti pubblici, distinta dalla spesa COFOG di contabilità nazionale.");
   }
 
   function load() {
@@ -168,3 +167,4 @@
     window.setTimeout(load, 2200);
   }
 })();
+

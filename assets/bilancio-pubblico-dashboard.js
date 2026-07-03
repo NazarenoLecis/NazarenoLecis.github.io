@@ -447,7 +447,6 @@
       "OpenBDAP e Eurostat COFOG hanno perimetri diversi: OpenBDAP serve per il dettaglio dei rendiconti regionali, Eurostat COFOG per i confronti armonizzati per funzione.",
       "Le metriche euro pro capite ed euro per kmq sono normalizzazioni derivate; il dato originale OpenBDAP resta espresso in euro o miliardi di euro.",
       "L'imposta su successioni e donazioni aggrega trasferimenti patrimoniali per causa di morte e trasferimenti gratuiti tra vivi.",
-      "SIOPE misura incassi e pagamenti degli enti pubblici. In questa versione e' indicato come fonte di riferimento per future analisi sui flussi di cassa; i grafici correnti usano MEF, Eurostat, OCSE e OpenBDAP.",
       "Distribuzione IRPEF: contribuenti e imposta netta sono aggregati per fascia di reddito dichiarato.",
       payload.meta && payload.meta.manifest_rows ? "Serie e tavole sorgente censite nell'elaborazione: " + payload.meta.manifest_rows + "." : null
     ].filter(Boolean).forEach(function (text) {
