@@ -200,7 +200,6 @@
           <span>Dataset MIM di edilizia scolastica, impianti, origine degli edifici e indicatori energetici.</span>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
           <a class="related-link" href="../../articoli/calendario-scolastico-vacanze-estive.html">Leggi l'articolo collegato</a>
-          <a class="related-link" href="https://data.nazarenolecis.com/ciclo-unico-caldo/registro_verifica_dataset_mim.json" target="_blank" rel="noopener">Apri registro verifiche R2</a>
           <a class="related-link" href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Apri repository dati</a>
         </div>
       </div>
@@ -360,7 +359,7 @@
       <div>
         <h2>Note metodologiche</h2>
         <ul>
-          <li>Le unità del grafico sono edifici distinti nel perimetro modellato. La fonte è il Ministero dell'Istruzione e del Merito, Anagrafe edilizia scolastica, dataset sugli impianti di riscaldamento e condizionamento 2024/2025.</li>
+          <li>Le unità del grafico sono edifici distinti nel perimetro modellato, non associazioni scuola-edificio presenti nel file sorgente. La fonte è il Ministero dell'Istruzione e del Merito, Anagrafe edilizia scolastica, dataset sugli impianti di riscaldamento e condizionamento 2024/2025.</li>
           <li>La quota A/C dichiarata usa come denominatore tutti gli edifici, compresi i valori <code>NON DEFINITO</code>, per mantenere confrontabile la base regionale.</li>
           <li>Nel dataset MIM sugli impianti, la variabile su condizionamento e ventilazione ha valori SI, NO o NON DEFINITO.</li>
           <li>Rischio caldo e mitigazione termica sono proxy del repository. Usano indicatori MIM su impianti, doppi vetri, isolamento, riduzione dei consumi, posizione comunale e studenti esposti.</li>
@@ -370,7 +369,7 @@
       </div>
       <div>
         <h2>Fonti e repository</h2>
-        <p>Fonte principale: MIM, Portale unico dei dati della scuola, dataset di edilizia scolastica e impianti. Il registro pubblicato su R2 riporta anno scolastico, data file, chiave di verifica, duplicati e conteggi distinti.</p>
+        <p>Fonte principale: MIM, Portale unico dei dati della scuola, dataset di edilizia scolastica e impianti. Le verifiche interne controllano anno scolastico, data del dataset, chiave di verifica, duplicati e conteggi distinti.</p>
         <p>Fonti territoriali e di scenario: Istat per comuni e popolazione, repository <a class="related-link" href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">NazarenoLecis/Ciclo_unico_scolastico</a> per pipeline, proxy e aggregazioni.</p>
         <p>Dettaglio PNRR/OpenCoesione: <a class="related-link" href="https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json" target="_blank" rel="noopener">progetti clima/energia per edilizia scolastica</a>.</p>
         <p>Elaborazione di Nazareno Lecis.</p>
