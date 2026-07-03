@@ -103,7 +103,7 @@
     note.querySelector("strong").textContent = title;
     note.querySelector("p").textContent = joinParts([
       shortFilter("Indagine", selectLabel("scatterSurveyYear")),
-      shortFilter("coorte", selectLabel("scatterGraduationYear")),
+      shortFilter("anno laurea", selectLabel("scatterGraduationYear")),
       shortFilter("distanza", selectLabel("scatterYearsAfter")),
       shortFilter("occupazione", selectLabel("scatterDefinition")),
       shortFilter("ateneo", selectLabel("scatterUniversity")),
@@ -124,7 +124,7 @@
     note.querySelector("strong").textContent = title;
     note.querySelector("p").textContent = joinParts([
       shortFilter("Indagine", selectLabel("boxSurveyYear")),
-      shortFilter("coorte", selectLabel("boxGraduationYear")),
+      shortFilter("anno laurea", selectLabel("boxGraduationYear")),
       shortFilter("distanza", selectLabel("boxYearsAfter")),
       shortFilter("occupazione", selectLabel("boxDefinition")),
       shortFilter("ateneo", selectLabel("boxUniversity")),

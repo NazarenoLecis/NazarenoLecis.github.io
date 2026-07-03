@@ -42,7 +42,7 @@
         <span class="eyebrow">Dati AlmaLaurea</span>
         <h1>Occupazione e retribuzione dei laureati</h1>
         <p class="lead">
-          Parti da anno e coorte, poi restringi il perimetro per ateneo,
+          Parti da anno indagine e anno laurea, poi restringi il perimetro per ateneo,
           gruppo disciplinare, tipo di corso, classe e corso di laurea. La vista
           dettagliata usa gli anni recenti; le serie storiche usano dati
           piu' aggregati e vanno piu' indietro nel tempo.
@@ -62,7 +62,7 @@
       <div class="workflow-step">
         <span>1</span>
         <h2>Scegli il perimetro</h2>
-        <p>Anno di indagine, anni dalla laurea e coorte identificano il gruppo osservato.</p>
+        <p>Anno indagine, anni dalla laurea e anno laurea identificano il gruppo osservato.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
@@ -86,7 +86,7 @@
     <section class="dashboard-section" id="scatterSection">
       <div class="section-head">
         <span class="eyebrow">Confronto</span>
-        <h2>Mappa della coorte selezionata</h2>
+        <h2>Mappa dei laureati selezionati</h2>
         <p>Lo scatter confronta occupazione e retribuzione. La dimensione della bolla indica il numero di laureati, mentre il menu "punti e serie" decide se visualizzare gruppi disciplinari, atenei o classi.</p>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri scatterplot">
@@ -105,7 +105,7 @@
             <select id="scatterYearsAfter"></select>
           </label>
           <label>
-            <span>Coorte</span>
+            <span>Anno laurea</span>
             <select id="scatterGraduationYear"></select>
           </label>
           <select class="is-hidden" id="scatterDefinition" aria-hidden="true"></select>
@@ -182,7 +182,7 @@
             <select id="boxYearsAfter"></select>
           </label>
           <label>
-            <span>Coorte</span>
+            <span>Anno laurea</span>
             <select id="boxGraduationYear"></select>
           </label>
           <select class="is-hidden" id="boxDefinition" aria-hidden="true"></select>
@@ -267,7 +267,7 @@
             <select id="timeYearsAfter"></select>
           </label>
           <label>
-            <span>Coorte</span>
+            <span>Anno laurea</span>
             <select id="timeCohort"></select>
           </label>
           <select class="is-hidden" id="timeDefinition" aria-hidden="true"></select>
