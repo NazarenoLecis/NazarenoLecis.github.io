@@ -168,6 +168,10 @@
     loadExternalScript("data-bp-openbdap-detail", "../../assets/bilancio-pubblico-openbdap-detail.js");
   }
 
+  function loadPeerScript() {
+    loadExternalScript("data-bp-peer-all", "../../assets/bilancio-pubblico-peer-all.js");
+  }
+
   function observeCharts() {
     if (!window.MutationObserver) return;
     OBSERVED_CHART_IDS.forEach(function (id) {
@@ -187,12 +191,14 @@
       observeCharts();
       loadSpendingOptionsScript();
       loadOpenbdapDetailScript();
+      loadPeerScript();
     });
   } else {
     schedule();
     observeCharts();
     loadSpendingOptionsScript();
     loadOpenbdapDetailScript();
+    loadPeerScript();
   }
 
   window.addEventListener("resize", function () {
