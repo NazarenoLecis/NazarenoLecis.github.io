@@ -151,13 +151,21 @@
     });
   }
 
-  function loadSpendingOptionsScript() {
-    if (document.querySelector("script[data-bp-spending-options]")) return;
+  function loadExternalScript(flag, src) {
+    if (document.querySelector("script[" + flag + "]")) return;
     var script = document.createElement("script");
     script.defer = true;
-    script.dataset.bpSpendingOptions = "true";
-    script.src = "../../assets/bilancio-pubblico-spending-options.js";
+    script.setAttribute(flag, "true");
+    script.src = src;
     document.body.appendChild(script);
+  }
+
+  function loadSpendingOptionsScript() {
+    loadExternalScript("data-bp-spending-options", "../../assets/bilancio-pubblico-spending-options.js");
+  }
+
+  function loadOpenbdapDetailScript() {
+    loadExternalScript("data-bp-openbdap-detail", "../../assets/bilancio-pubblico-openbdap-detail.js");
   }
 
   function observeCharts() {
@@ -178,11 +186,13 @@
       schedule();
       observeCharts();
       loadSpendingOptionsScript();
+      loadOpenbdapDetailScript();
     });
   } else {
     schedule();
     observeCharts();
     loadSpendingOptionsScript();
+    loadOpenbdapDetailScript();
   }
 
   window.addEventListener("resize", function () {
