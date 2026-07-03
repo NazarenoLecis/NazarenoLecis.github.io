@@ -43,9 +43,12 @@
 
   function readUnder500Rows(node) {
     var bar = node.data && node.data.find(function (trace) {
-      return trace.type === "bar" && trace.orientation !== "h" && Array.isArray(trace.x) && Array.isArray(trace.y);
+      return trace.type === "bar" && Array.isArray(trace.x) && Array.isArray(trace.y);
     });
     if (!bar) return null;
+    if (bar.orientation === "h") {
+      return bar.y.map(function (label, index) { return { label: String(label || ""), value: toNumber(bar.x[index]) }; }).filter(function (row) { return row.label && row.value !== null; });
+    }
     return bar.x.map(function (label, index) { return { label: String(label || ""), value: toNumber(bar.y[index]) }; }).filter(function (row) { return row.label && row.value !== null; });
   }
 
@@ -59,7 +62,7 @@
     if (!node.__bpUnder500Rows || !node.__bpUnder500Rows.length) return;
     var rows = node.__bpUnder500Rows.slice().sort(function (a, b) { return b.value - a.value; }).slice(0, 8).reverse();
     node.__bpUnder500Tuned = true;
-    window.Plotly.react(node, [{ type: "bar", orientation: "h", x: rows.map(function (row) { return row.value; }), y: rows.map(function (row) { return shortLabel(row.label); }), customdata: rows.map(function (row) { return row.label; }), marker: { color: cssVar("--orange", "#ff5a1f") }, text: rows.map(function (row) { return formatMld(row.value); }), textposition: "auto", hovertemplate: "%{customdata}<br>%{x:.3f} mld<extra></extra>" }], { height: 430, margin: { t: 6, r: 8, b: 44, l: 170 }, showlegend: false, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { color: cssVar("--text", "#f5f2ed"), family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", size: 12 }, xaxis: { title: "Miliardi", fixedrange: true, gridcolor: cssVar("--line", "#303030"), zerolinecolor: cssVar("--line", "#303030"), tickfont: { color: cssVar("--muted", "#b9b2aa") }, titlefont: { color: cssVar("--muted", "#b9b2aa") }, automargin: false }, yaxis: { title: "", fixedrange: true, tickfont: { color: cssVar("--muted", "#b9b2aa") }, automargin: false } }, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false }).catch(function () { node.__bpUnder500Tuned = false; });
+    window.Plotly.react(node, [{ type: "bar", orientation: "h", x: rows.map(function (row) { return row.value; }), y: rows.map(function (row) { return shortLabel(row.label); }), customdata: rows.map(function (row) { return row.label; }), marker: { color: cssVar("--orange", "#ff5a1f") }, text: rows.map(function (row) { return formatMld(row.value); }), textposition: "auto", hovertemplate: "%{customdata}<br>%{x:.3f} mld<extra></extra>" }], { height: 430, margin: { t: 6, r: 8, b: 44, l: 170 }, showlegend: false, paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: { color: cssVar("--text", "#f5f2ed"), family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", size: 12 }, xaxis: { title: "Miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030"), zerolinecolor: cssVar("--line", "#303030"), tickfont: { color: cssVar("--muted", "#b9b2aa") }, titlefont: { color: cssVar("--muted", "#b9b2aa") }, automargin: false }, yaxis: { title: "", fixedrange: true, tickfont: { color: cssVar("--muted", "#b9b2aa") }, automargin: false } }, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false }).catch(function () { node.__bpUnder500Tuned = false; });
   }
 
   function tuneAll() { PIE_IDS.forEach(tunePie); tuneUnder500(); }
