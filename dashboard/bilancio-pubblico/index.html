@@ -83,6 +83,7 @@
       <a href="#overview">Panoramica</a>
       <a href="#distribuzione">Distribuzione</a>
       <a href="#serie-storiche">Serie storiche</a>
+      <a href="#bilanci-regionali">Regioni</a>
       <a href="#focus-irpef">IRPEF</a>
       <a href="#focus-entrate">Entrate</a>
       <a href="#focus-spese">Spese</a>
@@ -192,6 +193,52 @@
           <div id="bpSpendingTrend" class="chart bp-chart" role="img" aria-label="Serie storiche spese"></div>
         </div>
         <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, classificazione COFOG. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="bp-grid-2" id="bilanci-regionali">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Bilanci regionali</h2>
+          <span>Rendiconto OpenBDAP</span>
+        </div>
+        <p>Spese, entrate, saldi e missioni delle Regioni e province autonome disponibili nel dataset.</p>
+
+        <div class="bp-filter-row" aria-label="Filtri bilanci regionali">
+          <label class="bp-filter-label" for="bpRegionalYear">
+            Anno
+            <select id="bpRegionalYear" class="bp-select"></select>
+          </label>
+          <label class="bp-filter-label" for="bpRegionalRegion">
+            Regione
+            <select id="bpRegionalRegion" class="bp-select"></select>
+          </label>
+        </div>
+
+        <div id="bpRegionalSummary" class="bp-regional-summary" aria-label="Sintesi bilancio regionale"></div>
+        <p id="bpRegionalCoverage" class="muted-note"></p>
+
+        <div class="bp-chart-wrap">
+          <div id="bpRegionalMissionChart" class="chart bp-chart bp-chart-tall" role="img" aria-label="Composizione della spesa regionale per missione"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: RGS - OpenBDAP, rendiconto della gestione delle Regioni e province autonome. Elaborazione di Nazareno Lecis.</p>
+
+        <div class="bp-chart-wrap bp-chart-wrap-secondary">
+          <div id="bpRegionalBalanceChart" class="chart bp-chart bp-chart-compact" role="img" aria-label="Entrate spese e saldo regionale"></div>
+        </div>
+
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Missione</th>
+                <th>Mld euro</th>
+                <th>Quota spesa</th>
+              </tr>
+            </thead>
+            <tbody id="bpRegionalMissionRows"></tbody>
+          </table>
+        </div>
       </article>
     </section>
 
@@ -377,6 +424,7 @@
           <li><a href="https://www.finanze.gov.it/it/statistiche-fiscali/DichiarazioniFiscali-/" target="_blank" rel="noopener">MEF Dipartimento delle Finanze - Statistiche dichiarazioni fiscali</a></li>
           <li><a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_taxag/default/table?lang=en" target="_blank" rel="noopener">Eurostat - Main national accounts tax aggregates</a></li>
           <li><a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table?lang=en" target="_blank" rel="noopener">Eurostat - General government expenditure by function (COFOG)</a></li>
+          <li><a href="https://openbdap.rgs.mef.gov.it/" target="_blank" rel="noopener">RGS - OpenBDAP, Banca Dati Amministrazioni Pubbliche</a></li>
           <li><a href="https://www.bancaditalia.it/statistiche/tematiche/conti-patrimoniali/conti-distributivi/index.html" target="_blank" rel="noopener">Banca d'Italia - Conti distributivi sulla ricchezza delle famiglie</a></li>
           <li><a href="https://www.oecd.org/en/data/datasets/global-revenue-statistics-database.html" target="_blank" rel="noopener">OECD - Global Revenue Statistics Database</a></li>
         </ul>

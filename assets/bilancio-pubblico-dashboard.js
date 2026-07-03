@@ -4,7 +4,9 @@
   var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json";
   var STATE = {
     payload: null,
-    peerMetric: "tax_pressure"
+    peerMetric: "tax_pressure",
+    regionalYear: null,
+    regionalRegion: null
   };
 
   var COLORS = [
@@ -229,6 +231,66 @@
     return toArray(rows).slice().sort(function (a, b) {
       return (toNumber(b[key]) || 0) - (toNumber(a[key]) || 0);
     });
+  }
+
+  function uniqueSorted(values, descending) {
+    var seen = {};
+    var out = [];
+    toArray(values).forEach(function (value) {
+      if (value === null || value === undefined || value === "") return;
+      var key = String(value);
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push(value);
+    });
+    out.sort(function (a, b) {
+      var an = toNumber(a);
+      var bn = toNumber(b);
+      if (an !== null && bn !== null) return descending ? bn - an : an - bn;
+      return descending
+        ? String(b).localeCompare(String(a), "it")
+        : String(a).localeCompare(String(b), "it");
+    });
+    return out;
+  }
+
+  function setSelectOptions(select, values, current, labelFormatter) {
+    if (!select) return current || null;
+    clear(select);
+    values = toArray(values);
+    if (!values.length) return null;
+    values.forEach(function (value) {
+      var option = document.createElement("option");
+      option.value = String(value);
+      option.textContent = labelFormatter ? labelFormatter(value) : String(value);
+      select.appendChild(option);
+    });
+    var selected = current !== null && current !== undefined ? String(current) : String(values[0]);
+    var allowed = values.map(function (value) { return String(value); });
+    if (allowed.indexOf(selected) < 0) selected = String(values[0]);
+    select.value = selected;
+    return selected;
+  }
+
+  function regionalRowRegion(row) {
+    return row && row.regione ? String(row.regione) : "";
+  }
+
+  function regionalRowMatches(row, region, year) {
+    return regionalRowRegion(row) === region && toNumber(row.anno) === year;
+  }
+
+  function findRegionalValue(rows, region, year) {
+    var row = toArray(rows).find(function (item) {
+      return regionalRowMatches(item, region, year);
+    });
+    return row ? toNumber(row.mld) : null;
+  }
+
+  function formatRegionalMld(value) {
+    var n = toNumber(value);
+    if (n === null) return "-";
+    return formatMld(n, Math.abs(n) < 1 ? 3 : 2);
   }
 
   function renderKpis(payload) {
@@ -683,6 +745,196 @@
     ]);
   }
 
+  function renderRegionalSummary(items) {
+    var container = byId("bpRegionalSummary");
+    if (!container) return;
+    clear(container);
+    toArray(items).forEach(function (item) {
+      var box = document.createElement("div");
+
+      var label = document.createElement("span");
+      label.textContent = item.label;
+
+      var value = document.createElement("strong");
+      value.textContent = item.value;
+
+      var detail = document.createElement("small");
+      detail.textContent = item.detail || "";
+
+      box.appendChild(label);
+      box.appendChild(value);
+      if (detail.textContent) box.appendChild(detail);
+      container.appendChild(box);
+    });
+  }
+
+  function renderRegionalBudgets(payload) {
+    var block = payload.regional_budgets || {};
+    var missionRows = toArray(block.spending_by_mission).filter(function (row) {
+      return regionalRowRegion(row) && row.missione && toNumber(row.mld) !== null;
+    });
+    var spendingRows = toArray(block.spending_by_region).filter(function (row) {
+      return regionalRowRegion(row) && toNumber(row.mld) !== null;
+    });
+    var revenueRows = toArray(block.revenue_by_region).filter(function (row) {
+      return regionalRowRegion(row) && toNumber(row.mld) !== null;
+    });
+    var balanceRows = toArray(block.balances_by_region).filter(function (row) {
+      return regionalRowRegion(row) && toNumber(row.mld) !== null;
+    });
+
+    var tableColumns = [
+      { value: function (row) { return asText(row.missione); } },
+      { value: function (row) { return formatRegionalMld(row.mld); } },
+      { value: function (row) { return formatPercent(row.share, 1); } }
+    ];
+
+    if (!missionRows.length && !spendingRows.length) {
+      showEmptyChart("bpRegionalMissionChart", "Nessun dato regionale disponibile");
+      showEmptyChart("bpRegionalBalanceChart", "Nessun dato regionale disponibile");
+      createTableRows(byId("bpRegionalMissionRows"), [], tableColumns);
+      renderRegionalSummary([]);
+      var emptyCoverage = byId("bpRegionalCoverage");
+      if (emptyCoverage) emptyCoverage.textContent = "Dati regionali non disponibili nel dataset caricato.";
+      return;
+    }
+
+    var detailYears = uniqueSorted(missionRows.map(function (row) { return toNumber(row.anno); }), true);
+    var totalYears = uniqueSorted(
+      spendingRows.concat(revenueRows).concat(balanceRows).map(function (row) { return toNumber(row.anno); }),
+      true
+    );
+    var years = detailYears.length ? detailYears : totalYears;
+    var selectedYearText = setSelectOptions(byId("bpRegionalYear"), years, STATE.regionalYear, function (value) {
+      return String(value);
+    });
+    var selectedYear = toNumber(selectedYearText);
+    STATE.regionalYear = selectedYearText;
+
+    if (selectedYear === null) {
+      showEmptyChart("bpRegionalMissionChart", "Nessun anno regionale disponibile");
+      showEmptyChart("bpRegionalBalanceChart", "Nessun anno regionale disponibile");
+      createTableRows(byId("bpRegionalMissionRows"), [], tableColumns);
+      renderRegionalSummary([]);
+      return;
+    }
+
+    var detailRegions = uniqueSorted(missionRows
+      .filter(function (row) { return toNumber(row.anno) === selectedYear; })
+      .map(regionalRowRegion), false);
+    var totalRegions = uniqueSorted(spendingRows
+      .filter(function (row) { return toNumber(row.anno) === selectedYear; })
+      .map(regionalRowRegion), false);
+    var regions = detailRegions.length ? detailRegions : totalRegions;
+    var largestRegion = spendingRows
+      .filter(function (row) { return toNumber(row.anno) === selectedYear; })
+      .sort(function (a, b) { return (toNumber(b.mld) || 0) - (toNumber(a.mld) || 0); })[0];
+    var selectedRegion = setSelectOptions(
+      byId("bpRegionalRegion"),
+      regions,
+      STATE.regionalRegion || (largestRegion && regionalRowRegion(largestRegion)) || regions[0],
+      function (value) { return String(value); }
+    );
+    STATE.regionalRegion = selectedRegion;
+
+    var spendingValue = findRegionalValue(spendingRows, selectedRegion, selectedYear);
+    var revenueValue = findRegionalValue(revenueRows, selectedRegion, selectedYear);
+    var balanceValue = findRegionalValue(balanceRows, selectedRegion, selectedYear);
+    if (balanceValue === null && revenueValue !== null && spendingValue !== null) {
+      balanceValue = revenueValue - spendingValue;
+    }
+
+    renderRegionalSummary([
+      { label: "Spese", value: formatRegionalMld(spendingValue), detail: "Rendiconto " + selectedYear },
+      { label: "Entrate", value: formatRegionalMld(revenueValue), detail: "Rendiconto " + selectedYear },
+      { label: "Saldo", value: formatRegionalMld(balanceValue), detail: "Entrate - spese" }
+    ]);
+
+    var coverage = toArray(block.coverage).find(function (row) {
+      return toNumber(row.anno) === selectedYear;
+    });
+    var coverageNode = byId("bpRegionalCoverage");
+    if (coverageNode) {
+      var coverageText = coverage
+        ? "Copertura " + selectedYear + ": " + formatPlain(coverage.regioni_presenti, 0) + " regioni su " +
+          formatPlain(coverage.regioni_attese, 0) + "."
+        : "Copertura non indicata per " + selectedYear + ".";
+      var missing = toArray(coverage && coverage.regioni_mancanti);
+      if (missing.length) coverageText += " Mancano: " + missing.join(", ") + ".";
+      if (detailYears.length && totalYears.length > detailYears.length) {
+        coverageText += " Il dettaglio per missione e' disponibile per " + detailYears.join(", ") + ".";
+      }
+      coverageNode.textContent = coverageText;
+    }
+
+    var selectedMissionRows = missionRows
+      .filter(function (row) { return regionalRowMatches(row, selectedRegion, selectedYear); })
+      .filter(function (row) { return toNumber(row.mld) !== null && toNumber(row.mld) > 0; })
+      .sort(function (a, b) { return (toNumber(b.mld) || 0) - (toNumber(a.mld) || 0); });
+    var missionTotal = spendingValue !== null
+      ? spendingValue
+      : selectedMissionRows.reduce(function (sum, row) { return sum + (toNumber(row.mld) || 0); }, 0);
+    selectedMissionRows = selectedMissionRows.map(function (row) {
+      return Object.assign({}, row, {
+        share: missionTotal ? (toNumber(row.mld) || 0) / missionTotal * 100 : null
+      });
+    });
+
+    if (selectedMissionRows.length) {
+      var mobile = isMobileViewport();
+      var chartRows = selectedMissionRows.slice(0, mobile ? 10 : 16).reverse();
+      plot("bpRegionalMissionChart", [{
+        type: "bar",
+        orientation: "h",
+        name: "Miliardi di euro",
+        x: chartRows.map(function (row) { return toNumber(row.mld); }),
+        y: chartRows.map(function (row) { return compactLabel(row.missione, mobile ? 28 : 54); }),
+        marker: { color: cssVar("--orange", COLORS[0]) },
+        text: mobile ? [] : chartRows.map(function (row) { return formatRegionalMld(row.mld); }),
+        textposition: mobile ? "none" : "outside",
+        cliponaxis: false,
+        customdata: chartRows.map(function (row) {
+          return [asText(row.missione), toNumber(row.share)];
+        }),
+        hovertemplate: "%{customdata[0]}<br>Miliardi di euro: %{x:.3f}<br>Quota spesa: %{customdata[1]:.1f}%<extra></extra>"
+      }], {
+        margin: { t: 18, r: mobile ? 24 : 84, b: 54, l: mobile ? 142 : 300 },
+        xaxis: { title: "Miliardi di euro", rangemode: "tozero" },
+        yaxis: { title: "", showgrid: false },
+        showlegend: false
+      });
+    } else {
+      showEmptyChart("bpRegionalMissionChart", "Nessun dettaglio per missione disponibile per la selezione");
+    }
+
+    var balanceItems = [
+      { label: "Entrate", value: revenueValue, color: COLORS[2] },
+      { label: "Spese", value: spendingValue, color: cssVar("--orange", COLORS[0]) },
+      { label: "Saldo", value: balanceValue, color: (balanceValue || 0) >= 0 ? COLORS[1] : COLORS[5] }
+    ].filter(function (item) { return toNumber(item.value) !== null; });
+    if (balanceItems.length) {
+      plot("bpRegionalBalanceChart", [{
+        type: "bar",
+        orientation: "h",
+        x: balanceItems.map(function (item) { return toNumber(item.value); }),
+        y: balanceItems.map(function (item) { return item.label; }),
+        marker: { color: balanceItems.map(function (item) { return item.color; }) },
+        text: balanceItems.map(function (item) { return formatRegionalMld(item.value); }),
+        textposition: "auto",
+        hovertemplate: "%{y}<br>%{x:.3f} mld<extra></extra>"
+      }], {
+        margin: { t: 18, r: 28, b: 52, l: 82 },
+        xaxis: { title: "Miliardi di euro", zeroline: true },
+        yaxis: { title: "", autorange: "reversed", showgrid: false },
+        showlegend: false
+      });
+    } else {
+      showEmptyChart("bpRegionalBalanceChart", "Nessun totale regionale disponibile per la selezione");
+    }
+
+    createTableRows(byId("bpRegionalMissionRows"), selectedMissionRows, tableColumns);
+  }
+
   function normalizePeerRows(payload) {
     var metric = PEER_METRICS[STATE.peerMetric] || PEER_METRICS.tax_pressure;
     return toArray(payload.peer)
@@ -762,6 +1014,7 @@
     renderUnder500(payload);
     renderRevenueGaps(payload);
     renderSpendingFocus(payload);
+    renderRegionalBudgets(payload);
     renderPeer(payload);
   }
 
@@ -772,6 +1025,23 @@
       STATE.peerMetric = select.value;
       if (STATE.payload) renderPeer(STATE.payload);
     });
+  }
+
+  function initRegionalControls() {
+    var yearSelect = byId("bpRegionalYear");
+    var regionSelect = byId("bpRegionalRegion");
+    if (yearSelect) {
+      yearSelect.addEventListener("change", function () {
+        STATE.regionalYear = yearSelect.value;
+        if (STATE.payload) renderRegionalBudgets(STATE.payload);
+      });
+    }
+    if (regionSelect) {
+      regionSelect.addEventListener("change", function () {
+        STATE.regionalRegion = regionSelect.value;
+        if (STATE.payload) renderRegionalBudgets(STATE.payload);
+      });
+    }
   }
 
   function initThemeObserver() {
@@ -789,6 +1059,7 @@
 
   function init() {
     initPeerControl();
+    initRegionalControls();
     initThemeObserver();
 
     var status = byId("bpStatus");
@@ -808,7 +1079,8 @@
         [
           "bpTopTaxes", "bpTaxTrend", "bpRevenuePie", "bpSpendingPie",
           "bpRevenueTrend", "bpSpendingTrend", "bpIrpefBandChart",
-          "bpTaxTypeTrend", "bpUnder500Chart", "bpPeerBars"
+          "bpTaxTypeTrend", "bpUnder500Chart", "bpRegionalMissionChart",
+          "bpRegionalBalanceChart", "bpPeerBars"
         ].forEach(function (id) {
           showEmptyChart(id, "Dati non caricati");
         });
