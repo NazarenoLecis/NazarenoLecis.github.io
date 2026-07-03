@@ -281,7 +281,7 @@
       </div>
 
       <div class="selection-comment">
-        <strong>Nota di lettura.</strong> La presenza di condizionamento o ventilazione è un dato dichiarato nel campo MIM <code>CONDIZIONAMENTOVENTILAZIONE</code>. Non misura la temperatura in aula e non garantisce che tutte le aule siano raffrescate.
+        <strong>Nota di lettura.</strong> La presenza di condizionamento o ventilazione è un dato dichiarato nel dataset MIM sugli impianti. Non misura la temperatura in aula e non garantisce che tutte le aule siano raffrescate.
       </div>
     </section>
 
@@ -360,9 +360,9 @@
       <div>
         <h2>Note metodologiche</h2>
         <ul>
-          <li>Le unità del grafico sono edifici nel perimetro modellato, deduplicati su <code>CODICEEDIFICIO</code>. Il file sorgente MIM degli impianti contiene anche il conteggio verificato di <code>CODICEEDIFICIO</code> e <code>CODICESCUOLA</code> distinti.</li>
+          <li>Le unità del grafico sono edifici distinti nel perimetro modellato. La fonte è il Ministero dell'Istruzione e del Merito, Anagrafe edilizia scolastica, dataset sugli impianti di riscaldamento e condizionamento 2024/2025 (file <code>EDITIPORISCSTA202120242520250806.csv</code>).</li>
           <li>La quota A/C dichiarata usa come denominatore tutti gli edifici, compresi i valori <code>NON DEFINITO</code>, per mantenere confrontabile la base regionale.</li>
-          <li>Il campo diretto è <code>CONDIZIONAMENTOVENTILAZIONE</code>, con valori SI, NO o NON DEFINITO nel dataset MIM sugli impianti.</li>
+          <li>Nel dataset MIM sugli impianti, la variabile su condizionamento e ventilazione ha valori SI, NO o NON DEFINITO.</li>
           <li>Rischio caldo e mitigazione termica sono proxy del repository. Usano indicatori MIM su impianti, doppi vetri, isolamento, riduzione dei consumi, posizione comunale e studenti esposti.</li>
           <li>Il grafico PNRR usa un JSON aggregato regionale leggero, derivato dai progetti 2021-2027 classificati come efficientamento energetico, comfort termico o mitigazione caldo.</li>
           <li>Le classi di rischio indicano priorità di intervento. Non sono misure fisiche della temperatura dentro le aule.</li>
