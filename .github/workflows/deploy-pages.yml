@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -43,5 +43,3 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5
-        with:
-          timeout: 600000
