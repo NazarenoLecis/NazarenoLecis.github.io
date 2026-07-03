@@ -1,7 +1,7 @@
 ﻿(function () {
   "use strict";
 
-  var DATA_URL = "../../data/bilancio-pubblico/dashboard.json?v=20260703-cofog-detail";
+  var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-pressure-split";
   var MISSING_VALUE = "ND";
   var STATE = {
     payload: null,

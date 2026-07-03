@@ -1,7 +1,7 @@
 ﻿(function () {
   "use strict";
 
-  var DATA_URL = "../../data/bilancio-pubblico/dashboard.json?v=20260703-cofog-detail";
+  var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-pressure-split";
   var state = { metric: "mld", yearWindow: "all" };
   var fallbackOptions = [
     { id: "mld", label: "Miliardi correnti", field: "mld", unit: "mld", axis: "Miliardi di euro correnti", source: "Fonte: Eurostat gov_10a_exp, classificazione COFOG" },
