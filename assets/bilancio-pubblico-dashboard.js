@@ -92,6 +92,17 @@
       .trim();
   }
 
+  function compactLabel(value, maxLength) {
+    var text = asText(value);
+    maxLength = maxLength || 48;
+    if (text.length <= maxLength) return text;
+    return text.slice(0, Math.max(0, maxLength - 3)).trim() + "...";
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+  }
+
   function clear(node) {
     if (!node) return;
     while (node.firstChild) node.removeChild(node.firstChild);
@@ -531,45 +542,76 @@
     });
 
     if (entries.length) {
-      var chartRows = entries.slice(0, 24).reverse();
+      var chartRows = entries.slice(0, 24);
+      var mobile = isMobileViewport();
+      var values = chartRows.map(function (row) { return toNumber(row.value_mld !== undefined ? row.value_mld : row.value); });
+      var yValues = chartRows.map(function (row, index) { return index; });
+      var yLabels = chartRows.map(function (row) {
+        return compactLabel(row.label || row.code, mobile ? 25 : 58);
+      });
+      var valueTexts = chartRows.map(function (row) {
+        return formatMld(row.value_mld !== undefined ? row.value_mld : row.value, 2);
+      });
       var cumulative = [];
       var running = 0;
       chartRows.forEach(function (row) {
-        running += toNumber(row.value_mld) || 0;
+        running += toNumber(row.value_mld !== undefined ? row.value_mld : row.value) || 0;
         cumulative.push(running);
       });
+      var numericValues = values.filter(function (value) { return value !== null; });
+      var maxValue = numericValues.length ? Math.max.apply(null, numericValues) : 1;
+      var totalValue = cumulative.length ? cumulative[cumulative.length - 1] : 0;
       plot("bpUnder500Chart", [
         {
           type: "bar",
+          orientation: "h",
           name: "Valore",
-          x: chartRows.map(function (row) { return asText(row.label || row.code); }),
-          y: chartRows.map(function (row) { return toNumber(row.value_mld); }),
+          x: values,
+          y: yValues,
           marker: { color: cssVar("--orange", COLORS[0]) },
-          hovertemplate: "%{x}<br>%{y:.3f} mld<extra></extra>"
+          text: mobile ? [] : valueTexts,
+          textposition: mobile ? "none" : "outside",
+          cliponaxis: false,
+          customdata: chartRows.map(function (row) { return asText(row.label || row.code); }),
+          hovertemplate: "%{customdata}<br>Valore: %{x:.3f} mld<extra></extra>"
         },
         {
           type: "scatter",
           mode: "lines+markers",
           name: "Cumulo",
-          x: chartRows.map(function (row) { return asText(row.label || row.code); }),
-          y: cumulative,
-          yaxis: "y2",
+          x: cumulative,
+          y: yValues,
+          xaxis: "x2",
           line: { color: COLORS[1], width: 3 },
           marker: { size: 6 },
-          hovertemplate: "%{x}<br>Cumulo: %{y:.3f} mld<extra></extra>"
+          customdata: chartRows.map(function (row) { return asText(row.label || row.code); }),
+          hovertemplate: "%{customdata}<br>Cumulo: %{x:.3f} mld<extra></extra>"
         }
       ], {
-        margin: { t: 18, r: 72, b: 112, l: 58 },
-        xaxis: { title: "", tickangle: -35 },
-        yaxis: { title: "Miliardi" },
-        yaxis2: {
+        margin: { t: 58, r: mobile ? 28 : 72, b: 66, l: mobile ? 128 : 290 },
+        xaxis: {
+          title: "Miliardi di euro",
+          range: [0, maxValue * (mobile ? 1.7 : 1.15)],
+          rangemode: "tozero"
+        },
+        xaxis2: {
           title: "Cumulo",
-          overlaying: "y",
-          side: "right",
+          overlaying: "x",
+          side: "top",
           fixedrange: true,
+          range: [0, totalValue * (mobile ? 2 : 1.08)],
+          rangemode: "tozero",
           gridcolor: "rgba(0,0,0,0)"
         },
-        legend: { orientation: "h", y: -0.35 }
+        yaxis: {
+          title: "",
+          range: [chartRows.length - 0.5, -0.5],
+          tickmode: "array",
+          tickvals: yValues,
+          ticktext: yLabels,
+          showgrid: false
+        },
+        legend: { orientation: "h", y: -0.2 }
       });
     } else {
       showEmptyChart("bpUnder500Chart", "Nessuna voce sotto 500 milioni disponibile");

@@ -235,6 +235,17 @@
   display: none !important;
 }
 
+@media (min-width: 1081px) {
+  .bp-grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .bp-chart {
+    min-height: 520px;
+  }
+}
+
 @media (max-width: 1080px) {
   .bp-dashboard .dash-head {
     grid-template-columns: 1fr;
@@ -272,8 +283,23 @@
     padding: 16px;
   }
 
+  .bp-card-title {
+    display: block;
+  }
+
+  .bp-card-title span,
+  .bp-select-label {
+    display: block;
+    margin-top: 6px;
+  }
+
   .bp-chart {
     min-height: 330px;
+  }
+
+  #bpUnder500Chart.bp-chart {
+    min-width: 100%;
+    min-height: 420px;
   }
 
   .bp-select {
