@@ -190,7 +190,7 @@
         <span class="eyebrow">Ciclo unico scolastico</span>
         <h1>Scuole, caldo e climatizzazione</h1>
         <p class="lead">
-          Dashboard sui dati MIM degli impianti di riscaldamento e condizionamento. Il grafico mostra la quota di righe scuola edificio con condizionamento o ventilazione dichiarati, per regione e grado scolastico, insieme ad alcuni indicatori termici usati nello scenario del repository.
+          Dashboard sui dati MIM degli impianti di riscaldamento e condizionamento. Il grafico mostra la quota di edifici con condizionamento o ventilazione dichiarati, per regione e grado scolastico, distinguendo il perimetro modellato dai conteggi unici del file sorgente.
         </p>
       </div>
       <div class="source-panel">
@@ -200,6 +200,7 @@
           <span>Dataset MIM di edilizia scolastica, impianti, origine degli edifici e indicatori energetici.</span>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
           <a class="related-link" href="../../articoli/calendario-scolastico-vacanze-estive.html">Leggi l'articolo collegato</a>
+          <a class="related-link" href="https://data.nazarenolecis.com/ciclo-unico-caldo/registro_verifica_dataset_mim.json" target="_blank" rel="noopener">Apri registro verifiche R2</a>
           <a class="related-link" href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">Apri repository dati</a>
         </div>
       </div>
@@ -209,7 +210,7 @@
       <div class="workflow-step">
         <span>1</span>
         <h2>Scegli il grado</h2>
-        <p>Il menu permette di leggere tutte le righe MIM insieme oppure separare infanzia, primaria, secondaria di primo grado e secondaria di secondo grado.</p>
+        <p>Il menu permette di leggere tutti gli edifici del perimetro insieme oppure separare infanzia, primaria, secondaria di primo grado e secondaria di secondo grado.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
@@ -261,7 +262,8 @@
       </details>
 
       <div class="kpi-grid" aria-label="Indicatori sintetici">
-        <div class="kpi"><span>Righe MIM nel perimetro</span><strong id="kpiSites">-</strong></div>
+        <div class="kpi"><span>Edifici nel perimetro</span><strong id="kpiSites">-</strong></div>
+        <div class="kpi"><span>Edifici unici sorgente</span><strong id="kpiSourceBuildings">-</strong></div>
         <div class="kpi"><span>A/C dichiarata</span><strong id="kpiAcData">-</strong></div>
         <div class="kpi"><span>Mitigazione media/alta</span><strong id="kpiMitigation">-</strong></div>
         <div class="kpi"><span>Rischio caldo alto</span><strong id="kpiRisk">-</strong></div>
@@ -288,7 +290,7 @@
         <span class="eyebrow">Investimenti recenti</span>
         <div>
           <h2>PNRR clima/energia rispetto allo stock scolastico</h2>
-          <p>Il grafico mette a 100 le righe scuola-edificio MIM di ogni regione e mostra i progetti PNRR 2021-2027 collegati a efficientamento energetico, comfort termico o mitigazione caldo.</p>
+          <p>Il grafico mette a 100 gli edifici del perimetro di ogni regione e mostra i progetti PNRR 2021-2027 collegati a efficientamento energetico, comfort termico o mitigazione caldo.</p>
         </div>
       </div>
 
@@ -311,8 +313,8 @@
 
       <div class="chart-panel main-chart">
         <div class="panel-title">
-          <h2 id="pnrrChartTitle">Progetti clima/energia per 100 scuole-edificio</h2>
-          <span id="pnrrChartNote">progetti 2021-2027 / righe MIM per regione</span>
+          <h2 id="pnrrChartTitle">Progetti clima/energia per 100 edifici</h2>
+          <span id="pnrrChartNote">progetti 2021-2027 / edifici per regione</span>
         </div>
         <div class="chart">
           <svg id="pnrrChart" role="img" aria-labelledby="pnrrChartTitle"></svg>
@@ -321,7 +323,7 @@
       </div>
 
       <div class="selection-comment" id="pnrrComment">
-        <strong>Nota di lettura.</strong> Il valore e' una proxy territoriale: progetti PNRR clima/energia per 100 righe scuola-edificio MIM del grado selezionato.
+        <strong>Nota di lettura.</strong> Il valore e' una proxy territoriale: progetti PNRR clima/energia per 100 edifici del grado selezionato.
       </div>
     </section>
 
@@ -339,7 +341,7 @@
             <thead>
               <tr>
                 <th>Regione</th>
-                <th>Righe MIM</th>
+                <th>Edifici</th>
                 <th>A/C dichiarata</th>
                 <th>A/C non definita</th>
                 <th>Mitigazione media/alta</th>
@@ -358,8 +360,8 @@
       <div>
         <h2>Note metodologiche</h2>
         <ul>
-          <li>Le unità sono righe scuola edificio del dataset MIM. Non coincidono sempre con istituti scolastici o edifici fisici unici.</li>
-          <li>La quota A/C dichiarata usa come denominatore tutte le righe, compresi i valori <code>NON DEFINITO</code>, per mantenere confrontabile la base regionale.</li>
+          <li>Le unità del grafico sono edifici nel perimetro modellato, deduplicati su <code>CODICEEDIFICIO</code>. Il file sorgente MIM degli impianti contiene anche il conteggio verificato di <code>CODICEEDIFICIO</code> e <code>CODICESCUOLA</code> distinti.</li>
+          <li>La quota A/C dichiarata usa come denominatore tutti gli edifici, compresi i valori <code>NON DEFINITO</code>, per mantenere confrontabile la base regionale.</li>
           <li>Il campo diretto è <code>CONDIZIONAMENTOVENTILAZIONE</code>, con valori SI, NO o NON DEFINITO nel dataset MIM sugli impianti.</li>
           <li>Rischio caldo e mitigazione termica sono proxy del repository. Usano indicatori MIM su impianti, doppi vetri, isolamento, riduzione dei consumi, posizione comunale e studenti esposti.</li>
           <li>Il grafico PNRR usa un JSON aggregato regionale leggero, derivato dai progetti 2021-2027 classificati come efficientamento energetico, comfort termico o mitigazione caldo.</li>
@@ -368,7 +370,7 @@
       </div>
       <div>
         <h2>Fonti e repository</h2>
-        <p>Fonte principale: MIM, Portale unico dei dati della scuola, dataset di edilizia scolastica e impianti.</p>
+        <p>Fonte principale: MIM, Portale unico dei dati della scuola, dataset di edilizia scolastica e impianti. Il registro pubblicato su R2 riporta anno scolastico, data file, chiave di verifica, duplicati e conteggi distinti.</p>
         <p>Fonti territoriali e di scenario: Istat per comuni e popolazione, repository <a class="related-link" href="https://github.com/NazarenoLecis/Ciclo_unico_scolastico" target="_blank" rel="noopener">NazarenoLecis/Ciclo_unico_scolastico</a> per pipeline, proxy e aggregazioni.</p>
         <p>Dettaglio PNRR/OpenCoesione: <a class="related-link" href="https://data.nazarenolecis.com/ciclo-unico-caldo/dashboard_caldo_pnrr_projects.json" target="_blank" rel="noopener">progetti clima/energia per edilizia scolastica</a>.</p>
         <p>Elaborazione di Nazareno Lecis.</p>

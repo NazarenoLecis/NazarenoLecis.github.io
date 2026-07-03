@@ -15,17 +15,17 @@
     quota_aria_condizionata_si: {
       label: "Quota scuole-edifici con A/C dichiarata",
       color: "warning",
-      note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, su tutte le righe comprese quelle NON DEFINITO."
+      note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, su tutti gli edifici compresi quelli NON DEFINITO."
     },
     quota_aria_condizionata_si_su_definiti: {
       label: "Quota A/C sui soli SI/NO",
       color: "warning",
-      note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, escludendo le righe NON DEFINITO dal denominatore."
+      note: "Campo MIM CONDIZIONAMENTOVENTILAZIONE=SI, escludendo gli edifici NON DEFINITO dal denominatore."
     },
     quota_aria_condizionata_non_definito: {
       label: "Quota A/C non definita",
       color: "danger",
-      note: "Righe MIM in cui il campo CONDIZIONAMENTOVENTILAZIONE e' NON DEFINITO o non compilato."
+      note: "Edifici in cui il campo CONDIZIONAMENTOVENTILAZIONE e' NON DEFINITO o non compilato."
     },
     quota_mitigazione_media_alta: {
       label: "Quota con mitigazione termica media o alta",
@@ -143,7 +143,9 @@
   function updateKpis(grade) {
     var totals = totalsForGrade(grade);
     var denominator = totals.righe_mim || 1;
+    var metadata = state.data && state.data.metadata ? state.data.metadata : {};
     byId("kpiSites").textContent = formatNumber(totals.righe_mim);
+    byId("kpiSourceBuildings").textContent = formatNumber(metadata.source_unique_buildings);
     byId("kpiAcData").textContent = formatPercent(totals.aria_condizionata_si / denominator * 100);
     byId("kpiMitigation").textContent = formatPercent((totals.mitigazione_alta + totals.mitigazione_media) / denominator * 100);
     byId("kpiRisk").textContent = formatPercent(totals.rischio_caldo_alto / denominator * 100);
@@ -271,8 +273,8 @@
 
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
     svg.innerHTML = html;
-    byId("pnrrChartTitle").textContent = t("Progetti clima/energia per 100 scuole-edificio");
-    byId("pnrrChartNote").textContent = t("progetti 2021-2027 / righe MIM per regione") + " - " + t(grade);
+    byId("pnrrChartTitle").textContent = t("Progetti clima/energia per 100 edifici");
+    byId("pnrrChartNote").textContent = t("progetti 2021-2027 / edifici per regione") + " - " + t(grade);
     return sorted;
   }
 
@@ -294,7 +296,7 @@
     });
     var topText = top ? " " + t("La regione con intensita' piu' alta e'") + " <strong>" + escapeHtml(top.regione) + "</strong> (" + formatRate(top.per_100) + ")." : "";
     comment.innerHTML = "<strong>" + escapeHtml(t("Nota di lettura.")) + "</strong> " +
-      escapeHtml(t("Il valore e' una proxy territoriale: progetti PNRR clima/energia per 100 righe scuola-edificio MIM del grado selezionato.")) + " " +
+      escapeHtml(t("Il valore e' una proxy territoriale: progetti PNRR clima/energia per 100 edifici del grado selezionato.")) + " " +
       escapeHtml(t("Nel perimetro selezionato il numeratore resta regionale, mentre il denominatore cambia con il grado scolastico.")) + " " +
       escapeHtml(t("Totale progetti considerati:")) + " <strong>" + formatNumber(totalProjects) + "</strong>, " +
       escapeHtml(t("valore finanziato:")) + " <strong>" + formatCurrency(totalCost) + "</strong>." + topText;
