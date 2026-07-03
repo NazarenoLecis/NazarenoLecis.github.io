@@ -535,37 +535,80 @@
     ]);
   }
 
+  function revenueEntryValue(row) {
+    if (!row) return null;
+    if (row.value_mld !== undefined) return toNumber(row.value_mld);
+    if (row.latest_value_mld !== undefined) return toNumber(row.latest_value_mld);
+    return toNumber(row.value);
+  }
+
+  function revenueEntryYear(row, fallback) {
+    return row && (row.latest_year || row.year) ? (row.latest_year || row.year) : fallback;
+  }
+
+  function under500Key(row) {
+    return [
+      asText(row && (row.code || row.label), ""),
+      asText(row && row.source, ""),
+      asText(row && (row.year || row.latest_year), "")
+    ].join("|").toLowerCase();
+  }
+
+  function collectUnder500Entries(payload, block) {
+    var threshold = toNumber(block && block.threshold_mld) || 0.5;
+    var entriesByKey = {};
+
+    function addEntry(row, fallbackYear) {
+      var value = revenueEntryValue(row);
+      if (!row || value === null || value <= 0 || value >= threshold || row.status) return;
+      var normalized = Object.assign({}, row, {
+        year: revenueEntryYear(row, fallbackYear),
+        value_mld: value
+      });
+      entriesByKey[under500Key(normalized)] = normalized;
+    }
+
+    toArray(block && block.entries).forEach(function (row) {
+      addEntry(row, block && block.year);
+    });
+    toArray(payload.all_revenue_lines).forEach(function (row) {
+      addEntry(row, block && block.year);
+    });
+    if (!Object.keys(entriesByKey).length) {
+      toArray(payload.revenue_items).forEach(function (row) {
+        addEntry(row, block && block.year);
+      });
+    }
+
+    return Object.keys(entriesByKey).map(function (key) {
+      return entriesByKey[key];
+    }).sort(function (a, b) {
+      return (revenueEntryValue(b) || 0) - (revenueEntryValue(a) || 0);
+    });
+  }
+
   function renderUnder500(payload) {
     var block = payload.under_500m_revenue_summary || {};
-    var entries = toArray(block.entries).slice().sort(function (a, b) {
-      return (toNumber(b.value_mld) || 0) - (toNumber(a.value_mld) || 0);
-    });
+    var entries = collectUnder500Entries(payload, block);
 
     if (entries.length) {
       var chartRows = entries.slice(0, 24);
       var mobile = isMobileViewport();
-      var values = chartRows.map(function (row) { return toNumber(row.value_mld !== undefined ? row.value_mld : row.value); });
+      var values = chartRows.map(function (row) { return revenueEntryValue(row); });
       var yValues = chartRows.map(function (row, index) { return index; });
       var yLabels = chartRows.map(function (row) {
         return compactLabel(row.label || row.code, mobile ? 25 : 58);
       });
       var valueTexts = chartRows.map(function (row) {
-        return formatMld(row.value_mld !== undefined ? row.value_mld : row.value, 2);
-      });
-      var cumulative = [];
-      var running = 0;
-      chartRows.forEach(function (row) {
-        running += toNumber(row.value_mld !== undefined ? row.value_mld : row.value) || 0;
-        cumulative.push(running);
+        return formatMld(revenueEntryValue(row), 2);
       });
       var numericValues = values.filter(function (value) { return value !== null; });
       var maxValue = numericValues.length ? Math.max.apply(null, numericValues) : 1;
-      var totalValue = cumulative.length ? cumulative[cumulative.length - 1] : 0;
       plot("bpUnder500Chart", [
         {
           type: "bar",
           orientation: "h",
-          name: "Valore",
+          name: "Miliardi di euro",
           x: values,
           y: yValues,
           marker: { color: cssVar("--orange", COLORS[0]) },
@@ -573,35 +616,14 @@
           textposition: mobile ? "none" : "outside",
           cliponaxis: false,
           customdata: chartRows.map(function (row) { return asText(row.label || row.code); }),
-          hovertemplate: "%{customdata}<br>Valore: %{x:.3f} mld<extra></extra>"
-        },
-        {
-          type: "scatter",
-          mode: "lines+markers",
-          name: "Cumulo",
-          x: cumulative,
-          y: yValues,
-          xaxis: "x2",
-          line: { color: COLORS[1], width: 3 },
-          marker: { size: 6 },
-          customdata: chartRows.map(function (row) { return asText(row.label || row.code); }),
-          hovertemplate: "%{customdata}<br>Cumulo: %{x:.3f} mld<extra></extra>"
+          hovertemplate: "%{customdata}<br>Miliardi di euro: %{x:.3f}<extra></extra>"
         }
       ], {
-        margin: { t: 58, r: mobile ? 28 : 72, b: 66, l: mobile ? 128 : 290 },
+        margin: { t: 20, r: mobile ? 24 : 72, b: 58, l: mobile ? 128 : 290 },
         xaxis: {
           title: "Miliardi di euro",
-          range: [0, maxValue * (mobile ? 1.7 : 1.15)],
+          range: [0, maxValue * (mobile ? 1.25 : 1.15)],
           rangemode: "tozero"
-        },
-        xaxis2: {
-          title: "Cumulo",
-          overlaying: "x",
-          side: "top",
-          fixedrange: true,
-          range: [0, totalValue * (mobile ? 2 : 1.08)],
-          rangemode: "tozero",
-          gridcolor: "rgba(0,0,0,0)"
         },
         yaxis: {
           title: "",
@@ -611,7 +633,7 @@
           ticktext: yLabels,
           showgrid: false
         },
-        legend: { orientation: "h", y: -0.2 }
+        showlegend: false
       });
     } else {
       showEmptyChart("bpUnder500Chart", "Nessuna voce sotto 500 milioni disponibile");
@@ -619,16 +641,22 @@
 
     createTableRows(byId("bpUnder500Rows"), entries, [
       { value: function (row) { return asText(row.label || row.code); } },
-      { value: function (row) { return asText(row.year || block.year); } },
-      { value: function (row) { return formatMld(row.value_mld || row.value, 2); } },
+      { value: function (row) { return asText(revenueEntryYear(row, block.year)); } },
+      { value: function (row) { return formatMld(revenueEntryValue(row), 2); } },
       { value: function (row) { return formatPercent(row.share_of_total_percent || row.share_percent, 2); } }
     ]);
 
     var meta = byId("bpUnder500Meta");
     if (!meta) return;
     if (entries.length) {
-      meta.textContent = "Totale sotto 500 milioni: " + formatMld(block.under_500_total_mld, 2) +
-        " (" + formatPercent(block.under_500_share_of_total_percent, 2) + " del totale).";
+      var total = entries.reduce(function (sum, row) {
+        return sum + (revenueEntryValue(row) || 0);
+      }, 0);
+      var shareText = toNumber(block.under_500_share_of_total_percent) !== null && toArray(block.entries).length === entries.length
+        ? " (" + formatPercent(block.under_500_share_of_total_percent, 2) + " del totale)"
+        : "";
+      meta.textContent = "Voci sotto 500 milioni nel dataset caricato: " + entries.length +
+        ". Totale: " + formatMld(total, 2) + shareText + ".";
     } else {
       meta.textContent = asText(block.note, "Nessuna voce sotto soglia nell'elaborazione corrente.");
     }
