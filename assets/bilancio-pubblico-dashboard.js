@@ -1473,22 +1473,52 @@
   }
 
   function peerMetricOptions(payload) {
-    var options = Object.keys(PEER_METRICS).map(function (key) {
+    var sourceOptions = toArray(payload.peer_spending_function_options);
+    var hasSocialCofog = sourceOptions.some(function (item) {
+      return asText(item.id || item.cofog_code, "") === "GF10";
+    });
+    var options = Object.keys(PEER_METRICS).filter(function (key) {
+      return !(key === "social_spending" && hasSocialCofog);
+    }).map(function (key) {
       return Object.assign({ id: key, group: "Indicatori principali" }, PEER_METRICS[key]);
     });
-    toArray(payload.peer_spending_function_options).forEach(function (item) {
+
+    var macroItems = [];
+    var detailItemsByParent = {};
+    sourceOptions.forEach(function (item) {
       var code = asText(item.id || item.cofog_code, "");
       if (!code) return;
       var level = toNumber(item.level || item.cofog_level);
-      var parent = asText(item.parent_label, "");
+      if (level === 1) {
+        macroItems.push(item);
+        return;
+      }
+      var parentCode = asText(item.parent_code, "");
+      if (!detailItemsByParent[parentCode]) detailItemsByParent[parentCode] = [];
+      detailItemsByParent[parentCode].push(item);
+    });
+
+    function addCofogOption(item, parentLabel) {
+      var code = asText(item.id || item.cofog_code, "");
+      var level = toNumber(item.level || item.cofog_level);
       var label = asText(item.label || item.cofog_label || code);
+      var macroLabel = code === "GF10" ? "Spesa sociale" : label;
       options.push({
         id: "cofog:" + code,
-        label: level === 2 && parent ? parent + " - " + label : "Aggregata - " + label,
-        group: level === 2 ? "Spesa COFOG - voci granulari" : "Spesa COFOG - macro aggregate",
+        label: level === 2 && parentLabel ? parentLabel + " - " + label : macroLabel,
+        group: "Spesa per funzione COFOG",
         unit: item.unit || "% PIL",
         year: "year",
         cofogCode: code
+      });
+    }
+
+    macroItems.forEach(function (macro) {
+      var macroCode = asText(macro.id || macro.cofog_code, "");
+      var macroLabel = macroCode === "GF10" ? "Spesa sociale" : asText(macro.label || macro.cofog_label || macroCode);
+      addCofogOption(macro);
+      toArray(detailItemsByParent[macroCode]).forEach(function (detail) {
+        addCofogOption(detail, macroLabel);
       });
     });
     return options;
@@ -1506,7 +1536,9 @@
     var options = peerMetricOptions(payload);
     var current = STATE.peerMetric;
     if (!options.some(function (option) { return option.id === current; })) {
-      current = "tax_pressure";
+      current = current === "social_spending" && options.some(function (option) { return option.id === "cofog:GF10"; })
+        ? "cofog:GF10"
+        : "tax_pressure";
       STATE.peerMetric = current;
     }
     if (!select) {
@@ -1519,7 +1551,7 @@
       if (!byGroup[option.group]) byGroup[option.group] = [];
       byGroup[option.group].push(option);
     });
-    ["Indicatori principali", "Spesa COFOG - macro aggregate", "Spesa COFOG - voci granulari"].forEach(function (groupName) {
+    ["Indicatori principali", "Spesa per funzione COFOG"].forEach(function (groupName) {
       var groupOptions = byGroup[groupName] || [];
       if (!groupOptions.length) return;
       var group = document.createElement("optgroup");
