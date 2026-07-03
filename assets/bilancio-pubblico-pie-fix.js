@@ -151,6 +151,15 @@
     });
   }
 
+  function loadSpendingOptionsScript() {
+    if (document.querySelector("script[data-bp-spending-options]")) return;
+    var script = document.createElement("script");
+    script.defer = true;
+    script.dataset.bpSpendingOptions = "true";
+    script.src = "../../assets/bilancio-pubblico-spending-options.js";
+    document.body.appendChild(script);
+  }
+
   function observeCharts() {
     if (!window.MutationObserver) return;
     OBSERVED_CHART_IDS.forEach(function (id) {
@@ -168,10 +177,12 @@
     document.addEventListener("DOMContentLoaded", function () {
       schedule();
       observeCharts();
+      loadSpendingOptionsScript();
     });
   } else {
     schedule();
     observeCharts();
+    loadSpendingOptionsScript();
   }
 
   window.addEventListener("resize", function () {
