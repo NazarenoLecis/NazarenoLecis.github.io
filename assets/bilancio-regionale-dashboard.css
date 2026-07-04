@@ -37,12 +37,80 @@
   grid-column: 1 / -1;
 }
 
+.br-compare-controls {
+  display: grid;
+  grid-template-columns: minmax(190px, 260px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  margin: 12px 0 14px;
+}
+
+.br-region-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.br-region-option {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  color: var(--text);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.br-region-option input {
+  accent-color: var(--orange);
+}
+
+.br-region-option span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.br-definition-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.br-definition-grid div {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+}
+
+.br-definition-grid h3 {
+  margin: 0;
+  color: var(--orange);
+  font-size: .98rem;
+  letter-spacing: 0;
+}
+
+.br-definition-grid p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.42;
+}
+
 .br-dashboard .bp-table td:first-child {
   min-width: 130px;
 }
 
 .br-dashboard #brCodesRows td:nth-child(2),
-.br-dashboard #brTitleRows td:nth-child(2),
+.br-dashboard #brSpendingTitleRows td:first-child,
+.br-dashboard #brRevenueTitleRows td:first-child,
 .br-dashboard #brMissionRows td:first-child {
   max-width: 620px;
   white-space: normal;
@@ -69,6 +137,11 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .br-compare-controls,
+  .br-definition-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .br-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
@@ -78,6 +151,20 @@
   .br-control-panel {
     grid-template-columns: 1fr;
     padding: 14px;
+  }
+
+  .br-compare-controls,
+  .br-definition-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .br-region-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .br-region-option {
+    padding: 8px;
+    font-size: .82rem;
   }
 
   .br-kpi-grid {

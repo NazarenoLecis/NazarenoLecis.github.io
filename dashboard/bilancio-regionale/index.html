@@ -81,6 +81,7 @@
     <nav class="dashboard-jump-nav bp-jump-nav" aria-label="Sezioni dashboard bilancio regionale">
       <a href="#quadro">Quadro</a>
       <a href="#openbdap">OpenBDAP</a>
+      <a href="#confronti-regionali">Confronti regionali</a>
       <a href="#dettaglio">Dettaglio</a>
       <a href="#siope">SIOPE</a>
       <a href="#codici">Codici</a>
@@ -146,6 +147,42 @@
       </article>
     </section>
 
+    <section class="bp-grid-2" id="confronti-regionali">
+      <article class="bp-card br-wide-card">
+        <div class="bp-card-title">
+          <h2>Confronto OpenBDAP per missione</h2>
+          <span id="brOpenbdapCompareTitle">Stesso confronto della dashboard Bilancio pubblico</span>
+        </div>
+        <p>Bar chart multi-regione sulla spesa per missione. Seleziona le regioni da confrontare e la metrica.</p>
+        <div class="br-compare-controls">
+          <label for="brOpenbdapMetric" class="bp-filter-label">Metrica
+            <select id="brOpenbdapMetric" class="bp-select"></select>
+          </label>
+          <div>
+            <span class="bp-filter-label">Regioni</span>
+            <div id="brOpenbdapRegions" class="br-region-grid"></div>
+          </div>
+        </div>
+        <div class="bp-chart-wrap">
+          <div id="brOpenbdapMissionCompareChart" class="chart bp-chart bp-chart-tall" role="img" aria-labelledby="brOpenbdapCompareTitle"></div>
+        </div>
+        <p id="brOpenbdapCompareNote" class="muted-note"></p>
+        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, rendiconto della gestione delle Regioni e province autonome. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Regione</th>
+                <th>Missione</th>
+                <th>Valore</th>
+              </tr>
+            </thead>
+            <tbody id="brOpenbdapMissionCompareRows"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
     <section class="bp-grid-2" id="dettaglio">
       <article class="bp-card">
         <div class="bp-card-title">
@@ -173,24 +210,46 @@
 
       <article class="bp-card">
         <div class="bp-card-title">
-          <h2>Entrate e spese per titolo</h2>
-          <span id="brTitleTitle">Titoli</span>
+          <h2>Spese per titolo</h2>
+          <span id="brSpendingTitleTitle">Titoli spesa</span>
         </div>
-        <p>Dettaglio dei titoli contabili di entrata e di spesa per la regione selezionata.</p>
+        <p>Dettaglio dei titoli contabili di spesa per la regione selezionata.</p>
         <div class="bp-chart-wrap">
-          <div id="brTitleChart" class="chart bp-chart" role="img" aria-labelledby="brTitleTitle"></div>
+          <div id="brSpendingTitleChart" class="chart bp-chart" role="img" aria-labelledby="brSpendingTitleTitle"></div>
         </div>
-        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, Allegato 10 entrate e spese. Elaborazione di Nazareno Lecis.</p>
+        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, Allegato 10 spese. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
           <table class="bp-table">
             <thead>
               <tr>
-                <th>Tipo</th>
                 <th>Titolo</th>
                 <th>Valore</th>
               </tr>
             </thead>
-            <tbody id="brTitleRows"></tbody>
+            <tbody id="brSpendingTitleRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Entrate per titolo</h2>
+          <span id="brRevenueTitleTitle">Titoli entrata</span>
+        </div>
+        <p>Dettaglio dei titoli contabili di entrata per la regione selezionata.</p>
+        <div class="bp-chart-wrap">
+          <div id="brRevenueTitleChart" class="chart bp-chart" role="img" aria-labelledby="brRevenueTitleTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, Allegato 10 entrate. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Titolo</th>
+                <th>Valore</th>
+              </tr>
+            </thead>
+            <tbody id="brRevenueTitleRows"></tbody>
           </table>
         </div>
       </article>
@@ -278,9 +337,28 @@
 
     <section class="bp-card notes-panel" id="metodo">
       <div class="bp-card-title">
-        <h2>Metodo e fonti</h2>
+        <h2>Fonti e definizioni</h2>
         <span>Perimetri distinti</span>
       </div>
+      <div class="br-definition-grid">
+        <div>
+          <h3>OpenBDAP/FET</h3>
+          <p>Rendiconti della gestione delle Regioni e province autonome, letti dagli endpoint della pagina Finanza degli Enti Territoriali.</p>
+        </div>
+        <div>
+          <h3>Missione</h3>
+          <p>Classificazione funzionale della spesa regionale: salute, trasporti, istruzione, ambiente, sviluppo economico e altre funzioni.</p>
+        </div>
+        <div>
+          <h3>Titolo</h3>
+          <p>Classificazione contabile per natura economica: entrate correnti, trasferimenti, conto capitale, spese correnti, investimenti e debito.</p>
+        </div>
+        <div>
+          <h3>SIOPE</h3>
+          <p>Flussi di cassa di incassi e pagamenti per ente, mese e codice gestionale. Non coincide con il rendiconto OpenBDAP.</p>
+        </div>
+      </div>
+      <p id="brCoverageNote" class="muted-note"></p>
       <ul>
         <li>OpenBDAP/FET misura dati di rendiconto della gestione delle Regioni e province autonome.</li>
         <li>SIOPE misura flussi di cassa: incassi e pagamenti per ente, mese e codice gestionale.</li>
