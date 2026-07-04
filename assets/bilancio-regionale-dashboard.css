@@ -23,7 +23,7 @@
 
 .br-focus-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 300px) minmax(200px, 300px);
   gap: 16px;
   align-items: end;
   margin: 18px 0;
@@ -90,32 +90,33 @@
   line-height: 1.48;
 }
 
-.br-definition-grid {
+.br-method-lists {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 14px 0 16px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+  gap: 28px;
+  margin: 14px 0 18px;
 }
 
-.br-definition-grid div {
-  min-width: 0;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-}
-
-.br-definition-grid h3 {
-  margin: 0;
+.br-method-lists h3 {
+  margin: 0 0 10px;
   color: var(--orange);
-  font-size: .98rem;
+  font-size: 1rem;
   letter-spacing: 0;
 }
 
-.br-definition-grid p {
-  margin: 8px 0 0;
+.br-method-lists ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.br-method-lists li {
+  margin: 0 0 8px;
   color: var(--muted);
-  line-height: 1.42;
+  line-height: 1.48;
+}
+
+.br-method-lists strong {
+  color: var(--text);
 }
 
 .br-dashboard .bp-table td:first-child {
@@ -152,7 +153,7 @@
 
   .br-focus-panel,
   .br-compare-controls,
-  .br-definition-grid {
+  .br-method-lists {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -165,7 +166,7 @@
 
   .br-focus-panel,
   .br-compare-controls,
-  .br-definition-grid {
+  .br-method-lists {
     grid-template-columns: 1fr;
   }
 

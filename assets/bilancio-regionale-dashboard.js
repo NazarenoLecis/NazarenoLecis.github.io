@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var PUBLIC_DATA_URL = "https://data.nazarenolecis.com/bilancio-regionale/dashboard.json?v=20260705-regionale-granulare";
+  var PUBLIC_DATA_URL = "https://data.nazarenolecis.com/bilancio-regionale/dashboard.json?v=20260705-regionale-focus-metrica";
   var LOCAL_DATA_URLS = [
     "../../../nazarenolecis-data-pipeline/publish/bilancio-regionale/dashboard.json",
     "../../data/bilancio-regionale/dashboard.json",
@@ -15,6 +15,7 @@
 
   var MISSING_VALUE = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#59a14f", "#f28e2b", "#76b7b2", "#e15759", "#edc948", "#b07aa1"];
+  var SIOPE_CODE_METRIC = { id: "mln", label: "Milioni correnti", unit: "mln" };
 
   var STATE = {
     payload: null,
@@ -23,6 +24,7 @@
     region: "Sardegna",
     year: null,
     metric: "mld",
+    focusMetric: "mld",
     measure: "saldo_totale",
     compareMetric: "mld",
     compareRegions: [],
@@ -116,6 +118,15 @@
     }) + " mld";
   }
 
+  function formatMillions(value) {
+    var valueNumber = num(value);
+    if (valueNumber === null) return MISSING_VALUE;
+    return valueNumber.toLocaleString("it-IT", {
+      maximumFractionDigits: Math.abs(valueNumber) < 10 ? 2 : 1,
+      minimumFractionDigits: 0
+    }) + " mln";
+  }
+
   function formatEuro(value) {
     var valueNumber = num(value);
     if (valueNumber === null) return MISSING_VALUE;
@@ -128,6 +139,7 @@
   function formatMetricValue(value, metric) {
     var unit = text(metric && metric.unit, "");
     if (unit === "mld") return formatMld(value);
+    if (unit === "mln") return formatMillions(value);
     if (unit === "% PIL") return formatDecimal(value, 2) + "%";
     if (unit === "euro" || unit === "euro_km2") return formatEuro(value);
     return formatDecimal(value, 2);
@@ -136,6 +148,7 @@
   function metricAxis(metric) {
     var unit = text(metric && metric.unit, "");
     if (unit === "mld") return "Miliardi di euro";
+    if (unit === "mln") return "Milioni di euro";
     if (unit === "% PIL") return "% PIL regionale";
     if (unit === "euro") return "Euro pro capite";
     if (unit === "euro_km2") return "Euro per kmq";
@@ -156,6 +169,10 @@
   function metricById(payload, id) {
     var options = metricOptions(payload);
     return options.find(function (metric) { return metric.id === id; }) || options[0];
+  }
+
+  function selectedFocusMetric(payload) {
+    return metricById(payload, STATE.focusMetric);
   }
 
   function measureById(id) {
@@ -422,6 +439,11 @@
     }, function (metric) {
       return metric.label;
     });
+    STATE.focusMetric = setSelect(byId("brFocusMetric"), metrics, STATE.focusMetric, function (metric) {
+      return metric.id;
+    }, function (metric) {
+      return metric.label;
+    });
     STATE.measure = setSelect(byId("brMeasure"), OPENBDAP_MEASURES, STATE.measure, function (measure) {
       return measure.id;
     }, function (measure) {
@@ -456,6 +478,15 @@
     bindSelect("brMetric", function () {
       STATE.metric = this.value;
       renderAll();
+    });
+    bindSelect("brFocusMetric", function () {
+      STATE.focusMetric = this.value;
+      renderHistory(STATE.payload);
+      renderSpendingDetail(STATE.payload);
+      renderRevenueDetail(STATE.payload);
+      renderSiopeYear(STATE.payload);
+      renderCompartments(STATE.payload);
+      renderCodes();
     });
     bindSelect("brMeasure", function () {
       STATE.measure = this.value;
@@ -764,7 +795,7 @@
   }
 
   function renderHistory(payload) {
-    var metric = metricById(payload, STATE.metric);
+    var metric = selectedFocusMetric(payload);
     var region = STATE.region;
     var spendingRows = arr(openbdapBlock(payload, "spending").by_region).filter(function (row) { return row.regione === region; });
     var revenueRows = arr(openbdapBlock(payload, "revenue").by_region).filter(function (row) { return row.regione === region; });
@@ -845,7 +876,7 @@
   }
 
   function renderOpenbdapDetail(payload, config) {
-    var metric = metricById(payload, STATE.metric);
+    var metric = selectedFocusMetric(payload);
     var block = openbdapBlock(payload, config.block);
     var rows = regionYearRows(block[config.rows], STATE.region, STATE.year)
       .filter(function (row) { return rowValue(row, metric) !== null && rowValue(row, metric) !== 0; });
@@ -917,7 +948,7 @@
   }
 
   function renderSiopeYear(payload) {
-    var metric = metricById(payload, STATE.metric);
+    var metric = selectedFocusMetric(payload);
     var siope = obj(payload.siope);
     var year = latestSiopeYear(payload);
     var rows = arr(siope.by_region_year).filter(function (row) {
@@ -984,7 +1015,7 @@
   }
 
   function renderCompartments(payload) {
-    var metric = metricById(payload, STATE.metric);
+    var metric = selectedFocusMetric(payload);
     var year = latestSiopeYear(payload);
     var rows = arr(obj(payload.siope).by_region_compartment_year).filter(function (row) {
       return row.regione === STATE.region && row.flusso === STATE.siopeFlow && num(row.anno) === year && rowValue(row, metric) !== null;
@@ -1018,6 +1049,11 @@
     });
   }
 
+  function codeRowValue(row) {
+    var value = num(row && row.mld);
+    return value === null ? null : value * 1000;
+  }
+
   function loadCodeRows(payload, region) {
     if (STATE.codeCache[region]) return Promise.resolve(STATE.codeCache[region]);
     if (STATE.codePromises[region]) return STATE.codePromises[region];
@@ -1035,25 +1071,26 @@
   function renderCodes() {
     var payload = STATE.payload;
     if (!payload) return;
-    var metric = metricById(payload, STATE.metric);
     var status = byId("brCodesStatus");
     var title = byId("brCodesTitle");
     var file = codeFileForRegion(payload, STATE.region);
-    if (title) title.textContent = STATE.region + " - " + (STATE.codeFlow === "uscite" ? "pagamenti" : "incassi");
+    var flowLabel = STATE.codeFlow === "uscite" ? "pagamenti" : "incassi";
+    if (title) title.textContent = STATE.region + " - " + flowLabel + " per codice";
     if (!file) {
       if (status) status.textContent = "Nessun file SIOPE per codice disponibile per " + STATE.region + ".";
       showEmptyChart("brCodesChart", "Dettaglio per codice non disponibile");
       createRows(byId("brCodesRows"), [], []);
       return;
     }
-    if (status) status.textContent = "Caricamento dettaglio " + STATE.region + " (" + formatPlain(file.rows, 0) + " righe) ...";
+    if (status) status.textContent = "Caricamento codici gestionali SIOPE per " + STATE.region + " ...";
     loadCodeRows(payload, STATE.region).then(function (rows) {
       var filtered = rows.filter(function (row) {
-        return row.perimetro === STATE.codePerimeter && row.flusso === STATE.codeFlow && rowValue(row, metric) !== null && rowValue(row, metric) !== 0;
+        return row.perimetro === STATE.codePerimeter && row.flusso === STATE.codeFlow && codeRowValue(row) !== null && codeRowValue(row) !== 0;
+      }).sort(function (a, b) {
+        return (codeRowValue(b) || 0) - (codeRowValue(a) || 0);
       });
-      filtered = sortRowsByMetric(filtered, metric);
       if (status) {
-        status.textContent = "Dettaglio caricato: " + formatPlain(filtered.length, 0) + " righe nel perimetro selezionato.";
+        status.textContent = "Codici gestionali SIOPE per " + STATE.region + ", " + flowLabel + ", in milioni di euro.";
       }
       if (!filtered.length) {
         showEmptyChart("brCodesChart", "Nessun codice gestionale per questa selezione");
@@ -1064,20 +1101,20 @@
       plot("brCodesChart", [{
         type: "bar",
         orientation: "h",
-        x: chartRows.map(function (row) { return rowValue(row, metric); }),
+        x: chartRows.map(function (row) { return codeRowValue(row); }),
         y: chartRows.map(function (row) { return compact(row.codice_gestionale + " - " + row.descrizione_codice, mobile() ? 34 : 70); }),
         marker: { color: STATE.codeFlow === "uscite" ? COLORS[0] : COLORS[2] },
-        hovertemplate: "%{y}<br>Valore %{x:.3f}<extra></extra>"
+        hovertemplate: "%{y}<br>%{x:.2f} mln<extra></extra>"
       }], {
         margin: { t: 18, r: 28, b: 54, l: mobile() ? 160 : 360 },
-        xaxis: { title: metricAxis(metric), rangemode: "tozero" },
+        xaxis: { title: metricAxis(SIOPE_CODE_METRIC), rangemode: "tozero" },
         yaxis: { title: "", showgrid: false },
         showlegend: false
       });
       createRows(byId("brCodesRows"), filtered.slice(0, 80), [
         { value: function (row) { return text(row.codice_gestionale); } },
         { value: function (row) { return text(row.descrizione_codice); } },
-        { value: function (row) { return formatMetricValue(rowValue(row, metric), metric); } }
+        { value: function (row) { return formatMetricValue(codeRowValue(row), SIOPE_CODE_METRIC); } }
       ]);
     }).catch(function () {
       if (status) status.textContent = "Errore nel caricamento del dettaglio SIOPE per " + STATE.region + ".";
