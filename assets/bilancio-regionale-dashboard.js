@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var PUBLIC_DATA_URL = "https://data.nazarenolecis.com/bilancio-regionale/dashboard.json?v=20260705-regionale";
+  var PUBLIC_DATA_URL = "https://data.nazarenolecis.com/bilancio-regionale/dashboard.json?v=20260705-regionale-granulare";
   var LOCAL_DATA_URLS = [
     "../../../nazarenolecis-data-pipeline/publish/bilancio-regionale/dashboard.json",
     "../../data/bilancio-regionale/dashboard.json",
@@ -23,9 +23,11 @@
     region: "Sardegna",
     year: null,
     metric: "mld",
-    measure: "spese_finali",
+    measure: "saldo_totale",
     compareMetric: "mld",
     compareRegions: [],
+    spendingDetailLevel: "mission",
+    revenueDetailLevel: "tipology",
     siopePerimeter: "regioni_sanita",
     siopeFlow: "uscite",
     codePerimeter: "regioni_sanita",
@@ -414,7 +416,7 @@
 
     if (regions.indexOf(STATE.region) < 0) STATE.region = regions.indexOf("Sardegna") >= 0 ? "Sardegna" : regions[0];
     STATE.year = num(setSelect(byId("brYear"), years, STATE.year || latestYear(payload)));
-    STATE.region = setSelect(byId("brRegion"), regions, STATE.region);
+    STATE.region = setSelect(byId("brFocusRegion"), regions, STATE.region);
     STATE.metric = setSelect(byId("brMetric"), metrics, STATE.metric, function (metric) {
       return metric.id;
     }, function (metric) {
@@ -425,6 +427,8 @@
     }, function (measure) {
       return measure.label;
     });
+    if (byId("brSpendingDetailLevel")) byId("brSpendingDetailLevel").value = STATE.spendingDetailLevel;
+    if (byId("brRevenueDetailLevel")) byId("brRevenueDetailLevel").value = STATE.revenueDetailLevel;
     STATE.siopePerimeter = setSelect(byId("brSiopePerimeter"), perimeters, STATE.siopePerimeter, function (perimeter) {
       return perimeter.id;
     }, function (perimeter) {
@@ -441,7 +445,7 @@
       return metric.label;
     });
 
-    bindSelect("brRegion", function () {
+    bindSelect("brFocusRegion", function () {
       STATE.region = this.value;
       renderAll();
     });
@@ -456,6 +460,14 @@
     bindSelect("brMeasure", function () {
       STATE.measure = this.value;
       renderAll();
+    });
+    bindSelect("brSpendingDetailLevel", function () {
+      STATE.spendingDetailLevel = this.value;
+      renderSpendingDetail(STATE.payload);
+    });
+    bindSelect("brRevenueDetailLevel", function () {
+      STATE.revenueDetailLevel = this.value;
+      renderRevenueDetail(STATE.payload);
     });
     bindSelect("brSiopePerimeter", function () {
       STATE.siopePerimeter = this.value;
@@ -476,48 +488,8 @@
     bindSelect("brOpenbdapMetric", function () {
       STATE.compareMetric = this.value;
       renderOpenbdapMissionCompare(STATE.payload);
+      renderOpenbdapRevenueCompare(STATE.payload);
     });
-  }
-
-  function kpiBox(label, value, detail) {
-    var box = document.createElement("div");
-    box.className = "kpi";
-    var labelNode = document.createElement("span");
-    labelNode.textContent = label;
-    var valueNode = document.createElement("strong");
-    valueNode.textContent = value;
-    var detailNode = document.createElement("small");
-    detailNode.textContent = detail;
-    box.appendChild(labelNode);
-    box.appendChild(valueNode);
-    box.appendChild(detailNode);
-    return box;
-  }
-
-  function renderKpis(payload) {
-    var container = byId("brKpis");
-    if (!container) return;
-    clear(container);
-    var year = STATE.year || latestYear(payload);
-    var region = STATE.region;
-    var spending = openbdapBlock(payload, "spending");
-    var revenue = openbdapBlock(payload, "revenue");
-    var balances = openbdapBlock(payload, "balances");
-    var spendRow = firstRegionYearRow(arr(spending.aggregates_by_region).filter(function (row) {
-      return row.aggregate_id === "spese_finali";
-    }), region, year) || firstRegionYearRow(spending.by_region, region, year);
-    var revenueRow = firstRegionYearRow(arr(revenue.aggregates_by_region).filter(function (row) {
-      return row.aggregate_id === "entrate_finali";
-    }), region, year) || firstRegionYearRow(revenue.by_region, region, year);
-    var balanceRow = firstRegionYearRow(balances.final_by_region, region, year) || firstRegionYearRow(balances.by_region, region, year);
-    var codeFile = arr(obj(obj(payload.siope).code_detail_index).files).find(function (file) {
-      return file && file.regione === region;
-    });
-
-    container.appendChild(kpiBox("Spese", formatMld(spendRow && spendRow.mld), region + ", " + year));
-    container.appendChild(kpiBox("Entrate", formatMld(revenueRow && revenueRow.mld), region + ", " + year));
-    container.appendChild(kpiBox("Saldo", formatMld(balanceRow && balanceRow.mld), "Entrate - spese"));
-    container.appendChild(kpiBox("Codici SIOPE", formatPlain(codeFile && codeFile.rows, 0), "Dettaglio gestionale pubblicato"));
   }
 
   function renderComparison(payload) {
@@ -612,6 +584,7 @@
           return input.value;
         });
         renderOpenbdapMissionCompare(payload);
+        renderOpenbdapRevenueCompare(payload);
       });
       var span = document.createElement("span");
       span.textContent = region;
@@ -636,6 +609,25 @@
     }).slice(0, mobile() ? 6 : 8);
   }
 
+  function revenueName(row) {
+    return text(row && (row.tipologia || row.titolo || row.tipologia_code || row.titolo_code), "");
+  }
+
+  function topCompareRevenueRows(rows, regions, metric) {
+    var totals = {};
+    rows.filter(function (row) {
+      return regions.indexOf(text(row && row.regione, "")) >= 0;
+    }).forEach(function (row) {
+      var itemName = revenueName(row);
+      var value = rowValue(row, metric);
+      if (!itemName || value === null) return;
+      totals[itemName] = (totals[itemName] || 0) + Math.abs(value);
+    });
+    return Object.keys(totals).sort(function (a, b) {
+      return totals[b] - totals[a];
+    }).slice(0, mobile() ? 6 : 8);
+  }
+
   function renderOpenbdapMissionCompare(payload) {
     if (!payload) return;
     var metric = metricById(payload, STATE.compareMetric);
@@ -646,7 +638,7 @@
     var note = byId("brOpenbdapCompareNote");
     if (title) title.textContent = "Spesa per missione " + STATE.year + " - " + metric.label;
     if (note) {
-      note.textContent = "Confronto OpenBDAP " + STATE.year + ": dettaglio regionale per missione. Usa la stessa logica del confronto presente nella dashboard Bilancio pubblico.";
+      note.textContent = "Come leggere: ogni gruppo di barre confronta le regioni selezionate sulla stessa missione di spesa. Le missioni sono funzioni pubbliche, per esempio salute, trasporti, istruzione, ambiente e politiche sociali.";
     }
     if (!rows.length) {
       setupCompareRegionGrid(payload, [], metric);
@@ -701,6 +693,76 @@
     ]);
   }
 
+  function renderOpenbdapRevenueCompare(payload) {
+    if (!payload) return;
+    var metric = metricById(payload, STATE.compareMetric);
+    var revenue = openbdapBlock(payload, "revenue");
+    var sourceRows = arr(revenue.by_tipology);
+    var levelLabel = "tipologia";
+    if (!sourceRows.length) {
+      sourceRows = arr(revenue.by_title);
+      levelLabel = "titolo";
+    }
+    var rows = sourceRows.filter(function (row) {
+      return num(row && row.anno) === STATE.year && rowValue(row, metric) !== null;
+    });
+    var title = byId("brOpenbdapRevenueCompareTitle");
+    var note = byId("brOpenbdapRevenueCompareNote");
+    if (title) title.textContent = "Entrate per " + levelLabel + " " + STATE.year + " - " + metric.label;
+    if (note) {
+      note.textContent = "Come leggere: ogni gruppo di barre confronta le regioni selezionate sulla stessa voce di entrata. Le tipologie distinguono anche trasferimenti da amministrazioni pubbliche e trasferimenti dall'Unione Europea e dal resto del mondo.";
+    }
+    if (!rows.length) {
+      showEmptyChart("brOpenbdapRevenueCompareChart", "Dettaglio entrate per " + levelLabel + " non disponibile per questo anno");
+      createRows(byId("brOpenbdapRevenueCompareRows"), [], []);
+      return;
+    }
+    var regions = selectedCompareRegions(payload, rows, metric);
+    var entries = topCompareRevenueRows(rows, regions, metric);
+    if (!regions.length || !entries.length) {
+      showEmptyChart("brOpenbdapRevenueCompareChart", "Seleziona almeno una regione");
+      createRows(byId("brOpenbdapRevenueCompareRows"), [], []);
+      return;
+    }
+    var traces = regions.map(function (region, index) {
+      var values = entries.map(function (itemName) {
+        var matched = rows.find(function (row) {
+          return row.regione === region && revenueName(row) === itemName;
+        });
+        return matched ? rowValue(matched, metric) : null;
+      });
+      return {
+        type: "bar",
+        name: region,
+        x: entries.map(function (itemName) { return compact(itemName, mobile() ? 18 : 30); }),
+        y: values,
+        customdata: values.map(function (value, valueIndex) {
+          return [entries[valueIndex], formatMetricValue(value, metric)];
+        }),
+        marker: { color: COLORS[index % COLORS.length] },
+        hovertemplate: "%{fullData.name}<br>%{customdata[0]}<br>%{customdata[1]}<extra></extra>"
+      };
+    });
+    plot("brOpenbdapRevenueCompareChart", traces, {
+      barmode: "group",
+      height: mobile() ? 460 : Math.min(760, Math.max(520, 360 + regions.length * 32)),
+      margin: { t: 20, r: 18, b: mobile() ? 122 : 96, l: mobile() ? 62 : 82 },
+      xaxis: { title: "", tickangle: mobile() ? -35 : -20 },
+      yaxis: { title: metricAxis(metric), rangemode: "tozero" },
+      legend: { orientation: "h", x: 0, xanchor: "left", y: -0.28 }
+    });
+    var tableRows = rows.filter(function (row) {
+      return regions.indexOf(row.regione) >= 0 && entries.indexOf(revenueName(row)) >= 0;
+    }).sort(function (a, b) {
+      return (rowValue(b, metric) || 0) - (rowValue(a, metric) || 0);
+    }).slice(0, 40);
+    createRows(byId("brOpenbdapRevenueCompareRows"), tableRows, [
+      { value: function (row) { return text(row.regione); } },
+      { value: function (row) { return revenueName(row); } },
+      { value: function (row) { return formatMetricValue(rowValue(row, metric), metric); } }
+    ]);
+  }
+
   function renderHistory(payload) {
     var metric = metricById(payload, STATE.metric);
     var region = STATE.region;
@@ -735,43 +797,93 @@
     });
   }
 
-  function renderMission(payload) {
+  function spendingDetailConfig() {
+    if (STATE.spendingDetailLevel === "mission_title") {
+      return {
+        rows: "by_mission_title",
+        label: "Missione x titolo",
+        empty: "Dettaglio spese missione x titolo non disponibile per questa selezione",
+        note: "Come leggere: ogni barra incrocia la funzione della spesa, cioe' la missione, con la natura contabile del titolo. Questo e' il livello regionale piu' granulare esposto stabilmente dall'endpoint OpenBDAP/FET usato per i confronti tra regioni.",
+        valueLabel: function (row) { return text(row.missione || row.missione_code) + " - " + text(row.titolo || row.titolo_code); }
+      };
+    }
+    if (STATE.spendingDetailLevel === "title") {
+      return {
+        rows: "by_title",
+        label: "Spese per titolo",
+        empty: "Dettaglio spese per titolo non disponibile per questa selezione",
+        note: "Come leggere: i titoli descrivono la natura economico-contabile della spesa, per esempio spese correnti, conto capitale, attivita' finanziarie e rimborso prestiti.",
+        valueLabel: function (row) { return text(row.titolo || row.titolo_code); }
+      };
+    }
+    return {
+      rows: "by_mission",
+      label: "Spesa per missione",
+      empty: "Dettaglio per missione non disponibile per questa selezione",
+      note: "Come leggere: le missioni classificano la funzione della spesa regionale, per esempio sanita, trasporti, istruzione, ambiente, sviluppo economico e politiche sociali.",
+      valueLabel: function (row) { return text(row.missione || row.missione_code); }
+    };
+  }
+
+  function revenueDetailConfig() {
+    if (STATE.revenueDetailLevel === "tipology") {
+      return {
+        rows: "by_tipology",
+        label: "Entrate per tipologia",
+        empty: "Dettaglio entrate per tipologia non disponibile per questa selezione",
+        note: "Come leggere: la tipologia e' il codice OpenBDAP/FET a 6 cifre sotto il titolo. Qui si distinguono, per esempio, trasferimenti correnti da amministrazioni pubbliche e trasferimenti dall'Unione Europea e dal resto del mondo.",
+        valueLabel: function (row) { return text(row.titolo || row.titolo_code) + " - " + text(row.tipologia || row.tipologia_code); }
+      };
+    }
+    return {
+      rows: "by_title",
+      label: "Entrate per titolo",
+      empty: "Dettaglio entrate per titolo non disponibile per questa selezione",
+      note: "Come leggere: i titoli distinguono tributi e perequazione, trasferimenti correnti, entrate extratributarie, conto capitale, riduzione di attivita' finanziarie e debito.",
+      valueLabel: function (row) { return text(row.titolo || row.titolo_code); }
+    };
+  }
+
+  function renderOpenbdapDetail(payload, config) {
     var metric = metricById(payload, STATE.metric);
-    var rows = regionYearRows(openbdapBlock(payload, "spending").by_mission, STATE.region, STATE.year)
+    var block = openbdapBlock(payload, config.block);
+    var rows = regionYearRows(block[config.rows], STATE.region, STATE.year)
       .filter(function (row) { return rowValue(row, metric) !== null && rowValue(row, metric) !== 0; });
     var total = totalForRows(rows, metric);
     rows = sortRowsByMetric(rows, metric);
-    var title = byId("brMissionTitle");
-    if (title) title.textContent = STATE.region + " " + STATE.year + " - " + metric.label;
+    var title = byId(config.titleId);
+    var note = byId(config.noteId);
+    if (title) title.textContent = STATE.region + " " + STATE.year + " - " + config.label;
+    if (note) note.textContent = config.note;
 
     if (!rows.length) {
-      showEmptyChart("brMissionChart", "Dettaglio per missione non disponibile per questa selezione");
-      createRows(byId("brMissionRows"), [], []);
+      showEmptyChart(config.chartId, config.empty);
+      createRows(byId(config.tableId), [], []);
       return;
     }
-    var chartRows = rows.slice(0, mobile() ? 10 : 16).reverse();
-    plot("brMissionChart", [{
+    var chartRows = rows.slice(0, mobile() ? 10 : 18).reverse();
+    plot(config.chartId, [{
       type: "bar",
       orientation: "h",
       x: chartRows.map(function (row) { return rowValue(row, metric); }),
-      y: chartRows.map(function (row) { return compact(row.missione, mobile() ? 30 : 58); }),
-      marker: { color: cssVar("--orange", COLORS[0]) },
+      y: chartRows.map(function (row) { return compact(config.valueLabel(row), mobile() ? 34 : 68); }),
+      marker: { color: config.color },
       text: mobile() ? [] : chartRows.map(function (row) { return formatMetricValue(rowValue(row, metric), metric); }),
       textposition: mobile() ? "none" : "outside",
       cliponaxis: false,
       customdata: chartRows.map(function (row) {
         var value = rowValue(row, metric) || 0;
-        return [text(row.missione), total ? value / total * 100 : null];
+        return [config.valueLabel(row), total ? value / total * 100 : null];
       }),
       hovertemplate: "%{customdata[0]}<br>Valore %{x:.3f}<br>Quota %{customdata[1]:.1f}%<extra></extra>"
     }], {
-      margin: { t: 18, r: mobile() ? 24 : 92, b: 54, l: mobile() ? 150 : 310 },
+      margin: { t: 18, r: mobile() ? 24 : 92, b: 54, l: mobile() ? 160 : 330 },
       xaxis: { title: metricAxis(metric), rangemode: "tozero" },
       yaxis: { title: "", showgrid: false },
       showlegend: false
     });
-    createRows(byId("brMissionRows"), rows, [
-      { value: function (row) { return text(row.missione); } },
+    createRows(byId(config.tableId), rows, [
+      { value: function (row) { return config.valueLabel(row); } },
       { value: function (row) { return formatMetricValue(rowValue(row, metric), metric); } },
       { value: function (row) {
         var value = rowValue(row, metric) || 0;
@@ -780,66 +892,28 @@
     ]);
   }
 
-  function detailTitleRows(payload, blockName) {
-    var metric = metricById(payload, STATE.metric);
-    return regionYearRows(openbdapBlock(payload, blockName).by_title, STATE.region, STATE.year)
-      .filter(function (row) { return rowValue(row, metric) !== null && rowValue(row, metric) !== 0; })
-      .sort(function (a, b) { return (rowValue(b, metric) || 0) - (rowValue(a, metric) || 0); });
-  }
-
-  function renderTitleDetail(payload, config) {
-    var metric = metricById(payload, STATE.metric);
-    var rows = detailTitleRows(payload, config.block);
-    var title = byId(config.titleId);
-    if (title) title.textContent = STATE.region + " " + STATE.year + " - " + metric.label;
-    if (!rows.length) {
-      showEmptyChart(config.chartId, config.emptyMessage);
-      createRows(byId(config.tableId), [], []);
-      return;
-    }
-    var chartRows = rows.slice(0, mobile() ? 10 : 16).reverse();
-    plot(config.chartId, [{
-      type: "bar",
-      orientation: "h",
-      x: chartRows.map(function (row) { return rowValue(row, metric); }),
-      y: chartRows.map(function (row) { return compact(row.titolo || row.titolo_code, mobile() ? 34 : 62); }),
-      marker: { color: config.color },
-      text: mobile() ? [] : chartRows.map(function (row) { return formatMetricValue(rowValue(row, metric), metric); }),
-      textposition: mobile() ? "none" : "outside",
-      cliponaxis: false,
-      hovertemplate: "%{y}<br>Valore %{x:.3f}<extra></extra>"
-    }], {
-      margin: { t: 18, r: mobile() ? 24 : 92, b: 54, l: mobile() ? 156 : 310 },
-      xaxis: { title: metricAxis(metric), rangemode: "tozero" },
-      yaxis: { title: "", showgrid: false },
-      showlegend: false
-    });
-    createRows(byId(config.tableId), rows, [
-      { value: function (row) { return text(row.titolo || row.titolo_code); } },
-      { value: function (row) { return formatMetricValue(rowValue(row, metric), metric); } }
-    ]);
-  }
-
-  function renderSpendingTitles(payload) {
-    renderTitleDetail(payload, {
+  function renderSpendingDetail(payload) {
+    var config = spendingDetailConfig();
+    renderOpenbdapDetail(payload, Object.assign(config, {
       block: "spending",
-      titleId: "brSpendingTitleTitle",
-      chartId: "brSpendingTitleChart",
-      tableId: "brSpendingTitleRows",
-      color: cssVar("--orange", COLORS[0]),
-      emptyMessage: "Dettaglio spese per titolo non disponibile per questa selezione"
-    });
+      titleId: "brSpendingDetailTitle",
+      chartId: "brSpendingDetailChart",
+      tableId: "brSpendingDetailRows",
+      noteId: "brSpendingDetailNote",
+      color: cssVar("--orange", COLORS[0])
+    }));
   }
 
-  function renderRevenueTitles(payload) {
-    renderTitleDetail(payload, {
+  function renderRevenueDetail(payload) {
+    var config = revenueDetailConfig();
+    renderOpenbdapDetail(payload, Object.assign(config, {
       block: "revenue",
-      titleId: "brRevenueTitleTitle",
-      chartId: "brRevenueTitleChart",
-      tableId: "brRevenueTitleRows",
-      color: COLORS[2],
-      emptyMessage: "Dettaglio entrate per titolo non disponibile per questa selezione"
-    });
+      titleId: "brRevenueDetailTitle",
+      chartId: "brRevenueDetailChart",
+      tableId: "brRevenueDetailRows",
+      noteId: "brRevenueDetailNote",
+      color: COLORS[2]
+    }));
   }
 
   function renderSiopeYear(payload) {
@@ -1045,8 +1119,10 @@
     node.textContent =
       "Copertura dati: totali OpenBDAP spese/entrate/saldi " + yearRangeText(availableYears(spending.by_region)) +
       "; missioni spesa " + yearRangeText(availableYears(spending.by_mission)) +
+      "; missione x titolo " + yearRangeText(availableYears(spending.by_mission_title)) +
       "; titoli di spesa " + yearRangeText(availableYears(spending.by_title)) +
       "; titoli di entrata " + yearRangeText(availableYears(revenue.by_title)) +
+      "; tipologie di entrata " + yearRangeText(availableYears(revenue.by_tipology)) +
       "; saldo finale " + yearRangeText(availableYears(balances.final_by_region)) +
       "; SIOPE " + yearRangeText(availableYears(siope.by_region_year)) + ".";
   }
@@ -1057,13 +1133,12 @@
     renderControls(payload);
     renderSourceMeta(payload);
     renderCoverageNote(payload);
-    renderKpis(payload);
     renderComparison(payload);
     renderOpenbdapMissionCompare(payload);
+    renderOpenbdapRevenueCompare(payload);
     renderHistory(payload);
-    renderMission(payload);
-    renderSpendingTitles(payload);
-    renderRevenueTitles(payload);
+    renderSpendingDetail(payload);
+    renderRevenueDetail(payload);
     renderSiopeYear(payload);
     renderSiopeMonth(payload);
     renderCompartments(payload);
@@ -1080,8 +1155,8 @@
     }).catch(function (error) {
       showStatus("Impossibile caricare i dati della dashboard regionale.", true);
       [
-        "brComparisonChart", "brOpenbdapMissionCompareChart", "brHistoryChart", "brMissionChart",
-        "brSpendingTitleChart", "brRevenueTitleChart", "brSiopeYearChart", "brSiopeMonthChart",
+        "brComparisonChart", "brOpenbdapMissionCompareChart", "brOpenbdapRevenueCompareChart", "brHistoryChart",
+        "brSpendingDetailChart", "brRevenueDetailChart", "brSiopeYearChart", "brSiopeMonthChart",
         "brCompartmentChart", "brCodesChart"
       ].forEach(function (id) {
         showEmptyChart(id, error.message || "Errore dati");

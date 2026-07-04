@@ -3,12 +3,12 @@
 }
 
 .br-dashboard .dash-head h1 {
-  letter-spacing: -.055em;
+  letter-spacing: 0;
 }
 
 .br-control-panel {
   display: grid;
-  grid-template-columns: repeat(4, minmax(190px, 1fr));
+  grid-template-columns: repeat(3, minmax(190px, 1fr));
   gap: 12px;
   margin: 18px 0 0;
   padding: 16px;
@@ -17,24 +17,32 @@
   background: color-mix(in srgb, var(--panel) 90%, transparent);
 }
 
-.br-kpi-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-}
-
-.br-kpi-grid .kpi:nth-child(4) {
-  display: block !important;
-}
-
-.br-kpi-grid .kpi small {
-  display: block;
-  margin-top: 8px;
-  color: var(--muted);
-  font-size: .82rem;
-  line-height: 1.3;
-}
-
 .br-wide-card {
   grid-column: 1 / -1;
+}
+
+.br-focus-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
+  gap: 16px;
+  align-items: end;
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.br-focus-panel h2 {
+  margin: 4px 0 6px;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  letter-spacing: 0;
+}
+
+.br-focus-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.42;
 }
 
 .br-compare-controls {
@@ -76,9 +84,15 @@
   white-space: nowrap;
 }
 
+.br-chart-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  line-height: 1.48;
+}
+
 .br-definition-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 14px 0 16px;
 }
@@ -109,9 +123,8 @@
 }
 
 .br-dashboard #brCodesRows td:nth-child(2),
-.br-dashboard #brSpendingTitleRows td:first-child,
-.br-dashboard #brRevenueTitleRows td:first-child,
-.br-dashboard #brMissionRows td:first-child {
+.br-dashboard #brSpendingDetailRows td:first-child,
+.br-dashboard #brRevenueDetailRows td:first-child {
   max-width: 620px;
   white-space: normal;
 }
@@ -137,13 +150,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .br-focus-panel,
   .br-compare-controls,
   .br-definition-grid {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .br-kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
@@ -153,6 +163,7 @@
     padding: 14px;
   }
 
+  .br-focus-panel,
   .br-compare-controls,
   .br-definition-grid {
     grid-template-columns: 1fr;
@@ -165,10 +176,6 @@
   .br-region-option {
     padding: 8px;
     font-size: .82rem;
-  }
-
-  .br-kpi-grid {
-    grid-template-columns: 1fr !important;
   }
 
   .br-dashboard .dashboard-jump-nav {
