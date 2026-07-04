@@ -1,0 +1,114 @@
+.br-dashboard {
+  --max: 1500px;
+}
+
+.br-dashboard .dash-head h1 {
+  letter-spacing: -.055em;
+}
+
+.br-control-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 18px 0 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.br-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.br-kpi-grid .kpi:nth-child(4) {
+  display: block !important;
+}
+
+.br-kpi-grid .kpi small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.3;
+}
+
+.br-wide-card {
+  grid-column: 1 / -1;
+}
+
+.br-dashboard .bp-table td:first-child {
+  min-width: 130px;
+}
+
+.br-dashboard #brCodesRows td:nth-child(2),
+.br-dashboard #brTitleRows td:nth-child(2),
+.br-dashboard #brMissionRows td:first-child {
+  max-width: 620px;
+  white-space: normal;
+}
+
+.br-dashboard .notes-panel {
+  margin-top: 18px;
+}
+
+.br-dashboard .notes-panel ul + ul {
+  margin-top: 12px;
+}
+
+.br-dashboard .bp-chart.bp-chart-tall {
+  min-height: 580px;
+}
+
+.br-dashboard .bp-chart.bp-chart-compact {
+  min-height: 300px;
+}
+
+@media (max-width: 1120px), (pointer: coarse) {
+  .br-control-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .br-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px), (pointer: coarse) {
+  .br-control-panel {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .br-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .br-dashboard .dashboard-jump-nav {
+    overflow-x: visible;
+    flex-wrap: wrap;
+  }
+
+  .br-dashboard .dashboard-jump-nav a {
+    white-space: normal;
+  }
+
+  .br-dashboard .bp-chart.bp-chart-tall {
+    min-height: 460px;
+  }
+
+  .br-dashboard .bp-table {
+    table-layout: fixed;
+    white-space: normal;
+  }
+
+  .br-dashboard .bp-table th,
+  .br-dashboard .bp-table td {
+    padding: 8px 6px;
+    overflow-wrap: anywhere;
+  }
+
+  .br-dashboard .bp-table td:first-child {
+    min-width: 0;
+  }
+}

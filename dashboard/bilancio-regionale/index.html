@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bilancio regionale | Nazareno Lecis</title>
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260705-regionale">
+  <link rel="stylesheet" href="../../assets/bilancio-regionale-dashboard.css?v=20260705-regionale">
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
+  <script defer src="../../assets/bilancio-regionale-dashboard.js?v=20260705-regionale"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html">
+        <span class="logo"></span>
+        <span>
+          <span class="brand-name">Nazareno Lecis</span>
+          <span class="brand-tag">Data &amp; Risk Analysis</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap alm-dashboard bp-dashboard br-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Finanza territoriale</span>
+        <h1>Bilancio regionale</h1>
+        <p class="lead">
+          Rendiconti regionali OpenBDAP/FET e flussi di cassa SIOPE: spese, entrate,
+          saldi, missioni, titoli, serie storiche e dettagli per codice gestionale.
+        </p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonti: RGS-OpenBDAP e SIOPE</strong>
+          <span id="brSourceMeta">Dati regionali elaborati da fonti ufficiali sulla finanza territoriale.</span>
+          <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
+          <a class="related-link" href="https://github.com/NazarenoLecis/Bilancio_pubblico" target="_blank" rel="noopener">
+            Apri repository Bilancio_pubblico
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-grid">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Rendiconti</h2>
+        <p>OpenBDAP/FET espone spese, entrate e saldi da rendiconto regionale, con missioni e titoli.</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Serie</h2>
+        <p>Le viste storiche confrontano regioni e anni nelle metriche correnti, pro capite, per kmq e su PIL.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Cassa</h2>
+        <p>SIOPE aggiunge incassi e pagamenti mensili, comparti e codici gestionali per regione.</p>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav bp-jump-nav" aria-label="Sezioni dashboard bilancio regionale">
+      <a href="#quadro">Quadro</a>
+      <a href="#openbdap">OpenBDAP</a>
+      <a href="#dettaglio">Dettaglio</a>
+      <a href="#siope">SIOPE</a>
+      <a href="#codici">Codici</a>
+      <a href="#metodo">Metodo</a>
+    </nav>
+
+    <p id="brStatus" class="bp-status">Caricamento in corso ...</p>
+
+    <section id="quadro" class="br-control-panel" aria-label="Filtri bilancio regionale">
+      <label class="bp-filter-label" for="brRegion">Regione
+        <select id="brRegion" class="bp-select"></select>
+      </label>
+      <label class="bp-filter-label" for="brYear">Anno
+        <select id="brYear" class="bp-select"></select>
+      </label>
+      <label class="bp-filter-label" for="brMetric">Metrica
+        <select id="brMetric" class="bp-select"></select>
+      </label>
+      <label class="bp-filter-label" for="brMeasure">Confronto
+        <select id="brMeasure" class="bp-select"></select>
+      </label>
+    </section>
+
+    <section class="bp-kpi-wrap">
+      <div id="brKpis" class="kpi-grid br-kpi-grid"></div>
+    </section>
+
+    <section class="bp-grid-2" id="openbdap">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Confronto tra regioni</h2>
+          <span id="brComparisonTitle">OpenBDAP</span>
+        </div>
+        <p>Rendiconto della gestione delle Regioni e province autonome, per anno e metrica selezionati.</p>
+        <div class="bp-chart-wrap">
+          <div id="brComparisonChart" class="chart bp-chart bp-chart-tall" role="img" aria-labelledby="brComparisonTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, Finanza degli Enti Territoriali. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Regione</th>
+                <th>Valore</th>
+                <th>Anno</th>
+              </tr>
+            </thead>
+            <tbody id="brComparisonRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Serie storica regionale</h2>
+          <span id="brHistoryTitle">Spese, entrate e saldi</span>
+        </div>
+        <p>Andamento del rendiconto regionale nel periodo disponibile, nella metrica selezionata.</p>
+        <div class="bp-chart-wrap">
+          <div id="brHistoryChart" class="chart bp-chart" role="img" aria-labelledby="brHistoryTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, rendiconti regionali. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="bp-grid-2" id="dettaglio">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Spesa per missione</h2>
+          <span id="brMissionTitle">Missioni</span>
+        </div>
+        <p>Composizione della spesa regionale per missione nel rendiconto selezionato.</p>
+        <div class="bp-chart-wrap">
+          <div id="brMissionChart" class="chart bp-chart bp-chart-tall" role="img" aria-labelledby="brMissionTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, Allegato 10 spese. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Missione</th>
+                <th>Valore</th>
+                <th>Quota</th>
+              </tr>
+            </thead>
+            <tbody id="brMissionRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Entrate e spese per titolo</h2>
+          <span id="brTitleTitle">Titoli</span>
+        </div>
+        <p>Dettaglio dei titoli contabili di entrata e di spesa per la regione selezionata.</p>
+        <div class="bp-chart-wrap">
+          <div id="brTitleChart" class="chart bp-chart" role="img" aria-labelledby="brTitleTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, Allegato 10 entrate e spese. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Titolo</th>
+                <th>Valore</th>
+              </tr>
+            </thead>
+            <tbody id="brTitleRows"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="bp-grid-2" id="siope">
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Flussi SIOPE</h2>
+          <span id="brSiopeTitle">Cassa</span>
+        </div>
+        <p>Incassi, pagamenti e saldo di cassa per perimetro SIOPE. La cassa non coincide con il rendiconto OpenBDAP.</p>
+        <div class="bp-filter-row">
+          <label class="bp-filter-label" for="brSiopePerimeter">Perimetro
+            <select id="brSiopePerimeter" class="bp-select"></select>
+          </label>
+        </div>
+        <div class="bp-chart-wrap">
+          <div id="brSiopeYearChart" class="chart bp-chart bp-chart-compact" role="img" aria-labelledby="brSiopeTitle"></div>
+        </div>
+        <div class="bp-chart-wrap">
+          <div id="brSiopeMonthChart" class="chart bp-chart" role="img" aria-label="Flussi mensili SIOPE"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: SIOPE, download massivo open data. Elaborazione di Nazareno Lecis.</p>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Comparti SIOPE</h2>
+          <span id="brCompartmentTitle">Enti e sotto-comparti</span>
+        </div>
+        <p>Principali sotto-comparti localizzati nella regione, aggregati per incassi o pagamenti.</p>
+        <div class="bp-filter-row">
+          <label class="bp-filter-label" for="brSiopeFlow">Flusso
+            <select id="brSiopeFlow" class="bp-select">
+              <option value="uscite">Pagamenti</option>
+              <option value="entrate">Incassi</option>
+            </select>
+          </label>
+        </div>
+        <div class="bp-chart-wrap">
+          <div id="brCompartmentChart" class="chart bp-chart bp-chart-tall" role="img" aria-labelledby="brCompartmentTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: SIOPE, enti localizzati per regione. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="bp-grid-2" id="codici">
+      <article class="bp-card br-wide-card">
+        <div class="bp-card-title">
+          <h2>Dettaglio SIOPE per codice gestionale</h2>
+          <span id="brCodesTitle">File regionale caricato a richiesta</span>
+        </div>
+        <p>Dettaglio granulare degli incassi e pagamenti per codice gestionale, pubblicato in file regionali separati.</p>
+        <div class="bp-filter-row">
+          <label class="bp-filter-label" for="brCodePerimeter">Perimetro
+            <select id="brCodePerimeter" class="bp-select"></select>
+          </label>
+          <label class="bp-filter-label" for="brCodeFlow">Flusso
+            <select id="brCodeFlow" class="bp-select">
+              <option value="uscite">Pagamenti</option>
+              <option value="entrate">Incassi</option>
+            </select>
+          </label>
+        </div>
+        <p id="brCodesStatus" class="muted-note">Seleziona una regione per caricare il dettaglio SIOPE.</p>
+        <div class="bp-chart-wrap">
+          <div id="brCodesChart" class="chart bp-chart bp-chart-tall" role="img" aria-labelledby="brCodesTitle"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: SIOPE, dettaglio per codice gestionale. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Codice</th>
+                <th>Descrizione</th>
+                <th>Valore</th>
+              </tr>
+            </thead>
+            <tbody id="brCodesRows"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="bp-card notes-panel" id="metodo">
+      <div class="bp-card-title">
+        <h2>Metodo e fonti</h2>
+        <span>Perimetri distinti</span>
+      </div>
+      <ul>
+        <li>OpenBDAP/FET misura dati di rendiconto della gestione delle Regioni e province autonome.</li>
+        <li>SIOPE misura flussi di cassa: incassi e pagamenti per ente, mese e codice gestionale.</li>
+        <li>Le normalizzazioni pro capite, per kmq e su PIL regionale sono derivate da popolazione, superficie e PIL regionale.</li>
+        <li>I file granulari SIOPE per codice sono pubblicati a parte per mantenere leggero il caricamento iniziale.</li>
+      </ul>
+      <ul class="bp-source-links">
+        <li><a href="https://openbdap.rgs.mef.gov.it/" target="_blank" rel="noopener">RGS - OpenBDAP</a></li>
+        <li><a href="https://www.siope.it/" target="_blank" rel="noopener">SIOPE</a></li>
+        <li><a href="https://github.com/NazarenoLecis/nazarenolecis-data-pipeline" target="_blank" rel="noopener">Repository pipeline dati</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner social-links">
+      <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+      <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+    </div>
+  </footer>
+</body>
+</html>
