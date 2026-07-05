@@ -373,6 +373,26 @@
     return mapped.length ? mapped : rows;
   }
 
+  function rowsForComparableYear(rows, targetYear, candidates) {
+    rows = toArray(rows);
+    candidates = toArray(candidates);
+    return rows.map(function (row) {
+      var candidate = comparableCandidate(row, candidates);
+      var enriched = candidate
+        ? Object.assign({}, candidate, row, { series: candidate.series || row.series })
+        : row;
+      var value = valueForYear(enriched, targetYear);
+      if (value === null) return null;
+      return Object.assign({}, enriched, {
+        year: targetYear,
+        latest_year: targetYear,
+        value: value,
+        value_mld: value,
+        latest_value_mld: value
+      });
+    }).filter(function (row) { return row; });
+  }
+
   function revenueComparableRows(payload) {
     return toArray(payload.revenue_category_series)
       .concat(toArray(payload.all_revenue_lines))
@@ -960,13 +980,44 @@
     });
   }
 
-  function renderPie(id, rows, title, tableId, candidates) {
+  function renderPie(id, rows, title, tableId, candidates, extraRows) {
+    var total = null;
+    var targetYear = null;
     rows = rowsForSingleComparableYear(rows, candidates);
-    rows = byValueDesc(rows, "value_mld");
     if (!rows.length) {
       showEmptyChart(id, "Nessuna ripartizione disponibile");
       return;
     }
+    targetYear = itemYear(rows[0]);
+    if (targetYear !== null && toArray(extraRows).length) {
+      var seenKeys = {};
+      rows.forEach(function (row) {
+        seenKeys[comparableLookupKey(row.code || row.label)] = true;
+      });
+      var comparableExtras = rowsForComparableYear(extraRows, targetYear, candidates).filter(function (row) {
+        return !seenKeys[comparableLookupKey(row.code || row.label)];
+      });
+      var otherTotal = comparableExtras.reduce(function (sum, row) {
+        return sum + (rowValueMld(row) || 0);
+      }, 0);
+      if (otherTotal > 0) {
+        rows = rows.concat([{
+          code: "__OTHER__",
+          label: "Altro",
+          year: targetYear,
+          value_mld: otherTotal
+        }]);
+      }
+    }
+    rows = byValueDesc(rows, "value_mld");
+    total = rows.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    rows = rows.map(function (row) {
+      return Object.assign({}, row, {
+        share_percent: total ? (rowValueMld(row) || 0) / total * 100 : null
+      });
+    });
     var node = byId(id);
     var card = node && node.closest ? node.closest(".bp-card") : null;
     var subtitle = card ? card.querySelector(".bp-card-title span") : null;
@@ -989,13 +1040,19 @@
       showlegend: true,
       legend: { orientation: "h", y: -0.05 },
       annotations: [{
-        text: title,
+        text: title + "<br><span style=\"font-size:12px\">" + formatDecimal(total, 1) + " mld</span>",
         showarrow: false,
         font: { color: cssVar("--text", "#f5f2ed"), size: 15, family: "inherit" }
       }]
     });
 
-    createTableRows(byId(tableId), rows, [
+    createTableRows(byId(tableId), rows.concat([{
+      code: "__TOTAL__",
+      label: "Totale",
+      year: targetYear,
+      value_mld: total,
+      share_percent: 100
+    }]), [
       { value: function (row) { return asText(row.label || row.code); } },
       { value: function (row) { return asText(row.latest_year || row.year || row.anno); } },
       { value: function (row) { return formatMld(rowValueMld(row), 1); } },
@@ -1780,7 +1837,14 @@
     renderTopTaxes(payload);
     renderTaxTrend(payload);
     renderTaxCompositionTrend(payload);
-    renderPie("bpRevenuePie", toArray(payload.revenue_pie), "Entrate", "bpRevenuePieRows", revenueComparableRows(payload));
+    renderPie(
+      "bpRevenuePie",
+      toArray(payload.revenue_pie),
+      "Entrate",
+      "bpRevenuePieRows",
+      revenueComparableRows(payload),
+      toArray(payload.under_500m_revenue_summary && payload.under_500m_revenue_summary.entries)
+    );
     renderPie("bpSpendingPie", toArray(payload.spending_pie), "Spese", "bpSpendingPieRows", toArray(payload.spending_pie));
     renderCategoryTrend("bpRevenueTrend", toArray(payload.revenue_category_series), "Nessuna serie entrate disponibile");
     renderIrpef(payload);
