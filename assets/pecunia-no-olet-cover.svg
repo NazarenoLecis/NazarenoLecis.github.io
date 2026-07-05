@@ -1,3 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1280" role="img" aria-label="Copertina Pecunia Non Olet">
-  <image href="WhatsApp%20Image%202026-06-26%20at%2017.16.39.jpeg" x="0" y="0" width="1280" height="1280" preserveAspectRatio="xMidYMid slice"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Copertina Pecunia Non Olet">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#050505"/>
+      <stop offset="60%" stop-color="#111111"/>
+      <stop offset="100%" stop-color="#1c120d"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff8a4f"/>
+      <stop offset="100%" stop-color="#ff5a1f"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1600" height="900" fill="none" stroke="#2f2f2f" stroke-width="4"/>
+
+  <g opacity="0.22">
+    <path d="M0 180 H1600" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M0 340 H1600" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M0 500 H1600" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M0 660 H1600" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M200 0 V900" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M520 0 V900" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M840 0 V900" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M1160 0 V900" stroke="#ff5a1f" stroke-width="1"/>
+    <path d="M1480 0 V900" stroke="#ff5a1f" stroke-width="1"/>
+  </g>
+
+  <g opacity="0.26">
+    <circle cx="1320" cy="190" r="150" fill="#ff5a1f"/>
+    <circle cx="1320" cy="190" r="118" fill="#080808"/>
+    <circle cx="1320" cy="190" r="88" fill="#ff5a1f"/>
+    <circle cx="1320" cy="190" r="62" fill="#080808"/>
+    <circle cx="1320" cy="190" r="36" fill="#ff5a1f"/>
+  </g>
+
+  <g filter="url(#glow)">
+    <path d="M140 640 C300 560 420 610 560 470 C670 360 780 320 920 370 C1040 412 1140 355 1270 250 C1340 194 1415 172 1490 184" fill="none" stroke="url(#accent)" stroke-width="14" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <circle cx="560" cy="470" r="18" fill="#ff5a1f"/>
+    <circle cx="920" cy="370" r="18" fill="#ff5a1f"/>
+    <circle cx="1270" cy="250" r="18" fill="#ff5a1f"/>
+    <circle cx="1490" cy="184" r="18" fill="#ff5a1f"/>
+  </g>
+
+  <g>
+    <rect x="118" y="128" width="150" height="42" rx="21" fill="#ff5a1f"/>
+    <text x="193" y="156" fill="#ffffff" font-size="22" font-weight="700" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" letter-spacing="3">PLAYLIST</text>
+  </g>
+
+  <g>
+    <text x="118" y="340" fill="#f5f2ed" font-size="112" font-weight="800" font-family="system-ui, -apple-system, Segoe UI, sans-serif">Pecunia</text>
+    <text x="118" y="452" fill="#ff5a1f" font-size="112" font-weight="800" font-family="system-ui, -apple-system, Segoe UI, sans-serif">Non Olet</text>
+    <text x="118" y="538" fill="#c9c2b8" font-size="34" font-weight="500" font-family="system-ui, -apple-system, Segoe UI, sans-serif">economia, finanza, dati e politiche pubbliche</text>
+  </g>
+
+  <g opacity="0.9">
+    <rect x="118" y="610" width="360" height="108" rx="20" fill="#0f0f0f" stroke="#383838" stroke-width="2"/>
+    <text x="154" y="654" fill="#ff5a1f" font-size="24" font-weight="700" font-family="system-ui, -apple-system, Segoe UI, sans-serif">Interventi e approfondimenti</text>
+    <text x="154" y="698" fill="#d0c8be" font-size="26" font-weight="500" font-family="system-ui, -apple-system, Segoe UI, sans-serif">video, live e spiegazioni</text>
+  </g>
+
+  <g opacity="0.78">
+    <rect x="1210" y="610" width="244" height="156" rx="22" fill="#0f0f0f" stroke="#383838" stroke-width="2"/>
+    <path d="M1284 651 L1394 688 L1284 725 Z" fill="#ff5a1f"/>
+    <text x="1332" y="748" fill="#f5f2ed" font-size="28" font-weight="700" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif">YouTube</text>
+  </g>
 </svg>
