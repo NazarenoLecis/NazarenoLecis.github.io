@@ -8,15 +8,16 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260705-crisi-mappa-base100">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
+  <link rel="preload" href="../../data/crisi-abitativa/italy-regions.geojson" as="fetch">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/regions/sardegna.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260705-crisi-mappa-base100"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js"></script>
 </head>
 <body>
@@ -74,7 +75,7 @@
       <div class="workflow-step">
         <span>3</span>
         <h2>Passa al locale</h2>
-        <p>Nel focus Italia scegli regione e metrica. I valori comunali sono quotazioni territoriali: affitto in euro per metro quadro al mese, vendita in euro per metro quadro. La Sardegna e' caricata di default; gli altri export regionali possono essere aggiunti dallo stesso repository dati.</p>
+        <p>Nel focus Italia leggi prima la mappa nazionale per regione, poi scendi al dettaglio comunale del territorio selezionato. Le quotazioni OMI restano valori territoriali di riferimento, non prezzi di contratto o di rogito.</p>
       </div>
     </section>
 
@@ -193,20 +194,16 @@
     <section class="dashboard-section" id="localSection">
       <div class="section-head">
         <span class="eyebrow">Italia locale</span>
-        <h2>Prezzi e affitti comunali: dove il problema diventa concreto</h2>
-        <p>Le medie nazionali dicono poco su cosa succede davvero a Cagliari, Nuoro, Sassari o nei comuni interni. Questa sezione usa export statici regionali con quotazioni OMI comunali: la Sardegna e' pre-caricata, mentre la struttura permette di aggiungere le altre regioni generando gli stessi JSON.</p>
+        <h2>Dalla mappa Italia al dettaglio comunale</h2>
+        <p>Le medie nazionali dicono poco su cosa succede davvero a Cagliari, Nuoro, Sassari o nei comuni interni. Per questo la lettura locale parte da una sintesi regionale su tutta Italia e poi scende alla singola regione e ai comuni. I dati usano export statici regionali con quotazioni OMI comunali e indicatori di reddito dove disponibili.</p>
       </div>
-      <details class="chart-filter-panel" open aria-label="Filtri focus locale">
-        <summary>Filtri focus locale</summary>
+      <details class="chart-filter-panel" open aria-label="Filtri mappa Italia">
+        <summary>Filtri mappa Italia</summary>
         <div class="filter-intro">
-          <h3>Come usare i filtri locali</h3>
-          <p>Scegli una regione e una metrica: affitto medio, affitto mediano, prezzo di vendita medio o prezzo di vendita mediano. Gli affitti sono in euro per metro quadro al mese e i prezzi di vendita in euro per metro quadro. Quando sono presenti le geometrie, il grafico mostra una mappa comunale; altrimenti usa una classifica dei comuni con valori disponibili.</p>
+          <h3>Come leggere la mappa Italia</h3>
+          <p>La misura selezionata colora le regioni italiane usando una sintesi dei valori comunali disponibili: affitto medio, affitto mediano, prezzo di vendita medio o prezzo di vendita mediano. Clicca una regione per caricare sotto il dettaglio comunale dello stesso territorio.</p>
         </div>
         <div class="filter-grid housing-filter-grid">
-          <label>
-            <span>Regione</span>
-            <select id="localRegion"></select>
-          </label>
           <label>
             <span>Misura comunale</span>
             <select id="localMetric">
@@ -215,6 +212,28 @@
               <option value="sale_mean">Prezzo di vendita medio (euro per metro quadro)</option>
               <option value="sale_median">Prezzo di vendita mediano (euro per metro quadro)</option>
             </select>
+          </label>
+        </div>
+      </details>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="italyOverviewTitle">Italia regionale</h2>
+          <span id="italyOverviewSubtitle">anteprima regionale della misura selezionata</span>
+        </div>
+        <div id="italyOverviewChart" class="chart"></div>
+        <div class="chart-credit">Fonte: OMI Agenzia Entrate e MEF Dipartimento Finanze, dove disponibili. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="selection-comment" id="italyOverviewComment"></div>
+      <details class="chart-filter-panel" open aria-label="Dettaglio regionale">
+        <summary>Dettaglio regionale</summary>
+        <div class="filter-intro">
+          <h3>Come usare il dettaglio regionale</h3>
+          <p>Dopo aver scelto la misura sopra, seleziona una regione oppure cliccala nella mappa Italia. Quando sono presenti le geometrie, il grafico mostra una mappa comunale; altrimenti usa una classifica dei comuni con valori disponibili. Il campo di ricerca serve solo a evidenziare un comune nel perimetro regionale gia' aperto.</p>
+        </div>
+        <div class="filter-grid housing-filter-grid">
+          <label>
+            <span>Regione</span>
+            <select id="localRegion"></select>
           </label>
           <label>
             <span>Comune da evidenziare</span>
@@ -226,7 +245,7 @@
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2 id="localTitle">Focus locale Italia</h2>
-          <span>dettaglio comunale</span>
+          <span id="localSubtitle">dettaglio comunale</span>
         </div>
         <div id="localChart" class="chart"></div>
         <div class="chart-credit">Fonte: OMI Agenzia Entrate e MEF Dipartimento Finanze, dove disponibili. Elaborazione di Nazareno Lecis.</div>
@@ -241,6 +260,7 @@
           <li>Il confronto europeo usa indicatori armonizzati Eurostat. La disponibilita' temporale puo' cambiare tra paesi e indicatori, quindi il range non sempre e' calcolato sugli stessi paesi.</li>
           <li>Il range min-max e' calcolato sui paesi disponibili nell'anno, escludendo gli aggregati come EU27. Non rappresenta una media, una mediana o una distribuzione interna ai paesi.</li>
           <li>Gli indicatori europei sono utili per il contesto, ma la crisi abitativa e' fortemente locale: prezzi, affitti, redditi, turismo, universita', trasporti e disponibilita' di stock cambiano tra comuni.</li>
+          <li>La mappa Italia sintetizza ogni regione con la media semplice dei valori comunali disponibili per la misura selezionata: e' una lettura di orientamento, non una stima pesata per popolazione, stock abitativo o transazioni.</li>
           <li>Nel focus locale prezzi e affitti OMI sono quotazioni territoriali per zona, non prezzi effettivi di transazione o canoni di contratto.</li>
           <li>Medie e mediane comunali OMI sono calcolate sulle zone OMI disponibili e non sono pesate per transazioni, stock abitativo, popolazione o superficie.</li>
         </ul>
