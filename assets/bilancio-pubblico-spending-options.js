@@ -2,7 +2,7 @@
   "use strict";
 
   var DATA_URL = "https://data.nazarenolecis.com/bilancio-pubblico/dashboard.json?v=20260703-eu-cofog-detail";
-  var state = { metric: "mld", yearWindow: "all" };
+  var state = { metric: "mld", yearWindow: "all", seriesMode: "absolute", baseYear: null };
   var fallbackOptions = [
     { id: "mld", label: "Miliardi correnti", field: "mld", unit: "mld", axis: "Miliardi di euro correnti", source: "Fonte: Eurostat gov_10a_exp, classificazione COFOG" },
     { id: "mld_2024", label: "Miliardi reali", field: "mld_2024", unit: "mld", axis: "Miliardi di euro a prezzi 2024", source: "Fonte: Eurostat gov_10a_exp e HICP all-items" },
@@ -16,6 +16,11 @@
     { id: "20", label: "Ultimi 20 anni", years: 20 },
     { id: "10", label: "Ultimi 10 anni", years: 10 },
     { id: "5", label: "Ultimi 5 anni", years: 5 }
+  ];
+
+  var SERIES_MODE_OPTIONS = [
+    { id: "absolute", label: "Valori assoluti" },
+    { id: "base100", label: "Indice base 100" }
   ];
 
   function byId(id) { return document.getElementById(id); }
@@ -54,6 +59,18 @@
       var year = num(point.year);
       return year !== null && year >= start;
     });
+  }
+
+  function commonYears(pointSets) {
+    var shared = null;
+    arr(pointSets).forEach(function (points) {
+      var years = availableYears(points);
+      if (!years.length) return;
+      shared = shared === null
+        ? years.slice()
+        : shared.filter(function (year) { return years.indexOf(year) >= 0; });
+    });
+    return shared || [];
   }
 
   function ensureYearWindowControl(chartId, years) {
@@ -107,6 +124,100 @@
       state.yearWindow = current;
     }
     existing.value = current;
+  }
+
+  function ensureSeriesControls(chartId, years, onChange) {
+    var periodSelect = byId(chartId + "YearWindow");
+    if (!periodSelect || !periodSelect.closest) return;
+    var row = periodSelect.closest(".bp-inline-controls");
+    if (!row) return;
+
+    function ensureLabeledSelect(id, labelText) {
+      var select = byId(id);
+      if (select) return select;
+      var label = document.createElement("label");
+      label.className = "bp-filter-label";
+      label.setAttribute("for", id);
+      label.textContent = labelText;
+
+      select = document.createElement("select");
+      select.id = id;
+      select.className = "bp-select bp-select-small";
+      select.addEventListener("change", onChange);
+
+      label.appendChild(select);
+      row.appendChild(label);
+      return select;
+    }
+
+    var modeSelect = ensureLabeledSelect(chartId + "SeriesMode", "Scala");
+    while (modeSelect.firstChild) modeSelect.removeChild(modeSelect.firstChild);
+    SERIES_MODE_OPTIONS.forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.label;
+      modeSelect.appendChild(item);
+    });
+    if (state.seriesMode !== "base100") state.seriesMode = "absolute";
+    modeSelect.value = state.seriesMode;
+
+    var baseYearSelect = ensureLabeledSelect(chartId + "BaseYear", "Base");
+    while (baseYearSelect.firstChild) baseYearSelect.removeChild(baseYearSelect.firstChild);
+    years = arr(years);
+    years.forEach(function (year) {
+      var item = document.createElement("option");
+      item.value = String(year);
+      item.textContent = String(year);
+      baseYearSelect.appendChild(item);
+    });
+    if (!years.length) {
+      var empty = document.createElement("option");
+      empty.value = "";
+      empty.textContent = "ND";
+      baseYearSelect.appendChild(empty);
+      state.baseYear = "";
+      baseYearSelect.value = "";
+      baseYearSelect.disabled = true;
+      return;
+    }
+    if (years.map(String).indexOf(String(state.baseYear)) < 0) {
+      state.baseYear = String(years[0]);
+    }
+    baseYearSelect.value = state.baseYear;
+    baseYearSelect.disabled = state.seriesMode !== "base100";
+  }
+
+  function normalizedPointsBase100(points, baseYear) {
+    baseYear = num(baseYear);
+    if (baseYear === null) return [];
+    var basePoint = arr(points).find(function (point) {
+      return point.year === baseYear && num(point.value) !== null;
+    });
+    var baseValue = basePoint ? num(basePoint.value) : null;
+    if (baseValue === null || baseValue === 0) return [];
+    return arr(points).map(function (point) {
+      var value = num(point.value);
+      if (value === null) return null;
+      return Object.assign({}, point, { base100: value / baseValue * 100 });
+    }).filter(function (point) { return point; });
+  }
+
+  function bindTrendSelection(node, groups) {
+    if (!node || typeof node.on !== "function" || !groups.length) return;
+    if (node.__bpSpendingTrendClickHandler) {
+      node.removeListener && node.removeListener("plotly_click", node.__bpSpendingTrendClickHandler);
+    }
+    var handler = function (eventData) {
+      var point = eventData && eventData.points && eventData.points[0];
+      if (!point) return;
+      var selected = groups[point.curveNumber];
+      var select = byId("bpSpendingDetailFunction");
+      if (!selected || !selected.code || !select) return;
+      select.value = selected.code;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    node.__bpSpendingTrendClickHandler = handler;
+    node.on("plotly_click", handler);
   }
 
   function availableOptions(payload, rows) {
@@ -207,26 +318,52 @@
     var groups = groupedRows(rows, option).map(function (group) {
       return Object.assign({}, group, { points: filterPointsByYearWindow(group.points) });
     }).filter(function (group) { return group.points.length > 1; });
-    ensureYearWindowControl("bpSpendingTrend", availableYears(Array.prototype.concat.apply([], groups.map(function (group) {
+    var visibleYears = availableYears(Array.prototype.concat.apply([], groups.map(function (group) {
       return group.points;
-    }))));
+    })));
+    ensureYearWindowControl("bpSpendingTrend", visibleYears);
+    var commonBaseYears = commonYears(groups.map(function (group) { return group.points; }));
+    ensureSeriesControls("bpSpendingTrend", commonBaseYears, function (event) {
+      if (event.target.id === "bpSpendingTrendSeriesMode") state.seriesMode = event.target.value;
+      if (event.target.id === "bpSpendingTrendBaseYear") state.baseYear = event.target.value;
+      render(payload);
+    });
     if (!groups.length) return;
+    var useBase100 = state.seriesMode === "base100" && commonBaseYears.length;
+    if (useBase100 && commonBaseYears.map(String).indexOf(String(state.baseYear)) < 0) {
+      state.baseYear = String(commonBaseYears[0]);
+    }
+    var baseYear = useBase100 ? state.baseYear : null;
     var traces = groups.map(function (group, index) {
+      var points = useBase100 ? normalizedPointsBase100(group.points, baseYear) : group.points;
+      if (points.length <= 1) return null;
       return {
         type: "scatter",
         mode: "lines+markers",
         name: mobile() ? compact(group.label) : group.label,
-        x: group.points.map(function (point) { return point.year; }),
-        y: group.points.map(function (point) { return point.value; }),
-        customdata: group.points.map(function (point) { return formatValue(point.value, option); }),
+        x: points.map(function (point) { return point.year; }),
+        y: points.map(function (point) { return useBase100 ? point.base100 : point.value; }),
+        customdata: points.map(function (point) {
+          return useBase100 ? point.base100.toLocaleString("it-IT", { maximumFractionDigits: 1 }) : formatValue(point.value, option);
+        }),
         line: { color: index === 0 ? css("--orange", "#ff5a1f") : ["#4e79a7", "#59a14f", "#f28e2b", "#76b7b2", "#e15759"][index - 1] || "#bab0ac", width: index === 0 ? 3 : 2 },
         marker: { size: index === 0 ? 6 : 5 },
-        hovertemplate: "%{x}<br>%{fullData.name}: %{customdata}<extra></extra>"
+        hovertemplate: useBase100
+          ? "%{x}<br>%{fullData.name}: %{customdata} (base " + baseYear + "=100)<extra></extra>"
+          : "%{x}<br>%{fullData.name}: %{customdata}<extra></extra>"
       };
-    });
-    window.Plotly.react(node, traces, layout(option), { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false }).catch(function () {});
+    }).filter(function (trace) { return trace; });
+    var chartLayout = layout(option);
+    if (useBase100) chartLayout.yaxis.title = "Indice base 100 (" + baseYear + "=100)";
+    window.Plotly.react(node, traces, chartLayout, { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false }).then(function () {
+      bindTrendSelection(node, groups);
+    }).catch(function () {});
     var card = node.closest(".bp-card");
-    if (card) ensureSelector(card, option, options, payload);
+    if (card) {
+      ensureSelector(card, option, options, payload);
+      var subtitle = card.querySelector(".bp-card-title span");
+      if (subtitle && useBase100) subtitle.textContent = "Indice base 100 (" + baseYear + "=100)";
+    }
   }
 
   function addNote(textValue) {
@@ -262,4 +399,3 @@
     window.setTimeout(load, 2200);
   }
 })();
-

@@ -15,6 +15,12 @@
   var MISSING_VALUE = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#59a14f", "#f28e2b", "#76b7b2", "#e15759", "#edc948", "#b07aa1"];
   var SIOPE_CODE_METRIC = { id: "mln", label: "Milioni correnti", unit: "mln" };
+  var SERIES_WINDOW_OPTIONS = [
+    { id: "all", label: "Tutti gli anni", years: null },
+    { id: "20", label: "Ultimi 20 anni", years: 20 },
+    { id: "10", label: "Ultimi 10 anni", years: 10 },
+    { id: "5", label: "Ultimi 5 anni", years: 5 }
+  ];
 
   var STATE = {
     payload: null,
@@ -34,6 +40,9 @@
     siopeFlow: "uscite",
     codePerimeter: "regioni_sanita",
     codeFlow: "uscite",
+    historyWindow: "all",
+    historyMode: "absolute",
+    historyBaseYear: null,
     codeCache: {},
     codePromises: {}
   };
@@ -330,6 +339,147 @@
     if (!select || select.brBound) return;
     select.brBound = true;
     select.addEventListener("change", handler);
+  }
+
+  function historyAvailableYears(rows) {
+    return arr(rows).map(function (row) {
+      return num(row && row.anno);
+    }).filter(function (year) {
+      return year !== null;
+    }).sort(function (a, b) {
+      return a - b;
+    });
+  }
+
+  function historyWindowStart(years) {
+    var selected = SERIES_WINDOW_OPTIONS.find(function (option) {
+      return option.id === STATE.historyWindow;
+    });
+    if (!selected || !selected.years || !years.length) return null;
+    return Math.max.apply(null, years) - selected.years + 1;
+  }
+
+  function normalizedHistoryRowsBase100(rows, metric, baseYear) {
+    baseYear = num(baseYear);
+    if (baseYear === null) return [];
+    var baseRow = arr(rows).find(function (row) {
+      return num(row && row.anno) === baseYear && rowValue(row, metric) !== null;
+    });
+    var baseValue = baseRow ? rowValue(baseRow, metric) : null;
+    if (baseValue === null || baseValue === 0) return [];
+    return arr(rows).map(function (row) {
+      var value = rowValue(row, metric);
+      if (value === null) return null;
+      return Object.assign({}, row, { base100: value / baseValue * 100 });
+    }).filter(function (row) {
+      return row;
+    });
+  }
+
+  function ensureHistoryControls(years, baseYears) {
+    var chart = byId("brHistoryChart");
+    if (!chart || !chart.closest) return;
+    var wrap = chart.closest(".bp-chart-wrap");
+    var card = chart.closest(".bp-card");
+    if (!card) return;
+    var controls = byId("brHistoryControls");
+    if (!controls) {
+      controls = document.createElement("div");
+      controls.id = "brHistoryControls";
+      controls.className = "bp-inline-controls br-history-controls";
+      if (wrap && wrap.parentNode) {
+        wrap.parentNode.insertBefore(controls, wrap);
+      } else {
+        card.appendChild(controls);
+      }
+    }
+
+    function ensureLabeledSelect(id, labelText, onChange) {
+      var select = byId(id);
+      if (select) return select;
+      var label = document.createElement("label");
+      label.className = "bp-filter-label";
+      label.setAttribute("for", id);
+      label.textContent = labelText;
+
+      select = document.createElement("select");
+      select.id = id;
+      select.className = "bp-select bp-select-small";
+      select.addEventListener("change", onChange);
+
+      label.appendChild(select);
+      controls.appendChild(label);
+      return select;
+    }
+
+    var windowSelect = ensureLabeledSelect("brHistoryWindow", "Periodo", function () {
+      STATE.historyWindow = windowSelect.value;
+      if (STATE.payload) renderHistory(STATE.payload);
+    });
+    clear(windowSelect);
+    years = arr(years);
+    baseYears = arr(baseYears && baseYears.length ? baseYears : years);
+
+    SERIES_WINDOW_OPTIONS.forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.label;
+      item.disabled = option.years !== null && years.length > 0 && years.length < option.years;
+      windowSelect.appendChild(item);
+    });
+    if (!Array.prototype.some.call(windowSelect.options, function (option) {
+      return option.value === STATE.historyWindow && !option.disabled;
+    })) {
+      STATE.historyWindow = "all";
+    }
+    windowSelect.value = STATE.historyWindow;
+
+    var modeSelect = ensureLabeledSelect("brHistoryMode", "Scala", function () {
+      STATE.historyMode = modeSelect.value;
+      if (STATE.payload) renderHistory(STATE.payload);
+    });
+    clear(modeSelect);
+    [
+      { id: "absolute", label: "Valori assoluti" },
+      { id: "base100", label: "Indice base 100" }
+    ].forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.label;
+      modeSelect.appendChild(item);
+    });
+    if (STATE.historyMode !== "base100") {
+      STATE.historyMode = "absolute";
+    }
+    modeSelect.value = STATE.historyMode;
+
+    var baseYearSelect = ensureLabeledSelect("brHistoryBaseYear", "Base", function () {
+      STATE.historyBaseYear = baseYearSelect.value;
+      if (STATE.payload) renderHistory(STATE.payload);
+    });
+    clear(baseYearSelect);
+    baseYears.forEach(function (year) {
+      var item = document.createElement("option");
+      item.value = String(year);
+      item.textContent = String(year);
+      baseYearSelect.appendChild(item);
+    });
+    if (!baseYears.length) {
+      var empty = document.createElement("option");
+      empty.value = "";
+      empty.textContent = "ND";
+      baseYearSelect.appendChild(empty);
+      STATE.historyBaseYear = "";
+      baseYearSelect.value = "";
+      baseYearSelect.disabled = true;
+      return;
+    }
+
+    if (baseYears.map(String).indexOf(String(STATE.historyBaseYear)) < 0) {
+      STATE.historyBaseYear = String(baseYears[0]);
+    }
+    baseYearSelect.value = String(STATE.historyBaseYear);
+    baseYearSelect.disabled = STATE.historyMode !== "base100";
   }
 
   function fetchJson(url) {
@@ -810,27 +960,50 @@
     var rows = measureRows(payload, STATE.focusMeasure).filter(function (row) {
       return row.regione === region && rowValue(row, metric) !== null;
     }).sort(function (a, b) { return num(a.anno) - num(b.anno); });
+    var allYears = historyAvailableYears(rows);
+    ensureHistoryControls(allYears, allYears);
+    var startYear = historyWindowStart(allYears);
+    if (startYear !== null) {
+      rows = rows.filter(function (row) {
+        return num(row.anno) >= startYear;
+      });
+    }
+    var visibleYears = historyAvailableYears(rows);
+    ensureHistoryControls(allYears, visibleYears);
+    if (visibleYears.length && visibleYears.map(String).indexOf(String(STATE.historyBaseYear)) < 0) {
+      STATE.historyBaseYear = String(visibleYears[0]);
+      ensureHistoryControls(allYears, visibleYears);
+    }
+    var useBase100 = STATE.historyMode === "base100" && visibleYears.length;
+    var baseYear = useBase100 ? num(STATE.historyBaseYear) : null;
+    var plotRows = useBase100 ? normalizedHistoryRowsBase100(rows, metric, baseYear) : rows;
     var color = measure.block === "revenue" ? COLORS[2] : (measure.block === "balances" ? COLORS[1] : COLORS[0]);
-    var traces = rows.length ? [{
+    var traces = plotRows.length ? [{
       type: "scatter",
       mode: "lines+markers",
       name: measure.label,
-      x: rows.map(function (row) { return num(row.anno); }),
-      y: rows.map(function (row) { return rowValue(row, metric); }),
+      x: plotRows.map(function (row) { return num(row.anno); }),
+      y: plotRows.map(function (row) { return useBase100 ? num(row.base100) : rowValue(row, metric); }),
       line: { color: color, width: 3 },
       marker: { size: 7 },
-      hovertemplate: measure.label + "<br>Anno %{x}<br>%{y:.3f}<extra></extra>"
+      hovertemplate: useBase100
+        ? measure.label + "<br>Anno %{x}<br>%{y:.1f} (base " + baseYear + "=100)<extra></extra>"
+        : measure.label + "<br>Anno %{x}<br>%{y:.3f}<extra></extra>"
     }] : [];
 
     var title = byId("brHistoryTitle");
-    if (title) title.textContent = region + " - " + measure.label + " - " + metric.label;
+    if (title) {
+      title.textContent = region + " - " + measure.label + " - " + (useBase100 ? "Indice base 100" : metric.label);
+    }
     if (!traces.length) {
       showEmptyChart("brHistoryChart", "Serie storica non disponibile per questa selezione");
       return;
     }
+    var minYear = Math.min.apply(null, traces[0].x);
+    var maxYear = Math.max.apply(null, traces[0].x);
     plot("brHistoryChart", traces, {
-      xaxis: { title: "Anno", dtick: 1 },
-      yaxis: { title: metricAxis(metric), zeroline: true },
+      xaxis: { title: "Anno", dtick: 1, range: [minYear - 0.2, maxYear + 0.2] },
+      yaxis: { title: useBase100 ? "Indice base 100 (" + baseYear + "=100)" : metricAxis(metric), zeroline: true },
       showlegend: false
     });
   }

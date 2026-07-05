@@ -9,6 +9,8 @@
     peerCountries: null,
     spendingDetailFunction: "GF01",
     yearWindows: {},
+    seriesModes: {},
+    seriesBaseYears: {},
     categoryTrendRows: {}
   };
 
@@ -405,6 +407,14 @@
     return STATE.yearWindows[chartId] || "all";
   }
 
+  function selectedSeriesMode(chartId) {
+    return STATE.seriesModes[chartId] || "absolute";
+  }
+
+  function selectedSeriesBaseYear(chartId) {
+    return STATE.seriesBaseYears[chartId] || null;
+  }
+
   function yearWindowStart(chartId, years) {
     var selected = SERIES_WINDOW_OPTIONS.find(function (item) {
       return item.id === selectedYearWindow(chartId);
@@ -489,6 +499,109 @@
       STATE.yearWindows[chartId] = current;
     }
     existing.value = current;
+  }
+
+  function commonYearsFromPointSets(pointSets) {
+    var common = null;
+    toArray(pointSets).forEach(function (points) {
+      var years = availableYearsFromRows(points, "year");
+      if (!years.length) return;
+      common = common === null
+        ? years.slice()
+        : common.filter(function (year) { return years.indexOf(year) >= 0; });
+    });
+    return common || [];
+  }
+
+  function ensureSeriesIndexControls(chartId, years) {
+    if (chartId !== "bpRevenueTrend") return;
+    var periodSelect = byId(chartId + "YearWindow");
+    if (!periodSelect || !periodSelect.closest) return;
+    var row = periodSelect.closest(".bp-inline-controls");
+    if (!row) return;
+
+    function ensureLabeledSelect(id, labelText, onChange) {
+      var select = byId(id);
+      if (select) return select;
+      var label = document.createElement("label");
+      label.className = "bp-filter-label";
+      label.setAttribute("for", id);
+      label.textContent = labelText;
+
+      select = document.createElement("select");
+      select.id = id;
+      select.className = "bp-select bp-select-small";
+      select.addEventListener("change", onChange);
+
+      label.appendChild(select);
+      row.appendChild(label);
+      return select;
+    }
+
+    var modeSelect = ensureLabeledSelect(chartId + "SeriesMode", "Scala", function () {
+      STATE.seriesModes[chartId] = modeSelect.value;
+      if (STATE.payload) renderAll(STATE.payload);
+    });
+    clear(modeSelect);
+    [
+      { id: "absolute", label: "Valori assoluti" },
+      { id: "base100", label: "Indice base 100" }
+    ].forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.label;
+      modeSelect.appendChild(item);
+    });
+    if (selectedSeriesMode(chartId) !== "base100") {
+      STATE.seriesModes[chartId] = "absolute";
+    }
+    modeSelect.value = selectedSeriesMode(chartId);
+
+    var baseYearSelect = ensureLabeledSelect(chartId + "BaseYear", "Base", function () {
+      STATE.seriesBaseYears[chartId] = baseYearSelect.value;
+      if (STATE.payload) renderAll(STATE.payload);
+    });
+    clear(baseYearSelect);
+    years = toArray(years);
+    years.forEach(function (year) {
+      var item = document.createElement("option");
+      item.value = String(year);
+      item.textContent = String(year);
+      baseYearSelect.appendChild(item);
+    });
+    if (!years.length) {
+      var empty = document.createElement("option");
+      empty.value = "";
+      empty.textContent = "ND";
+      baseYearSelect.appendChild(empty);
+      STATE.seriesBaseYears[chartId] = "";
+      baseYearSelect.value = "";
+      baseYearSelect.disabled = true;
+      return;
+    }
+
+    var currentBaseYear = selectedSeriesBaseYear(chartId);
+    if (years.map(String).indexOf(String(currentBaseYear)) < 0) {
+      currentBaseYear = String(years[0]);
+      STATE.seriesBaseYears[chartId] = currentBaseYear;
+    }
+    baseYearSelect.value = currentBaseYear;
+    baseYearSelect.disabled = modeSelect.value !== "base100";
+  }
+
+  function normalizedPointsBase100(points, valueKey, baseYear) {
+    baseYear = toNumber(baseYear);
+    if (baseYear === null) return [];
+    var basePoint = toArray(points).find(function (point) {
+      return toNumber(point.year) === baseYear && toNumber(point[valueKey]) !== null;
+    });
+    var baseValue = basePoint ? toNumber(basePoint[valueKey]) : null;
+    if (baseValue === null || baseValue === 0) return [];
+    return toArray(points).map(function (point) {
+      var value = toNumber(point[valueKey]);
+      if (value === null) return null;
+      return Object.assign({}, point, { base100: value / baseValue * 100 });
+    }).filter(function (point) { return point; });
   }
 
   function renderKpis(payload) {
@@ -821,8 +934,8 @@
     ensureYearWindowControl(id, availableYears);
     var startYear = yearWindowStart(id, availableYears);
     var endYear = availableYears.length ? Math.max.apply(null, availableYears) : null;
-    var rowIndexMap = [];
-    var traces = rows.map(function (row, index) {
+    var pointSets = [];
+    var visibleSeries = rows.map(function (row) {
       var points = toArray(row.series).filter(function (point) {
         return toNumber(point.year) !== null && toNumber(point.value_mld) !== null;
       });
@@ -833,16 +946,32 @@
         });
       }
       if (points.length <= 1) return null;
-      rowIndexMap.push(row);
+      pointSets.push(points);
+      return { row: row, points: points };
+    }).filter(function (item) { return item; });
+    var commonYears = commonYearsFromPointSets(pointSets);
+    ensureSeriesIndexControls(id, commonYears);
+    var useBase100 = id === "bpRevenueTrend" && selectedSeriesMode(id) === "base100" && commonYears.length;
+    var baseYear = useBase100 ? selectedSeriesBaseYear(id) : null;
+    var rowIndexMap = [];
+    var traces = visibleSeries.map(function (item, index) {
+      var points = item.points;
+      if (useBase100) {
+        points = normalizedPointsBase100(points, "value_mld", baseYear);
+      }
+      if (points.length <= 1) return null;
+      rowIndexMap.push(item.row);
       return {
         type: "scatter",
         mode: "lines+markers",
-        name: asText(row.label || row.code),
+        name: asText(item.row.label || item.row.code),
         x: points.map(function (point) { return toNumber(point.year); }),
-        y: points.map(function (point) { return toNumber(point.value_mld); }),
+        y: points.map(function (point) { return useBase100 ? toNumber(point.base100) : toNumber(point.value_mld); }),
         line: { color: COLORS[index % COLORS.length], width: index === 0 ? 3 : 2 },
         marker: { size: 5 },
-        hovertemplate: "%{x}<br>%{fullData.name}: %{y:.1f} miliardi di euro<extra></extra>"
+        hovertemplate: useBase100
+          ? "%{x}<br>%{fullData.name}: %{y:.1f} (base " + baseYear + "=100)<extra></extra>"
+          : "%{x}<br>%{fullData.name}: %{y:.1f} miliardi di euro<extra></extra>"
       };
     }).filter(function (trace) { return trace; });
 
@@ -858,7 +987,7 @@
       xaxis.dtick = Math.max(1, Math.ceil((endYear - startYear + 1) / 10));
     }
     var plotted = plot(id, traces, {
-      yaxis: { title: "Miliardi di euro" },
+      yaxis: { title: useBase100 ? "Indice base 100 (" + baseYear + "=100)" : "Miliardi di euro" },
       xaxis: xaxis
     });
     if (id === "bpSpendingTrend") {
@@ -1516,7 +1645,6 @@
     renderPie("bpRevenuePie", toArray(payload.revenue_pie), "Entrate", "bpRevenuePieRows", revenueComparableRows(payload));
     renderPie("bpSpendingPie", toArray(payload.spending_pie), "Spese", "bpSpendingPieRows", toArray(payload.spending_pie));
     renderCategoryTrend("bpRevenueTrend", toArray(payload.revenue_category_series), "Nessuna serie entrate disponibile");
-    renderCategoryTrend("bpSpendingTrend", toArray(payload.spending_category_series), "Nessuna serie spese disponibile");
     renderIrpef(payload);
     renderTaxTypeTrend(payload);
     renderRevenueFocus(payload);
