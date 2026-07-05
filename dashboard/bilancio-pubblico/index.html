@@ -8,12 +8,12 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260705-regional-link">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260705-public-order">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260705-regional-link"></script>
-  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260703-eu-cofog-detail"></script>
+  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260705-public-order"></script>
+  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260705-public-order"></script>
 </head>
 <body>
   <header class="site-header">
@@ -147,35 +147,12 @@
             <thead>
               <tr>
                 <th>Voce</th>
+                <th>Anno</th>
                 <th>Miliardi di euro</th>
                 <th>%</th>
               </tr>
             </thead>
             <tbody id="bpRevenuePieRows"></tbody>
-          </table>
-        </div>
-      </article>
-
-      <article class="bp-card">
-        <div class="bp-card-title">
-          <h2>Spesa in torta</h2>
-          <span>Ripartizione principale</span>
-        </div>
-        <p>Composizione della spesa pubblica aggregata.</p>
-        <div class="bp-chart-wrap">
-          <div id="bpSpendingPie" class="chart bp-chart" role="img" aria-label="Spesa pubblica in torta"></div>
-        </div>
-        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, spesa totale S13 per funzione COFOG. Elaborazione di Nazareno Lecis.</p>
-        <div class="bp-table-wrap">
-          <table class="bp-table">
-            <thead>
-              <tr>
-                <th>Funzione</th>
-                <th>Miliardi di euro</th>
-                <th>%</th>
-              </tr>
-            </thead>
-            <tbody id="bpSpendingPieRows"></tbody>
           </table>
         </div>
       </article>
@@ -185,40 +162,13 @@
       <article class="bp-card">
         <div class="bp-card-title">
           <h2>Serie storiche - Entrate</h2>
-        <span>Miliardi di euro, anni disponibili</span>
+          <span>Miliardi di euro, anni disponibili</span>
         </div>
         <p>Andamento delle categorie di entrata disponibili, comprese imposte e contributi sociali netti.</p>
         <div class="bp-chart-wrap">
           <div id="bpRevenueTrend" class="chart bp-chart" role="img" aria-label="Serie storiche entrate"></div>
         </div>
         <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze ed Eurostat gov_10a_taxag. Elaborazione di Nazareno Lecis.</p>
-      </article>
-
-      <article class="bp-card">
-        <div class="bp-card-title">
-          <h2>Serie storiche - Spese</h2>
-          <span>Miliardi di euro (1995-2024)</span>
-        </div>
-        <p>Andamento dei capitoli di spesa per funzione. Clicca una linea per aprire direttamente la sua scomposizione.</p>
-        <div class="bp-chart-wrap">
-          <div id="bpSpendingTrend" class="chart bp-chart" role="img" aria-label="Serie storiche spese"></div>
-        </div>
-        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, classificazione COFOG. Elaborazione di Nazareno Lecis.</p>
-      </article>
-    </section>
-
-    <section class="bp-grid-2" id="bilanci-regionali">
-      <article class="bp-card bp-related-dashboard">
-        <div class="bp-card-title">
-          <h2>Approfondimento regionale</h2>
-          <span>Dashboard dedicata</span>
-        </div>
-        <p>Per analizzare spese, entrate, saldi, serie storiche, confronti tra regioni e dettagli SIOPE/OpenBDAP a livello territoriale c'e' una dashboard separata.</p>
-        <p>
-          <a class="related-link" href="../bilancio-regionale/">
-            Apri la dashboard Bilancio regionale
-          </a>
-        </p>
       </article>
     </section>
 
@@ -315,6 +265,43 @@
     <section class="bp-grid-2" id="uscite">
       <article class="bp-card">
         <div class="bp-card-title">
+          <h2>Spesa in torta</h2>
+          <span>Ripartizione principale</span>
+        </div>
+        <p>Composizione della spesa pubblica aggregata.</p>
+        <div class="bp-chart-wrap">
+          <div id="bpSpendingPie" class="chart bp-chart" role="img" aria-label="Spesa pubblica in torta"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, spesa totale S13 per funzione COFOG. Elaborazione di Nazareno Lecis.</p>
+        <div class="bp-table-wrap">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Funzione</th>
+                <th>Anno</th>
+                <th>Miliardi di euro</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody id="bpSpendingPieRows"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
+          <h2>Serie storiche - Spese</h2>
+          <span>Miliardi di euro (1995-2024)</span>
+        </div>
+        <p>Andamento dei capitoli di spesa per funzione. Clicca una linea per aprire direttamente la sua scomposizione.</p>
+        <div class="bp-chart-wrap">
+          <div id="bpSpendingTrend" class="chart bp-chart" role="img" aria-label="Serie storiche spese"></div>
+        </div>
+        <p class="bp-chart-credit">Fonte: Eurostat gov_10a_exp, classificazione COFOG. Elaborazione di Nazareno Lecis.</p>
+      </article>
+
+      <article class="bp-card">
+        <div class="bp-card-title">
           <h2>Focus spese principali</h2>
           <span>Difesa, istruzione, ricerca, personale...</span>
         </div>
@@ -362,7 +349,10 @@
         </div>
       </article>
 
-      <article class="bp-card" id="confronto-europeo">
+    </section>
+
+    <section class="bp-grid-2" id="confronto-europeo">
+      <article class="bp-card">
         <div class="bp-card-title">
           <h2>Italia vs europei</h2>
           <label for="bpPeerMetric" class="bp-select-label">Metrica</label>
@@ -386,6 +376,21 @@
             <tbody id="bpPeerRows"></tbody>
           </table>
         </div>
+      </article>
+    </section>
+
+    <section class="bp-grid-2" id="bilanci-regionali">
+      <article class="bp-card bp-related-dashboard">
+        <div class="bp-card-title">
+          <h2>Approfondimento regionale</h2>
+          <span>Dashboard dedicata</span>
+        </div>
+        <p>Per analizzare spese, entrate, saldi, serie storiche, confronti tra regioni e dettagli SIOPE/OpenBDAP a livello territoriale c'e' una dashboard separata.</p>
+        <p>
+          <a class="related-link" href="../bilancio-regionale/">
+            Apri la dashboard Bilancio regionale
+          </a>
+        </p>
       </article>
     </section>
 

@@ -68,8 +68,7 @@
   function tuneAll() { PIE_IDS.forEach(tunePie); tuneUnder500(); }
   function schedule() { tuneAll(); [250, 800, 1500, 2500].forEach(function (delay) { window.setTimeout(tuneAll, delay); }); }
   function loadExternalScript(flag, src) { if (document.querySelector("script[" + flag + "]")) return; var script = document.createElement("script"); script.defer = true; script.setAttribute(flag, "true"); script.src = src; document.body.appendChild(script); }
-  function loadSpendingOptionsScript() { loadExternalScript("data-bp-spending-options", "../../assets/bilancio-pubblico-spending-options.js?v=20260703-eu-cofog-detail"); }
-  function loadOpenbdapDetailScript() { loadExternalScript("data-bp-openbdap-detail", "../../assets/bilancio-pubblico-openbdap-detail.js?v=20260703-eu-cofog-detail"); }
+  function loadSpendingOptionsScript() { loadExternalScript("data-bp-spending-options", "../../assets/bilancio-pubblico-spending-options.js?v=20260705-public-order"); }
 
   function observeCharts() {
     if (!window.MutationObserver) return;
@@ -82,8 +81,8 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { schedule(); observeCharts(); loadSpendingOptionsScript(); loadOpenbdapDetailScript(); });
-  } else { schedule(); observeCharts(); loadSpendingOptionsScript(); loadOpenbdapDetailScript(); }
+    document.addEventListener("DOMContentLoaded", function () { schedule(); observeCharts(); loadSpendingOptionsScript(); });
+  } else { schedule(); observeCharts(); loadSpendingOptionsScript(); }
 
   window.addEventListener("resize", function () { var under500 = document.getElementById("bpUnder500Chart"); if (under500) under500.__bpUnder500Tuned = false; schedule(); });
 })();

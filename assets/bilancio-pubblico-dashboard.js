@@ -268,6 +268,11 @@
     return row ? toNumber(row.latest_year || row.year || row.anno) : null;
   }
 
+  function rowValueMld(row) {
+    if (!row) return null;
+    return toNumber(row.value_mld !== undefined ? row.value_mld : row.value);
+  }
+
   function yearsFromRows(rows) {
     return uniqueSorted(toArray(rows).map(itemYear).filter(function (year) {
       return year !== null;
@@ -278,7 +283,99 @@
     var years = yearsFromRows(rows);
     if (!years.length) return "Anno non disponibile";
     if (years.length === 1) return "Anno " + years[0];
-    return "Anni " + years.join("/");
+    return "Anni non omogenei: " + years.join(", ");
+  }
+
+  function rowSeriesYears(row) {
+    return uniqueSorted(toArray(row && row.series).map(function (point) {
+      return toNumber(point.year);
+    }), false);
+  }
+
+  function comparableLatestYear(row) {
+    var years = rowSeriesYears(row);
+    if (years.length) return years[years.length - 1];
+    return itemYear(row);
+  }
+
+  function valueForYear(row, year) {
+    var point = toArray(row && row.series).find(function (item) {
+      return toNumber(item.year) === year;
+    });
+    if (point) return rowValueMld(point);
+    return itemYear(row) === year ? rowValueMld(row) : null;
+  }
+
+  function comparableLookupKey(value) {
+    return asText(value, "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function comparableCandidate(row, candidates) {
+    var code = comparableLookupKey(row && row.code);
+    var label = comparableLookupKey(row && row.label);
+    var richCandidates = candidates.filter(function (item) {
+      return toArray(item && item.series).length;
+    });
+    var searchRows = richCandidates.length ? richCandidates : candidates;
+    var exactCode = searchRows.find(function (item) {
+      return code && comparableLookupKey(item.code) === code;
+    });
+    if (exactCode) return exactCode;
+    var exactLabel = searchRows.find(function (item) {
+      return label && comparableLookupKey(item.label) === label;
+    });
+    if (exactLabel) return exactLabel;
+    var labelMatches = searchRows.filter(function (item) {
+      var itemLabel = comparableLookupKey(item.label);
+      return label && itemLabel && (itemLabel.indexOf(label) >= 0 || label.indexOf(itemLabel) >= 0);
+    });
+    if (labelMatches.length === 1) return labelMatches[0];
+    return candidates.find(function (item) {
+      return code && comparableLookupKey(item.code) === code;
+    }) || candidates.find(function (item) {
+      return label && comparableLookupKey(item.label) === label;
+    }) || null;
+  }
+
+  function rowsForSingleComparableYear(rows, candidates) {
+    rows = toArray(rows);
+    candidates = toArray(candidates);
+    var enriched = rows.map(function (row) {
+      var candidate = comparableCandidate(row, candidates);
+      return candidate ? Object.assign({}, candidate, row, { series: candidate.series || row.series }) : row;
+    });
+    var latestYears = enriched.map(comparableLatestYear).filter(function (year) {
+      return year !== null;
+    });
+    if (!latestYears.length) return rows;
+    var targetYear = Math.min.apply(null, latestYears);
+    var mapped = enriched.map(function (row) {
+      var value = valueForYear(row, targetYear);
+      if (value === null) return null;
+      return Object.assign({}, row, {
+        year: targetYear,
+        latest_year: targetYear,
+        value: value,
+        value_mld: value,
+        latest_value_mld: value
+      });
+    }).filter(function (row) { return row; });
+    var total = mapped.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    if (total) {
+      mapped = mapped.map(function (row) {
+        return Object.assign({}, row, { share_percent: (rowValueMld(row) || 0) / total * 100 });
+      });
+    }
+    return mapped.length ? mapped : rows;
+  }
+
+  function revenueComparableRows(payload) {
+    return toArray(payload.revenue_category_series)
+      .concat(toArray(payload.all_revenue_lines))
+      .concat(toArray(payload.top_taxes))
+      .concat(toArray(payload.revenue_pie));
   }
 
   function setSelectOptions(select, values, current, labelFormatter) {
@@ -472,7 +569,11 @@
   }
 
   function renderTopTaxes(payload) {
-    var rows = byValueDesc(firstRows(payload, ["top_taxes_2025", "top_taxes", "main_taxes_2025"]), "value_mld")
+    var rows = rowsForSingleComparableYear(
+      firstRows(payload, ["top_taxes_2025", "top_taxes", "main_taxes_2025"]),
+      revenueComparableRows(payload)
+    );
+    rows = byValueDesc(rows, "value_mld")
       .slice(0, 10)
       .reverse();
     if (!rows.length) {
@@ -484,14 +585,14 @@
     plot("bpTopTaxes", [{
       type: "bar",
       orientation: "h",
-      x: rows.map(function (row) { return toNumber(row.value_mld || row.value); }),
+      x: rows.map(rowValueMld),
       y: rows.map(function (row) { return asText(row.label || row.code); }),
       marker: {
         color: rows.map(function (row, index) {
           return row.code === "IRPEF" ? cssVar("--orange", COLORS[0]) : COLORS[(index + 1) % COLORS.length];
         })
       },
-      text: rows.map(function (row) { return formatMld(row.value_mld || row.value, 1); }),
+      text: rows.map(function (row) { return formatMld(rowValueMld(row), 1); }),
       textposition: "auto",
       hovertemplate: "%{y}<br>%{x:.1f} miliardi di euro<extra></extra>"
     }], {
@@ -662,7 +763,8 @@
     });
   }
 
-  function renderPie(id, rows, title, tableId) {
+  function renderPie(id, rows, title, tableId, candidates) {
+    rows = rowsForSingleComparableYear(rows, candidates);
     rows = byValueDesc(rows, "value_mld");
     if (!rows.length) {
       showEmptyChart(id, "Nessuna ripartizione disponibile");
@@ -675,7 +777,7 @@
     plot(id, [{
       type: "pie",
       labels: rows.map(function (row) { return asText(row.label || row.code); }),
-      values: rows.map(function (row) { return toNumber(row.value_mld || row.value); }),
+      values: rows.map(rowValueMld),
       hole: .48,
       sort: false,
       textinfo: "label+percent",
@@ -698,7 +800,8 @@
 
     createTableRows(byId(tableId), rows, [
       { value: function (row) { return asText(row.label || row.code); } },
-      { value: function (row) { return formatMld(row.value_mld || row.value, 1); } },
+      { value: function (row) { return asText(row.latest_year || row.year || row.anno); } },
+      { value: function (row) { return formatMld(rowValueMld(row), 1); } },
       { value: function (row) { return formatPercent(row.share_percent, 1); } }
     ]);
   }
@@ -714,13 +817,21 @@
         if (year !== null) allYears.push(year);
       });
     });
-    ensureYearWindowControl(id, uniqueSorted(allYears, false));
+    var availableYears = uniqueSorted(allYears, false);
+    ensureYearWindowControl(id, availableYears);
+    var startYear = yearWindowStart(id, availableYears);
+    var endYear = availableYears.length ? Math.max.apply(null, availableYears) : null;
     var rowIndexMap = [];
     var traces = rows.map(function (row, index) {
       var points = toArray(row.series).filter(function (point) {
         return toNumber(point.year) !== null && toNumber(point.value_mld) !== null;
       });
-      points = filterPointsByYearWindow(id, points);
+      if (startYear !== null) {
+        points = points.filter(function (point) {
+          var year = toNumber(point.year);
+          return year !== null && year >= startYear && (endYear === null || year <= endYear);
+        });
+      }
       if (points.length <= 1) return null;
       rowIndexMap.push(row);
       return {
@@ -741,9 +852,14 @@
       return;
     }
     STATE.categoryTrendRows[id] = rowIndexMap;
+    var xaxis = { title: "" };
+    if (startYear !== null && endYear !== null) {
+      xaxis.range = [startYear - 0.2, endYear + 0.2];
+      xaxis.dtick = Math.max(1, Math.ceil((endYear - startYear + 1) / 10));
+    }
     var plotted = plot(id, traces, {
       yaxis: { title: "Miliardi di euro" },
-      xaxis: { title: "" }
+      xaxis: xaxis
     });
     if (id === "bpSpendingTrend") {
       if (plotted && typeof plotted.then === "function") {
@@ -1397,8 +1513,8 @@
     renderTopTaxes(payload);
     renderTaxTrend(payload);
     renderTaxCompositionTrend(payload);
-    renderPie("bpRevenuePie", toArray(payload.revenue_pie), "Entrate", "bpRevenuePieRows");
-    renderPie("bpSpendingPie", toArray(payload.spending_pie), "Spese", "bpSpendingPieRows");
+    renderPie("bpRevenuePie", toArray(payload.revenue_pie), "Entrate", "bpRevenuePieRows", revenueComparableRows(payload));
+    renderPie("bpSpendingPie", toArray(payload.spending_pie), "Spese", "bpSpendingPieRows", toArray(payload.spending_pie));
     renderCategoryTrend("bpRevenueTrend", toArray(payload.revenue_category_series), "Nessuna serie entrate disponibile");
     renderCategoryTrend("bpSpendingTrend", toArray(payload.spending_category_series), "Nessuna serie spese disponibile");
     renderIrpef(payload);
