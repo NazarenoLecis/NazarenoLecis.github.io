@@ -200,41 +200,9 @@
   text-transform: uppercase;
 }
 
-.bp-regional-summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 10px 0 12px;
-}
-
-.bp-regional-summary div {
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-}
-
-.bp-regional-summary span {
-  display: block;
-  color: var(--muted);
-  font-size: .82rem;
-  font-weight: 750;
-}
-
-.bp-regional-summary strong {
-  display: block;
+.bp-related-dashboard .related-link {
+  width: fit-content;
   margin-top: 4px;
-  color: var(--text);
-  font-size: 1.25rem;
-  line-height: 1.15;
-}
-
-.bp-regional-summary small {
-  display: block;
-  margin-top: 4px;
-  color: var(--muted);
-  font-size: .78rem;
 }
 
 .bp-chart.bp-chart-compact {
@@ -469,10 +437,6 @@
 
   .bp-chart {
     min-height: 320px;
-  }
-
-  .bp-regional-summary {
-    grid-template-columns: 1fr;
   }
 
   .bp-filter-label {

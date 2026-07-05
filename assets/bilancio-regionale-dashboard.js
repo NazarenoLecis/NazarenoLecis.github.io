@@ -1,9 +1,8 @@
 (function () {
   "use strict";
 
-  var PUBLIC_DATA_URL = "https://data.nazarenolecis.com/bilancio-regionale/dashboard.json?v=20260705-regionale-focus-metrica";
+  var PUBLIC_DATA_URL = "https://data.nazarenolecis.com/bilancio-regionale/dashboard.json?v=20260705-regionale-focus-grandezza";
   var LOCAL_DATA_URLS = [
-    "../../../nazarenolecis-data-pipeline/publish/bilancio-regionale/dashboard.json",
     "../../data/bilancio-regionale/dashboard.json",
     PUBLIC_DATA_URL
   ];
@@ -25,6 +24,7 @@
     year: null,
     metric: "mld",
     focusMetric: "mld",
+    focusMeasure: "saldo_totale",
     measure: "saldo_totale",
     compareMetric: "mld",
     compareRegions: [],
@@ -444,6 +444,11 @@
     }, function (metric) {
       return metric.label;
     });
+    STATE.focusMeasure = setSelect(byId("brFocusMeasure"), OPENBDAP_MEASURES, STATE.focusMeasure, function (measure) {
+      return measure.id;
+    }, function (measure) {
+      return measure.label;
+    });
     STATE.measure = setSelect(byId("brMeasure"), OPENBDAP_MEASURES, STATE.measure, function (measure) {
       return measure.id;
     }, function (measure) {
@@ -487,6 +492,10 @@
       renderSiopeYear(STATE.payload);
       renderCompartments(STATE.payload);
       renderCodes();
+    });
+    bindSelect("brFocusMeasure", function () {
+      STATE.focusMeasure = this.value;
+      renderHistory(STATE.payload);
     });
     bindSelect("brMeasure", function () {
       STATE.measure = this.value;
@@ -796,35 +805,33 @@
 
   function renderHistory(payload) {
     var metric = selectedFocusMetric(payload);
+    var measure = measureById(STATE.focusMeasure);
     var region = STATE.region;
-    var spendingRows = arr(openbdapBlock(payload, "spending").by_region).filter(function (row) { return row.regione === region; });
-    var revenueRows = arr(openbdapBlock(payload, "revenue").by_region).filter(function (row) { return row.regione === region; });
-    var balanceRows = arr(openbdapBlock(payload, "balances").by_region).filter(function (row) { return row.regione === region; });
-    var series = [
-      { name: "Spese", rows: spendingRows, color: COLORS[0] },
-      { name: "Entrate", rows: revenueRows, color: COLORS[2] },
-      { name: "Saldo", rows: balanceRows, color: COLORS[1] }
-    ];
-    var traces = series.map(function (item) {
-      var rows = item.rows.slice().sort(function (a, b) { return num(a.anno) - num(b.anno); });
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: item.name,
-        x: rows.map(function (row) { return num(row.anno); }),
-        y: rows.map(function (row) { return rowValue(row, metric); }),
-        line: { color: item.color, width: 3 },
-        marker: { size: 7 },
-        hovertemplate: item.name + "<br>Anno %{x}<br>Valore %{y:.3f}<extra></extra>"
-      };
-    }).filter(function (trace) { return trace.x.length; });
+    var rows = measureRows(payload, STATE.focusMeasure).filter(function (row) {
+      return row.regione === region && rowValue(row, metric) !== null;
+    }).sort(function (a, b) { return num(a.anno) - num(b.anno); });
+    var color = measure.block === "revenue" ? COLORS[2] : (measure.block === "balances" ? COLORS[1] : COLORS[0]);
+    var traces = rows.length ? [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: measure.label,
+      x: rows.map(function (row) { return num(row.anno); }),
+      y: rows.map(function (row) { return rowValue(row, metric); }),
+      line: { color: color, width: 3 },
+      marker: { size: 7 },
+      hovertemplate: measure.label + "<br>Anno %{x}<br>%{y:.3f}<extra></extra>"
+    }] : [];
 
     var title = byId("brHistoryTitle");
-    if (title) title.textContent = region + " - " + metric.label;
+    if (title) title.textContent = region + " - " + measure.label + " - " + metric.label;
+    if (!traces.length) {
+      showEmptyChart("brHistoryChart", "Serie storica non disponibile per questa selezione");
+      return;
+    }
     plot("brHistoryChart", traces, {
       xaxis: { title: "Anno", dtick: 1 },
       yaxis: { title: metricAxis(metric), zeroline: true },
-      legend: { orientation: "h", y: -0.24 }
+      showlegend: false
     });
   }
 

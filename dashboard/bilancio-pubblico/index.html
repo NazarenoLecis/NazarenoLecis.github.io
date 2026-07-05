@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260703-eu-cofog-detail">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260705-regional-link">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260703-cofog-grouped"></script>
+  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260705-regional-link"></script>
   <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260703-eu-cofog-detail"></script>
 </head>
 <body>
@@ -43,15 +43,15 @@
         <span class="eyebrow">Finanza pubblica</span>
         <h1>Bilancio pubblico italiano</h1>
         <p class="lead">
-          Dashboard su entrate fiscali e contributive, spesa pubblica, confronti europei
-          e rendiconti regionali. Il percorso parte dal quadro Italia, entra nei dettagli
-          di entrate e uscite, poi passa a confronti e metodo.
+          Dashboard su entrate fiscali e contributive, spesa pubblica e confronti europei.
+          Il percorso parte dal quadro Italia, entra nei dettagli di entrate e uscite,
+          poi passa a confronti e metodo.
         </p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonti: MEF, Eurostat, OCSE, OpenBDAP, Banca d'Italia</strong>
+          <strong>Fonti: MEF, Eurostat, OCSE, Banca d'Italia</strong>
           <span id="bpSourceMeta">Dati elaborati a partire da fonti ufficiali sulla finanza pubblica italiana ed europea.</span>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Bilancio_pubblico" target="_blank" rel="noopener">
@@ -75,7 +75,7 @@
       <div class="workflow-step">
         <span>3</span>
         <h2>Confronti</h2>
-        <p>Europa, regioni e note metodologiche chiariscono perimetri, normalizzazioni e fonti.</p>
+        <p>Europa e note metodologiche chiariscono perimetri, normalizzazioni e fonti.</p>
       </div>
     </section>
 
@@ -84,7 +84,7 @@
       <a href="#entrate">Entrate</a>
       <a href="#uscite">Uscite</a>
       <a href="#confronto-europeo">Confronto europeo</a>
-      <a href="#bilanci-regionali">Focus regionale</a>
+      <a href="#bilanci-regionali">Regioni</a>
       <a href="#metodo">Metodo e fonti</a>
     </nav>
 
@@ -208,44 +208,17 @@
     </section>
 
     <section class="bp-grid-2" id="bilanci-regionali">
-      <article class="bp-card">
+      <article class="bp-card bp-related-dashboard">
         <div class="bp-card-title">
-          <h2 id="bpRegionalTitle">Rendiconti regionali - OpenBDAP/FET</h2>
-          <span id="bpRegionalSubtitle">Anno selezionabile</span>
+          <h2>Approfondimento regionale</h2>
+          <span>Dashboard dedicata</span>
         </div>
-        <p>Spese, entrate e saldi da rendiconto della gestione delle Regioni e province autonome. Fonte RGS-OpenBDAP, Finanza degli Enti Territoriali. Valori in miliardi di euro correnti, arrotondati.</p>
-
-        <div class="bp-filter-row" aria-label="Filtri bilanci regionali">
-          <label class="bp-filter-label" for="bpRegionalYear">
-            Anno
-            <select id="bpRegionalYear" class="bp-select"></select>
-          </label>
-          <label class="bp-filter-label" for="bpRegionalRegion">
-            Regione
-            <select id="bpRegionalRegion" class="bp-select"></select>
-          </label>
-        </div>
-
-        <div id="bpRegionalSummary" class="bp-regional-summary" aria-label="Sintesi bilancio regionale"></div>
-        <p id="bpRegionalCoverage" class="muted-note"></p>
-
-        <div class="bp-chart-wrap">
-          <div id="bpRegionalMissionChart" class="chart bp-chart bp-chart-tall" role="img" aria-label="Composizione della spesa regionale per missione"></div>
-        </div>
-        <p id="bpRegionalCredit" class="bp-chart-credit">Spese, entrate e saldi da rendiconto della gestione delle Regioni e province autonome. Fonte: RGS-OpenBDAP, Finanza degli Enti Territoriali. Valori in miliardi di euro correnti, arrotondati.</p>
-
-        <div class="bp-table-wrap">
-          <table class="bp-table">
-            <thead>
-              <tr>
-                <th>Missione</th>
-                <th>Miliardi di euro</th>
-                <th>Quota spesa</th>
-              </tr>
-            </thead>
-            <tbody id="bpRegionalMissionRows"></tbody>
-          </table>
-        </div>
+        <p>Per analizzare spese, entrate, saldi, serie storiche, confronti tra regioni e dettagli SIOPE/OpenBDAP a livello territoriale c'e' una dashboard separata.</p>
+        <p>
+          <a class="related-link" href="../bilancio-regionale/">
+            Apri la dashboard Bilancio regionale
+          </a>
+        </p>
       </article>
     </section>
 
@@ -434,9 +407,9 @@
           <li><a href="https://www.finanze.gov.it/it/statistiche-fiscali/DichiarazioniFiscali-/" target="_blank" rel="noopener">MEF Dipartimento delle Finanze - Statistiche dichiarazioni fiscali</a></li>
           <li><a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_taxag/default/table?lang=en" target="_blank" rel="noopener">Eurostat - Main national accounts tax aggregates</a></li>
           <li><a href="https://ec.europa.eu/eurostat/databrowser/view/gov_10a_exp/default/table?lang=en" target="_blank" rel="noopener">Eurostat - General government expenditure by function (COFOG)</a></li>
-          <li><a href="https://openbdap.rgs.mef.gov.it/" target="_blank" rel="noopener">RGS - OpenBDAP, Banca Dati Amministrazioni Pubbliche</a></li>
           <li><a href="https://www.bancaditalia.it/statistiche/tematiche/conti-patrimoniali/conti-distributivi/index.html" target="_blank" rel="noopener">Banca d'Italia - Conti distributivi sulla ricchezza delle famiglie</a></li>
           <li><a href="https://www.oecd.org/en/data/datasets/global-revenue-statistics-database.html" target="_blank" rel="noopener">OECD - Global Revenue Statistics Database</a></li>
+          <li><a href="../bilancio-regionale/">Dashboard Bilancio regionale</a></li>
         </ul>
       </div>
     </section>

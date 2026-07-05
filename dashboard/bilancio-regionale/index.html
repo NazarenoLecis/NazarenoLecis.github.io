@@ -8,12 +8,12 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260705-regionale-focus-metrica">
-  <link rel="stylesheet" href="../../assets/bilancio-regionale-dashboard.css?v=20260705-regionale-focus-metrica">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260705-regionale-focus-grandezza">
+  <link rel="stylesheet" href="../../assets/bilancio-regionale-dashboard.css?v=20260705-regionale-focus-grandezza">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/bilancio-regionale-dashboard.js?v=20260705-regionale-focus-metrica"></script>
+  <script defer src="../../assets/bilancio-regionale-dashboard.js?v=20260705-regionale-focus-grandezza"></script>
 </head>
 <body>
   <header class="site-header">
@@ -200,6 +200,9 @@
       <label class="bp-filter-label" for="brFocusRegion">Regione
         <select id="brFocusRegion" class="bp-select"></select>
       </label>
+      <label class="bp-filter-label" for="brFocusMeasure">Grandezza
+        <select id="brFocusMeasure" class="bp-select"></select>
+      </label>
       <label class="bp-filter-label" for="brFocusMetric">Metrica
         <select id="brFocusMetric" class="bp-select"></select>
       </label>
@@ -211,11 +214,11 @@
           <h2>Serie storica regionale</h2>
           <span id="brHistoryTitle">Spese, entrate e saldi</span>
         </div>
-        <p>Andamento del rendiconto regionale nel periodo disponibile, nella metrica selezionata.</p>
+        <p>Andamento della grandezza selezionata nel periodo disponibile, nella metrica scelta nel focus regionale.</p>
         <div class="bp-chart-wrap">
           <div id="brHistoryChart" class="chart bp-chart" role="img" aria-labelledby="brHistoryTitle"></div>
         </div>
-        <p class="br-chart-note">Come leggere: le tre linee confrontano spese, entrate e saldo della regione selezionata lungo tutti gli anni disponibili, usando la metrica scelta nel focus regionale.</p>
+        <p class="br-chart-note">Come leggere: scegli nel focus regionale se seguire spese, entrate o saldo; la linea mostra quella grandezza nel tempo.</p>
         <p class="bp-chart-credit">Fonte: RGS-OpenBDAP, rendiconti regionali. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
@@ -381,12 +384,12 @@
         <div>
           <h3>Definizioni</h3>
           <ul>
-            <li><strong>OpenBDAP/FET</strong>: rendiconti della gestione delle Regioni e province autonome; sono dati consuntivi, non previsionali.</li>
-            <li><strong>Spese</strong>: le missioni indicano la funzione della spesa; i titoli indicano la natura contabile. Il dettaglio massimo OpenBDAP pubblicato qui e' missione x titolo.</li>
-            <li><strong>Entrate</strong>: titoli e tipologie distinguono tributi, trasferimenti correnti, trasferimenti UE e resto del mondo, conto capitale, attivita' finanziarie e debito.</li>
-            <li><strong>SIOPE</strong>: flussi di cassa, quindi incassi e pagamenti effettivi per ente, mese e codice gestionale; non coincide con il rendiconto OpenBDAP.</li>
-            <li><strong>Saldo totale</strong>: entrate totali meno spese totali. Il saldo finale restringe il confronto ai titoli finali disponibili nei rendiconti.</li>
-            <li><strong>Metriche</strong>: importi in miliardi correnti; normalizzazioni per abitante, kmq e PIL regionale derivate da popolazione, superficie e PIL regionale.</li>
+            <li><strong>OpenBDAP/FET</strong>: fonte RGS sui rendiconti della gestione delle Regioni e province autonome. Qui si leggono risultati consuntivi, quindi importi effettivamente rendicontati a fine esercizio, non stanziamenti previsionali.</li>
+            <li><strong>Spese</strong>: la <strong>missione</strong> dice a quale funzione pubblica e' destinata la spesa, mentre il <strong>titolo</strong> descrive la natura contabile della voce. Il dettaglio massimo OpenBDAP pubblicato qui e' missione x titolo.</li>
+            <li><strong>Entrate</strong>: il <strong>titolo</strong> separa grandi famiglie contabili; la <strong>tipologia</strong> scende al codice a 6 cifre e consente di distinguere, tra le altre cose, tributi, trasferimenti da amministrazioni pubbliche, trasferimenti UE/resto del mondo, conto capitale e debito.</li>
+            <li><strong>SIOPE</strong>: misura flussi di cassa, cioe' incassi e pagamenti effettivi per ente, mese e codice gestionale. E' piu' granulare sui movimenti, ma non ha lo stesso perimetro contabile del rendiconto OpenBDAP.</li>
+            <li><strong>Saldo totale e saldo finale</strong>: il saldo totale usa entrate totali meno spese totali. Il saldo finale restringe il confronto ai titoli finali, escludendo voci non finali come partite di giro e alcune componenti finanziarie secondo la disponibilita' dei titoli.</li>
+            <li><strong>Metriche</strong>: gli importi OpenBDAP sono in miliardi correnti; le normalizzazioni per abitante, kmq e PIL regionale sono derivate da popolazione, superficie e PIL regionale. Il dettaglio SIOPE per codice e' mostrato in milioni per rendere leggibili anche voci piccole.</li>
           </ul>
         </div>
         <div>
@@ -396,7 +399,6 @@
             <li><a href="https://www.siope.it/" target="_blank" rel="noopener">SIOPE</a></li>
             <li><a href="https://ec.europa.eu/eurostat/databrowser/" target="_blank" rel="noopener">Eurostat - popolazione e PIL regionale</a></li>
             <li><a href="https://github.com/NazarenoLecis/Bilancio_pubblico" target="_blank" rel="noopener">Repository Bilancio_pubblico</a></li>
-            <li><a href="https://github.com/NazarenoLecis/nazarenolecis-data-pipeline" target="_blank" rel="noopener">Repository pipeline dati</a></li>
           </ul>
         </div>
       </div>
