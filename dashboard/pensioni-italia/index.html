@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pensioni italiane | Nazareno Lecis</title>
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css">
+  <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/dashboard.json" as="fetch" crossorigin>
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="../../assets/pensioni-italia-dashboard.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html">
+        <span class="logo"></span>
+        <span>
+          <span class="brand-name">Nazareno Lecis</span>
+          <span class="brand-tag">Data &amp; Risk Analysis</span>
+        </span>
+      </a>
+      <nav class="nav">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap pi-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Pensioni e finanza pubblica</span>
+        <h1>Pensioni italiane</h1>
+        <p class="lead">
+          Dashboard di lavoro su sistema a ripartizione, contributi, trasferimenti, demografia,
+          pensioni e pensionati. Il payload pubblico espone lo stato dei dati disponibili e il
+          calcolatore didattico sul tema "me la sono pagata".
+        </p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonti: INPS, RGS, ISTAT, Eurostat, COVIP, OECD</strong>
+          <span>Payload preparato dal repo dati pensioni_italia e pubblicato su Cloudflare R2.</span>
+          <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
+          <a class="related-link" href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Apri repository pensioni_italia</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-grid" aria-label="Guida alla lettura">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Perimetri</h2>
+        <p>Prima si separano INPS, amministrazioni pubbliche, ESSPROS, previdenza e assistenza.</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Persone</h2>
+        <p>Le pensioni sono trattamenti, i pensionati sono persone: la dashboard tiene distinti i due piani.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Copertura</h2>
+        <p>Le sezioni mostrano anche cosa e' gia' implementato e cosa richiede ancora dati ufficiali.</p>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard pensioni">
+      <a href="#quadro">Quadro dati</a>
+      <a href="#temi">Temi</a>
+      <a href="#calcolatore">Calcolatore</a>
+      <a href="#domande">Domande live</a>
+      <a href="#metodo">Metodo e fonti</a>
+    </nav>
+
+    <p id="piStatus" class="pi-status">Caricamento dati pensioni ...</p>
+
+    <details class="chart-filter-panel pi-filter-panel" open aria-label="Filtri dashboard pensioni">
+      <summary>Filtri dashboard pensioni</summary>
+      <div class="filter-intro">
+        <h3>Lettura guidata</h3>
+        <p>
+          I filtri cambiano temi e matrice domande senza alterare il payload. Lo scenario agisce solo
+          sul calcolatore didattico: non e' una previsione ufficiale, ma una sensibilita' sulle ipotesi.
+        </p>
+      </div>
+      <div class="filter-grid pi-filter-grid">
+        <label>
+          <span>Stato temi</span>
+          <select id="piThemeStatus"></select>
+        </label>
+        <label>
+          <span>Tema domande</span>
+          <select id="piQuestionTheme"></select>
+        </label>
+        <label>
+          <span>Stato domande</span>
+          <select id="piQuestionStatus"></select>
+        </label>
+        <label>
+          <span>Scenario calcolatore</span>
+          <select id="piScenario"></select>
+        </label>
+        <label class="pi-search-label">
+          <span>Cerca domanda</span>
+          <input id="piQuestionSearch" type="search" placeholder="ripartizione, trasferimenti, pensionati">
+        </label>
+      </div>
+      <div class="filter-actions">
+        <button class="button compact" id="piResetFilters" type="button">Reset filtri</button>
+      </div>
+    </details>
+
+    <section id="piKpis" class="kpi-grid pi-kpi-grid" aria-label="KPI dashboard pensioni"></section>
+
+    <section class="dashboard-section" id="quadro">
+      <div class="section-head">
+        <span class="eyebrow">Stato dei dati</span>
+        <div>
+          <h2>Copertura e controlli</h2>
+          <p>La dashboard non riempie i vuoti con stime opache: quando una domanda e' mappata ma non ha ancora dati, resta visibile.</p>
+        </div>
+      </div>
+      <div class="pi-grid-2">
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Domande live per stato</h3>
+            <span>Copertura</span>
+          </div>
+          <p class="pi-card-note">Le domande metodologiche sono gia' documentabili; quelle senza dati indicano tabelle finali ancora da popolare.</p>
+          <div class="pi-chart" id="piCoverageChart" role="img" aria-label="Copertura delle domande live"></div>
+        </article>
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Controlli qualita'</h3>
+            <span>Pipeline</span>
+          </div>
+          <p class="pi-card-note">I controlli verificano cataloghi, schemi, duplicati, anni e valori numerici delle tabelle finali.</p>
+          <div id="piQualityList" class="pi-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="temi">
+      <div class="section-head">
+        <span class="eyebrow">Dalle trascrizioni</span>
+        <div>
+          <h2>Temi da mostrare</h2>
+          <p>I temi sintetizzano le trascrizioni e sono collegati alle domande live e agli indicatori richiesti.</p>
+        </div>
+      </div>
+      <p id="piThemeSummary" class="pi-section-summary"></p>
+      <div id="piThemes" class="pi-theme-grid"></div>
+    </section>
+
+    <section class="dashboard-section" id="calcolatore">
+      <div class="section-head">
+        <span class="eyebrow">Scenario didattico</span>
+        <div>
+          <h2>Mi sono pagato la pensione?</h2>
+          <p>Il modello confronta contributi, montante figurativo, speranza di vita residua e tasso di sostituzione effettivo.</p>
+        </div>
+      </div>
+      <p id="piScenarioNote" class="pi-section-summary"></p>
+      <div id="piCalculatorKpis" class="pi-mini-kpis"></div>
+      <article class="pi-card">
+        <div class="pi-card-title">
+          <h3>Carriera simulata</h3>
+          <span>1985-2024</span>
+        </div>
+        <div class="pi-chart pi-chart-tall" id="piCareerChart" role="img" aria-label="Carriera contributiva simulata"></div>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="domande">
+      <div class="section-head">
+        <span class="eyebrow">Matrice live</span>
+        <div>
+          <h2>Domande, indicatori e stato</h2>
+          <p>Ogni riga collega una domanda della live alla tabella finale prevista e alla fonte principale.</p>
+        </div>
+      </div>
+      <p id="piQuestionSummary" class="pi-section-summary"></p>
+      <div class="pi-table-wrap">
+        <table class="pi-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tema</th>
+              <th>Stato</th>
+              <th>Domanda</th>
+              <th>Tabella</th>
+            </tr>
+          </thead>
+          <tbody id="piQuestionRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="metodo">
+      <div class="section-head">
+        <span class="eyebrow">Metodo</span>
+        <div>
+          <h2>Fonti e limiti</h2>
+          <p>Il repo dati registra fonti, indicatori, dataset attesi e controlli di qualita'.</p>
+        </div>
+      </div>
+      <div class="pi-grid-2">
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Limiti attuali</h3>
+            <span>Da leggere prima dei numeri</span>
+          </div>
+          <div id="piLimitations" class="pi-list"></div>
+        </article>
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Fonti registrate</h3>
+            <span>Catalogo</span>
+          </div>
+          <div id="piSources" class="pi-list"></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner social-links">
+      <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+      <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+    </div>
+  </footer>
+</body>
+</html>
