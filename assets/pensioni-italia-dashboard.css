@@ -171,9 +171,9 @@
 
 .pi-dashboard .section-head {
   display: grid;
-  grid-template-columns: minmax(260px, .8fr) minmax(300px, 1.2fr);
-  gap: 28px;
-  align-items: end;
+  grid-template-columns: minmax(0, 860px);
+  justify-content: center;
+  text-align: center;
   margin: 44px 0 16px;
 }
 
@@ -279,6 +279,29 @@
 
 .pi-dashboard .pi-section-head-center .eyebrow {
   margin: 0;
+}
+
+.pi-dashboard .pi-country-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.pi-dashboard .pi-country-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: .9rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pi-dashboard .pi-country-checks input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--orange);
 }
 
 .pi-filter-grid-compact {

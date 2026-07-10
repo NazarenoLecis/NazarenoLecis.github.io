@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-8";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-9";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -138,9 +138,9 @@
     if (!toArray(traces).some(isCartesianTrace)) return chartLayout;
     chartLayout.xaxis = Object.assign({}, chartLayout.xaxis || {});
     chartLayout.yaxis = Object.assign({}, chartLayout.yaxis || {});
-    chartLayout.xaxis.fixedrange = false;
-    chartLayout.yaxis.fixedrange = false;
-    chartLayout.dragmode = "zoom";
+    chartLayout.xaxis.fixedrange = true;
+    chartLayout.yaxis.fixedrange = true;
+    chartLayout.dragmode = false;
 
     var extent = numericXExtent(traces);
     if (extent && (state.xAxisStart !== null || state.xAxisEnd !== null)) {
@@ -177,7 +177,7 @@
     }
     window.Plotly.react(node, traces, applyAxisPreferences(baseLayout(layout), traces), {
       responsive: true,
-      displayModeBar: "hover",
+      displayModeBar: false,
       displaylogo: false,
       modeBarButtonsToRemove: ["lasso2d", "select2d", "toImage"],
       scrollZoom: false,
@@ -660,7 +660,11 @@
       grouped[key].weight += weight;
     });
     var categories = Array.from(new Set(Object.keys(grouped).map(function (key) { return key.split("|")[0]; }))).sort();
-    var years = Array.from(new Set(Object.keys(grouped).map(function (key) { return Number(key.split("|")[1]); }))).sort();
+    var observedYears = Array.from(new Set(Object.keys(grouped).map(function (key) { return Number(key.split("|")[1]); }))).sort();
+    var years = [];
+    if (observedYears.length) {
+      for (var year = observedYears[0]; year <= observedYears[observedYears.length - 1]; year += 1) years.push(year);
+    }
     var traces = categories.map(function (category, index) {
       var values = years.map(function (year) {
         var cell = grouped[category + "|" + year];
@@ -676,6 +680,7 @@
         y: values,
         line: { color: COLORS[index % COLORS.length], width: 2.5 },
         marker: { size: 7 },
+        connectgaps: false,
         hovertemplate: labelGroup(category) + "<br>%{x}: %{y:,.2f}" + (state.professionMeasure === "importo_medio_pensione" ? " euro al mese" : " mln prestazioni") + "<extra></extra>"
       };
     });
@@ -917,11 +922,20 @@
     var countries = Array.from(new Set(rowsByIndicator(tableRows("european_comparison"), "spesa_pensionistica_pil_esspros").map(function (row) { return row.paese; })))
       .filter(function (country) { return country !== "Italia" && country !== "Unione europea (27)"; }).sort();
     countries.forEach(function (country) {
-      var option = document.createElement("option"); option.value = country; option.textContent = country; option.selected = state.europeCountries.indexOf(country) >= 0; europe.appendChild(option);
-    });
-    europe.addEventListener("change", function () {
-      state.europeCountries = Array.from(europe.selectedOptions).map(function (option) { return option.value; });
-      renderEuropeChart();
+      var label = document.createElement("label");
+      var input = document.createElement("input");
+      var textNode = document.createElement("span");
+      input.type = "checkbox";
+      input.value = country;
+      input.checked = state.europeCountries.indexOf(country) >= 0;
+      textNode.textContent = country;
+      label.appendChild(input);
+      label.appendChild(textNode);
+      europe.appendChild(label);
+      input.addEventListener("change", function () {
+        state.europeCountries = Array.from(europe.querySelectorAll("input:checked")).map(function (node) { return node.value; });
+        renderEuropeChart();
+      });
     });
   }
 
@@ -939,7 +953,6 @@
     renderWorkersRatioChart();
     renderInsuredRatioChart();
     renderContributionCoverageChart();
-    renderOecdChart();
     renderEuropeChart();
     renderReplacementRateChart();
     renderDistributions();
@@ -962,10 +975,10 @@
         state.geojson = results[1];
         setupControls();
         renderAll();
-        setStatus("Dati caricati. Aggiornamento payload: " + text(state.payload.meta && state.payload.meta.updated_at));
+        setStatus("Dati aggiornati al " + text(state.payload.meta && state.payload.meta.updated_at));
       })
       ["catch"](function (error) {
-        setStatus("Errore nel caricamento del payload: " + error.message, true);
+        setStatus("Dati temporaneamente non disponibili: " + error.message, true);
       });
   }
 
