@@ -1,35 +1,14 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-2";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-3";
+  var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
 
-  var REGION_COORDS = {
-    "Piemonte": [45.1, 7.7],
-    "Valle d'Aosta": [45.7, 7.3],
-    "Lombardia": [45.6, 9.7],
-    "Trentino-Alto Adige": [46.5, 11.3],
-    "Veneto": [45.7, 11.8],
-    "Friuli Venezia Giulia": [46.1, 13.1],
-    "Liguria": [44.4, 8.9],
-    "Emilia-Romagna": [44.6, 11.2],
-    "Toscana": [43.5, 11.2],
-    "Umbria": [43.1, 12.4],
-    "Marche": [43.4, 13.2],
-    "Lazio": [41.9, 12.7],
-    "Abruzzo": [42.2, 13.9],
-    "Molise": [41.6, 14.6],
-    "Campania": [40.9, 14.9],
-    "Puglia": [41.1, 16.8],
-    "Basilicata": [40.5, 16.1],
-    "Calabria": [39.0, 16.5],
-    "Sicilia": [37.6, 14.0],
-    "Sardegna": [40.1, 9.0]
-  };
-
   var state = {
     payload: null,
+    geojson: null,
     mapMetric: "pensionati"
   };
 
@@ -191,7 +170,7 @@
     var labels = {
       ex_dipendenti_privati: "Ex dipendenti privati",
       ex_dipendenti_pubblici: "Ex dipendenti pubblici",
-      ex_imprenditori_autonomi: "Ex artigiani/commercianti",
+      ex_imprenditori_autonomi: "Artigiani e commercianti",
       ex_autonomi_agricoli: "Ex autonomi agricoli",
       ex_partite_iva_parasubordinati: "Gestione separata",
       altre_gestioni: "Altre gestioni",
@@ -221,64 +200,115 @@
     node.appendChild(makeKpi("Aliquota IVS", fmt(rate && rate.valore, 1) + "%", "Riferimento corrente AGO/FPLD"));
   }
 
-  function renderMoneyChart() {
-    var annual = tableRows("annual_pensions");
-    var series = [
-      ["entrate_contributive_inps", "Contributi INPS", COLORS[1]],
-      ["spesa_pensionistica_casellario", "Spesa Casellario", COLORS[0]],
-      ["spesa_pensionistica_inps_stimata", "Spesa INPS stimata", COLORS[3]]
-    ];
-    var traces = series.map(function (item) {
-      var rows = rowsByIndicator(annual, item[0]).sort(function (a, b) { return a.anno - b.anno; });
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: item[1],
-        x: rows.map(function (row) { return row.anno; }),
-        y: rows.map(function (row) { return toNumber(row.valore) / 1000000000; }),
-        line: { color: item[2], width: 3 },
-        marker: { size: 7 }
-      };
-    }).filter(function (trace) { return trace.x.length; });
-    plot("piMoneyChart", traces, { yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  function denseYears(rows) {
+    var ordered = toArray(rows).slice().sort(function (a, b) { return a.anno - b.anno; });
+    if (!ordered.length) return { years: [], values: [], areas: [] };
+    var byYear = {};
+    ordered.forEach(function (row) { byYear[row.anno] = row; });
+    var years = [];
+    var values = [];
+    var areas = [];
+    for (var year = ordered[0].anno; year <= ordered[ordered.length - 1].anno; year += 1) {
+      years.push(year);
+      values.push(byYear[year] ? toNumber(byYear[year].valore) : null);
+      areas.push(byYear[year] ? byYear[year].area : "Dato non disponibile");
+    }
+    return { years: years, values: values, areas: areas };
   }
 
-  function renderStockChart() {
-    var annual = tableRows("annual_pensions");
-    var traces = [
-      ["pensioni_vigenti", "Pensioni", COLORS[0]],
-      ["pensionati", "Pensionati", COLORS[2]]
-    ].map(function (item) {
-      var rows = rowsByIndicator(annual, item[0]).filter(function (row) {
-        return row.area === "Italia" || row.area === "Italia - INPS" || row.area === "Italia - complessivi";
-      }).sort(function (a, b) { return a.anno - b.anno; });
+  function renderContributionsChart() {
+    var rows = rowsByIndicator(tableRows("annual_pensions"), "entrate_contributive_inps");
+    var series = denseYears(rows);
+    plot("piContributionsChart", [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: "Entrate contributive INPS",
+      x: series.years,
+      y: series.values.map(function (value) { return value === null ? null : value / 1000000000; }),
+      connectgaps: false,
+      line: { color: COLORS[1], width: 3 },
+      marker: { size: 7 },
+      hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
+    }], { showlegend: false, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderSpendingChart() {
+    var rows = rowsByIndicator(tableRows("annual_pensions"), "spesa_pensionistica_casellario");
+    var series = denseYears(rows);
+    plot("piSpendingChart", [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: "Spesa pensionistica Casellario",
+      x: series.years,
+      y: series.values.map(function (value) { return value === null ? null : value / 1000000000; }),
+      connectgaps: false,
+      line: { color: COLORS[0], width: 3 },
+      marker: { size: 7 },
+      hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
+    }], { showlegend: false, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderPensionIncomeChart() {
+    var rows = rowsByIndicator(tableRows("annual_pensions"), "reddito_pensionistico_totale")
+      .filter(function (row) { return row.area === "Italia - complessivi"; });
+    var series = denseYears(rows);
+    plot("piPensionIncomeChart", [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: "Reddito pensionistico complessivo",
+      x: series.years,
+      y: series.values.map(function (value) { return value === null ? null : value / 1000000000; }),
+      connectgaps: false,
+      line: { color: COLORS[3], width: 3 },
+      marker: { size: 8 },
+      hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
+    }], { showlegend: false, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderCountChart(id, indicator, preferredArea, label, color) {
+    var allRows = rowsByIndicator(tableRows("annual_pensions"), indicator);
+    var rows = [];
+    Array.from(new Set(allRows.map(function (row) { return row.anno; }))).sort().forEach(function (year) {
+      var candidates = allRows.filter(function (row) { return row.anno === year; });
+      var selected = candidates.filter(function (row) { return row.area === preferredArea; })[0] || candidates[0];
+      if (selected) rows.push(selected);
+    });
+    var segments = [];
+    rows.forEach(function (row) {
+      var current = segments[segments.length - 1];
+      if (!current || row.anno > current[current.length - 1].anno + 1) {
+        current = [];
+        segments.push(current);
+      }
+      current.push(row);
+    });
+    var traces = segments.map(function (segment, index) {
+      var first = segment[0];
+      var last = segment[segment.length - 1];
       return {
         type: "scatter",
         mode: "lines+markers",
-        name: item[1],
-        x: rows.map(function (row) { return row.anno; }),
-        y: rows.map(function (row) { return toNumber(row.valore) / 1000000; }),
-        line: { color: item[2], width: 3 },
+        name: label + " " + first.anno + "-" + last.anno,
+        x: segment.map(function (row) { return row.anno; }),
+        y: segment.map(function (row) { return toNumber(row.valore) / 1000000; }),
+        text: segment.map(function (row) { return row.area; }),
+        line: { color: index === 0 ? color : COLORS[3], width: 3 },
         marker: { size: 7 },
-        text: rows.map(function (row) { return row.area; }),
-        hovertemplate: "%{fullData.name}<br>%{x}<br>%{y:.1f} mln<br>%{text}<extra></extra>"
+        hovertemplate: "%{x}<br>%{y:.2f} milioni<br>%{text}<extra></extra>"
       };
     });
-    plot("piStockChart", traces, { yaxis: { title: "milioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    plot(id, traces, {
+      legend: { orientation: "h", x: 0, y: -0.22, font: { color: cssVar("--muted", "#b9b2aa") } },
+      yaxis: { title: "milioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
+    });
   }
 
-  function renderRatioChart() {
-    var rows = rowsByIndicator(tableRows("annual_pensions"), "trattamenti_per_pensionato")
-      .sort(function (a, b) { return a.anno - b.anno; });
-    plot("piRatioChart", [{
-      type: "bar",
-      name: "Pensioni per pensionato",
-      x: rows.map(function (row) { return row.anno; }),
-      y: rows.map(function (row) { return row.valore; }),
-      marker: { color: COLORS[4] },
-      text: rows.map(function (row) { return fmt(row.valore, 2); }),
-      textposition: "outside"
-    }], { yaxis: { title: "rapporto", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  function renderPensionsChart() {
+    renderCountChart("piPensionsChart", "pensioni_vigenti", "Italia - INPS", "Pensioni vigenti", COLORS[0]);
+  }
+
+  function renderPensionersChart() {
+    renderCountChart("piPensionersChart", "pensionati", "Italia - complessivi", "Pensionati", COLORS[2]);
   }
 
   function renderRateChart() {
@@ -342,18 +372,29 @@
   function renderProfessionChart() {
     var grouped = {};
     tableRows("pensioners_by_management_profession").forEach(function (row) {
-      var key = row.categoria_professionale || "altre_gestioni";
+      var key = (row.categoria_professionale || "altre_gestioni") + "|" + row.anno;
       grouped[key] = (grouped[key] || 0) + (toNumber(row.prestazioni) || 0);
     });
-    var entries = Object.keys(grouped).map(function (key) { return [key, grouped[key]]; }).sort(function (a, b) { return b[1] - a[1]; });
-    plot("piProfessionChart", [{
-      type: "bar",
-      orientation: "h",
-      x: entries.map(function (entry) { return entry[1] / 1000000; }),
-      y: entries.map(function (entry) { return labelGroup(entry[0]); }),
-      marker: { color: COLORS[1] },
-      hovertemplate: "%{y}<br>%{x:.2f} mln prestazioni<extra></extra>"
-    }], { margin: { t: 18, r: 18, b: 46, l: 160 }, xaxis: { title: "milioni di prestazioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    var categories = Array.from(new Set(Object.keys(grouped).map(function (key) { return key.split("|")[0]; }))).sort();
+    var years = Array.from(new Set(Object.keys(grouped).map(function (key) { return Number(key.split("|")[1]); }))).sort();
+    var traces = years.map(function (year, index) {
+      return {
+        type: "bar",
+        orientation: "h",
+        name: String(year),
+        x: categories.map(function (category) { return (grouped[category + "|" + year] || 0) / 1000000; }),
+        y: categories.map(labelGroup),
+        marker: { color: COLORS[index % COLORS.length] },
+        hovertemplate: "%{y}<br>" + year + ": %{x:.2f} mln prestazioni<extra></extra>"
+      };
+    });
+    plot("piProfessionChart", traces, {
+      barmode: "group",
+      margin: { t: 18, r: 18, b: 70, l: window.innerWidth < 640 ? 132 : 190 },
+      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } },
+      xaxis: { title: "milioni di prestazioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { fixedrange: true, gridcolor: "rgba(0,0,0,0)", automargin: true }
+    });
   }
 
   function renderManagementList() {
@@ -370,13 +411,13 @@
   function metricLabel(metric) {
     return {
       pensionati: "Pensionati regionali",
-      gini_reddito_pensionistico: "Gini reddito pensionistico",
-      decile_D5_reddito_pensionistico: "Reddito pensionistico mediano"
+      reddito_pensionistico_medio_mensile: "Reddito pensionistico medio mensile",
+      spesa_pensionistica_regionale: "Spesa pensionistica complessiva"
     }[metric] || metric;
   }
 
   function metricUnit(metric) {
-    return metric === "pensionati" ? "pensionati" : metric === "gini_reddito_pensionistico" ? "%" : "euro";
+    return metric === "pensionati" ? "pensionati" : metric === "spesa_pensionistica_regionale" ? "miliardi di euro" : "euro al mese";
   }
 
   function regionName(name) {
@@ -388,16 +429,21 @@
     return value;
   }
 
-  function regionCoord(row) {
-    return REGION_COORDS[regionName(row.nome_territorio)];
+  function regionSlug(name) {
+    var value = regionName(name);
+    if (value === "Valle d'Aosta") return "valle_d_aosta_vallee_d_aoste";
+    if (value === "Trentino-Alto Adige") return "trentino_alto_adige_sudtirol";
+    return value.toLowerCase().replace(/'/g, "").replace(/-/g, "_").replace(/\s+/g, "_");
   }
 
   function regionRows(metric) {
     var rows = tableRows("territorial").filter(function (row) {
-      return row.livello_territoriale === "regione" && row.indicatore_id === metric && regionCoord(row);
+      return row.livello_territoriale === "regione" && row.indicatore_id === metric;
     });
     var latestYear = Math.max.apply(null, rows.map(function (row) { return toNumber(row.anno) || 0; }));
-    return rows.filter(function (row) { return toNumber(row.anno) === latestYear; });
+    var allowed = {};
+    toArray(state.geojson && state.geojson.features).forEach(function (feature) { allowed[feature.properties.slug] = true; });
+    return rows.filter(function (row) { return toNumber(row.anno) === latestYear && allowed[regionSlug(row.nome_territorio)]; });
   }
 
   function renderRegionalMap() {
@@ -407,65 +453,49 @@
       showEmpty("piRegionalMap", "Dati regionali non disponibili");
       return;
     }
-    var values = rows.map(function (row) { return toNumber(row.valore) || 0; });
-    var maxValue = Math.max.apply(null, values);
-    var sizes = values.map(function (value) {
-      if (metric === "pensionati") return 14 + 34 * Math.sqrt(value / maxValue);
-      return 24;
+    var values = rows.map(function (row) {
+      var value = toNumber(row.valore) || 0;
+      return metric === "spesa_pensionistica_regionale" ? value / 1000000000 : value;
     });
+    var minValue = Math.min.apply(null, values);
+    var maxValue = Math.max.apply(null, values);
     var subtitle = byId("piMapSubtitle");
     if (subtitle) subtitle.textContent = metricLabel(metric) + " - " + rows[0].anno;
     plot("piRegionalMap", [{
-      type: "scattergeo",
-      mode: "markers+text",
-      lat: rows.map(function (row) { return regionCoord(row)[0]; }),
-      lon: rows.map(function (row) { return regionCoord(row)[1]; }),
+      type: "choropleth",
+      geojson: state.geojson,
+      featureidkey: "properties.slug",
+      locations: rows.map(function (row) { return regionSlug(row.nome_territorio); }),
+      z: values,
       text: rows.map(function (row) { return regionName(row.nome_territorio); }),
-      textposition: "top center",
-      marker: {
-        size: sizes,
-        color: values,
-        colorscale: [[0, "#76b7b2"], [0.5, "#f2a541"], [1, "#ff5a1f"]],
-        line: { color: cssVar("--panel", "#090909"), width: 1 },
-        colorbar: { title: metricUnit(metric), tickfont: { color: cssVar("--muted", "#b9b2aa") } }
-      },
-      customdata: values,
-      hovertemplate: "%{text}<br>%{customdata:,.0f} " + metricUnit(metric) + "<extra></extra>"
+      customdata: rows.map(function (row) {
+        if (metric === "spesa_pensionistica_regionale") return euroBn(row.valore);
+        if (metric === "reddito_pensionistico_medio_mensile") return euro(row.valore) + " al mese";
+        return fmt(row.valore) + " pensionati";
+      }),
+      colorscale: [[0, "#fff2df"], [0.35, "#ffb15f"], [0.7, "#f26a21"], [1, "#7a1f0c"]],
+      zmin: minValue,
+      zmax: maxValue,
+      marker: { line: { color: "rgba(255,255,255,.55)", width: 0.55 } },
+      colorbar: { title: metricUnit(metric), tickfont: { color: cssVar("--muted", "#b9b2aa") } },
+      hovertemplate: "<b>%{text}</b><br>%{customdata}<extra></extra>"
     }], {
-      margin: { t: 4, r: 4, b: 4, l: 4 },
+      margin: { t: 8, r: 8, b: 8, l: 8 },
       showlegend: false,
       geo: {
-        scope: "europe",
-        resolution: 50,
-        lataxis: { range: [36, 47.5] },
-        lonaxis: { range: [6, 19] },
+        fitbounds: "locations",
+        visible: false,
         showland: true,
-        landcolor: "rgba(255,255,255,0.04)",
-        showcountries: false,
-        showsubunits: false,
-        showcoastlines: true,
-        coastlinecolor: cssVar("--line", "#303030"),
+        landcolor: "rgba(255,255,255,0.02)",
         bgcolor: "rgba(0,0,0,0)"
       }
-    });
-    renderRegionalRanking(rows, metric);
-  }
-
-  function renderRegionalRanking(rows, metric) {
-    var node = byId("piRegionalRanking");
-    clear(node);
-    var subtitle = byId("piRankingSubtitle");
-    if (subtitle && rows[0]) subtitle.textContent = String(rows[0].anno);
-    rows.slice().sort(function (a, b) { return (toNumber(b.valore) || 0) - (toNumber(a.valore) || 0); }).slice(0, 12).forEach(function (row) {
-      var value = metric === "decile_D5_reddito_pensionistico" ? euro(row.valore) : metric === "gini_reddito_pensionistico" ? fmt(row.valore, 1) + "%" : fmt(row.valore);
-      node.appendChild(makeListItem(row.nome_territorio, value + " - " + metricLabel(metric)));
     });
   }
 
   function renderSources() {
     var node = byId("piSources");
     clear(node);
-    var wanted = ["inps_appendice_xxv", "inps_casellario_2024", "inps_open_data", "inps_aliquote_storiche", "inps_aliquote_correnti"];
+    var wanted = ["inps_appendice_xxv", "inps_appendice_xxiv", "inps_appendice_xxiii", "inps_rendiconti", "inps_casellario_2024", "inps_open_data", "inps_aliquote_storiche", "inps_aliquote_correnti"];
     catalogRows("sources").filter(function (row) {
       return wanted.indexOf(row.fonte_id) >= 0;
     }).forEach(function (row) {
@@ -495,9 +525,11 @@
 
   function renderAll() {
     renderKpis();
-    renderMoneyChart();
-    renderStockChart();
-    renderRatioChart();
+    renderContributionsChart();
+    renderSpendingChart();
+    renderPensionIncomeChart();
+    renderPensionsChart();
+    renderPensionersChart();
     renderRateChart();
     renderDistributions();
     renderProfessionChart();
@@ -507,16 +539,21 @@
   }
 
   function load() {
-    fetch(DATA_URL, { cache: "no-store" })
-      .then(function (response) {
-        if (!response.ok) throw new Error("HTTP " + response.status);
-        return response.json();
+    Promise.all([
+      fetch(DATA_URL, { cache: "no-store" }),
+      fetch(GEOJSON_URL, { cache: "force-cache" })
+    ])
+      .then(function (responses) {
+        if (!responses[0].ok) throw new Error("Payload HTTP " + responses[0].status);
+        if (!responses[1].ok) throw new Error("Mappa HTTP " + responses[1].status);
+        return Promise.all([responses[0].json(), responses[1].json()]);
       })
-      .then(function (payload) {
-        state.payload = payload;
+      .then(function (results) {
+        state.payload = results[0];
+        state.geojson = results[1];
         setupControls();
         renderAll();
-        setStatus("Dati caricati. Aggiornamento payload: " + text(payload.meta && payload.meta.updated_at));
+        setStatus("Dati caricati. Aggiornamento payload: " + text(state.payload.meta && state.payload.meta.updated_at));
       })
       ["catch"](function (error) {
         setStatus("Errore nel caricamento del payload: " + error.message, true);

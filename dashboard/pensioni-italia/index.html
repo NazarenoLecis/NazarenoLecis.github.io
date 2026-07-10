@@ -7,11 +7,12 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css">
+  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260710-3">
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/dashboard.json" as="fetch" crossorigin>
+  <link rel="preload" href="../../data/crisi-abitativa/italy-regions.geojson" as="fetch">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/pensioni-italia-dashboard.js"></script>
+  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260710-3"></script>
 </head>
 <body>
   <header class="site-header">
@@ -51,7 +52,7 @@
         <div>
           <strong>Payload dati da Cloudflare R2</strong>
           <span>Repo dati: pensioni_italia. Pubblicazione: nazarenolecis-data-pipeline.</span>
-          <span class="source-credit">Mappa regionale ora; dettaglio provinciale da integrare quando la query API INPS sara' stabilizzata.</span>
+          <span class="source-credit">Serie, distribuzioni e mappa sono costruite solo da dati pubblicati e trasformati dalla pipeline.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Apri repository dati</a>
         </div>
       </div>
@@ -91,42 +92,58 @@
       <div class="section-head">
         <span class="eyebrow">Serie storiche</span>
         <div>
-          <h2>Spesa, contributi, pensioni e pensionati</h2>
-          <p>Le serie uniscono fonti con perimetri dichiarati: Casellario, INPS Open Data e Appendice statistica.</p>
+          <h2>Una misura per grafico</h2>
+          <p>Ogni serie ha un perimetro dichiarato. Gli anni mancanti restano visibili come interruzioni e non vengono collegati.</p>
         </div>
       </div>
-      <div class="pi-grid-2">
-        <article class="pi-card">
+      <div class="pi-stack">
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
-            <h3>Spesa e contributi</h3>
-            <span>miliardi di euro</span>
+            <h3>Contributi incassati dall'INPS</h3>
+            <span>2013-2024</span>
           </div>
-          <div class="pi-chart" id="piMoneyChart" role="img" aria-label="Serie storica spesa pensionistica e contributi"></div>
+          <p class="pi-card-note">Entrate contributive accertate nei conti e nei rendiconti INPS. La serie include il calo del 2020 e non mescola la spesa pensionistica.</p>
+          <div class="pi-chart pi-chart-wide" id="piContributionsChart" role="img" aria-label="Serie storica delle entrate contributive INPS"></div>
         </article>
-        <article class="pi-card">
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
-            <h3>Pensioni e pensionati</h3>
-            <span>numero</span>
+            <h3>Spesa pensionistica del Casellario</h3>
+            <span>2012-2016</span>
           </div>
-          <div class="pi-chart" id="piStockChart" role="img" aria-label="Serie storica pensioni e pensionati"></div>
+          <p class="pi-card-note">Importo complessivo annuo delle prestazioni censite dal Casellario. È una serie storica omogenea; non viene prolungata con stime.</p>
+          <div class="pi-chart pi-chart-wide" id="piSpendingChart" role="img" aria-label="Serie storica della spesa pensionistica del Casellario"></div>
         </article>
-      </div>
-      <div class="pi-grid-2 pi-section-gap">
-        <article class="pi-card">
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
-            <h3>Trattamenti per pensionato</h3>
-            <span>rapporto</span>
+            <h3>Reddito pensionistico complessivo dei pensionati</h3>
+            <span>2023-2025</span>
           </div>
-          <p class="pi-card-note">Il rapporto cresce quando piu' prestazioni sono cumulate dalla stessa persona.</p>
-          <div class="pi-chart" id="piRatioChart" role="img" aria-label="Rapporto tra pensioni e pensionati"></div>
+          <p class="pi-card-note">Somma annua di tutti i trattamenti percepiti dalle persone pensionate. È più ampia dell'importo di una singola pensione perché una persona può cumulare più prestazioni.</p>
+          <div class="pi-chart pi-chart-wide" id="piPensionIncomeChart" role="img" aria-label="Serie del reddito pensionistico complessivo"></div>
         </article>
-        <article class="pi-card">
+        <article class="pi-card pi-chart-block">
+          <div class="pi-card-title">
+            <h3>Numero di pensioni vigenti</h3>
+            <span>trattamenti</span>
+          </div>
+          <p class="pi-card-note">Conta le prestazioni, non le persone. Il tratto 2018-2021 resta vuoto perché la fonte usata non pubblica quei punti nello stesso prospetto.</p>
+          <div class="pi-chart pi-chart-wide" id="piPensionsChart" role="img" aria-label="Serie storica del numero di pensioni vigenti"></div>
+        </article>
+        <article class="pi-card pi-chart-block">
+          <div class="pi-card-title">
+            <h3>Numero di pensionati</h3>
+            <span>persone</span>
+          </div>
+          <p class="pi-card-note">Conta le persone beneficiarie complessive. Gli anni 2017-2022 non sono collegati artificialmente.</p>
+          <div class="pi-chart pi-chart-wide" id="piPensionersChart" role="img" aria-label="Serie storica del numero di pensionati"></div>
+        </article>
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
             <h3>Aliquota contributiva IVS</h3>
-            <span>percentuale</span>
+            <span>1920-2026</span>
           </div>
           <p class="pi-card-note">Serie storica FPLD a fine anno e riferimento corrente IVS/AGO.</p>
-          <div class="pi-chart" id="piRateChart" role="img" aria-label="Serie storica aliquota contributiva pensionistica"></div>
+          <div class="pi-chart pi-chart-wide" id="piRateChart" role="img" aria-label="Serie storica aliquota contributiva pensionistica"></div>
         </article>
       </div>
     </section>
@@ -139,15 +156,15 @@
           <p>Il primo grafico conta le singole pensioni per importo mensile; il secondo conta le persone per reddito pensionistico mensile complessivo.</p>
         </div>
       </div>
-      <div class="pi-grid-2">
-        <article class="pi-card">
+      <div class="pi-stack">
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
             <h3>Pensioni per classe d'importo</h3>
             <span>trattamenti</span>
           </div>
           <div class="pi-chart pi-chart-tall" id="piPensionDistributionChart" role="img" aria-label="Distribuzione delle pensioni per classe di importo"></div>
         </article>
-        <article class="pi-card">
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
             <h3>Pensionati per reddito pensionistico</h3>
             <span>persone</span>
@@ -165,13 +182,14 @@
           <p>Le categorie sono ricostruite dalla gestione INPS: sono prestazioni, non teste uniche di pensionati.</p>
         </div>
       </div>
-      <div class="pi-grid-2">
-        <article class="pi-card">
+      <div class="pi-stack">
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
             <h3>Prestazioni per categoria ricostruita</h3>
-            <span>2025</span>
+            <span>2023-2025</span>
           </div>
-          <div class="pi-chart" id="piProfessionChart" role="img" aria-label="Prestazioni per categoria professionale ricostruita"></div>
+          <p class="pi-card-note">Ogni gruppo di barre è una categoria ricostruita dalla gestione previdenziale. I colori confrontano 2023, 2024 e 2025.</p>
+          <div class="pi-chart pi-chart-wide" id="piProfessionChart" role="img" aria-label="Serie storiche delle prestazioni per categoria professionale ricostruita"></div>
         </article>
         <article class="pi-card">
           <div class="pi-card-title">
@@ -188,7 +206,7 @@
         <span class="eyebrow">Territorio</span>
         <div>
           <h2>Mappa regionale</h2>
-          <p>Vista regionale con pensionati storici disponibili e indicatori 2025 di disuguaglianza/reddito dall'appendice statistica.</p>
+          <p>Le tre misure usano lo stesso perimetro territoriale e lo stesso anno disponibile: pensionati, reddito pensionistico medio mensile e spesa complessiva.</p>
         </div>
       </div>
       <details class="chart-filter-panel pi-filter-panel" open aria-label="Filtro mappa regionale">
@@ -198,26 +216,20 @@
             <span>Indicatore mappa</span>
             <select id="piMapMetric">
               <option value="pensionati">Pensionati regionali</option>
-              <option value="gini_reddito_pensionistico">Gini reddito pensionistico</option>
-              <option value="decile_D5_reddito_pensionistico">Reddito pensionistico mediano</option>
+              <option value="reddito_pensionistico_medio_mensile">Reddito pensionistico medio mensile</option>
+              <option value="spesa_pensionistica_regionale">Spesa pensionistica complessiva</option>
             </select>
           </label>
         </div>
       </details>
-      <div class="pi-grid-2 pi-section-gap">
-        <article class="pi-card">
+      <div class="pi-stack pi-section-gap">
+        <article class="pi-card pi-chart-block">
           <div class="pi-card-title">
             <h3>Distribuzione regionale</h3>
             <span id="piMapSubtitle">regioni</span>
           </div>
-          <div class="pi-chart pi-chart-tall" id="piRegionalMap" role="img" aria-label="Mappa regionale pensioni"></div>
-        </article>
-        <article class="pi-card">
-          <div class="pi-card-title">
-            <h3>Ranking regioni</h3>
-            <span id="piRankingSubtitle">ultimo anno</span>
-          </div>
-          <div id="piRegionalRanking" class="pi-list"></div>
+          <p class="pi-card-note">Il colore confronta le regioni; passando il mouse si legge il valore esatto. Fonte territoriale INPS, anno 2016.</p>
+          <div class="pi-chart pi-map-chart" id="piRegionalMap" role="img" aria-label="Mappa regionale pensioni"></div>
         </article>
       </div>
     </section>
