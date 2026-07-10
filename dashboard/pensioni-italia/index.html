@@ -38,197 +38,212 @@
   <main class="wrap pi-dashboard">
     <section class="dash-head">
       <div>
-        <span class="eyebrow">Pensioni e finanza pubblica</span>
-        <h1>Pensioni italiane</h1>
+        <span class="eyebrow">Pensioni italiane</span>
+        <h1>Pensioni: trattamenti, pensionati, spesa e contributi</h1>
         <p class="lead">
-          Dashboard di lavoro su sistema a ripartizione, contributi, trasferimenti, demografia,
-          pensioni e pensionati. Il payload pubblico espone lo stato dei dati disponibili e il
-          calcolatore didattico sul tema "me la sono pagata".
+          Dashboard statica alimentata da INPS Open Data, Appendice statistica al XXV Rapporto annuale,
+          Casellario dei pensionati e serie storiche delle aliquote IVS. Le pensioni sono trattamenti;
+          i pensionati sono persone: le due misure restano sempre separate.
         </p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonti: INPS, RGS, ISTAT, Eurostat, COVIP, OECD</strong>
-          <span>Payload preparato dal repo dati pensioni_italia e pubblicato su Cloudflare R2.</span>
-          <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
-          <a class="related-link" href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Apri repository pensioni_italia</a>
+          <strong>Payload dati da Cloudflare R2</strong>
+          <span>Repo dati: pensioni_italia. Pubblicazione: nazarenolecis-data-pipeline.</span>
+          <span class="source-credit">Mappa regionale ora; dettaglio provinciale da integrare quando la query API INPS sara' stabilizzata.</span>
+          <a class="related-link" href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Apri repository dati</a>
         </div>
-      </div>
-    </section>
-
-    <section class="workflow-grid" aria-label="Guida alla lettura">
-      <div class="workflow-step">
-        <span>1</span>
-        <h2>Perimetri</h2>
-        <p>Prima si separano INPS, amministrazioni pubbliche, ESSPROS, previdenza e assistenza.</p>
-      </div>
-      <div class="workflow-step">
-        <span>2</span>
-        <h2>Persone</h2>
-        <p>Le pensioni sono trattamenti, i pensionati sono persone: la dashboard tiene distinti i due piani.</p>
-      </div>
-      <div class="workflow-step">
-        <span>3</span>
-        <h2>Copertura</h2>
-        <p>Le sezioni mostrano anche cosa e' gia' implementato e cosa richiede ancora dati ufficiali.</p>
       </div>
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard pensioni">
-      <a href="#quadro">Quadro dati</a>
-      <a href="#temi">Temi</a>
-      <a href="#calcolatore">Calcolatore</a>
-      <a href="#domande">Domande live</a>
-      <a href="#metodo">Metodo e fonti</a>
+      <a href="#serie">Serie</a>
+      <a href="#distribuzioni">Distribuzioni</a>
+      <a href="#gestioni">Gestioni</a>
+      <a href="#territorio">Mappa regionale</a>
+      <a href="#fonti">Fonti</a>
     </nav>
 
     <p id="piStatus" class="pi-status">Caricamento dati pensioni ...</p>
 
-    <details class="chart-filter-panel pi-filter-panel" open aria-label="Filtri dashboard pensioni">
-      <summary>Filtri dashboard pensioni</summary>
-      <div class="filter-intro">
-        <h3>Lettura guidata</h3>
-        <p>
-          I filtri cambiano temi e matrice domande senza alterare il payload. Lo scenario agisce solo
-          sul calcolatore didattico: non e' una previsione ufficiale, ma una sensibilita' sulle ipotesi.
-        </p>
-      </div>
-      <div class="filter-grid pi-filter-grid">
-        <label>
-          <span>Stato temi</span>
-          <select id="piThemeStatus"></select>
-        </label>
-        <label>
-          <span>Tema domande</span>
-          <select id="piQuestionTheme"></select>
-        </label>
-        <label>
-          <span>Stato domande</span>
-          <select id="piQuestionStatus"></select>
-        </label>
-        <label>
-          <span>Scenario calcolatore</span>
-          <select id="piScenario"></select>
-        </label>
-        <label class="pi-search-label">
-          <span>Cerca domanda</span>
-          <input id="piQuestionSearch" type="search" placeholder="ripartizione, trasferimenti, pensionati">
-        </label>
-      </div>
-      <div class="filter-actions">
-        <button class="button compact" id="piResetFilters" type="button">Reset filtri</button>
-      </div>
-    </details>
+    <section id="piKpis" class="kpi-grid pi-kpi-grid" aria-label="KPI pensioni italiane"></section>
 
-    <section id="piKpis" class="kpi-grid pi-kpi-grid" aria-label="KPI dashboard pensioni"></section>
+    <section class="workflow-grid" aria-label="Definizioni chiave">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Pensione</h2>
+        <p>Un trattamento pensionistico. Una persona puo' riceverne piu' di uno.</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Pensionato</h2>
+        <p>Una persona beneficiaria. Il suo reddito pensionistico somma tutti i trattamenti percepiti.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Aliquota</h2>
+        <p>La serie FPLD storica e il riferimento corrente IVS/AGO al 33% sono mostrati separatamente.</p>
+      </div>
+    </section>
 
-    <section class="dashboard-section" id="quadro">
+    <section class="dashboard-section" id="serie">
       <div class="section-head">
-        <span class="eyebrow">Stato dei dati</span>
+        <span class="eyebrow">Serie storiche</span>
         <div>
-          <h2>Copertura e controlli</h2>
-          <p>La dashboard non riempie i vuoti con stime opache: quando una domanda e' mappata ma non ha ancora dati, resta visibile.</p>
+          <h2>Spesa, contributi, pensioni e pensionati</h2>
+          <p>Le serie uniscono fonti con perimetri dichiarati: Casellario, INPS Open Data e Appendice statistica.</p>
         </div>
       </div>
       <div class="pi-grid-2">
         <article class="pi-card">
           <div class="pi-card-title">
-            <h3>Domande live per stato</h3>
-            <span>Copertura</span>
+            <h3>Spesa e contributi</h3>
+            <span>miliardi di euro</span>
           </div>
-          <p class="pi-card-note">Le domande metodologiche sono gia' documentabili; quelle senza dati indicano tabelle finali ancora da popolare.</p>
-          <div class="pi-chart" id="piCoverageChart" role="img" aria-label="Copertura delle domande live"></div>
+          <div class="pi-chart" id="piMoneyChart" role="img" aria-label="Serie storica spesa pensionistica e contributi"></div>
         </article>
         <article class="pi-card">
           <div class="pi-card-title">
-            <h3>Controlli qualita'</h3>
-            <span>Pipeline</span>
+            <h3>Pensioni e pensionati</h3>
+            <span>numero</span>
           </div>
-          <p class="pi-card-note">I controlli verificano cataloghi, schemi, duplicati, anni e valori numerici delle tabelle finali.</p>
-          <div id="piQualityList" class="pi-list"></div>
+          <div class="pi-chart" id="piStockChart" role="img" aria-label="Serie storica pensioni e pensionati"></div>
+        </article>
+      </div>
+      <div class="pi-grid-2 pi-section-gap">
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Trattamenti per pensionato</h3>
+            <span>rapporto</span>
+          </div>
+          <p class="pi-card-note">Il rapporto cresce quando piu' prestazioni sono cumulate dalla stessa persona.</p>
+          <div class="pi-chart" id="piRatioChart" role="img" aria-label="Rapporto tra pensioni e pensionati"></div>
+        </article>
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Aliquota contributiva IVS</h3>
+            <span>percentuale</span>
+          </div>
+          <p class="pi-card-note">Serie storica FPLD a fine anno e riferimento corrente IVS/AGO.</p>
+          <div class="pi-chart" id="piRateChart" role="img" aria-label="Serie storica aliquota contributiva pensionistica"></div>
         </article>
       </div>
     </section>
 
-    <section class="dashboard-section" id="temi">
+    <section class="dashboard-section" id="distribuzioni">
       <div class="section-head">
-        <span class="eyebrow">Dalle trascrizioni</span>
+        <span class="eyebrow">Distribuzioni</span>
         <div>
-          <h2>Temi da mostrare</h2>
-          <p>I temi sintetizzano le trascrizioni e sono collegati alle domande live e agli indicatori richiesti.</p>
-        </div>
-      </div>
-      <p id="piThemeSummary" class="pi-section-summary"></p>
-      <div id="piThemes" class="pi-theme-grid"></div>
-    </section>
-
-    <section class="dashboard-section" id="calcolatore">
-      <div class="section-head">
-        <span class="eyebrow">Scenario didattico</span>
-        <div>
-          <h2>Mi sono pagato la pensione?</h2>
-          <p>Il modello confronta contributi, montante figurativo, speranza di vita residua e tasso di sostituzione effettivo.</p>
-        </div>
-      </div>
-      <p id="piScenarioNote" class="pi-section-summary"></p>
-      <div id="piCalculatorKpis" class="pi-mini-kpis"></div>
-      <article class="pi-card">
-        <div class="pi-card-title">
-          <h3>Carriera simulata</h3>
-          <span>1985-2024</span>
-        </div>
-        <div class="pi-chart pi-chart-tall" id="piCareerChart" role="img" aria-label="Carriera contributiva simulata"></div>
-      </article>
-    </section>
-
-    <section class="dashboard-section" id="domande">
-      <div class="section-head">
-        <span class="eyebrow">Matrice live</span>
-        <div>
-          <h2>Domande, indicatori e stato</h2>
-          <p>Ogni riga collega una domanda della live alla tabella finale prevista e alla fonte principale.</p>
-        </div>
-      </div>
-      <p id="piQuestionSummary" class="pi-section-summary"></p>
-      <div class="pi-table-wrap">
-        <table class="pi-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Tema</th>
-              <th>Stato</th>
-              <th>Domanda</th>
-              <th>Tabella</th>
-            </tr>
-          </thead>
-          <tbody id="piQuestionRows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="dashboard-section" id="metodo">
-      <div class="section-head">
-        <span class="eyebrow">Metodo</span>
-        <div>
-          <h2>Fonti e limiti</h2>
-          <p>Il repo dati registra fonti, indicatori, dataset attesi e controlli di qualita'.</p>
+          <h2>Valore delle pensioni e reddito dei pensionati</h2>
+          <p>Il primo grafico conta le singole pensioni per importo mensile; il secondo conta le persone per reddito pensionistico mensile complessivo.</p>
         </div>
       </div>
       <div class="pi-grid-2">
         <article class="pi-card">
           <div class="pi-card-title">
-            <h3>Limiti attuali</h3>
-            <span>Da leggere prima dei numeri</span>
+            <h3>Pensioni per classe d'importo</h3>
+            <span>trattamenti</span>
           </div>
-          <div id="piLimitations" class="pi-list"></div>
+          <div class="pi-chart pi-chart-tall" id="piPensionDistributionChart" role="img" aria-label="Distribuzione delle pensioni per classe di importo"></div>
         </article>
         <article class="pi-card">
           <div class="pi-card-title">
-            <h3>Fonti registrate</h3>
-            <span>Catalogo</span>
+            <h3>Pensionati per reddito pensionistico</h3>
+            <span>persone</span>
+          </div>
+          <div class="pi-chart pi-chart-tall" id="piIncomeDistributionChart" role="img" aria-label="Distribuzione dei pensionati per classe di reddito pensionistico"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="gestioni">
+      <div class="section-head">
+        <span class="eyebrow">Categorie</span>
+        <div>
+          <h2>Dipendenti privati, pubblici, autonomi e imprenditori</h2>
+          <p>Le categorie sono ricostruite dalla gestione INPS: sono prestazioni, non teste uniche di pensionati.</p>
+        </div>
+      </div>
+      <div class="pi-grid-2">
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Prestazioni per categoria ricostruita</h3>
+            <span>2025</span>
+          </div>
+          <div class="pi-chart" id="piProfessionChart" role="img" aria-label="Prestazioni per categoria professionale ricostruita"></div>
+        </article>
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Gestioni principali</h3>
+            <span>importo medio</span>
+          </div>
+          <div id="piManagementList" class="pi-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="territorio">
+      <div class="section-head">
+        <span class="eyebrow">Territorio</span>
+        <div>
+          <h2>Mappa regionale</h2>
+          <p>Vista regionale con pensionati storici disponibili e indicatori 2025 di disuguaglianza/reddito dall'appendice statistica.</p>
+        </div>
+      </div>
+      <details class="chart-filter-panel pi-filter-panel" open aria-label="Filtro mappa regionale">
+        <summary>Filtro mappa regionale</summary>
+        <div class="filter-grid pi-filter-grid pi-filter-grid-compact">
+          <label>
+            <span>Indicatore mappa</span>
+            <select id="piMapMetric">
+              <option value="pensionati">Pensionati regionali</option>
+              <option value="gini_reddito_pensionistico">Gini reddito pensionistico</option>
+              <option value="decile_D5_reddito_pensionistico">Reddito pensionistico mediano</option>
+            </select>
+          </label>
+        </div>
+      </details>
+      <div class="pi-grid-2 pi-section-gap">
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Distribuzione regionale</h3>
+            <span id="piMapSubtitle">regioni</span>
+          </div>
+          <div class="pi-chart pi-chart-tall" id="piRegionalMap" role="img" aria-label="Mappa regionale pensioni"></div>
+        </article>
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Ranking regioni</h3>
+            <span id="piRankingSubtitle">ultimo anno</span>
+          </div>
+          <div id="piRegionalRanking" class="pi-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="fonti">
+      <div class="section-head">
+        <span class="eyebrow">Fonti</span>
+        <div>
+          <h2>Copertura e limiti</h2>
+          <p>La dashboard mostra dati ufficiali gia' trasformati; le aree ancora senza tabella restano tracciate nel payload.</p>
+        </div>
+      </div>
+      <div class="pi-grid-2">
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Fonti principali</h3>
+            <span>repo dati</span>
           </div>
           <div id="piSources" class="pi-list"></div>
+        </article>
+        <article class="pi-card">
+          <div class="pi-card-title">
+            <h3>Dataset disponibili</h3>
+            <span>inventario</span>
+          </div>
+          <div id="piDatasets" class="pi-list"></div>
         </article>
       </div>
     </section>

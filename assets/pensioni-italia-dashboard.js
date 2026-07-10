@@ -1,17 +1,36 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260709-2";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-2";
   var MISSING = "ND";
-  var COLORS = ["#ff5a1f", "#76b7b2", "#f2a541", "#e15759", "#4e79a7", "#b07aa1"];
+  var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
+
+  var REGION_COORDS = {
+    "Piemonte": [45.1, 7.7],
+    "Valle d'Aosta": [45.7, 7.3],
+    "Lombardia": [45.6, 9.7],
+    "Trentino-Alto Adige": [46.5, 11.3],
+    "Veneto": [45.7, 11.8],
+    "Friuli Venezia Giulia": [46.1, 13.1],
+    "Liguria": [44.4, 8.9],
+    "Emilia-Romagna": [44.6, 11.2],
+    "Toscana": [43.5, 11.2],
+    "Umbria": [43.1, 12.4],
+    "Marche": [43.4, 13.2],
+    "Lazio": [41.9, 12.7],
+    "Abruzzo": [42.2, 13.9],
+    "Molise": [41.6, 14.6],
+    "Campania": [40.9, 14.9],
+    "Puglia": [41.1, 16.8],
+    "Basilicata": [40.5, 16.1],
+    "Calabria": [39.0, 16.5],
+    "Sicilia": [37.6, 14.0],
+    "Sardegna": [40.1, 9.0]
+  };
 
   var state = {
     payload: null,
-    themeStatus: "",
-    questionTheme: "",
-    questionStatus: "",
-    questionSearch: "",
-    scenarioId: ""
+    mapMetric: "pensionati"
   };
 
   function byId(id) {
@@ -46,78 +65,21 @@
     });
   }
 
-  function percentShare(value) {
+  function euroBn(value) {
     var n = toNumber(value);
     if (n === null) return MISSING;
-    return (n * 100).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
+    return (n / 1000000000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mld";
   }
 
   function euro(value) {
     var n = toNumber(value);
     if (n === null) return MISSING;
-    if (Math.abs(n) >= 1000000000) return (n / 1000000000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mld euro";
     return n.toLocaleString("it-IT", { maximumFractionDigits: 0 }) + " euro";
   }
 
   function clear(node) {
     if (!node) return;
     while (node.firstChild) node.removeChild(node.firstChild);
-  }
-
-  function uniqueSorted(values) {
-    var seen = {};
-    return toArray(values).filter(function (value) {
-      if (value === null || value === undefined || value === "") return false;
-      var key = String(value);
-      if (seen[key]) return false;
-      seen[key] = true;
-      return true;
-    }).sort(function (a, b) {
-      return String(a).localeCompare(String(b), "it");
-    });
-  }
-
-  function countBy(rows, field) {
-    return toArray(rows).reduce(function (acc, row) {
-      var key = text(row[field], "non_disponibile");
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
-  }
-
-  function badge(value) {
-    var span = document.createElement("span");
-    var clean = text(value, "nd").replace(/\s+/g, "_");
-    span.className = "pi-badge " + clean;
-    span.textContent = text(value);
-    return span;
-  }
-
-  function makeKpi(label, value, note) {
-    var item = document.createElement("div");
-    item.className = "pi-kpi";
-    var labelNode = document.createElement("span");
-    var valueNode = document.createElement("strong");
-    var noteNode = document.createElement("small");
-    labelNode.textContent = label;
-    valueNode.textContent = value;
-    noteNode.textContent = note || "";
-    item.appendChild(labelNode);
-    item.appendChild(valueNode);
-    item.appendChild(noteNode);
-    return item;
-  }
-
-  function makeListItem(title, body) {
-    var item = document.createElement("div");
-    item.className = "pi-list-item";
-    var strong = document.createElement("strong");
-    var span = document.createElement("span");
-    strong.textContent = title;
-    span.textContent = body || "";
-    item.appendChild(strong);
-    item.appendChild(span);
-    return item;
   }
 
   function setStatus(message, isError) {
@@ -150,9 +112,9 @@
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: textColor, family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", size: 12 },
-      margin: { t: 18, r: 18, b: 54, l: 58 },
+      margin: { t: 24, r: 18, b: 58, l: 62 },
       hoverlabel: { bgcolor: panel, bordercolor: line, font: { color: textColor } },
-      legend: { orientation: "h", x: 0, xanchor: "left", y: -0.2, font: { color: muted } },
+      legend: { orientation: "h", x: 0, xanchor: "left", y: -0.22, font: { color: muted } },
       dragmode: false,
       xaxis: { fixedrange: true, gridcolor: line, zerolinecolor: line, tickfont: { color: muted }, automargin: true },
       yaxis: { fixedrange: true, gridcolor: line, zerolinecolor: line, tickfont: { color: muted }, automargin: true }
@@ -175,305 +137,395 @@
       displayModeBar: false,
       scrollZoom: false,
       doubleClick: false
-    }).catch(function () {
+    })["catch"](function () {
       showEmpty(id, "Errore nella costruzione del grafico");
     });
   }
 
-  function populateSelect(id, values, allLabel, selectedValue) {
-    var node = byId(id);
-    clear(node);
-    var all = document.createElement("option");
-    all.value = "";
-    all.textContent = allLabel || "Tutti";
-    node.appendChild(all);
-    toArray(values).forEach(function (value) {
-      var option = document.createElement("option");
-      option.value = String(value.value || value);
-      option.textContent = String(value.label || value);
-      node.appendChild(option);
-    });
-    node.value = selectedValue || "";
+  function tableRows(key) {
+    return toArray(state.payload && state.payload.tables && state.payload.tables.final && state.payload.tables.final[key] && state.payload.tables.final[key].rows);
   }
 
-  function coverageRows() {
-    return toArray(state.payload && state.payload.coverage && state.payload.coverage.questions);
+  function catalogRows(key) {
+    return toArray(state.payload && state.payload.catalog && state.payload.catalog[key]);
   }
 
-  function filteredQuestions() {
-    var needle = state.questionSearch.trim().toLowerCase();
-    return coverageRows().filter(function (row) {
-      if (state.questionTheme && row.tema !== state.questionTheme) return false;
-      if (state.questionStatus && row.stato !== state.questionStatus) return false;
-      if (!needle) return true;
-      return [row.domanda_id, row.tema, row.domanda, row.indicatore_richiesto, row.fonte_principale]
-        .join(" ")
-        .toLowerCase()
-        .indexOf(needle) !== -1;
-    });
+  function latest(rows, predicate) {
+    return toArray(rows)
+      .filter(predicate || function () { return true; })
+      .sort(function (a, b) { return (toNumber(b.anno) || 0) - (toNumber(a.anno) || 0); })[0] || null;
   }
 
-  function filteredThemes() {
-    return toArray(state.payload && state.payload.themes).filter(function (theme) {
-      return !state.themeStatus || theme.stato === state.themeStatus;
-    });
+  function rowsByIndicator(rows, indicator) {
+    return toArray(rows).filter(function (row) { return row.indicatore_id === indicator; });
   }
 
-  function baseRows() {
-    var rows = toArray(state.payload && state.payload.calculator && state.payload.calculator.base_rows);
-    if (!rows.length && state.payload && state.payload.calculator && state.payload.calculator.base) {
-      rows = [state.payload.calculator.base];
-    }
-    return rows;
+  function makeKpi(label, value, note) {
+    var item = document.createElement("div");
+    item.className = "pi-kpi";
+    var labelNode = document.createElement("span");
+    var valueNode = document.createElement("strong");
+    var noteNode = document.createElement("small");
+    labelNode.textContent = label;
+    valueNode.textContent = value;
+    noteNode.textContent = note || "";
+    item.appendChild(labelNode);
+    item.appendChild(valueNode);
+    item.appendChild(noteNode);
+    return item;
   }
 
-  function selectedScenarioId() {
-    if (state.scenarioId) return state.scenarioId;
-    return state.payload && state.payload.calculator && state.payload.calculator.default_scenario_id;
+  function makeListItem(title, body) {
+    var item = document.createElement("div");
+    item.className = "pi-list-item";
+    var strong = document.createElement("strong");
+    var span = document.createElement("span");
+    strong.textContent = title;
+    span.textContent = body || "";
+    item.appendChild(strong);
+    item.appendChild(span);
+    return item;
   }
 
-  function selectedCalculator() {
-    var scenarioId = selectedScenarioId();
-    var rows = baseRows();
-    return rows.find(function (row) { return row.scenario_id === scenarioId; }) || rows[0] || {};
-  }
-
-  function selectedCareer() {
-    var scenarioId = selectedScenarioId();
-    return toArray(state.payload && state.payload.calculator && state.payload.calculator.career).filter(function (row) {
-      return !scenarioId || row.scenario_id === scenarioId;
-    });
-  }
-
-  function setupControls(payload) {
-    populateSelect("piThemeStatus", uniqueSorted(toArray(payload.themes).map(function (row) { return row.stato; })), "Tutti gli stati", state.themeStatus);
-    populateSelect("piQuestionTheme", uniqueSorted(coverageRows().map(function (row) { return row.tema; })), "Tutti i temi", state.questionTheme);
-    populateSelect("piQuestionStatus", uniqueSorted(coverageRows().map(function (row) { return row.stato; })), "Tutti gli stati", state.questionStatus);
-
-    var scenarioLabels = baseRows().map(function (row) {
-      return {
-        value: row.scenario_id,
-        label: text(row.scenario_id).replace(/_/g, " ")
-      };
-    });
-    populateSelect("piScenario", scenarioLabels, "Scenario default", state.scenarioId);
-
-    byId("piThemeStatus").addEventListener("change", function (event) {
-      state.themeStatus = event.target.value;
-      renderAll();
-    });
-    byId("piQuestionTheme").addEventListener("change", function (event) {
-      state.questionTheme = event.target.value;
-      renderAll();
-    });
-    byId("piQuestionStatus").addEventListener("change", function (event) {
-      state.questionStatus = event.target.value;
-      renderAll();
-    });
-    byId("piScenario").addEventListener("change", function (event) {
-      state.scenarioId = event.target.value;
-      renderAll();
-    });
-    byId("piQuestionSearch").addEventListener("input", function (event) {
-      state.questionSearch = event.target.value;
-      renderAll();
-    });
-    byId("piResetFilters").addEventListener("click", function () {
-      state.themeStatus = "";
-      state.questionTheme = "";
-      state.questionStatus = "";
-      state.questionSearch = "";
-      state.scenarioId = "";
-      byId("piQuestionSearch").value = "";
-      setupControls(state.payload);
-      renderAll();
-    });
+  function labelGroup(value) {
+    var labels = {
+      ex_dipendenti_privati: "Ex dipendenti privati",
+      ex_dipendenti_pubblici: "Ex dipendenti pubblici",
+      ex_imprenditori_autonomi: "Ex artigiani/commercianti",
+      ex_autonomi_agricoli: "Ex autonomi agricoli",
+      ex_partite_iva_parasubordinati: "Gestione separata",
+      altre_gestioni: "Altre gestioni",
+      prestazioni_assistenziali: "Prestazioni assistenziali"
+    };
+    return labels[value] || text(value).replace(/_/g, " ");
   }
 
   function renderKpis() {
+    var annual = tableRows("annual_pensions");
+    var parameters = tableRows("system_parameters");
     var node = byId("piKpis");
     clear(node);
-    var questions = filteredQuestions();
-    var allQuestions = coverageRows();
-    var calculator = selectedCalculator();
-    node.appendChild(makeKpi("Domande visibili", fmt(questions.length), fmt(allQuestions.length) + " nella matrice"));
-    node.appendChild(makeKpi("Senza dati", fmt(countBy(questions, "stato").mancano_dati || 0), "Dopo i filtri correnti"));
-    node.appendChild(makeKpi("Temi visibili", fmt(filteredThemes().length), fmt(toArray(state.payload.themes).length) + " totali"));
-    node.appendChild(makeKpi("Quota non coperta", percentShare(calculator.quota_pensione_non_coperta), text(calculator.scenario_id, "Scenario")));
+
+    var pensioni = latest(annual, function (row) { return row.indicatore_id === "pensioni_vigenti" && row.area === "Italia - INPS"; });
+    var pensionati = latest(annual, function (row) { return row.indicatore_id === "pensionati" && row.area === "Italia - INPS"; });
+    var reddito = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_totale" && row.area === "Italia - complessivi"; });
+    var ratio = latest(annual, function (row) { return row.indicatore_id === "trattamenti_per_pensionato" && row.area === "Italia - INPS"; });
+    var spesa = latest(annual, function (row) { return row.indicatore_id === "spesa_pensionistica_inps_stimata"; });
+    var rate = latest(parameters, function (row) { return row.parametro_id === "aliquota_ivs_standard_ago_corrente"; });
+
+    node.appendChild(makeKpi("Pensioni INPS", fmt(pensioni && pensioni.valore), "Prestazioni vigenti " + text(pensioni && pensioni.anno)));
+    node.appendChild(makeKpi("Pensionati INPS", fmt(pensionati && pensionati.valore), "Persone beneficiarie " + text(pensionati && pensionati.anno)));
+    node.appendChild(makeKpi("Pensioni per pensionato", fmt(ratio && ratio.valore, 2), "Rapporto nel perimetro INPS"));
+    node.appendChild(makeKpi("Reddito pensionistico", euroBn(reddito && reddito.valore), "Sistema complessivo " + text(reddito && reddito.anno)));
+    node.appendChild(makeKpi("Spesa INPS stimata", euroBn(spesa && spesa.valore), "Da prestazioni x importo medio"));
+    node.appendChild(makeKpi("Aliquota IVS", fmt(rate && rate.valore, 1) + "%", "Riferimento corrente AGO/FPLD"));
   }
 
-  function renderCoverage() {
-    var counts = countBy(filteredQuestions(), "stato");
-    var labels = Object.keys(counts);
-    var values = labels.map(function (key) { return counts[key]; });
-    plot("piCoverageChart", [{
+  function renderMoneyChart() {
+    var annual = tableRows("annual_pensions");
+    var series = [
+      ["entrate_contributive_inps", "Contributi INPS", COLORS[1]],
+      ["spesa_pensionistica_casellario", "Spesa Casellario", COLORS[0]],
+      ["spesa_pensionistica_inps_stimata", "Spesa INPS stimata", COLORS[3]]
+    ];
+    var traces = series.map(function (item) {
+      var rows = rowsByIndicator(annual, item[0]).sort(function (a, b) { return a.anno - b.anno; });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: item[1],
+        x: rows.map(function (row) { return row.anno; }),
+        y: rows.map(function (row) { return toNumber(row.valore) / 1000000000; }),
+        line: { color: item[2], width: 3 },
+        marker: { size: 7 }
+      };
+    }).filter(function (trace) { return trace.x.length; });
+    plot("piMoneyChart", traces, { yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderStockChart() {
+    var annual = tableRows("annual_pensions");
+    var traces = [
+      ["pensioni_vigenti", "Pensioni", COLORS[0]],
+      ["pensionati", "Pensionati", COLORS[2]]
+    ].map(function (item) {
+      var rows = rowsByIndicator(annual, item[0]).filter(function (row) {
+        return row.area === "Italia" || row.area === "Italia - INPS" || row.area === "Italia - complessivi";
+      }).sort(function (a, b) { return a.anno - b.anno; });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: item[1],
+        x: rows.map(function (row) { return row.anno; }),
+        y: rows.map(function (row) { return toNumber(row.valore) / 1000000; }),
+        line: { color: item[2], width: 3 },
+        marker: { size: 7 },
+        text: rows.map(function (row) { return row.area; }),
+        hovertemplate: "%{fullData.name}<br>%{x}<br>%{y:.1f} mln<br>%{text}<extra></extra>"
+      };
+    });
+    plot("piStockChart", traces, { yaxis: { title: "milioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderRatioChart() {
+    var rows = rowsByIndicator(tableRows("annual_pensions"), "trattamenti_per_pensionato")
+      .sort(function (a, b) { return a.anno - b.anno; });
+    plot("piRatioChart", [{
+      type: "bar",
+      name: "Pensioni per pensionato",
+      x: rows.map(function (row) { return row.anno; }),
+      y: rows.map(function (row) { return row.valore; }),
+      marker: { color: COLORS[4] },
+      text: rows.map(function (row) { return fmt(row.valore, 2); }),
+      textposition: "outside"
+    }], { yaxis: { title: "rapporto", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderRateChart() {
+    var rows = tableRows("system_parameters")
+      .filter(function (row) { return row.parametro_id === "aliquota_ivs_fpld_totale_fine_anno"; })
+      .sort(function (a, b) { return a.anno - b.anno; });
+    var current = tableRows("system_parameters").filter(function (row) { return row.parametro_id === "aliquota_ivs_standard_ago_corrente"; });
+    var traces = [{
+      type: "scatter",
+      mode: "lines",
+      name: "FPLD totale a fine anno",
+      x: rows.map(function (row) { return row.anno; }),
+      y: rows.map(function (row) { return row.valore; }),
+      line: { color: COLORS[0], width: 3 }
+    }];
+    if (current.length) {
+      traces.push({
+        type: "scatter",
+        mode: "markers",
+        name: "Riferimento corrente AGO/FPLD",
+        x: current.map(function (row) { return row.anno; }),
+        y: current.map(function (row) { return row.valore; }),
+        marker: { color: COLORS[2], size: 11, symbol: "diamond" }
+      });
+    }
+    plot("piRateChart", traces, { yaxis: { title: "%", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function orderedDistribution(rows) {
+    return toArray(rows).sort(function (a, b) {
+      var av = toNumber(a.classe_importo_min);
+      var bv = toNumber(b.classe_importo_min);
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return av - bv;
+    });
+  }
+
+  function renderDistributions() {
+    var distribution = tableRows("pensioner_distribution");
+    var pensions = orderedDistribution(distribution.filter(function (row) { return row.indicatore_id === "pensioni_per_classe_importo"; }));
+    var pensioners = orderedDistribution(distribution.filter(function (row) { return row.indicatore_id === "pensionati_per_classe_reddito_pensionistico"; }));
+    plot("piPensionDistributionChart", [{
+      type: "bar",
+      name: "Pensioni",
+      x: pensions.map(function (row) { return row.classe_importo; }),
+      y: pensions.map(function (row) { return toNumber(row.valore) / 1000000; }),
+      marker: { color: COLORS[0] },
+      hovertemplate: "%{x}<br>%{y:.2f} mln pensioni<extra></extra>"
+    }], { yaxis: { title: "milioni di pensioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    plot("piIncomeDistributionChart", [{
+      type: "bar",
+      name: "Pensionati",
+      x: pensioners.map(function (row) { return row.classe_importo; }),
+      y: pensioners.map(function (row) { return toNumber(row.valore) / 1000000; }),
+      marker: { color: COLORS[2] },
+      hovertemplate: "%{x}<br>%{y:.2f} mln pensionati<extra></extra>"
+    }], { yaxis: { title: "milioni di pensionati", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderProfessionChart() {
+    var grouped = {};
+    tableRows("pensioners_by_management_profession").forEach(function (row) {
+      var key = row.categoria_professionale || "altre_gestioni";
+      grouped[key] = (grouped[key] || 0) + (toNumber(row.prestazioni) || 0);
+    });
+    var entries = Object.keys(grouped).map(function (key) { return [key, grouped[key]]; }).sort(function (a, b) { return b[1] - a[1]; });
+    plot("piProfessionChart", [{
       type: "bar",
       orientation: "h",
-      y: labels,
-      x: values,
-      marker: { color: COLORS.slice(0, labels.length) },
-      hovertemplate: "%{y}: %{x}<extra></extra>"
-    }], {
-      margin: { t: 18, r: 18, b: 42, l: 118 },
-      xaxis: { title: "Domande" }
-    });
+      x: entries.map(function (entry) { return entry[1] / 1000000; }),
+      y: entries.map(function (entry) { return labelGroup(entry[0]); }),
+      marker: { color: COLORS[1] },
+      hovertemplate: "%{y}<br>%{x:.2f} mln prestazioni<extra></extra>"
+    }], { margin: { t: 18, r: 18, b: 46, l: 160 }, xaxis: { title: "milioni di prestazioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
-  function renderQuality() {
-    var node = byId("piQualityList");
+  function renderManagementList() {
+    var node = byId("piManagementList");
     clear(node);
-    var counts = (state.payload.quality && state.payload.quality.status_counts) || {};
-    Object.keys(counts).forEach(function (key) {
-      var item = document.createElement("div");
-      item.className = "pi-list-item";
-      var strong = document.createElement("strong");
-      var span = document.createElement("span");
-      strong.appendChild(badge(key));
-      span.textContent = fmt(counts[key]) + " controlli";
-      item.appendChild(strong);
-      item.appendChild(span);
-      node.appendChild(item);
+    var counts = tableRows("managements").filter(function (row) {
+      return row.anno === 2025 && row.indicatore_id === "pensioni_vigenti";
+    }).sort(function (a, b) { return (toNumber(b.valore) || 0) - (toNumber(a.valore) || 0); }).slice(0, 7);
+    counts.forEach(function (row) {
+      node.appendChild(makeListItem(row.gestione_nome, fmt(row.valore) + " prestazioni - " + labelGroup(row.gruppo_gestione)));
     });
-    if (!node.children.length) node.appendChild(makeListItem("Nessun controllo disponibile", ""));
   }
 
-  function renderThemes() {
-    var node = byId("piThemes");
-    var themes = filteredThemes();
-    clear(node);
-    byId("piThemeSummary").textContent = themes.length + " temi visualizzati. La sintesi viene da metadata/temi_dashboard.csv, costruito a partire dai testi delle live.";
-    themes.forEach(function (theme) {
-      var card = document.createElement("article");
-      card.className = "pi-theme";
-      var h = document.createElement("h3");
-      var p = document.createElement("p");
-      var footer = document.createElement("div");
-      h.textContent = text(theme.titolo);
-      p.textContent = text(theme.sintesi, "");
-      footer.className = "pi-theme-footer";
-      footer.appendChild(badge(theme.stato));
-      if (theme.indicatori) footer.appendChild(badge("indicatori"));
-      card.appendChild(h);
-      card.appendChild(p);
-      card.appendChild(footer);
-      node.appendChild(card);
-    });
-    if (!themes.length) node.appendChild(makeListItem("Nessun tema con questi filtri", ""));
+  function metricLabel(metric) {
+    return {
+      pensionati: "Pensionati regionali",
+      gini_reddito_pensionistico: "Gini reddito pensionistico",
+      decile_D5_reddito_pensionistico: "Reddito pensionistico mediano"
+    }[metric] || metric;
   }
 
-  function renderCalculator() {
-    var base = selectedCalculator();
-    var kpis = byId("piCalculatorKpis");
-    clear(kpis);
-    byId("piScenarioNote").textContent = text(base.descrizione, "Scenario didattico") + " " + text(base.note, "");
-    kpis.appendChild(makeKpi("Anni contribuzione", fmt(base.anni_contribuzione), "Scenario selezionato"));
-    kpis.appendChild(makeKpi("Tasso teorico", percentShare(base.tasso_sostituzione_teorico), "Montante / vita residua"));
-    kpis.appendChild(makeKpi("Tasso effettivo", percentShare(base.tasso_sostituzione_effettivo), "Ipotesi scenario"));
-    kpis.appendChild(makeKpi("Per occupato", euro(base.quota_non_coperta_per_occupato), "Quota non coperta stimata"));
+  function metricUnit(metric) {
+    return metric === "pensionati" ? "pensionati" : metric === "gini_reddito_pensionistico" ? "%" : "euro";
+  }
 
-    var career = selectedCareer();
-    if (!career.length) {
-      showEmpty("piCareerChart", "Carriera non disponibile");
+  function regionName(name) {
+    var value = text(name);
+    if (value.indexOf("Valle d'Aosta") === 0 || value.indexOf("Valle D'Aosta") === 0) return "Valle d'Aosta";
+    if (value.indexOf("Trentino") === 0) return "Trentino-Alto Adige";
+    if (value.indexOf("Friuli") === 0) return "Friuli Venezia Giulia";
+    if (value.indexOf("Emilia") === 0) return "Emilia-Romagna";
+    return value;
+  }
+
+  function regionCoord(row) {
+    return REGION_COORDS[regionName(row.nome_territorio)];
+  }
+
+  function regionRows(metric) {
+    var rows = tableRows("territorial").filter(function (row) {
+      return row.livello_territoriale === "regione" && row.indicatore_id === metric && regionCoord(row);
+    });
+    var latestYear = Math.max.apply(null, rows.map(function (row) { return toNumber(row.anno) || 0; }));
+    return rows.filter(function (row) { return toNumber(row.anno) === latestYear; });
+  }
+
+  function renderRegionalMap() {
+    var metric = state.mapMetric;
+    var rows = regionRows(metric);
+    if (!rows.length) {
+      showEmpty("piRegionalMap", "Dati regionali non disponibili");
       return;
     }
-    plot("piCareerChart", [
-      {
-        type: "scatter",
-        mode: "lines",
-        name: "Salario",
-        x: career.map(function (row) { return row.anno; }),
-        y: career.map(function (row) { return row.salario; }),
-        line: { color: COLORS[0], width: 3 },
-        hovertemplate: "%{x}<br>salario indice %{y:.1f}<extra></extra>"
+    var values = rows.map(function (row) { return toNumber(row.valore) || 0; });
+    var maxValue = Math.max.apply(null, values);
+    var sizes = values.map(function (value) {
+      if (metric === "pensionati") return 14 + 34 * Math.sqrt(value / maxValue);
+      return 24;
+    });
+    var subtitle = byId("piMapSubtitle");
+    if (subtitle) subtitle.textContent = metricLabel(metric) + " - " + rows[0].anno;
+    plot("piRegionalMap", [{
+      type: "scattergeo",
+      mode: "markers+text",
+      lat: rows.map(function (row) { return regionCoord(row)[0]; }),
+      lon: rows.map(function (row) { return regionCoord(row)[1]; }),
+      text: rows.map(function (row) { return regionName(row.nome_territorio); }),
+      textposition: "top center",
+      marker: {
+        size: sizes,
+        color: values,
+        colorscale: [[0, "#76b7b2"], [0.5, "#f2a541"], [1, "#ff5a1f"]],
+        line: { color: cssVar("--panel", "#090909"), width: 1 },
+        colorbar: { title: metricUnit(metric), tickfont: { color: cssVar("--muted", "#b9b2aa") } }
       },
-      {
-        type: "scatter",
-        mode: "lines",
-        name: "Montante",
-        x: career.map(function (row) { return row.anno; }),
-        y: career.map(function (row) { return row.montante_contributivo; }),
-        line: { color: COLORS[1], width: 3 },
-        hovertemplate: "%{x}<br>montante %{y:.1f}<extra></extra>"
-      },
-      {
-        type: "bar",
-        name: "Contributi",
-        x: career.map(function (row) { return row.anno; }),
-        y: career.map(function (row) { return row.contributi; }),
-        marker: { color: "rgba(242,165,65,.55)" },
-        hovertemplate: "%{x}<br>contributi %{y:.1f}<extra></extra>"
+      customdata: values,
+      hovertemplate: "%{text}<br>%{customdata:,.0f} " + metricUnit(metric) + "<extra></extra>"
+    }], {
+      margin: { t: 4, r: 4, b: 4, l: 4 },
+      showlegend: false,
+      geo: {
+        scope: "europe",
+        resolution: 50,
+        lataxis: { range: [36, 47.5] },
+        lonaxis: { range: [6, 19] },
+        showland: true,
+        landcolor: "rgba(255,255,255,0.04)",
+        showcountries: false,
+        showsubunits: false,
+        showcoastlines: true,
+        coastlinecolor: cssVar("--line", "#303030"),
+        bgcolor: "rgba(0,0,0,0)"
       }
-    ], {
-      yaxis: { title: "Indice scenario" },
-      barmode: "overlay"
+    });
+    renderRegionalRanking(rows, metric);
+  }
+
+  function renderRegionalRanking(rows, metric) {
+    var node = byId("piRegionalRanking");
+    clear(node);
+    var subtitle = byId("piRankingSubtitle");
+    if (subtitle && rows[0]) subtitle.textContent = String(rows[0].anno);
+    rows.slice().sort(function (a, b) { return (toNumber(b.valore) || 0) - (toNumber(a.valore) || 0); }).slice(0, 12).forEach(function (row) {
+      var value = metric === "decile_D5_reddito_pensionistico" ? euro(row.valore) : metric === "gini_reddito_pensionistico" ? fmt(row.valore, 1) + "%" : fmt(row.valore);
+      node.appendChild(makeListItem(row.nome_territorio, value + " - " + metricLabel(metric)));
     });
   }
 
-  function renderQuestions() {
-    var body = byId("piQuestionRows");
-    var rows = filteredQuestions();
-    clear(body);
-    byId("piQuestionSummary").textContent = rows.length + " domande visualizzate. Usa tema, stato e ricerca per isolare ripartizione, trasferimenti, demografia o pensionati.";
-    rows.forEach(function (row) {
-      var tr = document.createElement("tr");
-      ["domanda_id", "tema", "stato", "domanda", "tabella_finale"].forEach(function (key) {
-        var td = document.createElement("td");
-        if (key === "stato") td.appendChild(badge(row[key]));
-        else td.textContent = text(row[key], "");
-        tr.appendChild(td);
+  function renderSources() {
+    var node = byId("piSources");
+    clear(node);
+    var wanted = ["inps_appendice_xxv", "inps_casellario_2024", "inps_open_data", "inps_aliquote_storiche", "inps_aliquote_correnti"];
+    catalogRows("sources").filter(function (row) {
+      return wanted.indexOf(row.fonte_id) >= 0;
+    }).forEach(function (row) {
+      node.appendChild(makeListItem(row.nome_fonte || row.fonte_id, text(row.perimetro) + " - " + text(row.frequenza)));
+    });
+
+    var dataNode = byId("piDatasets");
+    clear(dataNode);
+    var inventory = catalogRows("dataset_inventory")
+      .filter(function (row) { return row.priorita_dashboard === "alta"; })
+      .slice(0, 8);
+    inventory.forEach(function (row) {
+      dataNode.appendChild(makeListItem(text(row.titolo || row.name, row.dataset_id), text(row.ambito_dashboard) + " - " + text(row.stato_uso)));
+    });
+  }
+
+  function setupControls() {
+    var metric = byId("piMapMetric");
+    if (metric) {
+      metric.value = state.mapMetric;
+      metric.addEventListener("change", function () {
+        state.mapMetric = metric.value;
+        renderRegionalMap();
       });
-      body.appendChild(tr);
-    });
-    if (!rows.length) {
-      var empty = document.createElement("tr");
-      var cell = document.createElement("td");
-      cell.colSpan = 5;
-      cell.textContent = "Nessuna domanda con questi filtri.";
-      empty.appendChild(cell);
-      body.appendChild(empty);
     }
-  }
-
-  function renderMethod() {
-    var limitations = byId("piLimitations");
-    var sources = byId("piSources");
-    clear(limitations);
-    clear(sources);
-    toArray(state.payload.known_limitations).forEach(function (item) {
-      limitations.appendChild(makeListItem(item, ""));
-    });
-    if (!limitations.children.length) limitations.appendChild(makeListItem("Nessun limite registrato", ""));
-    toArray(state.payload.catalog && state.payload.catalog.sources).forEach(function (source) {
-      sources.appendChild(makeListItem(text(source.ente) + " - " + text(source.nome_fonte), text(source.perimetro, "")));
-    });
   }
 
   function renderAll() {
-    if (!state.payload) return;
     renderKpis();
-    renderCoverage();
-    renderQuality();
-    renderThemes();
-    renderCalculator();
-    renderQuestions();
-    renderMethod();
+    renderMoneyChart();
+    renderStockChart();
+    renderRatioChart();
+    renderRateChart();
+    renderDistributions();
+    renderProfessionChart();
+    renderManagementList();
+    renderRegionalMap();
+    renderSources();
   }
 
-  fetch(DATA_URL, { cache: "no-store" })
-    .then(function (response) {
-      if (!response.ok) throw new Error("HTTP " + response.status);
-      return response.json();
-    })
-    .then(function (payload) {
-      state.payload = payload;
-      setupControls(payload);
-      renderAll();
-      var preparedAt = payload.meta && payload.meta.prepared_at ? new Date(payload.meta.prepared_at) : null;
-      setStatus("Dati caricati" + (preparedAt ? " - payload " + preparedAt.toLocaleString("it-IT") : "") + ".");
-    })
-    .catch(function () {
-      setStatus("Impossibile caricare il payload pensioni da R2.", true);
-      showEmpty("piCoverageChart", "Payload non disponibile");
-      showEmpty("piCareerChart", "Payload non disponibile");
-    });
-}());
+  function load() {
+    fetch(DATA_URL, { cache: "no-store" })
+      .then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      })
+      .then(function (payload) {
+        state.payload = payload;
+        setupControls();
+        renderAll();
+        setStatus("Dati caricati. Aggiornamento payload: " + text(payload.meta && payload.meta.updated_at));
+      })
+      ["catch"](function (error) {
+        setStatus("Errore nel caricamento del payload: " + error.message, true);
+      });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", load);
+  } else {
+    load();
+  }
+})();
