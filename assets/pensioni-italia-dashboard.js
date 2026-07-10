@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-4";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-5";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -179,7 +179,7 @@
       ex_dipendenti_pubblici: "Ex dipendenti pubblici",
       ex_imprenditori_autonomi: "Artigiani e commercianti",
       ex_autonomi_agricoli: "Ex autonomi agricoli",
-      ex_partite_iva_parasubordinati: "Gestione separata",
+      ex_partite_iva_parasubordinati: "Autonomi e parasubordinati",
       altre_gestioni: "Altre gestioni",
       prestazioni_assistenziali: "Prestazioni assistenziali"
     };
@@ -202,7 +202,7 @@
     node.appendChild(makeKpi("Pensioni INPS", fmt(pensioni && pensioni.valore), "Prestazioni vigenti " + text(pensioni && pensioni.anno)));
     node.appendChild(makeKpi("Pensionati INPS", fmt(pensionati && pensionati.valore), "Persone beneficiarie " + text(pensionati && pensionati.anno)));
     node.appendChild(makeKpi("Pensioni per pensionato", fmt(ratio && ratio.valore, 2), "Rapporto nel perimetro INPS"));
-    node.appendChild(makeKpi("Reddito pensionistico", euroBn(reddito && reddito.valore), "Sistema complessivo " + text(reddito && reddito.anno)));
+    node.appendChild(makeKpi("Reddito pensionistico lordo", euroBn(reddito && reddito.valore), "Sistema complessivo " + text(reddito && reddito.anno)));
     node.appendChild(makeKpi("Spesa INPS stimata", euroBn(spesa && spesa.valore), "Da prestazioni x importo medio"));
     node.appendChild(makeKpi("Aliquota IVS", fmt(rate && rate.valore, 1) + "%", "Riferimento corrente AGO/FPLD"));
   }
@@ -236,7 +236,7 @@
       line: { color: COLORS[1], width: 3 },
       marker: { size: 7 },
       hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
-    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "miliardi di euro", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderSpendingChart() {
@@ -253,7 +253,34 @@
       line: { color: COLORS[0], width: 3 },
       marker: { size: 7 },
       hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
-    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "miliardi di euro", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function renderFundingChart() {
+    var annual = tableRows("annual_pensions");
+    var transfers = rowsByIndicator(tableRows("state_transfers"), "trasferimenti_stato_inps");
+    var contributions = rowsByIndicator(annual, "entrate_contributive_inps");
+    var spending = rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) {
+      return row.area === "Italia - complessivi";
+    });
+    var years = Array.from(new Set(transfers.map(function (row) { return toNumber(row.anno); })))
+      .filter(function (year) { return year >= 2019; }).sort();
+
+    function values(rows) {
+      var byYear = {};
+      rows.forEach(function (row) { byYear[toNumber(row.anno)] = toNumber(row.valore); });
+      return years.map(function (year) { return byYear[year] === undefined ? null : byYear[year] / 1000000000; });
+    }
+
+    plot("piFundingChart", [
+      { type: "scatter", mode: "lines+markers", name: "Contributi INPS", x: years, y: values(contributions), connectgaps: false, line: { color: COLORS[1], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
+      { type: "scatter", mode: "lines+markers", name: "Spesa pensionistica lorda", x: years, y: values(spending), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
+      { type: "scatter", mode: "lines+markers", name: "Trasferimenti dallo Stato", x: years, y: values(transfers), connectgaps: false, line: { color: COLORS[3], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }
+    ], {
+      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: "miliardi di euro", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
+    });
   }
 
   function renderPensionIncomeChart() {
@@ -270,7 +297,7 @@
       line: { color: COLORS[3], width: 3 },
       marker: { size: 8 },
       hovertemplate: "%{x}<br>%{y:,.0f} euro al mese<extra></extra>"
-    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "euro al mese", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "euro al mese", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderCountChart(id, indicator, preferredArea, label, color) {
@@ -297,7 +324,7 @@
     plot(id, traces, {
       showlegend: false,
       xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { title: "milioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
+      yaxis: { title: "milioni", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
     });
   }
 
@@ -332,7 +359,7 @@
         marker: { color: COLORS[2], size: 11, symbol: "diamond" }
       });
     }
-    plot("piRateChart", traces, { yaxis: { title: "%", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    plot("piRateChart", traces, { yaxis: { title: "%", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderEuropeChart() {
@@ -356,7 +383,7 @@
     }).filter(Boolean);
     plot("piEuropeChart", traces, {
       xaxis: { dtick: 2, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { title: "% del PIL", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: "% del PIL", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
     });
   }
@@ -396,7 +423,7 @@
       y: pensions.map(function (row) { return toNumber(row.valore) / pensionConfig.scale; }),
       marker: { color: COLORS[0] },
       hovertemplate: "%{x}<br>%{y:,.2f}" + pensionConfig.suffix + "<extra></extra>"
-    }], { yaxis: { title: pensionConfig.title, fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    }], { yaxis: { title: pensionConfig.title, rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
     plot("piIncomeDistributionChart", [{
       type: "bar",
       name: "Pensionati",
@@ -404,7 +431,7 @@
       y: pensioners.map(function (row) { return toNumber(row.valore) / incomeConfig.scale; }),
       marker: { color: COLORS[2] },
       hovertemplate: "%{x}<br>%{y:,.2f}" + incomeConfig.suffix + "<extra></extra>"
-    }], { yaxis: { title: incomeConfig.title, fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    }], { yaxis: { title: incomeConfig.title, rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderProfessionChart() {
@@ -446,7 +473,7 @@
       margin: { t: 18, r: 18, b: 70, l: 72 },
       legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } },
       xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { title: state.professionMeasure === "importo_medio_pensione" ? "euro al mese" : "milioni di prestazioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
+      yaxis: { title: state.professionMeasure === "importo_medio_pensione" ? "euro al mese" : "milioni di prestazioni", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
     });
   }
 
@@ -464,8 +491,8 @@
   function metricLabel(metric) {
     return {
       pensionati: "Pensionati regionali",
-      reddito_pensionistico_medio_mensile: "Reddito pensionistico medio mensile",
-      spesa_pensionistica_regionale: "Spesa pensionistica complessiva",
+      importo_medio_pensione_mensile_regionale: "Importo medio lordo della pensione",
+      spesa_pensionistica_regionale: "Spesa pensionistica complessiva lorda",
       pensionati_percentuale_popolazione: "Pensionati sulla popolazione residente",
       spesa_pensionistica_percentuale_pil: "Spesa pensionistica sul PIL regionale"
     }[metric] || metric;
@@ -474,7 +501,7 @@
   function metricUnit(metric) {
     if (metric === "pensionati") return "pensionati";
     if (metric === "spesa_pensionistica_regionale") return "miliardi di euro";
-    if (metric === "reddito_pensionistico_medio_mensile") return "euro al mese";
+    if (metric === "importo_medio_pensione_mensile_regionale") return "euro al mese";
     return "%";
   }
 
@@ -527,8 +554,8 @@
       z: values,
       text: rows.map(function (row) { return regionName(row.nome_territorio); }),
       customdata: rows.map(function (row) {
-        if (metric === "spesa_pensionistica_regionale") return euroBn(row.valore);
-        if (metric === "reddito_pensionistico_medio_mensile") return euro(row.valore) + " al mese";
+        if (metric === "spesa_pensionistica_regionale") return euroBn(row.valore) + " lordi";
+        if (metric === "importo_medio_pensione_mensile_regionale") return euro(row.valore) + " lordi al mese";
         if (metric === "pensionati_percentuale_popolazione") return fmt(row.valore, 1) + "% della popolazione";
         if (metric === "spesa_pensionistica_percentuale_pil") return fmt(row.valore, 1) + "% del PIL regionale";
         return fmt(row.valore) + " pensionati";
@@ -634,6 +661,7 @@
     renderKpis();
     renderContributionsChart();
     renderSpendingChart();
+    renderFundingChart();
     renderPensionIncomeChart();
     renderPensionsChart();
     renderPensionersChart();

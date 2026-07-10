@@ -91,6 +91,18 @@
 .pi-source-summary strong { color: var(--orange); font-size: 1.05rem; }
 .pi-source-summary span { margin-top: 8px; color: var(--muted); line-height: 1.5; }
 
+.pi-gross-note {
+  margin: 18px 0 0;
+  padding: 12px 0 12px 16px;
+  border-left: 3px solid var(--orange);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.pi-gross-note strong {
+  color: var(--text);
+}
+
 .pi-dashboard .workflow-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
