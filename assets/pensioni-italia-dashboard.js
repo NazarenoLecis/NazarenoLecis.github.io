@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-5";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-6";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -280,6 +280,52 @@
       xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       yaxis: { title: "miliardi di euro", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
+    });
+  }
+
+  function renderDemographyRatioChart(id, indicator, label, color) {
+    var rows = rowsByIndicator(tableRows("demography_work"), indicator)
+      .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+    plot(id, [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: label,
+      x: rows.map(function (row) { return row.anno; }),
+      y: rows.map(function (row) { return toNumber(row.valore); }),
+      line: { color: color, width: 3 },
+      marker: { size: 8 },
+      hovertemplate: "%{x}<br>%{y:.2f} per pensionato<extra></extra>"
+    }], {
+      showlegend: false,
+      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: "rapporto", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
+    });
+  }
+
+  function renderWorkersRatioChart() {
+    renderDemographyRatioChart("piWorkersRatioChart", "occupati_per_pensionato", "Occupati per pensionato", COLORS[2]);
+  }
+
+  function renderInsuredRatioChart() {
+    renderDemographyRatioChart("piInsuredRatioChart", "assicurati_inps_per_pensionato", "Assicurati INPS per pensionato", COLORS[1]);
+  }
+
+  function renderContributionCoverageChart() {
+    var rows = rowsByIndicator(tableRows("demography_work"), "copertura_spesa_contributi")
+      .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+    plot("piContributionCoverageChart", [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: "Contributi / spesa lorda",
+      x: rows.map(function (row) { return row.anno; }),
+      y: rows.map(function (row) { return toNumber(row.valore); }),
+      line: { color: COLORS[3], width: 3 },
+      marker: { size: 8 },
+      hovertemplate: "%{x}<br>%{y:.1f}% della spesa<extra></extra>"
+    }], {
+      showlegend: false,
+      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: "% della spesa lorda", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
     });
   }
 
@@ -666,6 +712,9 @@
     renderPensionsChart();
     renderPensionersChart();
     renderRateChart();
+    renderWorkersRatioChart();
+    renderInsuredRatioChart();
+    renderContributionCoverageChart();
     renderEuropeChart();
     renderDistributions();
     renderProfessionChart();

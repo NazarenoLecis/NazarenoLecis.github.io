@@ -9,20 +9,20 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260710-5">
+  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260710-6">
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/dashboard.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260710-5"></script>
+  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260710-6"></script>
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap nav-bar">
-      <a class="brand" href="../../index.html"><span class="brand-mark">NL</span><span>Nazareno Lecis</span></a>
-      <nav class="nav-links" aria-label="Navigazione principale">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html"><span class="logo"></span><span><span class="brand-name">Nazareno Lecis</span><span class="brand-tag">Data &amp; Risk Analysis</span></span></a>
+      <nav class="nav" aria-label="Navigazione principale">
         <a href="../../index.html">Home</a>
-        <a href="../index.html">Dashboard</a>
         <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
         <a href="../../media/index.html">Media</a>
         <a href="../../about/index.html">Chi sono</a>
         <a href="https://github.com/NazarenoLecis">GitHub</a>
@@ -46,7 +46,7 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard pensioni">
-      <a href="#serie">Serie</a><a href="#europa">Europa</a><a href="#distribuzioni">Distribuzioni</a><a href="#gestioni">Categorie</a><a href="#territorio">Mappa</a><a href="#fonti">Metodo</a>
+      <a href="#serie">Serie</a><a href="#lavoro">Lavoro</a><a href="#europa">Europa</a><a href="#distribuzioni">Distribuzioni</a><a href="#gestioni">Categorie</a><a href="#territorio">Mappa</a><a href="#fonti">Metodo</a>
     </nav>
     <p id="piStatus" class="pi-status">Caricamento dati pensioni ...</p>
     <section id="piKpis" class="kpi-grid pi-kpi-grid" aria-label="KPI pensioni italiane"></section>
@@ -68,6 +68,15 @@
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Numero di pensioni vigenti</h3><span>2018-2025</span></div><p class="pi-card-note">Conta le prestazioni INPS, non le persone.</p><div class="pi-chart pi-chart-wide" id="piPensionsChart"></div><p class="pi-chart-credit">Fonte: Rapporti annuali e Appendici statistiche INPS. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Numero di pensionati</h3><span>2018-2025</span></div><p class="pi-card-note">Conta una sola volta ogni persona beneficiaria, anche quando riceve piu' trattamenti.</p><div class="pi-chart pi-chart-wide" id="piPensionersChart"></div><p class="pi-chart-credit">Fonte: Rapporti annuali e Appendici statistiche INPS. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Aliquota contributiva IVS</h3><span>1920-2026</span></div><p class="pi-card-note">Serie storica FPLD a fine anno e riferimento corrente IVS/AGO.</p><div class="pi-chart pi-chart-wide" id="piRateChart"></div><p class="pi-chart-credit">Fonte: INPS, Aliquote storiche IVS FPLD e aliquote correnti. Elaborazione di Nazareno Lecis.</p></article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="lavoro">
+      <div class="section-head"><span class="eyebrow">Lavoro e sostenibilita'</span><div><h2>Occupati, assicurati e pensionati</h2><p>Tre indicatori distinti: consistenza degli occupati, persone con contribuzione INPS nell'anno e copertura finanziaria della spesa.</p></div></div>
+      <div class="pi-stack">
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Occupati per pensionato</h3><span>2018-2025</span></div><p class="pi-card-note">Occupati di 15-64 anni secondo EU-LFS divisi per pensionati complessivi. E' un rapporto demografico tra grandezze medie.</p><div class="pi-chart pi-chart-wide" id="piWorkersRatioChart"></div><p class="pi-chart-credit">Fonte: Eurostat EU-LFS e Rapporti annuali INPS. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Assicurati INPS per pensionato</h3><span>2019-2024</span></div><p class="pi-card-note">Gli assicurati hanno almeno un contributo o una giornata retribuita nell'anno e sono contati una sola volta tra le gestioni. Non equivalgono a occupati medi a tempo pieno.</p><div class="pi-chart pi-chart-wide" id="piInsuredRatioChart"></div><p class="pi-chart-credit">Fonte: Rapporti annuali INPS XXIII e XXIV, tabelle sui lavoratori assicurati. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Spesa pensionistica coperta dai contributi</h3><span>lordo, 2018-2025</span></div><p class="pi-card-note">Entrate contributive complessive INPS divise per reddito pensionistico lordo complessivo. Il rapporto e' aggregato e i due perimetri non coincidono perfettamente.</p><div class="pi-chart pi-chart-wide" id="piContributionCoverageChart"></div><p class="pi-chart-credit">Fonte: Rendiconti, Rapporti annuali e Appendici statistiche INPS. Elaborazione di Nazareno Lecis.</p></article>
       </div>
     </section>
 
@@ -99,7 +108,7 @@
     <section class="dashboard-section" id="fonti">
       <div class="section-head"><span class="eyebrow">Metodo</span><div><h2>Note metodologiche e fonti</h2><p>Definizioni, perimetri e trasformazioni necessarie per leggere correttamente i grafici.</p></div></div>
       <div class="pi-notes-panel">
-        <div><h3>Note metodologiche</h3><ul><li><strong>Pensione:</strong> singolo trattamento. Una persona puo' ricevere piu' pensioni.</li><li><strong>Pensionato:</strong> persona beneficiaria contata una sola volta nel Casellario.</li><li><strong>Reddito pensionistico:</strong> somma lorda di tutti i trattamenti percepiti dalla persona; non coincide con l'importo di una singola pensione.</li><li><strong>Lordo e netto:</strong> spesa, importi medi e redditi pensionistici sono valori lordi prima di IRPEF e addizionali. Contributi e trasferimenti sono voci finanziarie di bilancio.</li><li>Le medie mensili derivate dividono l'importo annuo per 12 e non rappresentano necessariamente la singola rata pagata.</li><li>Le serie 2018-2025 usano tavole annuali omogenee. Le revisioni successive prevalgono sui dati provvisori; non sono effettuate interpolazioni.</li><li>I trasferimenti statali finanziano il complesso delle attivita' INPS, comprese prestazioni assistenziali e altre funzioni: non misurano da soli il disavanzo pensionistico.</li><li>ESSPROS usa definizioni armonizzate e non va sovrapposto direttamente ai conti amministrativi INPS.</li><li>La mappa 2024 usa gli osservatori API INPS 413 e 416. L'importo medio e' riferito alla singola pensione; la spesa e' stimata come numero di prestazioni per importo medio annuo.</li><li>I rapporti regionali combinano numeratore INPS e popolazione o PIL Eurostat dello stesso anno. Trento e Bolzano sono aggregate.</li></ul></div>
+        <div><h3>Note metodologiche</h3><ul><li><strong>Pensione:</strong> singolo trattamento. Una persona puo' ricevere piu' pensioni.</li><li><strong>Pensionato:</strong> persona beneficiaria contata una sola volta nel Casellario.</li><li><strong>Reddito pensionistico:</strong> somma lorda di tutti i trattamenti percepiti dalla persona; non coincide con l'importo di una singola pensione.</li><li><strong>Lordo e netto:</strong> spesa, importi medi e redditi pensionistici sono valori lordi prima di IRPEF e addizionali. Contributi e trasferimenti sono voci finanziarie di bilancio.</li><li><strong>Occupato e assicurato:</strong> l'occupato EU-LFS e' una grandezza media; l'assicurato INPS e' una persona con almeno un contributo o una giornata retribuita nell'anno. Il secondo e' un flusso annuale e non un equivalente a tempo pieno.</li><li><strong>Imposte e contributi:</strong> no-tax area e detrazioni possono azzerare l'IRPEF netta, ma un reddito di lavoro basso non elimina in generale i contributi previdenziali. Restano fuori dal perimetro INPS, tra gli altri, alcuni lavoratori esenti e i professionisti iscritti alle Casse private.</li><li>Le medie mensili derivate dividono l'importo annuo per 12 e non rappresentano necessariamente la singola rata pagata.</li><li>Le serie 2018-2025 usano tavole annuali omogenee. Le revisioni successive prevalgono sui dati provvisori; non sono effettuate interpolazioni.</li><li>I trasferimenti statali finanziano il complesso delle attivita' INPS, comprese prestazioni assistenziali e altre funzioni: non misurano da soli il disavanzo pensionistico.</li><li>ESSPROS usa definizioni armonizzate e non va sovrapposto direttamente ai conti amministrativi INPS.</li><li>La mappa 2024 usa gli osservatori API INPS 413 e 416. L'importo medio e' riferito alla singola pensione; la spesa e' stimata come numero di prestazioni per importo medio annuo.</li><li>I rapporti regionali combinano numeratore INPS e popolazione o PIL Eurostat dello stesso anno. Trento e Bolzano sono aggregate.</li></ul></div>
         <div><h3>Fonti e dati</h3><p>La pipeline interroga prima le API ufficiali INPS ed Eurostat. Quando un indicatore non e' esposto via API, scarica esclusivamente i file XLSX o PDF ufficiali pubblicati dagli enti; non effettua scraping di pagine HTML.</p><p>API Osservatori e Open Data INPS, Bilanci e Rendiconti generali, Rapporti annuali XVIII-XXV, Appendici statistiche e Casellario dei pensionati; Eurostat ESSPROS, popolazione regionale e PIL regionale.</p><p>Il file <a href="https://github.com/NazarenoLecis/pensioni_italia/blob/main/docs/elenco_datasets.md" target="_blank" rel="noopener">elenco dei dataset</a> documenta disponibilita', perimetro e stato d'uso. Il <a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">repository dati</a> contiene pipeline, controlli e trasformazioni.</p><p>Elaborazione di Nazareno Lecis.</p></div>
       </div>
     </section>

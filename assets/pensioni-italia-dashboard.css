@@ -7,6 +7,12 @@
   scroll-margin-top: 126px;
 }
 
+@media (max-width: 900px) {
+  .pi-dashboard .dashboard-section {
+    scroll-margin-top: 214px;
+  }
+}
+
 .pi-dashboard .dash-head {
   display: grid;
   gap: 28px;
