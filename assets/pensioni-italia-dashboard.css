@@ -271,6 +271,16 @@
   grid-template-columns: repeat(5, minmax(170px, 1fr));
 }
 
+.pi-dashboard .pi-section-head-center {
+  grid-template-columns: minmax(0, 760px);
+  justify-content: center;
+  text-align: center;
+}
+
+.pi-dashboard .pi-section-head-center .eyebrow {
+  margin: 0;
+}
+
 .pi-filter-grid-compact {
   grid-template-columns: minmax(220px, 360px);
 }
@@ -385,6 +395,39 @@
   color: var(--text);
   font: inherit;
   font-weight: 750;
+}
+
+.pi-axis-panel {
+  margin-top: 18px;
+}
+
+.pi-axis-grid {
+  grid-template-columns: minmax(190px, 1.3fr) repeat(2, minmax(150px, 1fr)) auto;
+  align-items: end;
+}
+
+.pi-axis-grid input,
+.pi-axis-grid select,
+.pi-axis-reset {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 750;
+}
+
+.pi-axis-reset {
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.pi-axis-reset:hover,
+.pi-axis-reset:focus-visible {
+  border-color: var(--orange);
+  color: var(--orange);
 }
 
 .pi-stack {
@@ -672,6 +715,10 @@
   .pi-filter-grid-map {
     grid-template-columns: 1fr;
   }
+
+  .pi-axis-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -691,6 +738,10 @@
   }
 
   .pi-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pi-axis-grid {
     grid-template-columns: 1fr;
   }
 

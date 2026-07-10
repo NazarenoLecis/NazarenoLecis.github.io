@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-6";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-7";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -16,7 +16,10 @@
     incomeDistributionYear: null,
     incomeDistributionMeasure: "pensionati_per_classe_reddito_pensionistico",
     professionMeasure: "pensioni_vigenti",
-    europeCountries: ["Germania", "Francia", "Spagna"]
+    europeCountries: ["Germania", "Francia", "Spagna"],
+    yAxisMode: "zero",
+    xAxisStart: null,
+    xAxisEnd: null
   };
 
   function byId(id) {
@@ -30,6 +33,11 @@
   function toNumber(value) {
     var parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function optionalInputNumber(node) {
+    if (!node || String(node.value || "").trim() === "") return null;
+    return toNumber(node.value);
   }
 
   function text(value, fallback) {
@@ -107,6 +115,51 @@
     }, extra || {});
   }
 
+  function numericXExtent(traces) {
+    var values = [];
+    toArray(traces).forEach(function (trace) {
+      toArray(trace.x).forEach(function (value) {
+        var parsed = toNumber(value);
+        if (parsed !== null) values.push(parsed);
+      });
+    });
+    return values.length ? { min: Math.min.apply(null, values), max: Math.max.apply(null, values) } : null;
+  }
+
+  function isCartesianTrace(trace) {
+    return trace && trace.type !== "choropleth" && toArray(trace.x).length && toArray(trace.y).length;
+  }
+
+  function applyAxisPreferences(chartLayout, traces) {
+    if (!toArray(traces).some(isCartesianTrace)) return chartLayout;
+    chartLayout.xaxis = Object.assign({}, chartLayout.xaxis || {});
+    chartLayout.yaxis = Object.assign({}, chartLayout.yaxis || {});
+    chartLayout.xaxis.fixedrange = false;
+    chartLayout.yaxis.fixedrange = false;
+    chartLayout.dragmode = "zoom";
+
+    var extent = numericXExtent(traces);
+    if (extent && (state.xAxisStart !== null || state.xAxisEnd !== null)) {
+      var start = state.xAxisStart === null ? extent.min : state.xAxisStart;
+      var end = state.xAxisEnd === null ? extent.max : state.xAxisEnd;
+      if (start < end) {
+        chartLayout.xaxis.range = [start, end];
+        chartLayout.xaxis.autorange = false;
+      }
+    }
+
+    if (state.yAxisMode === "fit") {
+      delete chartLayout.yaxis.rangemode;
+      delete chartLayout.yaxis.range;
+      chartLayout.yaxis.autorange = true;
+    } else {
+      delete chartLayout.yaxis.range;
+      delete chartLayout.yaxis.autorange;
+      chartLayout.yaxis.rangemode = "tozero";
+    }
+    return chartLayout;
+  }
+
   function plot(id, traces, layout) {
     var node = byId(id);
     if (!node) return;
@@ -118,11 +171,13 @@
       showEmpty(id, "Nessun dato disponibile");
       return;
     }
-    window.Plotly.react(node, traces, baseLayout(layout), {
+    window.Plotly.react(node, traces, applyAxisPreferences(baseLayout(layout), traces), {
       responsive: true,
-      displayModeBar: false,
+      displayModeBar: "hover",
+      displaylogo: false,
+      modeBarButtonsToRemove: ["lasso2d", "select2d", "toImage"],
       scrollZoom: false,
-      doubleClick: false
+      doubleClick: "reset"
     })["catch"](function () {
       showEmpty(id, "Errore nella costruzione del grafico");
     });
@@ -646,6 +701,33 @@
   }
 
   function setupControls() {
+    var yAxisMode = byId("piYAxisMode");
+    var xAxisStart = byId("piXAxisStart");
+    var xAxisEnd = byId("piXAxisEnd");
+    var resetAxes = byId("piResetAxes");
+    function updateAxisRange() {
+      state.xAxisStart = optionalInputNumber(xAxisStart);
+      state.xAxisEnd = optionalInputNumber(xAxisEnd);
+      renderAll();
+    }
+    if (yAxisMode) {
+      yAxisMode.value = state.yAxisMode;
+      yAxisMode.addEventListener("change", function () { state.yAxisMode = yAxisMode.value; renderAll(); });
+    }
+    if (xAxisStart) xAxisStart.addEventListener("change", updateAxisRange);
+    if (xAxisEnd) xAxisEnd.addEventListener("change", updateAxisRange);
+    if (resetAxes) {
+      resetAxes.addEventListener("click", function () {
+        state.yAxisMode = "zero";
+        state.xAxisStart = null;
+        state.xAxisEnd = null;
+        if (yAxisMode) yAxisMode.value = state.yAxisMode;
+        if (xAxisStart) xAxisStart.value = "";
+        if (xAxisEnd) xAxisEnd.value = "";
+        renderAll();
+      });
+    }
+
     var metric = byId("piMapMetric");
     var mapYear = byId("piMapYear");
     function fillMapYears() {

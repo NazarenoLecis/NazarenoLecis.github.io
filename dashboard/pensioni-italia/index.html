@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260710-6">
+  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260710-7">
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/dashboard.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260710-6"></script>
+  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260710-7"></script>
 </head>
 <body>
   <header class="site-header">
@@ -50,6 +50,15 @@
     </nav>
     <p id="piStatus" class="pi-status">Caricamento dati pensioni ...</p>
     <section id="piKpis" class="kpi-grid pi-kpi-grid" aria-label="KPI pensioni italiane"></section>
+    <details class="chart-filter-panel pi-filter-panel pi-axis-panel" open>
+      <summary>Scale grafici</summary>
+      <div class="filter-grid pi-filter-grid pi-axis-grid">
+        <label><span>Asse Y</span><select id="piYAxisMode"><option value="zero">Includi lo zero</option><option value="fit">Adatta ai dati</option></select></label>
+        <label><span>Asse X da</span><input id="piXAxisStart" type="number" inputmode="numeric" placeholder="Anno iniziale"></label>
+        <label><span>Asse X a</span><input id="piXAxisEnd" type="number" inputmode="numeric" placeholder="Anno finale"></label>
+        <button class="pi-axis-reset" id="piResetAxes" type="button">Reimposta</button>
+      </div>
+    </details>
 
     <section class="workflow-grid" aria-label="Definizioni chiave">
       <div class="workflow-step"><span>1</span><h2>Pensione</h2><p>Un trattamento pensionistico. Una persona puo' riceverne piu' di uno.</p></div>
@@ -87,7 +96,7 @@
     </section>
 
     <section class="dashboard-section" id="distribuzioni">
-      <div class="section-head"><span class="eyebrow">Distribuzioni</span><div><h2>Valore delle pensioni e reddito dei pensionati</h2><p>Il primo grafico classifica i singoli trattamenti; il secondo classifica le persone sulla somma di tutte le pensioni ricevute.</p></div></div>
+      <div class="section-head pi-section-head-center"><span class="eyebrow">Distribuzioni</span><div><h2>Valore delle pensioni e reddito dei pensionati</h2><p>Il primo grafico classifica i singoli trattamenti; il secondo classifica le persone sulla somma di tutte le pensioni ricevute.</p></div></div>
       <div class="pi-stack">
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensioni per classe d'importo</h3><span>importi lordi</span></div><div class="pi-inline-filters"><label><span>Anno</span><select id="piPensionDistributionYear"></select></label><label><span>Misura</span><select id="piPensionDistributionMeasure"><option value="pensioni_per_classe_importo">Numero di pensioni</option><option value="spesa_per_classe_importo">Spesa annua lorda</option><option value="importo_medio_pensione_mensile_classe">Importo medio mensile lordo</option></select></label></div><div class="pi-chart pi-chart-tall" id="piPensionDistributionChart"></div><p class="pi-chart-credit">Fonte: INPS, Casellario dei pensionati 2024, Tavola 6. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensionati per reddito pensionistico</h3><span>redditi lordi</span></div><div class="pi-inline-filters"><label><span>Anno</span><select id="piIncomeDistributionYear"></select></label><label><span>Misura</span><select id="piIncomeDistributionMeasure"><option value="pensionati_per_classe_reddito_pensionistico">Numero di pensionati</option><option value="reddito_pensionistico_totale">Reddito pensionistico annuo lordo</option><option value="reddito_pensionistico_medio_mensile_classe">Reddito medio mensile lordo</option></select></label></div><div class="pi-chart pi-chart-tall" id="piIncomeDistributionChart"></div><p class="pi-chart-credit">Fonte: Appendici statistiche INPS, Tavola 3.4. Elaborazione di Nazareno Lecis.</p></article>
