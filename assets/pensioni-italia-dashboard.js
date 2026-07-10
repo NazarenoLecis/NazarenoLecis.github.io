@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-3";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-4";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -9,7 +9,14 @@
   var state = {
     payload: null,
     geojson: null,
-    mapMetric: "pensionati"
+    mapMetric: "pensionati",
+    mapYear: null,
+    pensionDistributionYear: null,
+    pensionDistributionMeasure: "pensioni_per_classe_importo",
+    incomeDistributionYear: null,
+    incomeDistributionMeasure: "pensionati_per_classe_reddito_pensionistico",
+    professionMeasure: "pensioni_vigenti",
+    europeCountries: ["Germania", "Francia", "Spagna"]
   };
 
   function byId(id) {
@@ -229,76 +236,67 @@
       line: { color: COLORS[1], width: 3 },
       marker: { size: 7 },
       hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
-    }], { showlegend: false, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderSpendingChart() {
-    var rows = rowsByIndicator(tableRows("annual_pensions"), "spesa_pensionistica_casellario");
+    var rows = rowsByIndicator(tableRows("annual_pensions"), "reddito_pensionistico_totale")
+      .filter(function (row) { return row.area === "Italia - complessivi" && toNumber(row.anno) >= 2018; });
     var series = denseYears(rows);
     plot("piSpendingChart", [{
       type: "scatter",
       mode: "lines+markers",
-      name: "Spesa pensionistica Casellario",
+      name: "Spesa pensionistica complessiva",
       x: series.years,
       y: series.values.map(function (value) { return value === null ? null : value / 1000000000; }),
       connectgaps: false,
       line: { color: COLORS[0], width: 3 },
       marker: { size: 7 },
       hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
-    }], { showlegend: false, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderPensionIncomeChart() {
-    var rows = rowsByIndicator(tableRows("annual_pensions"), "reddito_pensionistico_totale")
-      .filter(function (row) { return row.area === "Italia - complessivi"; });
+    var rows = rowsByIndicator(tableRows("annual_pensions"), "reddito_pensionistico_medio_mensile")
+      .filter(function (row) { return row.area === "Italia - complessivi" && toNumber(row.anno) >= 2018; });
     var series = denseYears(rows);
     plot("piPensionIncomeChart", [{
       type: "scatter",
       mode: "lines+markers",
-      name: "Reddito pensionistico complessivo",
+      name: "Reddito pensionistico medio mensile",
       x: series.years,
-      y: series.values.map(function (value) { return value === null ? null : value / 1000000000; }),
+      y: series.values,
       connectgaps: false,
       line: { color: COLORS[3], width: 3 },
       marker: { size: 8 },
-      hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>"
-    }], { showlegend: false, yaxis: { title: "miliardi di euro", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+      hovertemplate: "%{x}<br>%{y:,.0f} euro al mese<extra></extra>"
+    }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "euro al mese", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderCountChart(id, indicator, preferredArea, label, color) {
-    var allRows = rowsByIndicator(tableRows("annual_pensions"), indicator);
+    var allRows = rowsByIndicator(tableRows("annual_pensions"), indicator).filter(function (row) {
+      return row.area === preferredArea && toNumber(row.anno) >= 2018;
+    });
     var rows = [];
     Array.from(new Set(allRows.map(function (row) { return row.anno; }))).sort().forEach(function (year) {
       var candidates = allRows.filter(function (row) { return row.anno === year; });
       var selected = candidates.filter(function (row) { return row.area === preferredArea; })[0] || candidates[0];
       if (selected) rows.push(selected);
     });
-    var segments = [];
-    rows.forEach(function (row) {
-      var current = segments[segments.length - 1];
-      if (!current || row.anno > current[current.length - 1].anno + 1) {
-        current = [];
-        segments.push(current);
-      }
-      current.push(row);
-    });
-    var traces = segments.map(function (segment, index) {
-      var first = segment[0];
-      var last = segment[segment.length - 1];
-      return {
+    var traces = [{
         type: "scatter",
         mode: "lines+markers",
-        name: label + " " + first.anno + "-" + last.anno,
-        x: segment.map(function (row) { return row.anno; }),
-        y: segment.map(function (row) { return toNumber(row.valore) / 1000000; }),
-        text: segment.map(function (row) { return row.area; }),
-        line: { color: index === 0 ? color : COLORS[3], width: 3 },
+        name: label,
+        x: rows.map(function (row) { return row.anno; }),
+        y: rows.map(function (row) { return toNumber(row.valore) / 1000000; }),
+        text: rows.map(function (row) { return row.area; }),
+        line: { color: color, width: 3 },
         marker: { size: 7 },
         hovertemplate: "%{x}<br>%{y:.2f} milioni<br>%{text}<extra></extra>"
-      };
-    });
+      }];
     plot(id, traces, {
-      legend: { orientation: "h", x: 0, y: -0.22, font: { color: cssVar("--muted", "#b9b2aa") } },
+      showlegend: false,
+      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       yaxis: { title: "milioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
     });
   }
@@ -337,6 +335,32 @@
     plot("piRateChart", traces, { yaxis: { title: "%", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
+  function renderEuropeChart() {
+    var rows = rowsByIndicator(tableRows("european_comparison"), "spesa_pensionistica_pil_esspros");
+    var countries = ["Italia", "Unione europea (27)"].concat(state.europeCountries);
+    var colors = { "Italia": COLORS[0], "Unione europea (27)": COLORS[2] };
+    var traces = countries.map(function (country, index) {
+      var countryRows = rows.filter(function (row) { return row.paese === country; })
+        .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+      if (!countryRows.length) return null;
+      return {
+        type: "scatter",
+        mode: country === "Italia" ? "lines+markers" : "lines",
+        name: country,
+        x: countryRows.map(function (row) { return row.anno; }),
+        y: countryRows.map(function (row) { return row.valore; }),
+        line: { color: colors[country] || COLORS[(index + 1) % COLORS.length], width: country === "Italia" ? 4 : 2.2, dash: country === "Unione europea (27)" ? "dash" : "solid" },
+        marker: { size: 6 },
+        hovertemplate: country + "<br>%{x}: %{y:.1f}% del PIL<extra></extra>"
+      };
+    }).filter(Boolean);
+    plot("piEuropeChart", traces, {
+      xaxis: { dtick: 2, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: "% del PIL", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
+    });
+  }
+
   function orderedDistribution(rows) {
     return toArray(rows).sort(function (a, b) {
       var av = toNumber(a.classe_importo_min);
@@ -349,51 +373,80 @@
 
   function renderDistributions() {
     var distribution = tableRows("pensioner_distribution");
-    var pensions = orderedDistribution(distribution.filter(function (row) { return row.indicatore_id === "pensioni_per_classe_importo"; }));
-    var pensioners = orderedDistribution(distribution.filter(function (row) { return row.indicatore_id === "pensionati_per_classe_reddito_pensionistico"; }));
+    var pensions = orderedDistribution(distribution.filter(function (row) {
+      return row.popolazione === "pensioni" && row.indicatore_id === state.pensionDistributionMeasure && toNumber(row.anno) === state.pensionDistributionYear;
+    }));
+    var pensioners = orderedDistribution(distribution.filter(function (row) {
+      return row.popolazione === "pensionati_inps" && row.indicatore_id === state.incomeDistributionMeasure && toNumber(row.anno) === state.incomeDistributionYear;
+    }));
+    var pensionConfig = {
+      pensioni_per_classe_importo: { scale: 1000000, title: "milioni di pensioni", suffix: " mln pensioni" },
+      spesa_per_classe_importo: { scale: 1000000000, title: "miliardi di euro", suffix: " mld euro" },
+      importo_medio_pensione_mensile_classe: { scale: 1, title: "euro al mese", suffix: " euro al mese" }
+    }[state.pensionDistributionMeasure];
+    var incomeConfig = {
+      pensionati_per_classe_reddito_pensionistico: { scale: 1000000, title: "milioni di pensionati", suffix: " mln pensionati" },
+      reddito_pensionistico_totale: { scale: 1000000000, title: "miliardi di euro annui", suffix: " mld euro" },
+      reddito_pensionistico_medio_mensile_classe: { scale: 1, title: "euro al mese", suffix: " euro al mese" }
+    }[state.incomeDistributionMeasure];
     plot("piPensionDistributionChart", [{
       type: "bar",
       name: "Pensioni",
       x: pensions.map(function (row) { return row.classe_importo; }),
-      y: pensions.map(function (row) { return toNumber(row.valore) / 1000000; }),
+      y: pensions.map(function (row) { return toNumber(row.valore) / pensionConfig.scale; }),
       marker: { color: COLORS[0] },
-      hovertemplate: "%{x}<br>%{y:.2f} mln pensioni<extra></extra>"
-    }], { yaxis: { title: "milioni di pensioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+      hovertemplate: "%{x}<br>%{y:,.2f}" + pensionConfig.suffix + "<extra></extra>"
+    }], { yaxis: { title: pensionConfig.title, fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
     plot("piIncomeDistributionChart", [{
       type: "bar",
       name: "Pensionati",
       x: pensioners.map(function (row) { return row.classe_importo; }),
-      y: pensioners.map(function (row) { return toNumber(row.valore) / 1000000; }),
+      y: pensioners.map(function (row) { return toNumber(row.valore) / incomeConfig.scale; }),
       marker: { color: COLORS[2] },
-      hovertemplate: "%{x}<br>%{y:.2f} mln pensionati<extra></extra>"
-    }], { yaxis: { title: "milioni di pensionati", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+      hovertemplate: "%{x}<br>%{y:,.2f}" + incomeConfig.suffix + "<extra></extra>"
+    }], { yaxis: { title: incomeConfig.title, fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
   function renderProfessionChart() {
+    var rows = tableRows("managements");
+    var counts = {};
+    rows.filter(function (row) { return row.indicatore_id === "pensioni_vigenti"; }).forEach(function (row) {
+      counts[row.anno + "|" + row.gestione_id] = toNumber(row.valore) || 0;
+    });
     var grouped = {};
-    tableRows("pensioners_by_management_profession").forEach(function (row) {
-      var key = (row.categoria_professionale || "altre_gestioni") + "|" + row.anno;
-      grouped[key] = (grouped[key] || 0) + (toNumber(row.prestazioni) || 0);
+    rows.filter(function (row) { return row.indicatore_id === state.professionMeasure; }).forEach(function (row) {
+      var key = (row.gruppo_gestione || "altre_gestioni") + "|" + row.anno;
+      var value = toNumber(row.valore) || 0;
+      var weight = state.professionMeasure === "importo_medio_pensione" ? (counts[row.anno + "|" + row.gestione_id] || 0) : 1;
+      grouped[key] = grouped[key] || { total: 0, weight: 0 };
+      grouped[key].total += state.professionMeasure === "importo_medio_pensione" ? value * weight : value;
+      grouped[key].weight += weight;
     });
     var categories = Array.from(new Set(Object.keys(grouped).map(function (key) { return key.split("|")[0]; }))).sort();
     var years = Array.from(new Set(Object.keys(grouped).map(function (key) { return Number(key.split("|")[1]); }))).sort();
-    var traces = years.map(function (year, index) {
+    var traces = categories.map(function (category, index) {
+      var values = years.map(function (year) {
+        var cell = grouped[category + "|" + year];
+        if (!cell) return null;
+        var value = state.professionMeasure === "importo_medio_pensione" ? cell.total / cell.weight : cell.total / 1000000;
+        return value;
+      });
       return {
-        type: "bar",
-        orientation: "h",
-        name: String(year),
-        x: categories.map(function (category) { return (grouped[category + "|" + year] || 0) / 1000000; }),
-        y: categories.map(labelGroup),
-        marker: { color: COLORS[index % COLORS.length] },
-        hovertemplate: "%{y}<br>" + year + ": %{x:.2f} mln prestazioni<extra></extra>"
+        type: "scatter",
+        mode: "lines+markers",
+        name: labelGroup(category),
+        x: years,
+        y: values,
+        line: { color: COLORS[index % COLORS.length], width: 2.5 },
+        marker: { size: 7 },
+        hovertemplate: labelGroup(category) + "<br>%{x}: %{y:,.2f}" + (state.professionMeasure === "importo_medio_pensione" ? " euro al mese" : " mln prestazioni") + "<extra></extra>"
       };
     });
     plot("piProfessionChart", traces, {
-      barmode: "group",
-      margin: { t: 18, r: 18, b: 70, l: window.innerWidth < 640 ? 132 : 190 },
+      margin: { t: 18, r: 18, b: 70, l: 72 },
       legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } },
-      xaxis: { title: "milioni di prestazioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { fixedrange: true, gridcolor: "rgba(0,0,0,0)", automargin: true }
+      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: state.professionMeasure === "importo_medio_pensione" ? "euro al mese" : "milioni di prestazioni", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
     });
   }
 
@@ -412,12 +465,17 @@
     return {
       pensionati: "Pensionati regionali",
       reddito_pensionistico_medio_mensile: "Reddito pensionistico medio mensile",
-      spesa_pensionistica_regionale: "Spesa pensionistica complessiva"
+      spesa_pensionistica_regionale: "Spesa pensionistica complessiva",
+      pensionati_percentuale_popolazione: "Pensionati sulla popolazione residente",
+      spesa_pensionistica_percentuale_pil: "Spesa pensionistica sul PIL regionale"
     }[metric] || metric;
   }
 
   function metricUnit(metric) {
-    return metric === "pensionati" ? "pensionati" : metric === "spesa_pensionistica_regionale" ? "miliardi di euro" : "euro al mese";
+    if (metric === "pensionati") return "pensionati";
+    if (metric === "spesa_pensionistica_regionale") return "miliardi di euro";
+    if (metric === "reddito_pensionistico_medio_mensile") return "euro al mese";
+    return "%";
   }
 
   function regionName(name) {
@@ -440,10 +498,10 @@
     var rows = tableRows("territorial").filter(function (row) {
       return row.livello_territoriale === "regione" && row.indicatore_id === metric;
     });
-    var latestYear = Math.max.apply(null, rows.map(function (row) { return toNumber(row.anno) || 0; }));
+    var year = state.mapYear || Math.max.apply(null, rows.map(function (row) { return toNumber(row.anno) || 0; }));
     var allowed = {};
     toArray(state.geojson && state.geojson.features).forEach(function (feature) { allowed[feature.properties.slug] = true; });
-    return rows.filter(function (row) { return toNumber(row.anno) === latestYear && allowed[regionSlug(row.nome_territorio)]; });
+    return rows.filter(function (row) { return toNumber(row.anno) === year && allowed[regionSlug(row.nome_territorio)]; });
   }
 
   function renderRegionalMap() {
@@ -471,6 +529,8 @@
       customdata: rows.map(function (row) {
         if (metric === "spesa_pensionistica_regionale") return euroBn(row.valore);
         if (metric === "reddito_pensionistico_medio_mensile") return euro(row.valore) + " al mese";
+        if (metric === "pensionati_percentuale_popolazione") return fmt(row.valore, 1) + "% della popolazione";
+        if (metric === "spesa_pensionistica_percentuale_pil") return fmt(row.valore, 1) + "% del PIL regionale";
         return fmt(row.valore) + " pensionati";
       }),
       colorscale: [[0, "#fff2df"], [0.35, "#ffb15f"], [0.7, "#f26a21"], [1, "#7a1f0c"]],
@@ -514,13 +574,60 @@
 
   function setupControls() {
     var metric = byId("piMapMetric");
+    var mapYear = byId("piMapYear");
+    function fillMapYears() {
+      var years = Array.from(new Set(tableRows("territorial").filter(function (row) {
+        return row.livello_territoriale === "regione" && row.indicatore_id === state.mapMetric;
+      }).map(function (row) { return toNumber(row.anno); }))).filter(Boolean).sort();
+      clear(mapYear);
+      years.forEach(function (year) {
+        var option = document.createElement("option"); option.value = year; option.textContent = year; mapYear.appendChild(option);
+      });
+      state.mapYear = years.indexOf(state.mapYear) >= 0 ? state.mapYear : years[years.length - 1];
+      mapYear.value = state.mapYear;
+    }
     if (metric) {
       metric.value = state.mapMetric;
       metric.addEventListener("change", function () {
         state.mapMetric = metric.value;
+        fillMapYears();
         renderRegionalMap();
       });
     }
+    if (mapYear) {
+      fillMapYears();
+      mapYear.addEventListener("change", function () { state.mapYear = toNumber(mapYear.value); renderRegionalMap(); });
+    }
+
+    function setupDistribution(yearId, measureId, population, stateYearKey, stateMeasureKey) {
+      var yearNode = byId(yearId);
+      var measureNode = byId(measureId);
+      var years = Array.from(new Set(tableRows("pensioner_distribution").filter(function (row) { return row.popolazione === population; }).map(function (row) { return toNumber(row.anno); }))).filter(Boolean).sort();
+      clear(yearNode);
+      years.forEach(function (year) { var option = document.createElement("option"); option.value = year; option.textContent = year; yearNode.appendChild(option); });
+      state[stateYearKey] = years[years.length - 1];
+      yearNode.value = state[stateYearKey];
+      measureNode.value = state[stateMeasureKey];
+      yearNode.addEventListener("change", function () { state[stateYearKey] = toNumber(yearNode.value); renderDistributions(); });
+      measureNode.addEventListener("change", function () { state[stateMeasureKey] = measureNode.value; renderDistributions(); });
+    }
+    setupDistribution("piPensionDistributionYear", "piPensionDistributionMeasure", "pensioni", "pensionDistributionYear", "pensionDistributionMeasure");
+    setupDistribution("piIncomeDistributionYear", "piIncomeDistributionMeasure", "pensionati_inps", "incomeDistributionYear", "incomeDistributionMeasure");
+
+    var profession = byId("piProfessionMeasure");
+    profession.value = state.professionMeasure;
+    profession.addEventListener("change", function () { state.professionMeasure = profession.value; renderProfessionChart(); });
+
+    var europe = byId("piEuropeCountries");
+    var countries = Array.from(new Set(rowsByIndicator(tableRows("european_comparison"), "spesa_pensionistica_pil_esspros").map(function (row) { return row.paese; })))
+      .filter(function (country) { return country !== "Italia" && country !== "Unione europea (27)"; }).sort();
+    countries.forEach(function (country) {
+      var option = document.createElement("option"); option.value = country; option.textContent = country; option.selected = state.europeCountries.indexOf(country) >= 0; europe.appendChild(option);
+    });
+    europe.addEventListener("change", function () {
+      state.europeCountries = Array.from(europe.selectedOptions).map(function (option) { return option.value; });
+      renderEuropeChart();
+    });
   }
 
   function renderAll() {
@@ -531,11 +638,10 @@
     renderPensionsChart();
     renderPensionersChart();
     renderRateChart();
+    renderEuropeChart();
     renderDistributions();
     renderProfessionChart();
-    renderManagementList();
     renderRegionalMap();
-    renderSources();
   }
 
   function load() {
