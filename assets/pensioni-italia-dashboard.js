@@ -828,6 +828,16 @@
       yAxisMode.value = state.yAxisMode;
       yAxisMode.addEventListener("change", function () { state.yAxisMode = yAxisMode.value; renderAll(); });
     }
+    if (xAxisStart && xAxisStart.tagName === "SELECT") {
+      clear(xAxisStart);
+      var allYears = [];
+      ["annual_pensions", "european_comparison", "demography_work", "managements", "territorial"].forEach(function (table) {
+        tableRows(table).forEach(function (row) { var year = toNumber(row.anno); if (year !== null) allYears.push(year); });
+      });
+      allYears = Array.from(new Set(allYears)).sort(function (a, b) { return a - b; });
+      var allOption = document.createElement("option"); allOption.value = ""; allOption.textContent = "Tutti gli anni"; xAxisStart.appendChild(allOption);
+      allYears.forEach(function (year) { var option = document.createElement("option"); option.value = year; option.textContent = "Dal " + year; xAxisStart.appendChild(option); });
+    }
     if (xAxisStart) xAxisStart.addEventListener("change", updateAxisRange);
     if (xAxisEnd) xAxisEnd.addEventListener("change", updateAxisRange);
     if (resetAxes) {

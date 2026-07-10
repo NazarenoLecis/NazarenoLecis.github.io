@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260710-9">
+  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260710-10">
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/dashboard.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260710-9"></script>
+  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260710-10"></script>
 </head>
 <body>
   <header class="site-header">
@@ -57,9 +57,7 @@
       <summary>Scale grafici</summary>
       <div class="filter-grid pi-filter-grid pi-axis-grid">
         <label><span>Asse Y</span><select id="piYAxisMode"><option value="zero">Includi lo zero</option><option value="fit">Adatta ai dati</option></select></label>
-        <label><span>Asse X da</span><input id="piXAxisStart" type="number" inputmode="numeric" placeholder="Anno iniziale"></label>
-        <label><span>Asse X a</span><input id="piXAxisEnd" type="number" inputmode="numeric" placeholder="Anno finale"></label>
-        <button class="pi-axis-reset" id="piResetAxes" type="button">Reimposta</button>
+        <label><span>Anno iniziale</span><select id="piXAxisStart"></select></label>
       </div>
     </details>
 
@@ -85,7 +83,6 @@
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Spesa pensionistica lorda INPS</h3><span>2018-2025</span></div><p class="pi-card-note">Importo annuo del reddito pensionistico degli iscritti INPS: include trattamenti previdenziali, assistenziali, integrazioni e mensilita' aggiuntive. Non e' una stima da importo medio.</p><div class="pi-chart pi-chart-wide" id="piSpendingChart"></div><p class="pi-chart-credit">Fonte: Rapporti annuali e Appendici statistiche INPS, Tavola 3.1. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Contributi incassati dall'INPS</h3><span>2013-2025</span></div><p class="pi-card-note">Entrate contributive accertate nei conti e nei rendiconti INPS.</p><div class="pi-chart pi-chart-wide" id="piContributionsChart"></div><p class="pi-chart-credit">Fonte: Bilanci e Rendiconti generali INPS. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Contributi, spesa pensionistica e trasferimenti statali</h3><span>2019-2025</span></div><p class="pi-card-note">Contributi e spesa usano il perimetro INPS. I trasferimenti dal bilancio dello Stato finanziano inoltre assistenza e altre prestazioni: non misurano da soli il disavanzo delle pensioni.</p><div class="pi-chart pi-chart-wide" id="piFundingChart"></div><p class="pi-chart-credit">Fonte: Rendiconti generali INPS e Tavola 3.1 delle Appendici statistiche. Elaborazione di Nazareno Lecis.</p></article>
-        <details class="chart-filter-panel pi-filter-panel"><summary>Componenti dei trasferimenti</summary><div class="filter-grid pi-filter-grid pi-filter-grid-compact"><label><span>Componenti visualizzate</span><select id="piTransferComponents" multiple size="7"></select></label></div></details>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Trasferimenti dal bilancio dello Stato per componente</h3><span>GIAS, 2020-2024</span></div><p class="pi-card-note">La colonna impila le componenti GIAS: oneri pensionistici, sostegno al reddito, famiglia, sgravi e altre voci. Non equivale al disavanzo delle sole pensioni.</p><div class="pi-chart pi-chart-wide" id="piTransferComponentsChart"></div><p class="pi-chart-credit">Fonte: Rendiconti generali INPS, conti GIAS. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Reddito pensionistico medio dei pensionati</h3><span>lordo, 2018-2025</span></div><p class="pi-card-note">Media mensile lorda per persona: somma tutti i trattamenti percepiti dal pensionato, non misura la singola pensione.</p><div class="pi-chart pi-chart-wide" id="piPensionIncomeChart"></div><p class="pi-chart-credit">Fonte: Rapporti annuali e Appendici statistiche INPS. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Numero di pensioni vigenti</h3><span>2018-2025</span></div><p class="pi-card-note">Conta le prestazioni INPS, non le persone.</p><div class="pi-chart pi-chart-wide" id="piPensionsChart"></div><p class="pi-chart-credit">Fonte: Rapporti annuali e Appendici statistiche INPS. Elaborazione di Nazareno Lecis.</p></article>
