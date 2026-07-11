@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-11";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-01";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -347,22 +347,26 @@
 
   function renderKpis() {
     var annual = tableRows("annual_pensions");
+    var comparison = tableRows("european_comparison");
     var parameters = tableRows("system_parameters");
     var node = byId("piKpis");
     clear(node);
 
+    var pil = latest(comparison, function (row) { return row.indicatore_id === "reddito_pensionistico_pil_complessivo" && row.paese === "Italia"; });
     var pensioni = latest(annual, function (row) { return row.indicatore_id === "pensioni_vigenti" && row.area === "Italia - INPS"; });
-    var pensionati = latest(annual, function (row) { return row.indicatore_id === "pensionati" && row.area === "Italia - INPS"; });
+    var pensionati = latest(annual, function (row) { return row.indicatore_id === "pensionati" && row.area === "Italia - complessivi"; });
+    var pensionatiInps = latest(annual, function (row) { return row.indicatore_id === "pensionati" && row.area === "Italia - INPS"; });
     var reddito = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_totale" && row.area === "Italia - complessivi"; });
     var ratio = latest(annual, function (row) { return row.indicatore_id === "trattamenti_per_pensionato" && row.area === "Italia - INPS"; });
-    var spesa = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_totale" && row.area === "Italia - INPS"; });
+    var redditoInps = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_totale" && row.area === "Italia - INPS"; });
     var rate = latest(parameters, function (row) { return row.parametro_id === "aliquota_ivs_standard_ago_corrente"; });
 
+    node.appendChild(makeKpi("Reddito pensionistico/PIL", fmt(pil && pil.valore, 1) + "%", "Stesso anno " + text(pil && pil.anno)));
     node.appendChild(makeKpi("Pensioni INPS", fmt(pensioni && pensioni.valore), "Prestazioni vigenti " + text(pensioni && pensioni.anno)));
-    node.appendChild(makeKpi("Pensionati INPS", fmt(pensionati && pensionati.valore), "Persone beneficiarie " + text(pensionati && pensionati.anno)));
+    node.appendChild(makeKpi("Pensionati complessivi", fmt(pensionati && pensionati.valore), "Di cui INPS: " + fmt(pensionatiInps && pensionatiInps.valore)));
     node.appendChild(makeKpi("Pensioni per pensionato", fmt(ratio && ratio.valore, 2), "Rapporto nel perimetro INPS"));
-    node.appendChild(makeKpi("Reddito pensionistico lordo", euroBn(reddito && reddito.valore), "Tutti i pensionati " + text(reddito && reddito.anno)));
-    node.appendChild(makeKpi("Spesa pensionistica lorda INPS", euroBn(spesa && spesa.valore), "Reddito pensionistico annuo " + text(spesa && spesa.anno)));
+    node.appendChild(makeKpi("Reddito pensionistico lordo", euroBn(reddito && reddito.valore), "Totale complessivo " + text(reddito && reddito.anno)));
+    node.appendChild(makeKpi("Di cui pensionati INPS", euroBn(redditoInps && redditoInps.valore), "Sottoinsieme " + text(redditoInps && redditoInps.anno)));
     node.appendChild(makeKpi("Aliquota IVS", fmt(rate && rate.valore, 1) + "%", "Riferimento corrente AGO/FPLD"));
   }
 
@@ -400,12 +404,12 @@
 
   function renderSpendingChart() {
     var rows = rowsByIndicator(tableRows("annual_pensions"), "reddito_pensionistico_totale")
-      .filter(function (row) { return row.area === "Italia - INPS" && toNumber(row.anno) >= 2018; });
+      .filter(function (row) { return row.area === "Italia - complessivi" && toNumber(row.anno) >= 2018; });
     var series = denseYears(rows);
     plot("piSpendingChart", [{
       type: "scatter",
       mode: "lines+markers",
-      name: "Spesa pensionistica lorda INPS",
+      name: "Reddito pensionistico lordo complessivo",
       x: series.years,
       y: series.values.map(function (value) { return value === null ? null : value / 1000000000; }),
       connectgaps: false,
@@ -429,19 +433,59 @@
       .filter(function (row) { return row.categoria_analitica === "oneri_pensionistici"; });
     var contributions = rowsByIndicator(annual, "entrate_contributive_inps");
     var spending = rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) {
+      return row.area === "Italia - complessivi";
+    });
+    var inpsSpending = rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) {
       return row.area === "Italia - INPS";
     });
-    var years = Array.from(new Set([].concat(contributions, spending, transfers).map(function (row) { return toNumber(row.anno); })))
+    var years = Array.from(new Set([].concat(contributions, spending, inpsSpending, transfers).map(function (row) { return toNumber(row.anno); })))
       .filter(function (year) { return year >= 2013; }).sort(function (a, b) { return a - b; });
 
     return {
       years: years,
       traces: [
         { type: "scatter", mode: "lines+markers", name: "Contributi INPS", x: years, y: valuesByYear(contributions, years, 1000000000), connectgaps: false, line: { color: COLORS[1], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
-        { type: "scatter", mode: "lines+markers", name: "Spesa pensionistica lorda INPS", x: years, y: valuesByYear(spending, years, 1000000000), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
+        { type: "scatter", mode: "lines+markers", name: "Reddito pensionistico complessivo", x: years, y: valuesByYear(spending, years, 1000000000), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
+        { type: "scatter", mode: "lines+markers", name: "Di cui pensionati INPS", x: years, y: valuesByYear(inpsSpending, years, 1000000000), connectgaps: false, line: { color: COLORS[0], width: 2, dash: "dot" }, marker: { size: 6 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
         { type: "scatter", mode: "lines+markers", name: "Oneri pensionistici Stato", x: years, y: valuesByYear(transfers, years, 1000000000), connectgaps: false, line: { color: COLORS[3], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }
       ]
     };
+  }
+
+  function updateSystemSeriesCopy(metric) {
+    var title = byId("piSystemSeriesTitle");
+    var tag = byId("piSystemSeriesTag");
+    var note = byId("piSystemSeriesNote");
+    var copy = {
+      funding: {
+        title: "Reddito pensionistico, contributi e oneri pensionistici",
+        tag: "flussi lordi",
+        note: "Il totale complessivo arriva a 370,7 miliardi nel 2025; la linea puntinata isola il sottoinsieme dei pensionati INPS, pari a 361,3 miliardi. Contributi e oneri pensionistici restano voci di bilancio INPS."
+      },
+      spending: {
+        title: "Reddito pensionistico lordo",
+        tag: "totale e di cui INPS",
+        note: "Il totale complessivo conta tutti i pensionati; il sottoinsieme INPS conta le persone che percepiscono almeno una prestazione INPS. Non sono grandezze identiche."
+      },
+      contributions: {
+        title: "Contributi incassati dall'INPS",
+        tag: "entrate contributive",
+        note: "Entrate contributive accertate nei bilanci e rendiconti INPS. La serie misura incassi del sistema INPS, non contributi individuali medi."
+      },
+      pensions_pensioners: {
+        title: "Pensioni e pensionati",
+        tag: "trattamenti e persone",
+        note: "Le pensioni sono singoli trattamenti; i pensionati sono persone. Una persona puo' cumulare piu' prestazioni, quindi le due linee non devono coincidere."
+      },
+      income: {
+        title: "Reddito pensionistico medio lordo",
+        tag: "media mensile",
+        note: "Media mensile del reddito pensionistico complessivo: somma annua lorda dei trattamenti divisa per pensionati e per 12 mesi."
+      }
+    }[metric] || {};
+    if (title) title.textContent = copy.title || "Serie storiche del sistema";
+    if (tag) tag.textContent = copy.tag || "seleziona misura";
+    if (note) note.textContent = copy.note || "";
   }
 
   function renderFundingChart() {
@@ -455,6 +499,7 @@
 
   function renderSystemSeriesChart() {
     var metric = state.systemSeriesMetric;
+    updateSystemSeriesCopy(metric);
     var annual = tableRows("annual_pensions");
     var traces = [];
     var layout = {
@@ -466,9 +511,12 @@
     if (metric === "funding") {
       traces = fundingSeries().traces;
     } else if (metric === "spending") {
-      var spending = denseYears(rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) { return row.area === "Italia - INPS" && toNumber(row.anno) >= 2018; }));
-      traces = [{ type: "scatter", mode: "lines+markers", name: "Spesa pensionistica lorda INPS", x: spending.years, y: spending.values.map(function (value) { return value === null ? null : value / 1000000000; }), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }];
-      layout.showlegend = false;
+      var spending = denseYears(rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) { return row.area === "Italia - complessivi" && toNumber(row.anno) >= 2018; }));
+      var spendingInps = denseYears(rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) { return row.area === "Italia - INPS" && toNumber(row.anno) >= 2018; }));
+      traces = [
+        { type: "scatter", mode: "lines+markers", name: "Totale complessivo", x: spending.years, y: spending.values.map(function (value) { return value === null ? null : value / 1000000000; }), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
+        { type: "scatter", mode: "lines+markers", name: "Di cui pensionati INPS", x: spendingInps.years, y: spendingInps.values.map(function (value) { return value === null ? null : value / 1000000000; }), connectgaps: false, line: { color: COLORS[2], width: 2.5, dash: "dot" }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }
+      ];
     } else if (metric === "contributions") {
       var contributions = denseYears(rowsByIndicator(annual, "entrate_contributive_inps"));
       traces = [{ type: "scatter", mode: "lines+markers", name: "Contributi INPS", x: contributions.years, y: contributions.values.map(function (value) { return value === null ? null : value / 1000000000; }), connectgaps: false, line: { color: COLORS[1], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }];
