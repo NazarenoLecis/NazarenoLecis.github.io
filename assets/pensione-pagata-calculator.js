@@ -591,9 +591,6 @@
     byId("pcGenerateAnnualRows").addEventListener("click", function () { generateAnnualRows(); calculate(); });
     byId("pcExportCsv").addEventListener("click", exportCsv);
     byId("pcExportJson").addEventListener("click", exportJson);
-    byId("pcExportPng").addEventListener("click", function () {
-      if (window.Plotly && byId("pcPensionChart")) window.Plotly.downloadImage(byId("pcPensionChart"), { format: "png", filename: "calcolatore-pensione-confronto" });
-    });
     byId("pcShareLink").addEventListener("click", function () {
       var link = location.origin + location.pathname + "?mode=" + encodeURIComponent(state.mode);
       if (navigator.clipboard) navigator.clipboard.writeText(link);

@@ -302,7 +302,6 @@
       return;
     }
     ensureAxisControls(id, traces);
-    ensureExportButton(id);
     window.Plotly.react(node, traces, applyAxisPreferences(baseLayout(layout), traces, id), {
       responsive: true,
       displayModeBar: false,
@@ -313,52 +312,6 @@
     })["catch"](function () {
       showEmpty(id, "Errore nella costruzione del grafico");
     });
-  }
-
-  function slugify(value) {
-    return text(value, "grafico").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "grafico";
-  }
-
-  function exportChart(id) {
-    var node = byId(id);
-    if (!node || !window.Plotly || !node.data) return;
-    var card = node.closest(".pi-card") || node.parentNode;
-    var title = card && card.querySelector(".pi-card-title h3") ? card.querySelector(".pi-card-title h3").textContent : id;
-    var note = card && card.querySelector(".pi-card-note") ? card.querySelector(".pi-card-note").textContent : "";
-    var credit = card && card.querySelector(".pi-chart-credit") ? card.querySelector(".pi-chart-credit").textContent : "";
-    var exportLayout = Object.assign({}, node.layout || {}, {
-      title: { text: title, x: 0.01, xanchor: "left", font: { size: 22 } },
-      width: 1400,
-      height: 900,
-      margin: Object.assign({}, (node.layout && node.layout.margin) || {}, { t: 90, b: 155 }),
-      annotations: [
-        { text: note, x: 0, y: -0.16, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top", showarrow: false, align: "left", font: { size: 13 } },
-        { text: credit, x: 0, y: -0.28, xref: "paper", yref: "paper", xanchor: "left", yanchor: "top", showarrow: false, align: "left", font: { size: 12 } }
-      ]
-    });
-    window.Plotly.toImage({ data: node.data, layout: exportLayout }, { format: "png", width: 1400, height: 900 })
-      .then(function (url) {
-        var link = document.createElement("a");
-        link.href = url;
-        link.download = slugify(title) + ".png";
-        link.click();
-      });
-  }
-
-  function ensureExportButton(id) {
-    var node = byId(id);
-    if (!node) return;
-    var card = node.closest(".pi-card");
-    if (!card || card.querySelector('[data-pi-export-for="' + id + '"]')) return;
-    var titleRow = card.querySelector(".pi-card-title") || card;
-    var button = document.createElement("button");
-    button.type = "button";
-    button.className = "pi-export-button";
-    button.setAttribute("data-pi-export-for", id);
-    button.setAttribute("aria-label", "Esporta grafico in PNG");
-    button.textContent = "PNG";
-    button.addEventListener("click", function () { exportChart(id); });
-    titleRow.appendChild(button);
   }
 
   function tableRows(key) {
