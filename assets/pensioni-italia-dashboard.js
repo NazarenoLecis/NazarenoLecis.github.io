@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-05";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-06";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -905,6 +905,21 @@
     return config;
   }
 
+  function distributionMetricOptions() {
+    if (state.distributionScope === "pensionati") {
+      return [
+        { value: "count", label: "Numero di pensionati" },
+        { value: "total", label: "Reddito pensionistico annuo lordo per fascia" },
+        { value: "average", label: "Reddito pensionistico medio mensile lordo" }
+      ];
+    }
+    return [
+      { value: "count", label: "Numero di pensioni" },
+      { value: "total", label: "Spesa annua lorda per fascia" },
+      { value: "average", label: "Importo medio mensile lordo della pensione" }
+    ];
+  }
+
   function renderDistributions() {
     var distribution = tableRows("pensioner_distribution");
     var config = distributionConfig();
@@ -1206,16 +1221,31 @@
       state.distributionYear = years.indexOf(state.distributionYear) >= 0 ? state.distributionYear : years[years.length - 1];
       distributionYear.value = state.distributionYear;
     }
+    function fillDistributionMetrics() {
+      if (!distributionMetric) return;
+      var options = distributionMetricOptions();
+      var selected = options.some(function (option) { return option.value === state.distributionMetric; }) ? state.distributionMetric : "count";
+      clear(distributionMetric);
+      options.forEach(function (item) {
+        var option = document.createElement("option");
+        option.value = item.value;
+        option.textContent = item.label;
+        distributionMetric.appendChild(option);
+      });
+      state.distributionMetric = selected;
+      distributionMetric.value = selected;
+    }
     if (distributionScope) {
       distributionScope.value = state.distributionScope;
       distributionScope.addEventListener("change", function () {
         state.distributionScope = distributionScope.value;
+        fillDistributionMetrics();
         fillDistributionYears();
         renderDistributions();
       });
     }
     if (distributionMetric) {
-      distributionMetric.value = state.distributionMetric;
+      fillDistributionMetrics();
       distributionMetric.addEventListener("change", function () {
         state.distributionMetric = distributionMetric.value;
         fillDistributionYears();
