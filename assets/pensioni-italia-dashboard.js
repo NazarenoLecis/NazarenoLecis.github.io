@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-9";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260710-11";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -21,9 +21,21 @@
     replacementWorker: "dipendenti_privati",
     replacementCoverage: "obbligatoria",
     replacementMeasure: "lordo",
-    yAxisMode: "zero",
-    xAxisStart: null,
-    xAxisEnd: null
+    systemSeriesMetric: "funding",
+    axisPrefs: {}
+  };
+
+  var AXIS_CONTROLLED_CHARTS = {
+    piEuropeChart: true,
+    piReplacementRateChart: true,
+    piSystemSeriesChart: true,
+    piTransferComponentsChart: true,
+    piRateChart: true,
+    piLabourCountsChart: true,
+    piWorkersRatioChart: true,
+    piInsuredRatioChart: true,
+    piContributionCoverageChart: true,
+    piProfessionChart: true
   };
 
   function byId(id) {
@@ -130,12 +142,99 @@
     return values.length ? { min: Math.min.apply(null, values), max: Math.max.apply(null, values) } : null;
   }
 
+  function axisState(id) {
+    state.axisPrefs[id] = state.axisPrefs[id] || { yAxisMode: "zero", xAxisStart: null };
+    return state.axisPrefs[id];
+  }
+
+  function axisYears(traces) {
+    var values = [];
+    toArray(traces).forEach(function (trace) {
+      toArray(trace.x).forEach(function (value) {
+        var parsed = toNumber(value);
+        if (parsed !== null && Number.isInteger(parsed)) values.push(parsed);
+      });
+    });
+    return Array.from(new Set(values)).sort(function (a, b) { return a - b; });
+  }
+
+  function ensureAxisControls(id, traces) {
+    if (!AXIS_CONTROLLED_CHARTS[id]) return;
+    var chart = byId(id);
+    if (!chart || !toArray(traces).some(isCartesianTrace)) return;
+    var prefs = axisState(id);
+    var controls = chart.parentNode.querySelector('[data-pi-axis-for="' + id + '"]');
+    var ySelect;
+    var xSelect;
+    if (!controls) {
+      controls = document.createElement("div");
+      controls.className = "pi-inline-filters pi-axis-inline";
+      controls.setAttribute("data-pi-axis-for", id);
+
+      var yLabel = document.createElement("label");
+      var yText = document.createElement("span");
+      ySelect = document.createElement("select");
+      yText.textContent = "Asse Y";
+      [["zero", "Includi lo zero"], ["fit", "Adatta ai dati"]].forEach(function (optionData) {
+        var option = document.createElement("option");
+        option.value = optionData[0];
+        option.textContent = optionData[1];
+        ySelect.appendChild(option);
+      });
+      yLabel.appendChild(yText);
+      yLabel.appendChild(ySelect);
+
+      var xLabel = document.createElement("label");
+      var xText = document.createElement("span");
+      xSelect = document.createElement("select");
+      xText.textContent = "Anno iniziale";
+      xLabel.appendChild(xText);
+      xLabel.appendChild(xSelect);
+
+      controls.appendChild(yLabel);
+      controls.appendChild(xLabel);
+      chart.parentNode.insertBefore(controls, chart);
+      ySelect.addEventListener("change", function () {
+        axisState(id).yAxisMode = ySelect.value;
+        renderAll();
+      });
+      xSelect.addEventListener("change", function () {
+        axisState(id).xAxisStart = optionalInputNumber(xSelect);
+        renderAll();
+      });
+    }
+    ySelect = controls.querySelector("select");
+    xSelect = controls.querySelectorAll("select")[1];
+    if (ySelect) ySelect.value = prefs.yAxisMode;
+    if (xSelect) {
+      var years = axisYears(traces);
+      var current = prefs.xAxisStart;
+      clear(xSelect);
+      var allOption = document.createElement("option");
+      allOption.value = "";
+      allOption.textContent = "Tutti gli anni";
+      xSelect.appendChild(allOption);
+      years.forEach(function (year) {
+        var option = document.createElement("option");
+        option.value = year;
+        option.textContent = "Dal " + year;
+        xSelect.appendChild(option);
+      });
+      if (current !== null && years.indexOf(current) < 0) {
+        prefs.xAxisStart = null;
+        current = null;
+      }
+      xSelect.value = current === null ? "" : String(current);
+    }
+  }
+
   function isCartesianTrace(trace) {
     return trace && trace.type !== "choropleth" && toArray(trace.x).length && toArray(trace.y).length;
   }
 
-  function applyAxisPreferences(chartLayout, traces) {
+  function applyAxisPreferences(chartLayout, traces, id) {
     if (!toArray(traces).some(isCartesianTrace)) return chartLayout;
+    var prefs = AXIS_CONTROLLED_CHARTS[id] ? axisState(id) : { yAxisMode: "zero", xAxisStart: null };
     chartLayout.xaxis = Object.assign({}, chartLayout.xaxis || {});
     chartLayout.yaxis = Object.assign({}, chartLayout.yaxis || {});
     chartLayout.xaxis.fixedrange = true;
@@ -143,16 +242,16 @@
     chartLayout.dragmode = false;
 
     var extent = numericXExtent(traces);
-    if (extent && (state.xAxisStart !== null || state.xAxisEnd !== null)) {
-      var start = state.xAxisStart === null ? extent.min : state.xAxisStart;
-      var end = state.xAxisEnd === null ? extent.max : state.xAxisEnd;
+    if (extent && prefs.xAxisStart !== null) {
+      var start = prefs.xAxisStart === null ? extent.min : prefs.xAxisStart;
+      var end = extent.max;
       if (start < end) {
         chartLayout.xaxis.range = [start, end];
         chartLayout.xaxis.autorange = false;
       }
     }
 
-    if (state.yAxisMode === "fit") {
+    if (prefs.yAxisMode === "fit") {
       delete chartLayout.yaxis.rangemode;
       delete chartLayout.yaxis.range;
       chartLayout.yaxis.autorange = true;
@@ -175,7 +274,8 @@
       showEmpty(id, "Nessun dato disponibile");
       return;
     }
-    window.Plotly.react(node, traces, applyAxisPreferences(baseLayout(layout), traces), {
+    ensureAxisControls(id, traces);
+    window.Plotly.react(node, traces, applyAxisPreferences(baseLayout(layout), traces, id), {
       responsive: true,
       displayModeBar: false,
       displaylogo: false,
@@ -315,31 +415,79 @@
     }], { showlegend: false, xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") }, yaxis: { title: "miliardi di euro", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
   }
 
-  function renderFundingChart() {
+  function valuesByYear(rows, years, scale) {
+    var byYear = {};
+    toArray(rows).forEach(function (row) { byYear[toNumber(row.anno)] = toNumber(row.valore); });
+    return years.map(function (year) {
+      return byYear[year] === undefined || byYear[year] === null ? null : byYear[year] / (scale || 1);
+    });
+  }
+
+  function fundingSeries() {
     var annual = tableRows("annual_pensions");
-    var transfers = rowsByIndicator(tableRows("state_transfers"), "trasferimenti_stato_inps");
+    var transfers = rowsByIndicator(tableRows("state_transfers"), "trasferimenti_stato_inps_per_componente")
+      .filter(function (row) { return row.categoria_analitica === "oneri_pensionistici"; });
     var contributions = rowsByIndicator(annual, "entrate_contributive_inps");
     var spending = rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) {
       return row.area === "Italia - INPS";
     });
-    var years = Array.from(new Set(transfers.map(function (row) { return toNumber(row.anno); })))
-      .filter(function (year) { return year >= 2019; }).sort();
+    var years = Array.from(new Set([].concat(contributions, spending, transfers).map(function (row) { return toNumber(row.anno); })))
+      .filter(function (year) { return year >= 2013; }).sort(function (a, b) { return a - b; });
 
-    function values(rows) {
-      var byYear = {};
-      rows.forEach(function (row) { byYear[toNumber(row.anno)] = toNumber(row.valore); });
-      return years.map(function (year) { return byYear[year] === undefined ? null : byYear[year] / 1000000000; });
-    }
+    return {
+      years: years,
+      traces: [
+        { type: "scatter", mode: "lines+markers", name: "Contributi INPS", x: years, y: valuesByYear(contributions, years, 1000000000), connectgaps: false, line: { color: COLORS[1], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
+        { type: "scatter", mode: "lines+markers", name: "Spesa pensionistica lorda INPS", x: years, y: valuesByYear(spending, years, 1000000000), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
+        { type: "scatter", mode: "lines+markers", name: "Oneri pensionistici Stato", x: years, y: valuesByYear(transfers, years, 1000000000), connectgaps: false, line: { color: COLORS[3], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }
+      ]
+    };
+  }
 
-    plot("piFundingChart", [
-      { type: "scatter", mode: "lines+markers", name: "Contributi INPS", x: years, y: values(contributions), connectgaps: false, line: { color: COLORS[1], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
-      { type: "scatter", mode: "lines+markers", name: "Spesa pensionistica lorda", x: years, y: values(spending), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
-      { type: "scatter", mode: "lines+markers", name: "Trasferimenti dallo Stato", x: years, y: values(transfers), connectgaps: false, line: { color: COLORS[3], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }
-    ], {
+  function renderFundingChart() {
+    var series = fundingSeries();
+    plot("piFundingChart", series.traces, {
       xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       yaxis: { title: "miliardi di euro", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
     });
+  }
+
+  function renderSystemSeriesChart() {
+    var metric = state.systemSeriesMetric;
+    var annual = tableRows("annual_pensions");
+    var traces = [];
+    var layout = {
+      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: "miliardi di euro", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
+    };
+
+    if (metric === "funding") {
+      traces = fundingSeries().traces;
+    } else if (metric === "spending") {
+      var spending = denseYears(rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) { return row.area === "Italia - INPS" && toNumber(row.anno) >= 2018; }));
+      traces = [{ type: "scatter", mode: "lines+markers", name: "Spesa pensionistica lorda INPS", x: spending.years, y: spending.values.map(function (value) { return value === null ? null : value / 1000000000; }), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }];
+      layout.showlegend = false;
+    } else if (metric === "contributions") {
+      var contributions = denseYears(rowsByIndicator(annual, "entrate_contributive_inps"));
+      traces = [{ type: "scatter", mode: "lines+markers", name: "Contributi INPS", x: contributions.years, y: contributions.values.map(function (value) { return value === null ? null : value / 1000000000; }), connectgaps: false, line: { color: COLORS[1], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }];
+      layout.showlegend = false;
+    } else if (metric === "pensions_pensioners") {
+      var pensions = rowsByIndicator(annual, "pensioni_vigenti").filter(function (row) { return row.area === "Italia - INPS" && toNumber(row.anno) >= 2018; }).sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+      var pensioners = rowsByIndicator(annual, "pensionati").filter(function (row) { return row.area === "Italia - complessivi" && toNumber(row.anno) >= 2018; }).sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+      traces = [
+        { type: "scatter", mode: "lines+markers", name: "Pensioni vigenti INPS", x: pensions.map(function (row) { return row.anno; }), y: pensions.map(function (row) { return toNumber(row.valore) / 1000000; }), line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.2f} milioni<extra></extra>" },
+        { type: "scatter", mode: "lines+markers", name: "Pensionati complessivi", x: pensioners.map(function (row) { return row.anno; }), y: pensioners.map(function (row) { return toNumber(row.valore) / 1000000; }), line: { color: COLORS[2], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.2f} milioni<extra></extra>" }
+      ];
+      layout.yaxis.title = "milioni";
+    } else if (metric === "income") {
+      var income = denseYears(rowsByIndicator(annual, "reddito_pensionistico_medio_mensile").filter(function (row) { return row.area === "Italia - complessivi" && toNumber(row.anno) >= 2018; }));
+      traces = [{ type: "scatter", mode: "lines+markers", name: "Reddito pensionistico medio mensile", x: income.years, y: income.values, connectgaps: false, line: { color: COLORS[3], width: 3 }, marker: { size: 8 }, hovertemplate: "%{x}<br>%{y:,.0f} euro al mese<extra></extra>" }];
+      layout.yaxis.title = "euro al mese";
+      layout.showlegend = false;
+    }
+    plot("piSystemSeriesChart", traces, layout);
   }
 
   function renderTransferComponentsChart() {
@@ -395,7 +543,8 @@
       .filter(function (row) { return row.area === "Italia - complessivi"; });
     var series = [
       { indicator: "occupati", rows: rowsByIndicator(demography, "occupati"), name: "Occupati 15-64", color: COLORS[2] },
-      { indicator: "assicurati_inps", rows: rowsByIndicator(demography, "assicurati_inps"), name: "Assicurati INPS", color: COLORS[1] },
+      { indicator: "assicurati_inps_ponderati_settimane", rows: rowsByIndicator(demography, "assicurati_inps_ponderati_settimane"), name: "Assicurati INPS ponderati", color: COLORS[1] },
+      { indicator: "assicurati_medi_annui_inps", rows: rowsByIndicator(demography, "assicurati_medi_annui_inps"), name: "Assicurati medi annui INPS", color: COLORS[3] },
       { indicator: "pensionati", rows: pensioners, name: "Pensionati complessivi", color: COLORS[0] }
     ];
     var traces = series.map(function (item) {
@@ -815,43 +964,6 @@
   }
 
   function setupControls() {
-    var yAxisMode = byId("piYAxisMode");
-    var xAxisStart = byId("piXAxisStart");
-    var xAxisEnd = byId("piXAxisEnd");
-    var resetAxes = byId("piResetAxes");
-    function updateAxisRange() {
-      state.xAxisStart = optionalInputNumber(xAxisStart);
-      state.xAxisEnd = optionalInputNumber(xAxisEnd);
-      renderAll();
-    }
-    if (yAxisMode) {
-      yAxisMode.value = state.yAxisMode;
-      yAxisMode.addEventListener("change", function () { state.yAxisMode = yAxisMode.value; renderAll(); });
-    }
-    if (xAxisStart && xAxisStart.tagName === "SELECT") {
-      clear(xAxisStart);
-      var allYears = [];
-      ["annual_pensions", "european_comparison", "demography_work", "managements", "territorial"].forEach(function (table) {
-        tableRows(table).forEach(function (row) { var year = toNumber(row.anno); if (year !== null) allYears.push(year); });
-      });
-      allYears = Array.from(new Set(allYears)).sort(function (a, b) { return a - b; });
-      var allOption = document.createElement("option"); allOption.value = ""; allOption.textContent = "Tutti gli anni"; xAxisStart.appendChild(allOption);
-      allYears.forEach(function (year) { var option = document.createElement("option"); option.value = year; option.textContent = "Dal " + year; xAxisStart.appendChild(option); });
-    }
-    if (xAxisStart) xAxisStart.addEventListener("change", updateAxisRange);
-    if (xAxisEnd) xAxisEnd.addEventListener("change", updateAxisRange);
-    if (resetAxes) {
-      resetAxes.addEventListener("click", function () {
-        state.yAxisMode = "zero";
-        state.xAxisStart = null;
-        state.xAxisEnd = null;
-        if (yAxisMode) yAxisMode.value = state.yAxisMode;
-        if (xAxisStart) xAxisStart.value = "";
-        if (xAxisEnd) xAxisEnd.value = "";
-        renderAll();
-      });
-    }
-
     var metric = byId("piMapMetric");
     var mapYear = byId("piMapYear");
     function fillMapYears() {
@@ -892,6 +1004,15 @@
     }
     setupDistribution("piPensionDistributionYear", "piPensionDistributionMeasure", "pensioni", "pensionDistributionYear", "pensionDistributionMeasure");
     setupDistribution("piIncomeDistributionYear", "piIncomeDistributionMeasure", "pensionati_inps", "incomeDistributionYear", "incomeDistributionMeasure");
+
+    var systemSeries = byId("piSystemSeriesMetric");
+    if (systemSeries) {
+      systemSeries.value = state.systemSeriesMetric;
+      systemSeries.addEventListener("change", function () {
+        state.systemSeriesMetric = systemSeries.value;
+        renderSystemSeriesChart();
+      });
+    }
 
     var profession = byId("piProfessionMeasure");
     profession.value = state.professionMeasure;
@@ -951,13 +1072,8 @@
 
   function renderAll() {
     renderKpis();
-    renderContributionsChart();
-    renderSpendingChart();
-    renderFundingChart();
+    renderSystemSeriesChart();
     renderTransferComponentsChart();
-    renderPensionIncomeChart();
-    renderPensionsChart();
-    renderPensionersChart();
     renderRateChart();
     renderLabourCountsChart();
     renderWorkersRatioChart();

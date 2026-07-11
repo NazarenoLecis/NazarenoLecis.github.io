@@ -424,6 +424,15 @@
   margin-top: 18px;
 }
 
+.pi-axis-inline {
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.pi-axis-inline label {
+  min-width: 170px;
+}
+
 .pi-axis-grid {
   grid-template-columns: minmax(190px, 1.3fr) repeat(2, minmax(150px, 1fr)) auto;
   align-items: end;
