@@ -2,34 +2,49 @@
   --pc-gap: 14px;
 }
 
-.pc-mode-tabs {
-  display: inline-flex;
-  gap: 8px;
+.pc-dashboard [hidden] {
+  display: none !important;
+}
+
+.pc-mode-select,
+.pc-axis-select {
+  display: grid;
+  width: min(100%, 460px);
+  gap: 7px;
   margin: 10px 0 18px;
-  padding: 6px;
+  color: var(--orange);
+  font-size: .76rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pc-mode-select select,
+.pc-axis-select select {
+  min-height: 46px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--panel) 90%, transparent);
-}
-
-.pc-mode-tabs button {
-  min-height: 42px;
-  min-width: 150px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
+  padding: 0 12px;
+  background: var(--card);
+  color: var(--text);
   font: inherit;
-  font-weight: 850;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
-.pc-mode-tabs button.active,
-.pc-mode-tabs button:focus-visible,
-.pc-mode-tabs button:hover {
-  border-color: var(--orange);
-  color: var(--orange);
-  outline: none;
+.pc-mode-select small {
+  color: var(--muted);
+  font-size: .84rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.pc-axis-select {
+  width: min(100%, 300px);
+  margin-left: auto;
 }
 
 .pc-form {
@@ -196,6 +211,16 @@
   margin-top: 18px;
 }
 
+.pc-result-narrative {
+  margin-top: 14px;
+  padding: 17px 18px;
+  border-left: 4px solid var(--orange);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  color: var(--text);
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+
 .pc-reliability {
   margin-top: 14px;
   padding: 14px 16px;
@@ -235,15 +260,6 @@
 }
 
 @media (max-width: 680px) {
-  .pc-mode-tabs {
-    width: 100%;
-  }
-
-  .pc-mode-tabs button {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
   .pc-form-grid,
   .pc-form-grid-small {
     grid-template-columns: 1fr;
@@ -256,5 +272,9 @@
   .pc-button,
   .pc-file-label {
     width: 100%;
+  }
+
+  .pc-axis-select {
+    margin-left: 0;
   }
 }

@@ -4,29 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mi sono pagato la pensione? | Nazareno Lecis</title>
-  <meta name="description" content="Calcolatore didattico per confrontare contributi rivalutati, montante e pensione effettiva lorda.">
+  <meta name="description" content="Calcolatore didattico per confrontare montante contributivo, pensione contributiva e pensione effettiva lorda.">
   <link rel="stylesheet" href="../../../assets/base.css">
   <link rel="stylesheet" href="../../../assets/layout.css">
   <link rel="stylesheet" href="../../../assets/components.css">
   <link rel="stylesheet" href="../../../assets/almalaurea-dashboard.css">
   <link rel="stylesheet" href="../../../assets/pensioni-italia-dashboard.css?v=20260712-1">
-  <link rel="stylesheet" href="../../../assets/pensione-pagata-calculator.css?v=20260712-1">
+  <link rel="stylesheet" href="../../../assets/pensione-pagata-calculator.css?v=20260712-2">
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/calcolatore.json" as="fetch" crossorigin>
   <script defer src="../../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-1"></script>
+  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-2"></script>
 </head>
 <body>
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="brand" href="../../../index.html"><span class="logo"></span><span><span class="brand-name">Nazareno Lecis</span><span class="brand-tag">Data &amp; Risk Analysis</span></span></a>
       <nav class="nav" aria-label="Navigazione principale">
-        <a href="../../../index.html">Home</a>
-        <a href="../../../articoli/index.html">Articoli</a>
-        <a class="active" href="../../index.html">Dashboard</a>
-        <a href="../../../media/index.html">Media</a>
-        <a href="../../../about/index.html">Chi sono</a>
-        <a href="https://github.com/NazarenoLecis">GitHub</a>
+        <a href="../../../index.html">Home</a><a href="../../../articoli/index.html">Articoli</a><a class="active" href="../../index.html">Dashboard</a><a href="../../../media/index.html">Media</a><a href="../../../about/index.html">Chi sono</a><a href="https://github.com/NazarenoLecis">GitHub</a>
       </nav>
       <span class="sun">&#9788;</span>
     </div>
@@ -37,152 +32,120 @@
       <div>
         <span class="eyebrow">Calcolatore pensioni</span>
         <h1>Mi sono pagato la pensione?</h1>
-        <p class="lead">Un tool didattico per stimare il montante contributivo rivalutato, trasformarlo in una pensione interamente contributiva e confrontarlo con la pensione lorda effettiva inserita.</p>
+        <p class="lead">Stima quanto valgono i contributi maturati, quale pensione interamente contributiva produrrebbero e dopo quanto tempo la pensione incassata raggiunge quel montante.</p>
       </div>
-      <div class="source-panel">
-        <span class="logo"></span>
-        <div>
-          <strong>Fonti: INPS, ISTAT, Ministero del Lavoro</strong>
-          <span>Aliquote FPLD, tassi di capitalizzazione, coefficienti di trasformazione e tavole di mortalita.</span>
-          <span class="source-credit"><a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Repository pensioni</a>. Elaborazione di Nazareno Lecis.</span>
-        </div>
-      </div>
+      <div class="source-panel"><span class="logo"></span><div><strong>Fonti: INPS, ISTAT, Ministero del Lavoro</strong><span>Aliquote FPLD, tassi di capitalizzazione, coefficienti di trasformazione e tavole di mortalita.</span><span class="source-credit"><a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Repository pensioni</a>. Elaborazione di Nazareno Lecis.</span></div></div>
     </section>
 
-    <nav class="dashboard-jump-nav" aria-label="Collegamenti calcolatore">
-      <a href="../index.html">Dashboard pensioni</a>
-      <a href="#calcolo">Calcolo</a>
-      <a href="#risultati">Risultati</a>
-      <a href="#grafici">Grafici</a>
-      <a href="#metodo">Metodo</a>
-    </nav>
-
+    <nav class="dashboard-jump-nav" aria-label="Collegamenti calcolatore"><a href="../index.html">Dashboard pensioni</a><a href="#calcolo">Calcolo</a><a href="#risultati">Risultati</a><a href="#grafici">Grafici</a><a href="#metodo">Metodo</a></nav>
     <p id="pcStatus" class="pi-status">Caricamento parametri del calcolatore ...</p>
 
     <section class="workflow-grid" aria-label="Come usare il calcolatore">
-      <div class="workflow-step"><span>1</span><h2>Compila la carriera</h2><p>Usa la modalita rapida con poche informazioni oppure genera una carriera anno per anno.</p></div>
-      <div class="workflow-step"><span>2</span><h2>Controlla il confronto</h2><p>Il risultato confronta la pensione lorda inserita con un controfattuale interamente contributivo.</p></div>
-      <div class="workflow-step"><span>3</span><h2>Leggi le note</h2><p>Affidabilita, fonti e ipotesi spiegano cosa e' osservato, stimato o inserito dall'utente.</p></div>
+      <div class="workflow-step"><span>1</span><h2>Scegli la precisione</h2><p>Usa pochi dati, descrivi la carriera media oppure inserisci gli imponibili anno per anno.</p></div>
+      <div class="workflow-step"><span>2</span><h2>Confronta le pensioni</h2><p>Guarda la pensione effettiva, quella contributiva equivalente e la differenza per rata.</p></div>
+      <div class="workflow-step"><span>3</span><h2>Segui il montante</h2><p>La linea temporale mostra quanto hai gia' ricevuto e quando viene raggiunto il montante virtuale.</p></div>
     </section>
-    <p class="pi-gross-note"><strong>Privacy:</strong> il calcolo avviene nel browser. Non inserire nome, codice fiscale o numeri di pensione; la pagina non salva file caricati o dati individuali.</p>
+    <p class="pi-gross-note"><strong>Privacy:</strong> il calcolo avviene nel browser. Non inserire nome, codice fiscale o numero di pensione; la pagina non salva i dati individuali.</p>
 
     <section class="dashboard-section" id="calcolo">
-      <div class="section-head"><span class="eyebrow">Input</span><div><h2>Due modalita nella stessa pagina</h2><p>La versione semplificata si compila in pochi minuti. La versione accurata permette fino a tre periodi e una tabella annuale modificabile.</p></div></div>
-
-      <div class="pc-mode-tabs" role="tablist" aria-label="Modalita calcolatore">
-        <button class="active" type="button" id="pcModeSimple" data-mode="simple" role="tab" aria-selected="true">Semplificata</button>
-        <button type="button" id="pcModeAccurate" data-mode="accurate" role="tab" aria-selected="false">Accurata</button>
-      </div>
+      <div class="section-head"><span class="eyebrow">Input</span><div><h2>Tre livelli di precisione</h2><p>La modalita cambia il numero di informazioni richieste, non il significato del risultato.</p></div></div>
+      <label class="pc-mode-select"><span>Modalita di calcolo</span><select id="pcMode"><option value="simple">Semplificata - pochi dati</option><option value="guided">Intermedia - carriera media</option><option value="accurate">Accurata - anno per anno</option></select><small id="pcModeNote">Stima rapida basata su inizio carriera, anni contribuiti e ultima RAL.</small></label>
 
       <form id="pcCalculatorForm" class="pc-form">
         <article class="pi-card pc-panel">
-          <div class="pi-card-title"><h3>Dati personali e pensione</h3><span>obbligatori</span></div>
+          <div class="pi-card-title"><h3>Persona e pensione</h3><span>valori lordi</span></div>
+          <p class="pi-card-note">Le date servono per calcolare l'eta al pensionamento, da quanto tempo ricevi la pensione e la durata attesa secondo le tavole di mortalita.</p>
           <div class="pc-form-grid">
-            <label><span>Anno di nascita</span><input id="pcBirthYear" type="number" min="1930" max="2005" value="1960"></label>
-            <label><span>Sesso</span><select id="pcSex"><option value="T">Totale</option><option value="M">Maschi</option><option value="F">Femmine</option></select></label>
-            <label><span>Anno pensionamento</span><input id="pcRetirementYear" type="number" min="1996" max="2055" value="2025"></label>
-            <label><span>Eta pensionamento</span><input id="pcRetirementAge" type="number" min="50" max="75" value="65"></label>
-            <label><span>Mesi oltre eta intera</span><input id="pcRetirementMonths" type="number" min="0" max="11" value="0"></label>
+            <label><span>Data di nascita</span><input id="pcBirthDate" type="date" min="1925-01-01" max="2005-12-31" value="1960-01-01"></label>
+            <label><span>Sesso</span><select id="pcSex"><option value="T">Totale</option><option value="M">Uomo</option><option value="F">Donna</option></select></label>
+            <label><span>Data di pensionamento</span><input id="pcRetirementDate" type="date" min="1976-01-01" max="2060-12-31" value="2025-01-01"></label>
             <label><span>Pensione lorda mensile</span><input id="pcMonthlyPension" type="number" min="0" step="50" value="2000"></label>
-            <label><span>Mensilita</span><input id="pcPensionMonths" type="number" min="1" max="14" step="1" value="13"></label>
-            <label><span>Anno valore pensione</span><input id="pcPensionReferenceYear" type="number" min="1996" max="2055" value="2025"></label>
+            <label><span>Mensilita</span><select id="pcPensionMonths"><option value="12">12</option><option value="13" selected>13</option><option value="14">14</option></select></label>
+            <label><span>Anno del valore inserito</span><select id="pcPensionReferenceYear"></select></label>
+            <label class="pc-wide"><span>Categoria lavorativa</span><select id="pcCategory"></select><small id="pcCategoryNote"></small></label>
           </div>
         </article>
 
-        <article class="pi-card pc-panel">
-          <div class="pi-card-title"><h3>Categoria e carriera</h3><span id="pcCategoryTag">FPLD</span></div>
+        <article class="pi-card pc-panel pc-simple-only">
+          <div class="pi-card-title"><h3>Carriera in breve</h3><span id="pcCategoryTag">FPLD</span></div>
+          <p class="pi-card-note">Quattro dati bastano per una prima stima. Gli anni mancanti vengono ricostruiti con un profilo retributivo regolare.</p>
           <div class="pc-form-grid">
-            <label class="pc-wide"><span>Categoria lavorativa</span><select id="pcCategory"></select><small id="pcCategoryNote"></small></label>
+            <label><span>Primo anno di contributi</span><select id="pcSimpleStartYear"></select></label>
+            <label><span>Anni di contributi</span><select id="pcSimpleContributedYears"></select></label>
+            <label><span>Ultima RAL lorda</span><input id="pcSimpleFinalRal" type="number" min="0" step="500" value="38000"></label>
+            <label><span>Regime di lavoro prevalente</span><select id="pcSimpleWorkPattern"><option value="100">Tempo pieno</option><option value="75">Part-time circa 75%</option><option value="50">Part-time circa 50%</option><option value="seasonal">Stagionale - 8 mesi</option></select></label>
+          </div>
+        </article>
+
+        <article class="pi-card pc-panel pc-guided-only" hidden>
+          <div class="pi-card-title"><h3>Carriera media</h3><span>intermedia</span></div>
+          <p class="pi-card-note">Descrive la carriera con valori medi. E' piu' informativa della stima rapida, ma meno precisa degli imponibili annuali.</p>
+          <div class="pc-form-grid">
             <label><span>Anno inizio</span><input id="pcStartYear" type="number" min="1976" max="2050" value="1996"></label>
             <label><span>Anno fine</span><input id="pcEndYear" type="number" min="1976" max="2050" value="2024"></label>
             <label><span>Anni contribuiti</span><input id="pcContributedYears" type="number" min="0" max="50" step="0.5" value="29"></label>
             <label><span>Quota lavoro media</span><input id="pcWorkShare" type="number" min="1" max="100" step="1" value="100"></label>
             <label><span>Mesi medi annui</span><input id="pcWorkMonths" type="number" min="0" max="12" step="0.5" value="12"></label>
-            <label><span>Livello iniziale</span><select id="pcInitialLevel"><option value="basso">Basso</option><option value="medio" selected>Medio</option><option value="alto">Alto</option></select></label>
-            <label><span>Livello finale</span><select id="pcFinalLevel"><option value="basso">Basso</option><option value="medio" selected>Medio</option><option value="alto">Alto</option></select></label>
-            <label><span>Progressione</span><select id="pcProgression"><option value="nessuna">Nessuna</option><option value="lenta">Lenta</option><option value="media" selected>Media</option><option value="rapida">Rapida</option></select></label>
+            <label><span>Progressione retributiva</span><select id="pcProgression"><option value="nessuna">Nessuna</option><option value="lenta">Lenta</option><option value="media" selected>Media</option><option value="rapida">Rapida</option></select></label>
             <label><span>Prima RAL</span><input id="pcInitialRal" type="number" min="0" step="500" placeholder="opzionale"></label>
             <label><span>Ultima RAL</span><input id="pcFinalRal" type="number" min="0" step="500" value="38000"></label>
-            <label><span>Anno RAL nota</span><input id="pcKnownRalYear" type="number" min="1976" max="2050" placeholder="opzionale"></label>
-            <label><span>RAL nota</span><input id="pcKnownRalValue" type="number" min="0" step="500" placeholder="opzionale"></label>
           </div>
         </article>
 
         <article class="pi-card pc-panel pc-accurate-only" hidden>
-          <div class="pi-card-title"><h3>Periodi accurati</h3><span>massimo 3</span></div>
-          <p class="pi-card-note">Genera le righe annuali dai periodi, poi modifica imponibile, mesi o quota lavoro nella tabella. In alternativa carica un CSV con lo schema indicato.</p>
+          <div class="pi-card-title"><h3>Carriera anno per anno</h3><span>accurata</span></div>
+          <p class="pi-card-note">I periodi preparano la tabella. Per un risultato accurato sostituisci ogni imponibile con quello dell'estratto contributivo oppure carica un CSV.</p>
           <div id="pcPeriods" class="pc-period-grid"></div>
-          <div class="pc-action-row">
-            <button class="pc-button" type="button" id="pcGenerateAnnualRows">Genera anni</button>
-            <label class="pc-file-label"><span>Carica CSV</span><input id="pcCsvInput" type="file" accept=".csv,text/csv"></label>
-          </div>
-          <div class="pi-table-wrap pc-annual-wrap">
-            <table class="pi-table pc-annual-table">
-              <thead><tr><th>Anno</th><th>Gestione</th><th>Imponibile</th><th>Mesi</th><th>Quota lavoro</th><th>Contributi</th></tr></thead>
-              <tbody id="pcAnnualRows"></tbody>
-            </table>
-          </div>
+          <div class="pc-action-row"><button class="pc-button" type="button" id="pcGenerateAnnualRows">Genera anni</button><label class="pc-file-label"><span>Carica CSV</span><input id="pcCsvInput" type="file" accept=".csv,text/csv"></label></div>
+          <div class="pi-table-wrap pc-annual-wrap"><table class="pi-table pc-annual-table"><thead><tr><th>Anno</th><th>Categoria</th><th>Imponibile</th><th>Mesi</th><th>Quota lavoro</th><th>Contributi</th></tr></thead><tbody id="pcAnnualRows"></tbody></table></div>
         </article>
 
-        <article class="pi-card pc-panel">
-          <div class="pi-card-title"><h3>Ipotesi</h3><span>valore atteso</span></div>
+        <article class="pi-card pc-panel pc-non-simple-only" hidden>
+          <div class="pi-card-title"><h3>Ipotesi future</h3><span>proiezione</span></div>
           <div class="pc-form-grid pc-form-grid-small">
             <label><span>Rivalutazione futura pensione</span><select id="pcFutureIndexation"><option value="nessuna">Nessuna</option><option value="inflazione_costante">Inflazione costante</option></select></label>
             <label><span>Tasso annuo futuro</span><input id="pcFutureInflation" type="number" min="0" max="10" step="0.1" value="2"></label>
           </div>
-          <div class="pc-action-row">
-            <button class="pc-button pc-primary" type="button" id="pcCalculate">Calcola</button>
-            <button class="pc-button" type="button" id="pcReset">Ripristina esempio</button>
-          </div>
         </article>
+        <div class="pc-action-row"><button class="pc-button pc-primary" type="button" id="pcCalculate">Calcola</button><button class="pc-button" type="button" id="pcReset">Ripristina esempio</button></div>
       </form>
     </section>
 
     <section class="dashboard-section" id="risultati">
-      <div class="section-head"><span class="eyebrow">Risultati</span><div><h2>Montante, pensione contributiva e confronto</h2><p>I KPI mostrano grandezze lorde. La pensione effettiva non viene stimata dal tool: e' il valore inserito dall'utente.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Risultati</span><div><h2>Quanto hai maturato e quanto ricevi</h2><p>I valori sono lordi. La pensione effettiva e' quella inserita; la pensione contributiva equivalente e' calcolata dal montante stimato.</p></div></div>
+      <div id="pcResultNarrative" class="pc-result-narrative"></div>
       <section id="pcKpis" class="kpi-grid pi-kpi-grid pc-kpis" aria-label="Risultati principali"></section>
       <div id="pcReliability" class="pc-reliability"></div>
-      <div class="pc-export-row">
-        <button class="pc-button" type="button" id="pcExportCsv">CSV</button>
-        <button class="pc-button" type="button" id="pcExportJson">JSON</button>
-        <button class="pc-button" type="button" id="pcShareLink">Link senza dati personali</button>
-      </div>
+      <div class="pc-export-row"><button class="pc-button" type="button" id="pcExportCsv">CSV</button><button class="pc-button" type="button" id="pcExportJson">JSON</button><button class="pc-button" type="button" id="pcShareLink">Link senza dati personali</button></div>
     </section>
 
     <section class="dashboard-section" id="grafici">
-      <div class="section-head"><span class="eyebrow">Grafici</span><div><h2>Dalla carriera al pareggio</h2><p>Ogni grafico usa i parametri ufficiali disponibili e segnala quando il dato deriva da una stima o da input dell'utente.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Grafici</span><div><h2>Dalla carriera al montante virtuale</h2><p>I grafici distinguono cio' che deriva dai tuoi input, i parametri previdenziali e le proiezioni legate alla sopravvivenza.</p></div></div>
+      <label class="pc-axis-select"><span>Scala verticale</span><select id="pcAxisMode"><option value="zero">Inizia da zero</option><option value="data">Adatta ai dati</option></select></label>
       <div class="pi-stack">
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Retribuzione e imponibile</h3><span>euro annui</span></div><p class="pi-card-note">La retribuzione puo' essere inserita, calibrata su una RAL nota o stimata da scenario.</p><div class="pi-chart pi-chart-wide" id="pcSalaryChart"></div><p class="pi-chart-credit">Fonte: input utente e profilo retributivo del calcolatore. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Aliquote e contributi</h3><span>FPLD</span></div><p class="pi-card-note">Aliquota di finanziamento per i contributi finanziari; aliquota di computo per l'accredito al montante.</p><div class="pi-chart pi-chart-wide" id="pcRatesChart"></div><p class="pi-chart-credit">Fonte: INPS, aliquote storiche FPLD; INPS, montante contributivo. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Contributi e montante</h3><span>euro</span></div><p class="pi-card-note">Il montante cresce con gli accrediti annui e con il tasso di capitalizzazione del montante contributivo.</p><div class="pi-chart pi-chart-wide" id="pcCapitalChart"></div><p class="pi-chart-credit">Fonte: ISTAT, tassi annui di capitalizzazione dei montanti contributivi. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensione contributiva equivalente</h3><span>lordo annuo</span></div><p class="pi-card-note">Il coefficiente di trasformazione dipende da anno ed eta' di pensionamento. La pensione effettiva e' quella inserita.</p><div class="pi-chart pi-chart-wide" id="pcPensionChart"></div><p class="pi-chart-credit">Fonte: INPS e Ministero del Lavoro, coefficienti di trasformazione. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensioni cumulate e soglia di pareggio</h3><span>eta</span></div><p class="pi-card-note">La soglia confronta montante rivalutato e pensioni lorde cumulate non scontate. Il valore atteso usa invece probabilita' di sopravvivenza.</p><div class="pi-chart pi-chart-wide" id="pcCumulativeChart"></div><p class="pi-chart-credit">Fonte: ISTAT, tavole di mortalita; parametri del calcolatore. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block pc-simple-only"><div class="pi-card-title"><h3>Scenario basso, centrale e alto</h3><span>sensibilita</span></div><p class="pi-card-note">Se la carriera non e' caricata anno per anno, la stima va letta come intervallo attorno allo scenario centrale.</p><div class="pi-chart pi-chart-wide" id="pcScenarioChart"></div><p class="pi-chart-credit">Fonte: scenari del calcolatore. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block pc-accurate-only" hidden><div class="pi-card-title"><h3>Composizione della carriera</h3><span>gestione</span></div><p class="pi-card-note">Nella prima versione pienamente operativa la gestione disponibile e' FPLD; altre categorie restano disabilitate finche' non sono documentate.</p><div class="pi-chart pi-chart-wide" id="pcCompositionChart"></div><p class="pi-chart-credit">Fonte: input utente e parametri calcolatore. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Retribuzione e imponibile</h3><span>euro annui</span></div><p class="pi-card-note">La retribuzione lorda descrive il profilo di carriera. L'imponibile e' la quota su cui vengono calcolati i contributi dopo part-time, mesi lavorati e periodi senza contribuzione.</p><div class="pi-chart pi-chart-wide" id="pcSalaryChart"></div><p class="pi-chart-credit">Fonte: input utente e profilo retributivo del calcolatore. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Aliquote usate nel calcolo</h3><span>percentuale</span></div><p class="pi-card-note">L'aliquota di finanziamento stima i contributi versati; quella di computo determina l'accredito al montante. Il tasso di capitalizzazione rivaluta il montante gia' maturato.</p><div class="pi-chart pi-chart-wide" id="pcRatesChart"></div><p class="pi-chart-credit">Fonte: INPS, aliquote storiche FPLD; ISTAT, capitalizzazione del montante. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Contributi e montante rivalutato</h3><span>euro</span></div><p class="pi-card-note">Le barre sono i contributi finanziari stimati ogni anno. La linea e' il montante contributivo, cioe' gli accrediti accumulati e rivalutati fino al pensionamento.</p><div class="pi-chart pi-chart-wide" id="pcCapitalChart"></div><p class="pi-chart-credit">Fonte: INPS e ISTAT; input utente. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensione effettiva e pensione maturata</h3><span>lordo per rata</span></div><p class="pi-card-note" id="pcPensionChartNote">Confronta la rata lorda inserita con la rata che risulterebbe trasformando il montante simulato in una pensione interamente contributiva.</p><div class="pi-chart pi-chart-wide" id="pcPensionChart"></div><p class="pi-chart-credit">Fonte: INPS e Ministero del Lavoro, coefficienti di trasformazione; input utente. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Quando la pensione raggiunge il montante</h3><span>eta</span></div><p class="pi-card-note" id="pcCumulativeChartNote">Le pensioni cumulate sono confrontate con il montante virtuale. La parte successiva a oggi e' una proiezione; il montante non e' un conto individuale che viene materialmente svuotato.</p><div class="pi-chart pi-chart-wide" id="pcCumulativeChart"></div><p class="pi-chart-credit">Fonte: ISTAT, tavole di mortalita; parametri del calcolatore. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block pc-simple-only"><div class="pi-card-title"><h3>Quanto cambia la stima</h3><span>sensibilita</span></div><p class="pi-card-note">Mostra l'effetto di una carriera retributiva inferiore o superiore del 15% rispetto ai dati inseriti. Non e' un intervallo di confidenza.</p><div class="pi-chart pi-chart-wide" id="pcScenarioChart"></div><p class="pi-chart-credit">Fonte: scenari del calcolatore. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block pc-accurate-only" hidden><div class="pi-card-title"><h3>Composizione della carriera</h3><span>categoria</span></div><p class="pi-card-note">Somma gli imponibili annuali per categoria. Le categorie private abilitate condividono il profilo previdenziale FPLD.</p><div class="pi-chart pi-chart-wide" id="pcCompositionChart"></div><p class="pi-chart-credit">Fonte: input utente e parametri del calcolatore. Elaborazione di Nazareno Lecis.</p></article>
       </div>
     </section>
 
     <section class="dashboard-section" id="metodo">
-      <div class="section-head"><span class="eyebrow">Metodo</span><div><h2>Formule, fonti e limiti</h2><p>Il calcolatore e' trasparente: mostra il controfattuale contributivo, non una riliquidazione amministrativa.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Metodo</span><div><h2>Formule, fonti e limiti</h2><p>Il calcolatore mostra un controfattuale contributivo e non riliquida la pensione amministrata dall'INPS.</p></div></div>
       <div class="pi-notes-panel">
-        <div>
-          <h3>Note metodologiche</h3>
-          <ul>
-            <li><strong>Controfattuale contributivo:</strong> il tool calcola quale pensione annua lorda risulterebbe applicando il coefficiente di trasformazione al montante simulato.</li>
-            <li><strong>Pensione effettiva:</strong> e' il valore lordo inserito dall'utente. Se riferito a un anno successivo alla decorrenza viene riportato alla decorrenza con una perequazione stimata.</li>
-            <li><strong>Contributi finanziari e montante:</strong> i primi usano l'aliquota di finanziamento; il secondo usa l'aliquota di computo.</li>
-            <li><strong>Pre-1996:</strong> per il controfattuale interamente contributivo gli anni precedenti il 1996 sono approssimati usando l'aliquota FPLD storica come computo. Questo abbassa l'affidabilita' rispetto a una carriera post-1995.</li>
-            <li><strong>Valore atteso:</strong> somma le pensioni future ponderate per probabilita' di sopravvivenza ISTAT. Non e' il valore finanziario attualizzato.</li>
-            <li><strong>Categorie:</strong> solo la carriera generica FPLD e' pienamente operativa. Le categorie senza serie complete sono visibili ma non usate come sostituti silenziosi.</li>
-          </ul>
-        </div>
-        <div>
-          <h3>Fonti</h3>
-          <p>INPS: aliquote storiche FPLD, montante contributivo e coefficienti di trasformazione.</p>
-          <p>ISTAT: tassi annui di capitalizzazione dei montanti contributivi e tavole di mortalita della popolazione residente.</p>
-          <p>Ministero del Lavoro: decreti di aggiornamento dei coefficienti di trasformazione.</p>
-          <p><a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Repository pensioni</a>. Elaborazione di Nazareno Lecis.</p>
-        </div>
+        <div><h3>Note metodologiche</h3><ul>
+          <li><strong>Pensione contributiva equivalente:</strong> montante simulato moltiplicato per il coefficiente di trasformazione dell'anno e dell'eta di pensionamento.</li>
+          <li><strong>Differenza mensile:</strong> pensione lorda inserita meno pensione contributiva equivalente, divise per lo stesso numero di mensilita.</li>
+          <li><strong>Montante virtuale:</strong> e' la base di calcolo della pensione, non un conto bancario personale. La data di esaurimento indica quando le pensioni lorde cumulate raggiungono quella soglia.</li>
+          <li><strong>Tempo gia' in pensione:</strong> deriva dalle date inserite. Le prestazioni gia' ricevute sono stimate con una rivalutazione convenzionale del 2% annuo e non sostituiscono i cedolini storici.</li>
+          <li><strong>Aspettativa di vita:</strong> usa sesso ed eta al pensionamento nelle tavole ISTAT. E' una media di popolazione, non una previsione individuale.</li>
+          <li><strong>Categorie:</strong> metalmeccanica, commercio, edilizia, turismo e trasporti sono operative come settori del FPLD. Pubblico impiego, autonomi e Gestione separata restano disabilitati finche' non e' caricata una serie storica specifica.</li>
+          <li><strong>Pre-1996:</strong> gli anni precedenti il 1996 sono un controfattuale approssimato; il calcolatore non ricostruisce quote retributive o miste liquidate dall'INPS.</li>
+        </ul></div>
+        <div><h3>Fonti</h3><p>INPS: aliquote storiche FPLD, montante contributivo e coefficienti di trasformazione.</p><p>ISTAT: tassi annui di capitalizzazione e tavole di mortalita della popolazione residente.</p><p>Ministero del Lavoro: decreti sui coefficienti di trasformazione.</p><p><a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Repository pensioni</a>. Elaborazione di Nazareno Lecis.</p></div>
       </div>
     </section>
   </main>

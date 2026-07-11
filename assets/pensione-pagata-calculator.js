@@ -1,16 +1,16 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-1";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-2";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1"];
   var PROGRESSION = { nessuna: 0, lenta: 0.01, media: 0.02, rapida: 0.03 };
-  var LEVEL_RAL_2025 = { basso: 24000, medio: 36000, alto: 58000 };
-  var state = { payload: null, mode: "simple", annualRows: [], result: null, career: [] };
+  var state = { payload: null, mode: "simple", annualRows: [], result: null, career: [], scenario: null, axisMode: "zero" };
 
   function byId(id) { return document.getElementById(id); }
   function rows(dataset) { return dataset && Array.isArray(dataset.rows) ? dataset.rows : []; }
   function paramRows(name) { return rows(state.payload && state.payload.tables.parameters[name]); }
   function exampleRows(name) { return rows(state.payload && state.payload.tables.examples[name]); }
+  function clear(node) { if (node) while (node.firstChild) node.removeChild(node.firstChild); }
   function toNumber(value, fallback) {
     if (value === null || value === undefined || value === "") return fallback === undefined ? null : fallback;
     var parsed = Number(String(value).replace(",", "."));
@@ -18,10 +18,11 @@
   }
   function inputNumber(id, fallback) { var node = byId(id); return node ? toNumber(node.value, fallback) : fallback; }
   function inputText(id, fallback) { var node = byId(id); return node && node.value !== "" ? node.value : fallback; }
+  function truthy(value) { return value === true || String(value).toLowerCase() === "true" || value === 1; }
   function fmt(value, digits) {
-    var n = toNumber(value);
-    if (n === null) return "ND";
-    return n.toLocaleString("it-IT", { maximumFractionDigits: digits === undefined ? 0 : digits });
+    var number = toNumber(value);
+    if (number === null) return "ND";
+    return number.toLocaleString("it-IT", { maximumFractionDigits: digits === undefined ? 0 : digits });
   }
   function euro(value, digits) { return fmt(value, digits) + " euro"; }
   function pct(value, digits) { return fmt((toNumber(value, 0) || 0) * 100, digits === undefined ? 1 : digits) + "%"; }
@@ -31,62 +32,110 @@
     node.textContent = message;
     node.style.color = isError ? "#e15759" : "";
   }
+  function parseDate(value) {
+    if (!value) return null;
+    var parts = String(value).split("-").map(Number);
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  function isoDate(value) {
+    if (!value) return null;
+    return [value.getFullYear(), String(value.getMonth() + 1).padStart(2, "0"), String(value.getDate()).padStart(2, "0")].join("-");
+  }
+  function formatDate(value) {
+    return value ? value.toLocaleDateString("it-IT", { month: "long", year: "numeric" }) : "ND";
+  }
+  function addMonths(value, months) {
+    var result = new Date(value.getFullYear(), value.getMonth() + months, 1);
+    var lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+    result.setDate(Math.min(value.getDate(), lastDay));
+    return result;
+  }
+  function ageParts(birth, reference) {
+    var months = (reference.getFullYear() - birth.getFullYear()) * 12 + reference.getMonth() - birth.getMonth();
+    if (reference.getDate() < birth.getDate()) months -= 1;
+    months = Math.max(0, months);
+    return { years: Math.floor(months / 12), months: months % 12, total: months / 12 };
+  }
+  function elapsedYears(start, end) { return Math.max(0, (end.getTime() - start.getTime()) / 31556952000); }
   function cssVar(name, fallback) {
     var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return value || fallback;
   }
-  function plot(id, traces, layout) {
+
+  function plot(id, traces, customLayout) {
     var node = byId(id);
     if (!node || !window.Plotly) return;
     var textColor = cssVar("--text", "#f5f2ed");
-    var muted = cssVar("--muted", "#b9b2aa");
-    var line = cssVar("--line", "#303030");
-    var panel = cssVar("--panel", "#090909");
-    var base = {
+    var muted = cssVar("--muted", "#c5beb5");
+    var panel = cssVar("--panel", "#111214");
+    var grid = "rgba(170, 170, 170, 0.24)";
+    var baseX = { fixedrange: true, gridcolor: grid, zerolinecolor: grid, linecolor: grid, tickfont: { color: muted }, automargin: true };
+    var baseY = { fixedrange: true, rangemode: state.axisMode === "zero" ? "tozero" : "normal", gridcolor: grid, zerolinecolor: grid, linecolor: grid, tickfont: { color: muted }, automargin: true };
+    customLayout = customLayout || {};
+    var layout = Object.assign({
       autosize: true,
       paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(255,255,255,0.025)",
       font: { color: textColor, family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", size: 12 },
-      margin: { t: 22, r: 18, b: 58, l: 70 },
-      hoverlabel: { bgcolor: panel, bordercolor: line, font: { color: textColor } },
-      legend: { orientation: "h", x: 0, xanchor: "left", y: -0.22, font: { color: muted } },
-      xaxis: { fixedrange: true, gridcolor: line, zerolinecolor: line, tickfont: { color: muted }, automargin: true },
-      yaxis: { fixedrange: true, rangemode: "tozero", gridcolor: line, zerolinecolor: line, tickfont: { color: muted }, automargin: true }
-    };
-    window.Plotly.react(node, traces, Object.assign(base, layout || {}), { responsive: true, displaylogo: false, modeBarButtonsToRemove: ["select2d", "lasso2d"] });
+      margin: { t: 24, r: 20, b: 64, l: 78 },
+      hoverlabel: { bgcolor: panel, bordercolor: grid, font: { color: textColor } },
+      legend: { orientation: "h", x: 0, xanchor: "left", y: -0.22, font: { color: muted } }
+    }, customLayout);
+    layout.xaxis = Object.assign({}, baseX, customLayout.xaxis || {});
+    layout.yaxis = Object.assign({}, baseY, customLayout.yaxis || {});
+    window.Plotly.react(node, traces, layout, { responsive: true, displaylogo: false, displayModeBar: false, scrollZoom: false });
   }
-  function clear(node) { if (node) while (node.firstChild) node.removeChild(node.firstChild); }
 
+  function categoryFor(id) {
+    return paramRows("categories").find(function (row) { return row.categoria_id === id; });
+  }
   function populateCategories() {
     var select = byId("pcCategory");
-    if (!select) return;
     clear(select);
     paramRows("categories").forEach(function (row) {
       var option = document.createElement("option");
       option.value = row.categoria_id;
-      option.textContent = row.categoria_nome + (row.stato === "operativa" ? "" : " (" + row.stato + ")");
-      option.disabled = row.stato !== "operativa";
-      if (row.categoria_id === "generica_fpld") option.selected = true;
+      option.textContent = row.categoria_nome + (truthy(row.abilitata_frontend) ? "" : " - non ancora disponibile");
+      option.disabled = !truthy(row.abilitata_frontend);
+      option.selected = row.categoria_id === "generica_fpld";
       select.appendChild(option);
     });
     updateCategoryNote();
   }
-
   function updateCategoryNote() {
-    var selected = inputText("pcCategory", "generica_fpld");
-    var category = paramRows("categories").find(function (row) { return row.categoria_id === selected; });
-    var note = byId("pcCategoryNote");
+    var category = categoryFor(inputText("pcCategory", "generica_fpld"));
+    if (!category) return;
+    byId("pcCategoryNote").textContent = category.note || "";
     var tag = byId("pcCategoryTag");
-    if (note && category) note.textContent = category.note || "";
-    if (tag && category) tag.textContent = category.gestione || "FPLD";
+    if (tag) tag.textContent = category.gestione || "FPLD";
+  }
+  function fillSelect(select, values, selected) {
+    clear(select);
+    values.forEach(function (value) {
+      var option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      option.selected = Number(value) === Number(selected);
+      select.appendChild(option);
+    });
+  }
+  function populateSimpleMenus() {
+    var current = new Date().getFullYear();
+    var years = [], reverseYears = [], contributionYears = [];
+    for (var year = 1976; year <= current; year += 1) years.push(year);
+    for (var reverse = current; reverse >= 1976; reverse -= 1) reverseYears.push(reverse);
+    for (var count = 5; count <= 50; count += 1) contributionYears.push(count);
+    fillSelect(byId("pcSimpleStartYear"), years, 1996);
+    fillSelect(byId("pcSimpleContributedYears"), contributionYears, 29);
+    fillSelect(byId("pcPensionReferenceYear"), reverseYears, current);
   }
 
   function makePeriod(index, values) {
     values = values || {};
     var wrapper = document.createElement("div");
     wrapper.className = "pc-period";
-    wrapper.innerHTML =
-      '<h4>Periodo ' + (index + 1) + '</h4>' +
+    wrapper.innerHTML = '<h4>Periodo ' + (index + 1) + '</h4>' +
       '<label><span>Anno iniziale</span><input data-period-field="start" type="number" min="1976" max="2050" value="' + (values.start || "") + '"></label>' +
       '<label><span>Anno finale</span><input data-period-field="end" type="number" min="1976" max="2050" value="' + (values.end || "") + '"></label>' +
       '<label><span>RAL iniziale</span><input data-period-field="ralStart" type="number" min="0" step="500" value="' + (values.ralStart || "") + '"></label>' +
@@ -95,10 +144,8 @@
       '<label><span>Mesi annui</span><input data-period-field="months" type="number" min="0" max="12" step="0.5" value="' + (values.months || 12) + '"></label>';
     return wrapper;
   }
-
   function initPeriods() {
     var node = byId("pcPeriods");
-    if (!node) return;
     clear(node);
     node.appendChild(makePeriod(0, { start: 1996, end: 2024, ralStart: 20000, ralEnd: 38000, workShare: 100, months: 12 }));
     node.appendChild(makePeriod(1));
@@ -106,252 +153,223 @@
   }
 
   function readScenario() {
+    var birth = parseDate(inputText("pcBirthDate", "1960-01-01"));
+    var retirement = parseDate(inputText("pcRetirementDate", "2025-01-01"));
+    if (!birth || !retirement) throw new Error("Inserisci date di nascita e pensionamento valide.");
+    var age = ageParts(birth, retirement);
+    var start, end, contributed, workShare, workMonths, firstRal, finalRal, progression;
+    if (state.mode === "simple") {
+      start = inputNumber("pcSimpleStartYear", 1996);
+      end = retirement.getFullYear() - 1;
+      contributed = inputNumber("pcSimpleContributedYears", Math.max(1, end - start + 1));
+      var pattern = inputText("pcSimpleWorkPattern", "100");
+      workShare = pattern === "seasonal" ? 100 : toNumber(pattern, 100);
+      workMonths = pattern === "seasonal" ? 8 : 12;
+      firstRal = null;
+      finalRal = inputNumber("pcSimpleFinalRal", 38000);
+      progression = "media";
+    } else if (state.mode === "guided") {
+      start = inputNumber("pcStartYear", 1996);
+      end = inputNumber("pcEndYear", retirement.getFullYear() - 1);
+      contributed = inputNumber("pcContributedYears", end - start + 1);
+      workShare = inputNumber("pcWorkShare", 100);
+      workMonths = inputNumber("pcWorkMonths", 12);
+      firstRal = inputNumber("pcInitialRal", null);
+      finalRal = inputNumber("pcFinalRal", 38000);
+      progression = inputText("pcProgression", "media");
+    } else {
+      var annualYears = state.annualRows.map(function (row) { return row.anno; });
+      start = annualYears.length ? Math.min.apply(null, annualYears) : 1996;
+      end = annualYears.length ? Math.max.apply(null, annualYears) : retirement.getFullYear() - 1;
+      contributed = annualYears.length;
+      workShare = 100;
+      workMonths = 12;
+      firstRal = null;
+      finalRal = null;
+      progression = "media";
+    }
     return {
       scenario_id: "frontend",
-      anno_nascita: inputNumber("pcBirthYear", 1960),
+      data_nascita: isoDate(birth),
+      data_pensionamento: isoDate(retirement),
+      anno_nascita: birth.getFullYear(),
       sesso: inputText("pcSex", "T"),
       categoria_id: inputText("pcCategory", "generica_fpld"),
-      anno_inizio: inputNumber("pcStartYear", 1996),
-      anno_fine: inputNumber("pcEndYear", 2024),
-      anno_pensione: inputNumber("pcRetirementYear", 2025),
-      eta_pensione: inputNumber("pcRetirementAge", 65),
-      mesi_eta_pensione: inputNumber("pcRetirementMonths", 0),
-      ral_iniziale: inputNumber("pcInitialRal", null),
-      ral_finale: inputNumber("pcFinalRal", null),
-      ral_anno: inputNumber("pcKnownRalYear", null),
-      ral_valore: inputNumber("pcKnownRalValue", null),
-      livello_iniziale: inputText("pcInitialLevel", "medio"),
-      livello_finale: inputText("pcFinalLevel", "medio"),
-      progressione: inputText("pcProgression", "media"),
-      anni_contribuiti: inputNumber("pcContributedYears", 29),
-      percentuale_lavoro: inputNumber("pcWorkShare", 100),
-      mesi_lavorati_annui: inputNumber("pcWorkMonths", 12),
+      anno_inizio: start,
+      anno_fine: end,
+      anno_pensione: retirement.getFullYear(),
+      eta_pensione: age.years,
+      mesi_eta_pensione: age.months,
+      ral_iniziale: firstRal,
+      ral_finale: finalRal,
+      livello_finale: "medio",
+      progressione: progression,
+      anni_contribuiti: contributed,
+      percentuale_lavoro: workShare,
+      mesi_lavorati_annui: workMonths,
       pensione_lorda_mensile_effettiva: inputNumber("pcMonthlyPension", 2000),
       mensilita_pensione: inputNumber("pcPensionMonths", 13),
-      anno_riferimento_pensione: inputNumber("pcPensionReferenceYear", inputNumber("pcRetirementYear", 2025)),
+      anno_riferimento_pensione: inputNumber("pcPensionReferenceYear", new Date().getFullYear()),
       rivalutazione_futura_pensione: inputText("pcFutureIndexation", "nessuna"),
       tasso_inflazione_futura: inputNumber("pcFutureInflation", 2) / 100
     };
   }
-
-  function validateScenario(s) {
-    if (s.categoria_id !== "generica_fpld") throw new Error("Categoria non operativa: usa la carriera generica FPLD.");
-    if (s.anno_inizio > s.anno_fine) throw new Error("Anno inizio deve precedere anno fine.");
-    if (s.anno_fine >= s.anno_pensione) throw new Error("Anno fine deve precedere anno pensionamento.");
-    var impliedAge = s.anno_pensione - s.anno_nascita;
-    if (Math.abs(impliedAge - s.eta_pensione) > 2) throw new Error("Anno di nascita, pensionamento ed eta non sono coerenti.");
-    if (s.percentuale_lavoro <= 0 || s.percentuale_lavoro > 100) throw new Error("Quota lavoro deve essere tra 1 e 100.");
-    if (s.mesi_lavorati_annui < 0 || s.mesi_lavorati_annui > 12) throw new Error("Mesi annui deve essere tra 0 e 12.");
+  function validateScenario(scenario) {
+    var category = categoryFor(scenario.categoria_id);
+    if (!category || !truthy(category.abilitata_frontend) || category.profilo_aliquota_id !== "fpld") throw new Error("La categoria scelta non ha ancora una serie storica utilizzabile.");
+    if (scenario.anno_inizio > scenario.anno_fine) throw new Error("L'inizio della carriera deve precedere la fine.");
+    if (scenario.anno_fine >= scenario.anno_pensione) throw new Error("La carriera deve terminare prima del pensionamento.");
+    if (scenario.eta_pensione < 40 || scenario.eta_pensione > 80) throw new Error("Controlla le date: l'eta al pensionamento non e' plausibile.");
+    if (scenario.percentuale_lavoro <= 0 || scenario.percentuale_lavoro > 100) throw new Error("La quota di lavoro deve essere tra 1 e 100.");
   }
-
   function rateForYear(year) {
     var table = paramRows("annual");
     var exact = table.find(function (row) { return toNumber(row.anno) === year; });
     if (exact) return exact;
-    var before = table.filter(function (row) { return toNumber(row.anno, 0) <= year; }).sort(function (a, b) { return toNumber(b.anno) - toNumber(a.anno); })[0];
-    return before || table[table.length - 1];
+    return table.filter(function (row) { return toNumber(row.anno, 0) <= year; }).sort(function (a, b) { return toNumber(b.anno) - toNumber(a.anno); })[0] || table[table.length - 1];
   }
-
-  function coefficientFor(retirementYear, age, months) {
+  function coefficientFor(year, age, months) {
     var table = paramRows("coefficients");
-    var period = table.filter(function (row) { return toNumber(row.periodo_dal) <= retirementYear && toNumber(row.periodo_al) >= retirementYear; });
+    var period = table.filter(function (row) { return toNumber(row.periodo_dal) <= year && toNumber(row.periodo_al) >= year; });
     var nature = "osservato";
     if (!period.length) {
-      nature = "tabella_piu_vicina";
-      var latestStart = Math.max.apply(null, table.map(function (row) { return toNumber(row.periodo_dal, 0); }));
-      period = table.filter(function (row) { return toNumber(row.periodo_dal) === latestStart; });
+      nature = "tabella piu' vicina";
+      var latest = Math.max.apply(null, table.map(function (row) { return toNumber(row.periodo_dal, 0); }));
+      period = table.filter(function (row) { return toNumber(row.periodo_dal) === latest; });
     }
     var byAge = {};
     period.forEach(function (row) { byAge[toNumber(row.eta)] = toNumber(row.coefficiente); });
     var ages = Object.keys(byAge).map(Number).sort(function (a, b) { return a - b; });
-    var rawAge = age + Math.max(0, Math.min(months || 0, 11)) / 12;
-    rawAge = Math.max(ages[0], Math.min(rawAge, ages[ages.length - 1]));
-    var lower = Math.floor(rawAge);
-    var upper = Math.min(lower + 1, ages[ages.length - 1]);
-    var coeff = byAge[lower];
-    if (upper !== lower && byAge[upper] !== undefined) coeff = byAge[lower] + (byAge[upper] - byAge[lower]) * (rawAge - lower);
-    return { coefficiente: coeff, eta_usata: rawAge, natura: nature };
+    var rawAge = Math.max(ages[0], Math.min(age + Math.max(0, Math.min(months || 0, 11)) / 12, ages[ages.length - 1]));
+    var lower = Math.floor(rawAge), upper = Math.min(lower + 1, ages[ages.length - 1]);
+    var coefficient = byAge[lower];
+    if (upper !== lower && byAge[upper] !== undefined) coefficient += (byAge[upper] - byAge[lower]) * (rawAge - lower);
+    return { coefficiente: coefficient, eta_usata: rawAge, natura: nature };
   }
-
-  function salaryProfile(years, s) {
-    var growth = PROGRESSION[s.progressione] === undefined ? PROGRESSION.media : PROGRESSION[s.progressione];
-    var known = {};
-    var start = years[0], end = years[years.length - 1];
-    if (s.ral_iniziale) known[start] = s.ral_iniziale;
-    if (s.ral_finale) known[end] = s.ral_finale;
-    if (s.ral_anno && years.indexOf(s.ral_anno) >= 0 && s.ral_valore) known[s.ral_anno] = s.ral_valore;
-    var profile = {};
-    var points = Object.keys(known).map(Number).sort(function (a, b) { return a - b; });
-    if (points.length >= 2) {
+  function salaryProfile(years, scenario) {
+    var growth = PROGRESSION[scenario.progressione] === undefined ? PROGRESSION.media : PROGRESSION[scenario.progressione];
+    var start = years[0], end = years[years.length - 1], profile = {};
+    if (scenario.ral_iniziale && scenario.ral_finale) {
       years.forEach(function (year) {
-        var before = points.filter(function (p) { return p <= year; }).pop() || points[0];
-        var after = points.find(function (p) { return p >= year; }) || points[points.length - 1];
-        if (before === after) profile[year] = known[before];
-        else {
-          var localGrowth = Math.pow(known[after] / known[before], 1 / (after - before)) - 1;
-          profile[year] = known[before] * Math.pow(1 + localGrowth, year - before);
-        }
+        var local = Math.pow(scenario.ral_finale / scenario.ral_iniziale, 1 / Math.max(1, end - start)) - 1;
+        profile[year] = scenario.ral_iniziale * Math.pow(1 + local, year - start);
       });
-      return { profile: profile, nature: "stimato_calibrato_su_ral" };
+      return { profile: profile, nature: "stimato su due RAL" };
     }
-    if (points.length === 1) {
-      var refYear = points[0], refSalary = known[refYear];
-      years.forEach(function (year) { profile[year] = refSalary * Math.pow(1 + growth, year - refYear); });
-      return { profile: profile, nature: "stimato_calibrato_su_ral" };
-    }
-    var ref = LEVEL_RAL_2025[s.livello_finale] || LEVEL_RAL_2025.medio;
-    years.forEach(function (year) { profile[year] = ref / Math.pow(1 + Math.max(growth, 0.015), 2025 - year); });
-    return { profile: profile, nature: "stimato_scenario_senza_ral" };
+    var finalRal = scenario.ral_finale || 36000;
+    years.forEach(function (year) { profile[year] = finalRal / Math.pow(1 + Math.max(growth, 0.015), end - year); });
+    return { profile: profile, nature: "stimato su ultima RAL" };
   }
-
-  function buildCareer(s) {
-    validateScenario(s);
+  function buildCareer(scenario) {
+    validateScenario(scenario);
+    var category = categoryFor(scenario.categoria_id);
     var years = [];
-    for (var year = s.anno_inizio; year <= s.anno_fine; year += 1) years.push(year);
-    var salary = salaryProfile(years, s);
-    var possibleYears = years.length;
-    var contributedYears = Math.min(s.anni_contribuiti || possibleYears, possibleYears);
-    var monthsFromContributed = possibleYears ? 12 * contributedYears / possibleYears : 0;
-    var months = Math.min(s.mesi_lavorati_annui || 12, monthsFromContributed || 12);
-    var workShare = (s.percentuale_lavoro || 100) / 100;
+    for (var year = scenario.anno_inizio; year <= scenario.anno_fine; year += 1) years.push(year);
+    var salary = salaryProfile(years, scenario);
+    var monthsFromYears = years.length ? 12 * Math.min(scenario.anni_contribuiti || years.length, years.length) / years.length : 0;
+    var months = Math.min(scenario.mesi_lavorati_annui || 12, monthsFromYears || 12);
+    var workShare = (scenario.percentuale_lavoro || 100) / 100;
     var accrued = 0;
     return years.map(function (year, index) {
       var rate = rateForYear(year);
       var gross = Math.max(salary.profile[year], 0);
       var taxable = gross * workShare * months / 12;
       var financing = toNumber(rate.aliquota_finanziamento, 0.327);
-      var computo = toNumber(rate.aliquota_computo, 0.33);
-      var cap = toNumber(rate.tasso_capitalizzazione, 0);
+      var computation = toNumber(rate.aliquota_computo, 0.33);
+      var capitalization = toNumber(rate.tasso_capitalizzazione, 0);
       var financial = taxable * financing;
-      var credit = taxable * computo;
-      accrued = accrued * (1 + cap) + credit;
-      return {
-        scenario_id: "frontend",
-        anno: year,
-        categoria: "generica_fpld",
-        gestione: "FPLD lavoratori dipendenti",
-        retribuzione_stimata: gross,
-        retribuzione_inserita: salary.nature === "stimato_calibrato_su_ral" ? gross : null,
-        mesi_lavorati: months,
-        percentuale_part_time: workShare * 100,
-        imponibile_previdenziale: taxable,
-        aliquota_finanziamento: financing,
-        aliquota_computo: computo,
-        quota_lavoratore: toNumber(rate.quota_lavoratore, 0),
-        quota_datore: toNumber(rate.quota_datore, 0),
-        contributi_finanziari: financial,
-        accredito_montante: credit,
-        tasso_rivalutazione: cap,
-        montante_fine_anno: accrued,
-        natura_dato: salary.nature,
-        indice_anno: index + 1
-      };
+      var credit = taxable * computation;
+      accrued = accrued * (1 + capitalization) + credit;
+      return { scenario_id: "frontend", anno: year, categoria: scenario.categoria_id, gestione: category.gestione, retribuzione_stimata: gross, retribuzione_inserita: null, mesi_lavorati: months, percentuale_part_time: workShare * 100, imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: salary.nature, indice_anno: index + 1 };
     });
   }
-
-  function buildAccurateCareer(s) {
+  function buildAccurateCareer(scenario) {
     if (!state.annualRows.length) generateAnnualRows();
-    var rowsIn = state.annualRows.slice().sort(function (a, b) { return a.anno - b.anno; });
-    var seen = {};
-    var accrued = 0;
-    return rowsIn.map(function (row, index) {
+    validateScenario(scenario);
+    var seen = {}, accrued = 0;
+    return state.annualRows.slice().sort(function (a, b) { return a.anno - b.anno; }).map(function (row, index) {
       if (seen[row.anno]) throw new Error("Anno duplicato nella tabella accurata: " + row.anno);
       seen[row.anno] = true;
+      var category = categoryFor(row.categoria || scenario.categoria_id) || categoryFor(scenario.categoria_id);
       var rate = rateForYear(row.anno);
       var taxable = Math.max(toNumber(row.imponibile_previdenziale, 0), 0);
-      var financing = toNumber(rate.aliquota_finanziamento, 0.327);
-      var computo = toNumber(rate.aliquota_computo, 0.33);
-      var cap = toNumber(rate.tasso_capitalizzazione, 0);
+      var financing = toNumber(rate.aliquota_finanziamento, 0.327), computation = toNumber(rate.aliquota_computo, 0.33), capitalization = toNumber(rate.tasso_capitalizzazione, 0);
       var financial = row.contributi !== null && row.contributi !== undefined ? toNumber(row.contributi, 0) : taxable * financing;
-      var credit = taxable * computo + toNumber(row.contributi_figurativi, 0);
-      accrued = accrued * (1 + cap) + credit;
-      return {
-        scenario_id: "frontend",
-        anno: row.anno,
-        categoria: row.categoria || "generica_fpld",
-        gestione: row.gestione || "FPLD lavoratori dipendenti",
-        retribuzione_stimata: taxable,
-        retribuzione_inserita: taxable,
-        mesi_lavorati: toNumber(row.mesi_lavorati, 12),
-        percentuale_part_time: toNumber(row.percentuale_part_time, 100),
-        imponibile_previdenziale: taxable,
-        aliquota_finanziamento: financing,
-        aliquota_computo: computo,
-        quota_lavoratore: toNumber(rate.quota_lavoratore, 0),
-        quota_datore: toNumber(rate.quota_datore, 0),
-        contributi_finanziari: financial,
-        accredito_montante: credit,
-        tasso_rivalutazione: cap,
-        montante_fine_anno: accrued,
-        natura_dato: "inserito_utente",
-        indice_anno: index + 1
-      };
+      var credit = taxable * computation + toNumber(row.contributi_figurativi, 0);
+      accrued = accrued * (1 + capitalization) + credit;
+      return { scenario_id: "frontend", anno: row.anno, categoria: category.categoria_id, gestione: category.gestione, retribuzione_stimata: taxable, retribuzione_inserita: taxable, mesi_lavorati: toNumber(row.mesi_lavorati, 12), percentuale_part_time: toNumber(row.percentuale_part_time, 100), imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: "inserito dall'utente", indice_anno: index + 1 };
     });
   }
 
   function sexLabel(value) { return value === "M" ? "Maschi" : value === "F" ? "Femmine" : "Totale"; }
-  function survival(s, startAge, horizon) {
-    var table = paramRows("mortality").filter(function (row) { return row.sesso === sexLabel(s.sesso); });
-    if (!table.length) table = paramRows("mortality").filter(function (row) { return row.sesso === "Totale"; });
-    var base = table.find(function (row) { return toNumber(row.eta) === startAge; });
-    var target = table.find(function (row) { return toNumber(row.eta) === Math.min(startAge + horizon, 119); });
+  function mortalityRows(scenario) {
+    var table = paramRows("mortality").filter(function (row) { return row.sesso === sexLabel(scenario.sesso); });
+    return table.length ? table : paramRows("mortality").filter(function (row) { return row.sesso === "Totale"; });
+  }
+  function survival(scenario, age, horizon) {
+    var table = mortalityRows(scenario);
+    var base = table.find(function (row) { return toNumber(row.eta) === Math.floor(age); });
+    var target = table.find(function (row) { return toNumber(row.eta) === Math.min(Math.floor(age + horizon), 110); });
     var baseSurvivors = base ? toNumber(base.sopravviventi, 100000) : 100000;
     return target ? Math.max(0, Math.min(1, toNumber(target.sopravviventi, 0) / baseSurvivors)) : 0;
   }
-
-  function effectiveAnnualPension(s) {
-    var annual = (s.pensione_lorda_mensile_effettiva || 0) * (s.mensilita_pensione || 13);
-    if (s.anno_riferimento_pensione > s.anno_pensione) annual = annual / Math.pow(1.02, s.anno_riferimento_pensione - s.anno_pensione);
+  function lifeExpectancy(scenario, retirementAge) {
+    var row = mortalityRows(scenario).find(function (item) { return toNumber(item.eta) === Math.floor(retirementAge); });
+    var observed = row ? toNumber(row.speranza_vita, null) : null;
+    if (observed !== null) return observed;
+    var sum = 0;
+    for (var horizon = 1; horizon <= 55; horizon += 1) sum += survival(scenario, retirementAge, horizon);
+    return sum;
+  }
+  function effectiveAnnualPension(scenario) {
+    var annual = (scenario.pensione_lorda_mensile_effettiva || 0) * (scenario.mensilita_pensione || 13);
+    if (scenario.anno_riferimento_pensione > scenario.anno_pensione) annual /= Math.pow(1.02, scenario.anno_riferimento_pensione - scenario.anno_pensione);
     return annual;
   }
-
+  function calculateTimeline(scenario, accrued, actualAnnual) {
+    var birth = parseDate(scenario.data_nascita), retirement = parseDate(scenario.data_pensionamento), today = new Date();
+    var retirementAge = ageParts(birth, retirement).total;
+    var elapsed = retirement <= today ? elapsedYears(retirement, today) : 0;
+    var elapsedMonths = retirement <= today ? Math.max(0, Math.floor(elapsed * 12)) : 0;
+    var remainingLife = lifeExpectancy(scenario, retirementAge);
+    var expectedMonths = Math.max(1, Math.round(remainingLife * 12));
+    var futureRate = scenario.rivalutazione_futura_pensione === "inflazione_costante" ? scenario.tasso_inflazione_futura : 0;
+    var cumulative = 0, received = 0, atExpected = 0, exhaustionMonth = null, points = [{ month: 0, age: retirementAge, cumulative: 0 }];
+    for (var month = 1; month <= 960; month += 1) {
+      var annualPayment;
+      if (month <= elapsedMonths) annualPayment = actualAnnual * Math.pow(1.02, month / 12);
+      else annualPayment = actualAnnual * Math.pow(1.02, elapsedMonths / 12) * Math.pow(1 + futureRate, (month - elapsedMonths) / 12);
+      cumulative += annualPayment / 12;
+      if (month === elapsedMonths) received = cumulative;
+      if (month === expectedMonths) atExpected = cumulative;
+      if (exhaustionMonth === null && cumulative >= accrued) exhaustionMonth = month;
+      if (month % 3 === 0 || month === elapsedMonths || month === expectedMonths || month === exhaustionMonth) points.push({ month: month, age: retirementAge + month / 12, cumulative: cumulative });
+    }
+    if (!elapsedMonths) received = 0;
+    var exhaustionDate = exhaustionMonth === null ? null : addMonths(retirement, exhaustionMonth);
+    return { retirementAge: retirementAge, yearsRetired: elapsed, elapsedMonths: elapsedMonths, lifeRemaining: remainingLife, expectedAge: retirementAge + remainingLife, expectedMonths: expectedMonths, received: received, remainingToday: accrued - received, cumulativeAtExpected: atExpected, balanceAtExpected: accrued - atExpected, exhaustionMonth: exhaustionMonth, exhaustionAge: exhaustionMonth === null ? null : retirementAge + exhaustionMonth / 12, exhaustionDate: exhaustionDate, points: points };
+  }
   function classifyRegime(career) {
     var before = career.filter(function (row) { return row.anno < 1996; }).length;
-    if (!before) return "contributivo";
-    if (before >= 18) return "prevalentemente retributivo";
-    return "misto";
+    return !before ? "contributivo" : before >= 18 ? "prevalentemente retributivo" : "misto";
   }
-
-  function reliability(career, s) {
-    if (career.some(function (row) { return row.natura_dato === "inserito_utente"; })) return { level: "alta", note: "Imponibili annuali inseriti o caricati. Rimangono i limiti dei parametri normativi e della pensione effettiva inserita." };
-    if (s.ral_iniziale || s.ral_finale || s.ral_valore) return { level: "media", note: "Aggiungere imponibili annuali dall'estratto contributivo migliorerebbe la precisione." };
-    return { level: "bassa", note: "Inserire almeno una RAL reale o caricare un CSV annuale migliorerebbe molto la stima." };
+  function reliability() {
+    if (state.mode === "accurate") return { level: "alta", note: "Gli imponibili sono inseriti anno per anno; restano le approssimazioni dei parametri storici e della pensione indicata." };
+    if (state.mode === "guided") return { level: "media", note: "La carriera usa valori medi. Gli imponibili dell'estratto contributivo renderebbero la stima piu' precisa." };
+    return { level: "bassa", note: "La carriera e' ricostruita con pochi dati e va letta come ordine di grandezza." };
   }
-
-  function calculateMetrics(career, s) {
+  function calculateMetrics(career, scenario) {
     var last = career[career.length - 1] || {};
-    var accrued = toNumber(last.montante_fine_anno, 0);
-    var coeff = coefficientFor(s.anno_pensione, s.eta_pensione, s.mesi_eta_pensione);
-    var contributive = accrued * coeff.coefficiente;
-    var actual = effectiveAnnualPension(s);
-    var futureRate = s.rivalutazione_futura_pensione === "inflazione_costante" ? s.tasso_inflazione_futura : 0;
-    var expected = 0, cumulative = 0, breakEven = null;
-    for (var h = 0; h <= 55; h += 1) {
-      var payment = actual * Math.pow(1 + futureRate, h);
-      expected += payment * survival(s, s.eta_pensione, h);
-      cumulative += payment;
-      if (breakEven === null && cumulative >= accrued) breakEven = s.eta_pensione + h;
-    }
-    var rel = reliability(career, s);
-    return {
-      anni_contribuzione: career.length,
-      retribuzione_finale: toNumber(last.retribuzione_stimata, 0),
-      contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0),
-      accredito_totale_montante: career.reduce(function (sum, row) { return sum + toNumber(row.accredito_montante, 0); }, 0),
-      montante_contributivo: accrued,
-      coefficiente_trasformazione: coeff.coefficiente,
-      pensione_contributiva_annua_equivalente: contributive,
-      pensione_effettiva_annua_lorda: actual,
-      differenza_annua_lorda: actual - contributive,
-      differenza_percentuale_su_contributiva: contributive ? (actual - contributive) / contributive : 0,
-      valore_atteso_prestazioni_lorde: expected,
-      eta_pareggio: breakEven,
-      rapporto_prestazioni_attese_montante: accrued ? expected / accrued : null,
-      regime_indicativo: classifyRegime(career),
-      livello_affidabilita: rel.level,
-      input_migliorativi: rel.note,
-      natura_coefficiente: coeff.natura
-    };
+    var accrued = toNumber(last.montante_fine_anno, 0), coefficient = coefficientFor(scenario.anno_pensione, scenario.eta_pensione, scenario.mesi_eta_pensione);
+    var contributive = accrued * coefficient.coefficiente, actualAtRetirement = effectiveAnnualPension(scenario);
+    var referenceFactor = Math.pow(1.02, Math.max(0, scenario.anno_riferimento_pensione - scenario.anno_pensione));
+    var contributiveAtReference = contributive * referenceFactor;
+    var actualAtReference = scenario.pensione_lorda_mensile_effettiva * scenario.mensilita_pensione;
+    var timeline = calculateTimeline(scenario, accrued, actualAtRetirement), expected = 0;
+    var futureRate = scenario.rivalutazione_futura_pensione === "inflazione_costante" ? scenario.tasso_inflazione_futura : 0;
+    for (var horizon = 0; horizon <= 55; horizon += 1) expected += actualAtRetirement * Math.pow(1 + futureRate, horizon) * survival(scenario, timeline.retirementAge, horizon);
+    var rel = reliability(), months = scenario.mensilita_pensione || 13;
+    return { anni_contribuzione: career.reduce(function (sum, row) { return sum + toNumber(row.mesi_lavorati, 0) / 12; }, 0), contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0), montante_contributivo: accrued, coefficiente_trasformazione: coefficient.coefficiente, anno_riferimento_confronto: scenario.anno_riferimento_pensione, pensione_contributiva_annua_equivalente: contributive, pensione_effettiva_annua_lorda: actualAtRetirement, pensione_contributiva_annua_equivalente_anno_riferimento: contributiveAtReference, pensione_effettiva_annua_lorda_anno_riferimento: actualAtReference, pensione_contributiva_mensile_equivalente: contributiveAtReference / months, pensione_effettiva_mensile_lorda_anno_riferimento: actualAtReference / months, differenza_mensile_lorda: (actualAtReference - contributiveAtReference) / months, differenza_annua_lorda: actualAtReference - contributiveAtReference, differenza_percentuale_su_contributiva: contributiveAtReference ? (actualAtReference - contributiveAtReference) / contributiveAtReference : 0, valore_atteso_prestazioni_lorde: expected, eta_pareggio: timeline.exhaustionAge, regime_indicativo: classifyRegime(career), livello_affidabilita: rel.level, input_migliorativi: rel.note, natura_coefficiente: coefficient.natura, timeline: timeline };
   }
 
   function makeKpi(label, value, note) {
@@ -360,277 +378,175 @@
     node.innerHTML = "<span>" + label + "</span><strong>" + value + "</strong><small>" + (note || "") + "</small>";
     return node;
   }
-
-  function renderKpis(result) {
-    var node = byId("pcKpis");
+  function renderResults(result, scenario) {
+    var node = byId("pcKpis"), timeline = result.timeline;
     clear(node);
+    var exhaustionLabel = timeline.exhaustionDate ? formatDate(timeline.exhaustionDate) : "non raggiunto";
     [
-      ["Anni contribuzione", fmt(result.anni_contribuzione), result.regime_indicativo],
-      ["Montante contributivo", euro(result.montante_contributivo), "rivalutato a fine carriera"],
-      ["Pensione contributiva", euro(result.pensione_contributiva_annua_equivalente), "lordo annuo equivalente"],
-      ["Pensione effettiva", euro(result.pensione_effettiva_annua_lorda), "lordo annuo inserito"],
-      ["Differenza annua", euro(result.differenza_annua_lorda), pct(result.differenza_percentuale_su_contributiva) + " sulla contributiva"],
-      ["Valore atteso", euro(result.valore_atteso_prestazioni_lorde), "prestazioni lorde ponderate per sopravvivenza"],
-      ["Eta pareggio", result.eta_pareggio ? fmt(result.eta_pareggio) : "non raggiunta", "pensioni cumulate non scontate"],
+      ["Montante contributivo", euro(result.montante_contributivo), "accrediti rivalutati a fine carriera"],
+      ["Pensione effettiva", euro(result.pensione_effettiva_mensile_lorda_anno_riferimento), "lordo per rata nel " + result.anno_riferimento_confronto],
+      ["Pensione contributiva", euro(result.pensione_contributiva_mensile_equivalente), "lordo equivalente per rata nel " + result.anno_riferimento_confronto],
+      ["Differenza per rata", euro(result.differenza_mensile_lorda), pct(result.differenza_percentuale_su_contributiva) + " rispetto alla contributiva"],
+      ["Tempo in pensione", timeline.yearsRetired ? fmt(timeline.yearsRetired, 1) + " anni" : "non ancora", "calcolato dalla data inserita"],
+      ["Gia' ricevuto", euro(timeline.received), "stima lorda cumulata fino a oggi"],
+      ["Montante virtuale residuo", euro(timeline.remainingToday), timeline.remainingToday >= 0 ? "soglia ancora da raggiungere" : "soglia gia' superata"],
+      ["Raggiungimento montante", exhaustionLabel, timeline.exhaustionAge ? "circa " + fmt(timeline.exhaustionAge, 1) + " anni di eta" : "entro l'orizzonte simulato"],
+      ["Eta attesa media", fmt(timeline.expectedAge, 1) + " anni", "tavola ISTAT per sesso ed eta"],
       ["Affidabilita", result.livello_affidabilita, result.input_migliorativi]
     ].forEach(function (item) { node.appendChild(makeKpi(item[0], item[1], item[2])); });
-    var rel = byId("pcReliability");
-    if (rel) rel.innerHTML = "<strong>Affidabilita " + result.livello_affidabilita + ".</strong> " + result.input_migliorativi + " Il tool non ricalcola la pensione liquidata dall'INPS: confronta il valore inserito con un controfattuale contributivo.";
+
+    var direction = result.differenza_mensile_lorda >= 0 ? "superiore" : "inferiore";
+    var narrative = "La pensione inserita e' " + direction + " di " + euro(Math.abs(result.differenza_mensile_lorda)) + " per rata rispetto alla pensione interamente contributiva stimata. ";
+    narrative += timeline.exhaustionDate ? "Le prestazioni lorde cumulate raggiungono il montante virtuale intorno a " + formatDate(timeline.exhaustionDate) + ". " : "Nell'orizzonte simulato le prestazioni non raggiungono il montante virtuale. ";
+    narrative += "All'eta attesa media di " + fmt(timeline.expectedAge, 1) + " anni, il totale lordo cumulato sarebbe circa " + euro(timeline.cumulativeAtExpected) + ".";
+    byId("pcResultNarrative").textContent = narrative;
+    byId("pcReliability").innerHTML = "<strong>Affidabilita " + result.livello_affidabilita + ".</strong> " + result.input_migliorativi + " Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.";
+    byId("pcPensionChartNote").textContent = "Nel " + result.anno_riferimento_confronto + " la rata effettiva inserita e' " + euro(result.pensione_effettiva_mensile_lorda_anno_riferimento) + "; quella contributiva equivalente, rivalutata in modo omogeneo, e' " + euro(result.pensione_contributiva_mensile_equivalente) + ". La differenza e' " + euro(result.differenza_mensile_lorda) + " per rata.";
+    byId("pcCumulativeChartNote").textContent = "La soglia del montante viene " + (timeline.exhaustionDate ? "raggiunta intorno a " + formatDate(timeline.exhaustionDate) : "non raggiunta nell'orizzonte simulato") + ". La linea dopo oggi e' una proiezione fino all'eta attesa media; non descrive un conto che viene materialmente esaurito.";
   }
 
-  function renderCharts(career, result, s) {
+  function axis(title) { return { title: title, rangemode: state.axisMode === "zero" ? "tozero" : "normal" }; }
+  function renderCharts(career, result, scenario) {
     var years = career.map(function (row) { return row.anno; });
     plot("pcSalaryChart", [
-      { type: "scatter", mode: "lines", name: "Retribuzione stimata/inserita", x: years, y: career.map(function (r) { return r.retribuzione_stimata; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Imponibile previdenziale", x: years, y: career.map(function (r) { return r.imponibile_previdenziale; }), line: { color: COLORS[2], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }
-    ], { yaxis: { title: "euro annui", rangemode: "tozero" } });
-
+      { type: "scatter", mode: "lines", name: "Retribuzione lorda", x: years, y: career.map(function (row) { return row.retribuzione_stimata; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Imponibile previdenziale", x: years, y: career.map(function (row) { return row.imponibile_previdenziale; }), line: { color: COLORS[2], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }
+    ], { yaxis: axis("euro annui") });
     plot("pcRatesChart", [
-      { type: "scatter", mode: "lines", name: "Aliquota finanziamento", x: years, y: career.map(function (r) { return r.aliquota_finanziamento * 100; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Aliquota computo", x: years, y: career.map(function (r) { return r.aliquota_computo * 100; }), line: { color: COLORS[1], width: 3 }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Capitalizzazione", x: years, y: career.map(function (r) { return r.tasso_rivalutazione * 100; }), line: { color: COLORS[3], width: 2, dash: "dot" }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" }
-    ], { yaxis: { title: "%", rangemode: "tozero" } });
-
+      { type: "scatter", mode: "lines", name: "Finanziamento", x: years, y: career.map(function (row) { return row.aliquota_finanziamento * 100; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Computo", x: years, y: career.map(function (row) { return row.aliquota_computo * 100; }), line: { color: COLORS[1], width: 3 }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Capitalizzazione", x: years, y: career.map(function (row) { return row.tasso_rivalutazione * 100; }), line: { color: COLORS[3], width: 2, dash: "dot" }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" }
+    ], { yaxis: axis("percentuale") });
     plot("pcCapitalChart", [
-      { type: "bar", name: "Contributi finanziari", x: years, y: career.map(function (r) { return r.contributi_finanziari; }), marker: { color: COLORS[1] }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Montante", x: years, y: career.map(function (r) { return r.montante_fine_anno; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }
-    ], { yaxis: { title: "euro", rangemode: "tozero" } });
+      { type: "bar", name: "Contributi finanziari", x: years, y: career.map(function (row) { return row.contributi_finanziari; }), marker: { color: COLORS[1] }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Montante rivalutato", x: years, y: career.map(function (row) { return row.montante_fine_anno; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }
+    ], { yaxis: axis("euro") });
+    plot("pcPensionChart", [{ type: "bar", x: ["Effettiva", "Contributiva", "Differenza"], y: [result.pensione_effettiva_mensile_lorda_anno_riferimento, result.pensione_contributiva_mensile_equivalente, result.differenza_mensile_lorda], marker: { color: [COLORS[0], COLORS[2], result.differenza_mensile_lorda >= 0 ? COLORS[3] : COLORS[4]] }, hovertemplate: "%{x}<br>%{y:,.0f} euro per rata<extra></extra>" }], { yaxis: axis("euro lordi per rata"), showlegend: false });
 
-    plot("pcPensionChart", [{
-      type: "bar",
-      x: ["Contributiva equivalente", "Effettiva inserita", "Differenza"],
-      y: [result.pensione_contributiva_annua_equivalente, result.pensione_effettiva_annua_lorda, result.differenza_annua_lorda],
-      marker: { color: [COLORS[2], COLORS[0], result.differenza_annua_lorda >= 0 ? COLORS[3] : COLORS[4]] },
-      hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>"
-    }], { yaxis: { title: "euro annui lordi", rangemode: "tozero" }, showlegend: false });
-
-    var ages = [], cum = [], threshold = [];
-    var total = 0;
-    for (var h = 0; h <= 40; h += 1) {
-      ages.push(s.eta_pensione + h);
-      total += result.pensione_effettiva_annua_lorda;
-      cum.push(total);
-      threshold.push(result.montante_contributivo);
-    }
+    var timeline = result.timeline;
+    var horizonAge = Math.max(timeline.expectedAge + 2, timeline.exhaustionAge ? timeline.exhaustionAge + 2 : timeline.expectedAge + 2);
+    var visible = timeline.points.filter(function (point) { return point.age <= horizonAge; });
+    var past = visible.filter(function (point) { return point.month <= timeline.elapsedMonths; });
+    var future = visible.filter(function (point) { return point.month >= timeline.elapsedMonths; });
+    if (past.length && future.length && past[past.length - 1].month !== future[0].month) future.unshift(past[past.length - 1]);
     plot("pcCumulativeChart", [
-      { type: "scatter", mode: "lines", name: "Pensioni cumulate", x: ages, y: cum, line: { color: COLORS[0], width: 3 }, hovertemplate: "Eta %{x}<br>%{y:,.0f} euro<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Montante rivalutato", x: ages, y: threshold, line: { color: COLORS[2], width: 2, dash: "dash" }, hovertemplate: "Eta %{x}<br>%{y:,.0f} euro<extra></extra>" }
-    ], { xaxis: { title: "eta", fixedrange: true }, yaxis: { title: "euro cumulati", rangemode: "tozero" } });
-
-    renderScenarioChart(s);
+      { type: "scatter", mode: "lines", name: "Ricevuto fino a oggi", x: past.map(function (point) { return point.age; }), y: past.map(function (point) { return point.cumulative; }), line: { color: COLORS[0], width: 4 }, hovertemplate: "Eta %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Proiezione", x: future.map(function (point) { return point.age; }), y: future.map(function (point) { return point.cumulative; }), line: { color: COLORS[0], width: 3, dash: "dash" }, hovertemplate: "Eta %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Montante virtuale", x: visible.map(function (point) { return point.age; }), y: visible.map(function () { return result.montante_contributivo; }), line: { color: COLORS[2], width: 2, dash: "dot" }, hovertemplate: "%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "markers", name: "Eta attesa media", x: [timeline.expectedAge], y: [timeline.cumulativeAtExpected], marker: { color: COLORS[3], size: 10, symbol: "diamond" }, hovertemplate: "Eta attesa %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" }
+    ], { xaxis: { title: "eta", range: [timeline.retirementAge, horizonAge] }, yaxis: axis("pensioni lorde cumulate") });
+    renderScenarioChart(scenario);
     renderCompositionChart(career);
   }
-
-  function renderScenarioChart(s) {
-    var factors = state.mode === "simple" ? [
-      ["Basso", 0.85],
-      ["Centrale", 1],
-      ["Alto", 1.15]
-    ] : [];
-    if (!factors.length) return;
+  function renderScenarioChart(scenario) {
+    if (state.mode !== "simple") return;
     var labels = [], montantes = [], pensions = [];
-    factors.forEach(function (item) {
-      var copy = Object.assign({}, s);
-      if (copy.ral_finale) copy.ral_finale *= item[1];
-      if (copy.ral_iniziale) copy.ral_iniziale *= item[1];
-      if (copy.ral_valore) copy.ral_valore *= item[1];
-      var c = buildCareer(copy);
-      var r = calculateMetrics(c, copy);
-      labels.push(item[0]);
-      montantes.push(r.montante_contributivo);
-      pensions.push(r.pensione_contributiva_annua_equivalente);
+    [["RAL -15%", 0.85], ["Centrale", 1], ["RAL +15%", 1.15]].forEach(function (item) {
+      var copy = Object.assign({}, scenario, { ral_finale: scenario.ral_finale * item[1] });
+      var career = buildCareer(copy), result = calculateMetrics(career, copy);
+      labels.push(item[0]); montantes.push(result.montante_contributivo); pensions.push(result.pensione_contributiva_annua_equivalente);
     });
-    plot("pcScenarioChart", [
-      { type: "bar", name: "Montante", x: labels, y: montantes, marker: { color: COLORS[1] } },
-      { type: "bar", name: "Pensione contributiva annua", x: labels, y: pensions, marker: { color: COLORS[0] } }
-    ], { barmode: "group", yaxis: { title: "euro", rangemode: "tozero" } });
+    plot("pcScenarioChart", [{ type: "bar", name: "Montante", x: labels, y: montantes, marker: { color: COLORS[1] } }, { type: "bar", name: "Pensione contributiva annua", x: labels, y: pensions, marker: { color: COLORS[0] } }], { barmode: "group", yaxis: axis("euro") });
   }
-
   function renderCompositionChart(career) {
     if (state.mode !== "accurate") return;
-    var byGestione = {};
-    career.forEach(function (row) { byGestione[row.gestione] = (byGestione[row.gestione] || 0) + row.imponibile_previdenziale; });
-    plot("pcCompositionChart", [{
-      type: "bar",
-      x: Object.keys(byGestione),
-      y: Object.keys(byGestione).map(function (key) { return byGestione[key]; }),
-      marker: { color: COLORS[2] },
-      hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>"
-    }], { yaxis: { title: "imponibile complessivo", rangemode: "tozero" }, showlegend: false });
+    var grouped = {};
+    career.forEach(function (row) { var category = categoryFor(row.categoria); var label = category ? category.categoria_nome : row.categoria; grouped[label] = (grouped[label] || 0) + row.imponibile_previdenziale; });
+    plot("pcCompositionChart", [{ type: "bar", x: Object.keys(grouped), y: Object.keys(grouped).map(function (key) { return grouped[key]; }), marker: { color: COLORS[2] }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }], { yaxis: axis("imponibile complessivo"), showlegend: false });
   }
 
   function calculate() {
     try {
-      var s = readScenario();
-      var career = state.mode === "accurate" ? buildAccurateCareer(s) : buildCareer(s);
-      var result = calculateMetrics(career, s);
-      state.career = career;
-      state.result = result;
-      renderKpis(result);
-      renderCharts(career, result, s);
-      setStatus("Calcolo aggiornato. Tutti i valori sono lordi e derivano dai parametri disponibili.", false);
-    } catch (error) {
-      setStatus(error.message || "Errore nel calcolo", true);
-    }
+      var scenario = readScenario();
+      var career = state.mode === "accurate" ? buildAccurateCareer(scenario) : buildCareer(scenario);
+      var result = calculateMetrics(career, scenario);
+      state.scenario = scenario; state.career = career; state.result = result;
+      renderResults(result, scenario); renderCharts(career, result, scenario);
+      setStatus("Calcolo aggiornato in modalita " + (state.mode === "simple" ? "semplificata" : state.mode === "guided" ? "intermedia" : "accurata") + ". Tutti i valori sono lordi.", false);
+    } catch (error) { setStatus(error.message || "Errore nel calcolo", true); }
   }
-
   function generateAnnualRows() {
-    var periods = Array.from(document.querySelectorAll(".pc-period"));
-    var rowsOut = [];
-    periods.forEach(function (period) {
+    var output = [], categoryId = inputText("pcCategory", "generica_fpld");
+    Array.from(document.querySelectorAll(".pc-period")).forEach(function (period) {
       function field(name) { var input = period.querySelector('[data-period-field="' + name + '"]'); return input ? toNumber(input.value, null) : null; }
       var start = field("start"), end = field("end");
       if (!start || !end) return;
-      var ralStart = field("ralStart") || field("ralEnd") || 0;
-      var ralEnd = field("ralEnd") || ralStart;
-      var months = field("months") || 12;
-      var workShare = field("workShare") || 100;
+      var ralStart = field("ralStart") || field("ralEnd") || 0, ralEnd = field("ralEnd") || ralStart, months = field("months") || 12, workShare = field("workShare") || 100;
       for (var year = start; year <= end; year += 1) {
-        var share = start === end ? 0 : (year - start) / (end - start);
-        var salary = ralStart + (ralEnd - ralStart) * share;
-        rowsOut.push({
-          anno: year,
-          gestione: "FPLD lavoratori dipendenti",
-          categoria: "generica_fpld",
-          imponibile_previdenziale: salary * workShare / 100 * months / 12,
-          mesi_lavorati: months,
-          percentuale_part_time: workShare,
-          contributi: null,
-          contributi_figurativi: 0
-        });
+        var share = start === end ? 0 : (year - start) / (end - start), salary = ralStart + (ralEnd - ralStart) * share;
+        output.push({ anno: year, categoria: categoryId, imponibile_previdenziale: salary * workShare / 100 * months / 12, mesi_lavorati: months, percentuale_part_time: workShare, contributi: null, contributi_figurativi: 0 });
       }
     });
-    state.annualRows = rowsOut.sort(function (a, b) { return a.anno - b.anno; });
+    state.annualRows = output.sort(function (a, b) { return a.anno - b.anno; });
     renderAnnualTable();
   }
-
   function renderAnnualTable() {
-    var tbody = byId("pcAnnualRows");
-    clear(tbody);
+    var tbody = byId("pcAnnualRows"); clear(tbody);
     state.annualRows.forEach(function (row, index) {
+      var category = categoryFor(row.categoria) || categoryFor(inputText("pcCategory", "generica_fpld"));
       var tr = document.createElement("tr");
-      tr.innerHTML =
-        "<td>" + row.anno + "</td><td>" + row.gestione + "</td>" +
+      tr.innerHTML = "<td>" + row.anno + "</td><td>" + category.categoria_nome + "</td>" +
         '<td><input data-row="' + index + '" data-field="imponibile_previdenziale" type="number" value="' + Math.round(row.imponibile_previdenziale) + '"></td>' +
         '<td><input data-row="' + index + '" data-field="mesi_lavorati" type="number" min="0" max="12" step="0.5" value="' + row.mesi_lavorati + '"></td>' +
         '<td><input data-row="' + index + '" data-field="percentuale_part_time" type="number" min="1" max="100" value="' + row.percentuale_part_time + '"></td>' +
         '<td><input data-row="' + index + '" data-field="contributi" type="number" placeholder="auto" value="' + (row.contributi || "") + '"></td>';
       tbody.appendChild(tr);
     });
-    tbody.querySelectorAll("input").forEach(function (input) {
-      input.addEventListener("input", function () {
-        var row = state.annualRows[toNumber(input.dataset.row, 0)];
-        row[input.dataset.field] = input.value === "" ? null : toNumber(input.value, 0);
-      });
-    });
+    tbody.querySelectorAll("input").forEach(function (input) { input.addEventListener("input", function () { var row = state.annualRows[toNumber(input.dataset.row, 0)]; row[input.dataset.field] = input.value === "" ? null : toNumber(input.value, 0); }); });
   }
-
   function parseCsv(text) {
     var lines = text.trim().split(/\r?\n/).filter(Boolean);
     if (lines.length < 2) return [];
-    var header = lines[0].split(/[;,]/).map(function (x) { return x.trim(); });
+    var header = lines[0].split(/[;,]/).map(function (item) { return item.trim(); });
     return lines.slice(1).map(function (line) {
-      var values = line.split(/[;,]/);
-      var obj = {};
-      header.forEach(function (key, index) { obj[key] = values[index]; });
-      var weeks = toNumber(obj.settimane_contributive, null);
-      return {
-        anno: toNumber(obj.anno),
-        gestione: obj.gestione || "FPLD lavoratori dipendenti",
-        categoria: "generica_fpld",
-        imponibile_previdenziale: toNumber(obj.imponibile_previdenziale, 0),
-        mesi_lavorati: weeks ? weeks / 52 * 12 : 12,
-        percentuale_part_time: 100,
-        contributi: toNumber(obj.contributi, null),
-        contributi_figurativi: toNumber(obj.contributi_figurativi, 0)
-      };
+      var values = line.split(/[;,]/), object = {};
+      header.forEach(function (key, index) { object[key] = values[index]; });
+      var weeks = toNumber(object.settimane_contributive, null);
+      return { anno: toNumber(object.anno), categoria: object.categoria_id || inputText("pcCategory", "generica_fpld"), imponibile_previdenziale: toNumber(object.imponibile_previdenziale, 0), mesi_lavorati: weeks ? weeks / 52 * 12 : toNumber(object.mesi_lavorati, 12), percentuale_part_time: toNumber(object.percentuale_part_time, 100), contributi: toNumber(object.contributi, null), contributi_figurativi: toNumber(object.contributi_figurativi, 0) };
     }).filter(function (row) { return row.anno; });
   }
-
   function setMode(mode) {
-    state.mode = mode;
-    document.querySelectorAll(".pc-mode-tabs button").forEach(function (button) {
-      var active = button.dataset.mode === mode;
-      button.classList.toggle("active", active);
-      button.setAttribute("aria-selected", active ? "true" : "false");
-    });
-    document.querySelectorAll(".pc-accurate-only").forEach(function (node) { node.hidden = mode !== "accurate"; });
-    document.querySelectorAll(".pc-simple-only").forEach(function (node) { node.hidden = mode !== "simple"; });
-    if (mode === "accurate" && !state.annualRows.length) generateAnnualRows();
+    state.mode = ["simple", "guided", "accurate"].indexOf(mode) >= 0 ? mode : "simple";
+    byId("pcMode").value = state.mode;
+    document.querySelectorAll(".pc-simple-only").forEach(function (node) { node.hidden = state.mode !== "simple"; });
+    document.querySelectorAll(".pc-guided-only").forEach(function (node) { node.hidden = state.mode !== "guided"; });
+    document.querySelectorAll(".pc-accurate-only").forEach(function (node) { node.hidden = state.mode !== "accurate"; });
+    document.querySelectorAll(".pc-non-simple-only").forEach(function (node) { node.hidden = state.mode === "simple"; });
+    var notes = { simple: "Stima rapida basata su inizio carriera, anni contribuiti e ultima RAL.", guided: "Stima intermedia basata su valori medi della carriera.", accurate: "Calcolo sugli imponibili previdenziali inseriti anno per anno." };
+    byId("pcModeNote").textContent = notes[state.mode];
+    if (state.mode === "accurate" && !state.annualRows.length) generateAnnualRows();
     calculate();
   }
-
   function download(filename, content, mime) {
-    var blob = new Blob([content], { type: mime || "text/plain;charset=utf-8" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    var blob = new Blob([content], { type: mime || "text/plain;charset=utf-8" }), url = URL.createObjectURL(blob), link = document.createElement("a");
+    link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
   }
-
   function exportCsv() {
-    var header = ["anno", "gestione", "retribuzione_stimata", "imponibile_previdenziale", "aliquota_finanziamento", "aliquota_computo", "contributi_finanziari", "accredito_montante", "tasso_rivalutazione", "montante_fine_anno"];
+    var header = ["anno", "categoria", "retribuzione_stimata", "imponibile_previdenziale", "aliquota_finanziamento", "aliquota_computo", "contributi_finanziari", "accredito_montante", "tasso_rivalutazione", "montante_fine_anno"];
     var lines = [header.join(",")].concat(state.career.map(function (row) { return header.map(function (key) { return row[key] === null || row[key] === undefined ? "" : row[key]; }).join(","); }));
     download("calcolatore-pensione-carriera.csv", lines.join("\n"), "text/csv;charset=utf-8");
   }
-
-  function exportJson() {
-    download("calcolatore-pensione-risultato.json", JSON.stringify({ result: state.result, career: state.career }, null, 2), "application/json;charset=utf-8");
-  }
-
+  function exportJson() { download("calcolatore-pensione-risultato.json", JSON.stringify({ result: state.result, career: state.career }, null, 2), "application/json;charset=utf-8"); }
   function bindEvents() {
-    byId("pcCategory").addEventListener("change", function () { updateCategoryNote(); calculate(); });
+    byId("pcMode").addEventListener("change", function () { setMode(byId("pcMode").value); });
+    byId("pcCategory").addEventListener("change", function () { updateCategoryNote(); if (state.mode === "accurate") { state.annualRows.forEach(function (row) { row.categoria = byId("pcCategory").value; }); renderAnnualTable(); } calculate(); });
+    byId("pcAxisMode").addEventListener("change", function () { state.axisMode = byId("pcAxisMode").value; if (state.result) renderCharts(state.career, state.result, state.scenario); });
     byId("pcCalculate").addEventListener("click", calculate);
     byId("pcReset").addEventListener("click", function () { location.reload(); });
-    byId("pcModeSimple").addEventListener("click", function () { setMode("simple"); });
-    byId("pcModeAccurate").addEventListener("click", function () { setMode("accurate"); });
     byId("pcGenerateAnnualRows").addEventListener("click", function () { generateAnnualRows(); calculate(); });
     byId("pcExportCsv").addEventListener("click", exportCsv);
     byId("pcExportJson").addEventListener("click", exportJson);
-    byId("pcShareLink").addEventListener("click", function () {
-      var link = location.origin + location.pathname + "?mode=" + encodeURIComponent(state.mode);
-      if (navigator.clipboard) navigator.clipboard.writeText(link);
-      setStatus("Link copiato senza dati personali: contiene solo la modalita selezionata.", false);
-    });
-    byId("pcCsvInput").addEventListener("change", function (event) {
-      var file = event.target.files && event.target.files[0];
-      if (!file) return;
-      file.text().then(function (text) { state.annualRows = parseCsv(text); renderAnnualTable(); calculate(); });
-      event.target.value = "";
-    });
-    document.querySelectorAll("#pcCalculatorForm input, #pcCalculatorForm select").forEach(function (node) {
-      node.addEventListener("change", function () {
-        if (!node.closest(".pc-period") && !node.closest(".pc-annual-table")) calculate();
-      });
-    });
-  }
-
-  function hydrateFromExamples() {
-    var first = exampleRows("results")[0];
-    if (first) setStatus("Parametri caricati. Esempio pronto: " + first.scenario_id + ".", false);
+    byId("pcShareLink").addEventListener("click", function () { var link = location.origin + location.pathname + "?mode=" + encodeURIComponent(state.mode); if (navigator.clipboard) navigator.clipboard.writeText(link); setStatus("Link copiato senza dati personali: contiene solo la modalita selezionata.", false); });
+    byId("pcCsvInput").addEventListener("change", function (event) { var file = event.target.files && event.target.files[0]; if (!file) return; file.text().then(function (text) { state.annualRows = parseCsv(text); renderAnnualTable(); calculate(); }); event.target.value = ""; });
+    document.querySelectorAll("#pcCalculatorForm input, #pcCalculatorForm select").forEach(function (node) { node.addEventListener("change", function () { if (!node.closest(".pc-period") && !node.closest(".pc-annual-table")) calculate(); }); });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    fetch(DATA_URL, { cache: "no-store" })
-      .then(function (response) {
-        if (!response.ok) throw new Error("Impossibile caricare i parametri del calcolatore.");
-        return response.json();
-      })
-      .then(function (payload) {
-        state.payload = payload;
-        populateCategories();
-        initPeriods();
-        bindEvents();
-        hydrateFromExamples();
-        var params = new URLSearchParams(location.search);
-        setMode(params.get("mode") === "accurate" ? "accurate" : "simple");
-      })
-      .catch(function (error) {
-        setStatus(error.message || "Errore nel caricamento dati.", true);
-      });
+    fetch(DATA_URL, { cache: "no-store" }).then(function (response) { if (!response.ok) throw new Error("Impossibile caricare i parametri del calcolatore."); return response.json(); }).then(function (payload) {
+      state.payload = payload; populateCategories(); populateSimpleMenus(); initPeriods(); bindEvents();
+      var example = exampleRows("results")[0];
+      if (example) setStatus("Parametri caricati. Il calcolo avviene interamente nel browser.", false);
+      var mode = new URLSearchParams(location.search).get("mode"); setMode(["simple", "guided", "accurate"].indexOf(mode) >= 0 ? mode : "simple");
+    }).catch(function (error) { setStatus(error.message || "Errore nel caricamento dati.", true); });
   });
 }());
