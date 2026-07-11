@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260711-06">
+  <link rel="stylesheet" href="../../assets/pensioni-italia-dashboard.css?v=20260711-07">
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/dashboard.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260711-06"></script>
+  <script defer src="../../assets/pensioni-italia-dashboard.js?v=20260711-07"></script>
 </head>
 <body>
   <header class="site-header">
@@ -96,8 +96,8 @@
 
     <section class="dashboard-section" id="territorio">
       <div class="section-head"><span class="eyebrow">Territorio</span><div><h2>Mappa regionale</h2><p>Numero di pensionati, importo medio lordo della singola pensione, spesa complessiva e rapporti con popolazione residente e PIL regionale.</p></div></div>
-      <details class="chart-filter-panel pi-filter-panel" open><summary>Filtri mappa</summary><div class="filter-grid pi-filter-grid pi-filter-grid-map"><label><span>Indicatore</span><select id="piMapMetric"><option value="pensionati">Pensionati regionali</option><option value="importo_medio_pensione_mensile_regionale">Importo medio lordo della pensione</option><option value="spesa_pensionistica_regionale">Spesa complessiva lorda</option><option value="pensionati_percentuale_popolazione">Pensionati sulla popolazione</option><option value="spesa_pensionistica_percentuale_pil">Spesa sul PIL regionale</option></select></label><label><span>Anno</span><select id="piMapYear"></select></label></div></details>
-      <article class="pi-card pi-chart-block pi-section-gap"><div class="pi-card-title"><h3>Distribuzione regionale</h3><span id="piMapSubtitle">regioni</span></div><p class="pi-card-note">Gli anni disponibili cambiano per indicatore: i pensionati regionali sono continui 2012-2025; importi medi e spesa regionale usano solo anni con fonte omogenea.</p><div class="pi-chart pi-map-chart" id="piRegionalMap"></div><p class="pi-chart-credit">Fonte: Osservatori statistici INPS; popolazione e PIL regionali Eurostat. Elaborazione di Nazareno Lecis.</p></article>
+      <details class="chart-filter-panel pi-filter-panel" open><summary>Filtri mappa</summary><div class="filter-grid pi-filter-grid pi-filter-grid-map"><label><span>Indicatore</span><select id="piMapMetric"><option value="pensionati">Pensionati o pensioni regionali</option><option value="importo_medio_pensione_mensile_regionale">Importo medio lordo della pensione</option><option value="spesa_pensionistica_regionale">Spesa complessiva lorda</option><option value="pensionati_percentuale_popolazione">Quota su popolazione residente</option><option value="spesa_pensionistica_percentuale_pil">Spesa sul PIL regionale</option></select></label><label><span>Categoria</span><select id="piMapCategory"><option value="totale">Totale</option></select></label><label><span>Anno</span><select id="piMapYear"></select></label></div></details>
+      <article class="pi-card pi-chart-block pi-section-gap"><div class="pi-card-title"><h3>Distribuzione regionale</h3><span id="piMapSubtitle">regioni</span></div><p class="pi-card-note">Con categoria Totale il primo indicatore conta le persone pensionate; con IVS, vecchiaia, invalidita', superstiti, indennitarie o assistenziali conta le singole prestazioni della categoria. Gli anni disponibili cambiano per perimetro.</p><div class="pi-chart pi-map-chart" id="piRegionalMap"></div><p class="pi-chart-credit">Fonte: Osservatori statistici INPS; popolazione e PIL regionali Eurostat. Elaborazione di Nazareno Lecis.</p></article>
     </section>
 
     <section class="dashboard-section" id="fonti">

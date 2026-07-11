@@ -1,16 +1,27 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-06";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-07";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
+  var MAP_CATEGORY_LABELS = {
+    totale: "Totale",
+    ivs: "IVS",
+    vecchiaia: "Vecchiaia",
+    invalidita: "Invalidita'",
+    superstiti: "Superstiti",
+    indennitaria: "Indennitarie",
+    assistenziale: "Assistenziali"
+  };
+  var MAP_CATEGORY_ORDER = ["totale", "ivs", "vecchiaia", "invalidita", "superstiti", "indennitaria", "assistenziale"];
 
   var state = {
     payload: null,
     geojson: null,
     mapMetric: "pensionati",
     mapYear: null,
+    mapCategory: "totale",
     distributionYear: null,
     distributionSex: "Totale",
     distributionScope: "pensioni",
@@ -1050,7 +1061,23 @@
     });
   }
 
-  function metricLabel(metric) {
+  function categoryLabel(category) {
+    return MAP_CATEGORY_LABELS[category || "totale"] || text(category);
+  }
+
+  function rowCategory(row) {
+    return text(row.categoria_pensione || "totale") || "totale";
+  }
+
+  function mapDataMetric(metric, category) {
+    if ((category || "totale") !== "totale" && metric === "pensionati") return "pensioni_vigenti";
+    return metric;
+  }
+
+  function metricLabel(metric, category) {
+    var isCategory = (category || "totale") !== "totale";
+    if (isCategory && metric === "pensionati") return "Pensioni regionali";
+    if (isCategory && metric === "pensionati_percentuale_popolazione") return "Pensioni per 100 residenti";
     return {
       pensionati: "Pensionati regionali",
       importo_medio_pensione_mensile_regionale: "Importo medio lordo della pensione",
@@ -1060,10 +1087,11 @@
     }[metric] || metric;
   }
 
-  function metricUnit(metric) {
-    if (metric === "pensionati") return "pensionati";
+  function metricUnit(metric, category) {
+    if (metric === "pensionati") return (category || "totale") === "totale" ? "pensionati" : "pensioni";
     if (metric === "spesa_pensionistica_regionale") return "miliardi di euro";
     if (metric === "importo_medio_pensione_mensile_regionale") return "euro al mese";
+    if (metric === "pensionati_percentuale_popolazione" && (category || "totale") !== "totale") return "pensioni per 100 residenti";
     return "%";
   }
 
@@ -1084,8 +1112,10 @@
   }
 
   function regionRows(metric) {
+    var category = state.mapCategory || "totale";
+    var dataMetric = mapDataMetric(metric, category);
     var rows = tableRows("territorial").filter(function (row) {
-      return row.livello_territoriale === "regione" && row.indicatore_id === metric;
+      return row.livello_territoriale === "regione" && row.indicatore_id === dataMetric && rowCategory(row) === category;
     });
     var year = state.mapYear || Math.max.apply(null, rows.map(function (row) { return toNumber(row.anno) || 0; }));
     var allowed = {};
@@ -1095,6 +1125,7 @@
 
   function renderRegionalMap() {
     var metric = state.mapMetric;
+    var category = state.mapCategory || "totale";
     var rows = regionRows(metric);
     if (!rows.length) {
       showEmpty("piRegionalMap", "Dati regionali non disponibili");
@@ -1107,7 +1138,7 @@
     var minValue = Math.min.apply(null, values);
     var maxValue = Math.max.apply(null, values);
     var subtitle = byId("piMapSubtitle");
-    if (subtitle) subtitle.textContent = metricLabel(metric) + " - " + rows[0].anno;
+    if (subtitle) subtitle.textContent = metricLabel(metric, category) + " - " + categoryLabel(category) + " - " + rows[0].anno;
     plot("piRegionalMap", [{
       type: "choropleth",
       geojson: state.geojson,
@@ -1118,15 +1149,16 @@
       customdata: rows.map(function (row) {
         if (metric === "spesa_pensionistica_regionale") return euroBn(row.valore) + " lordi";
         if (metric === "importo_medio_pensione_mensile_regionale") return euro(row.valore) + " lordi al mese";
+        if (metric === "pensionati_percentuale_popolazione" && category !== "totale") return fmt(row.valore, 1) + " pensioni ogni 100 residenti";
         if (metric === "pensionati_percentuale_popolazione") return fmt(row.valore, 1) + "% della popolazione";
         if (metric === "spesa_pensionistica_percentuale_pil") return fmt(row.valore, 1) + "% del PIL regionale";
-        return fmt(row.valore) + " pensionati";
+        return fmt(row.valore) + (category === "totale" ? " pensionati" : " pensioni");
       }),
       colorscale: [[0, "#fff2df"], [0.35, "#ffb15f"], [0.7, "#f26a21"], [1, "#7a1f0c"]],
       zmin: minValue,
       zmax: maxValue,
       marker: { line: { color: "rgba(255,255,255,.55)", width: 0.55 } },
-      colorbar: { title: metricUnit(metric), tickfont: { color: cssVar("--muted", "#b9b2aa") } },
+      colorbar: { title: metricUnit(metric, category), tickfont: { color: cssVar("--muted", "#b9b2aa") } },
       hovertemplate: "<b>%{text}</b><br>%{customdata}<extra></extra>"
     }], {
       margin: { t: 8, r: 8, b: 8, l: 8 },
@@ -1174,9 +1206,38 @@
   function setupControls() {
     var metric = byId("piMapMetric");
     var mapYear = byId("piMapYear");
+    var mapCategory = byId("piMapCategory");
+    function mapCategoryAvailable(category) {
+      var dataMetric = mapDataMetric(state.mapMetric, category);
+      return tableRows("territorial").some(function (row) {
+        return row.livello_territoriale === "regione" && row.indicatore_id === dataMetric && rowCategory(row) === category;
+      });
+    }
+    function fillMapCategories() {
+      if (!mapCategory) return;
+      var present = {};
+      tableRows("territorial").forEach(function (row) {
+        if (row.livello_territoriale === "regione") present[rowCategory(row)] = true;
+      });
+      var categories = MAP_CATEGORY_ORDER.filter(function (category) {
+        return present[category] && mapCategoryAvailable(category);
+      });
+      if (categories.indexOf("totale") < 0) categories.unshift("totale");
+      clear(mapCategory);
+      categories.forEach(function (category) {
+        var option = document.createElement("option");
+        option.value = category;
+        option.textContent = categoryLabel(category);
+        mapCategory.appendChild(option);
+      });
+      state.mapCategory = categories.indexOf(state.mapCategory) >= 0 ? state.mapCategory : "totale";
+      mapCategory.value = state.mapCategory;
+    }
     function fillMapYears() {
+      var category = state.mapCategory || "totale";
+      var dataMetric = mapDataMetric(state.mapMetric, category);
       var years = Array.from(new Set(tableRows("territorial").filter(function (row) {
-        return row.livello_territoriale === "regione" && row.indicatore_id === state.mapMetric;
+        return row.livello_territoriale === "regione" && row.indicatore_id === dataMetric && rowCategory(row) === category;
       }).map(function (row) { return toNumber(row.anno); }))).filter(Boolean).sort();
       clear(mapYear);
       years.forEach(function (year) {
@@ -1189,6 +1250,15 @@
       metric.value = state.mapMetric;
       metric.addEventListener("change", function () {
         state.mapMetric = metric.value;
+        fillMapCategories();
+        fillMapYears();
+        renderRegionalMap();
+      });
+    }
+    if (mapCategory) {
+      fillMapCategories();
+      mapCategory.addEventListener("change", function () {
+        state.mapCategory = mapCategory.value;
         fillMapYears();
         renderRegionalMap();
       });
