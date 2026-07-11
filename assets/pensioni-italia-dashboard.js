@@ -48,7 +48,6 @@
 
   var AXIS_CONTROLLED_CHARTS = {
     piEuropeChart: true,
-    piOecdChart: true,
     piReplacementRateChart: true,
     piSystemSeriesChart: true,
     piTransferComponentsChart: true,
@@ -720,31 +719,6 @@
     }).filter(Boolean);
     plot("piEuropeChart", traces, {
       xaxis: { dtick: 2, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { title: "% del PIL", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
-    });
-  }
-
-  function renderOecdChart() {
-    var rows = rowsByIndicator(tableRows("european_comparison"), "spesa_pensionistica_pil_oecd_pubblica");
-    var selectedYears = [2000, 2010, 2020, 2021];
-    var colors = { "Italia": COLORS[0], "Media OCSE": COLORS[2] };
-    var traces = ["Italia", "Media OCSE"].map(function (country) {
-      var series = rows.filter(function (row) { return row.paese === country && selectedYears.indexOf(toNumber(row.anno)) >= 0; }).sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
-      if (!series.length) return null;
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: country,
-        x: series.map(function (row) { return row.anno; }),
-        y: series.map(function (row) { return row.valore; }),
-        line: { color: colors[country], width: country === "Italia" ? 4 : 2.5, dash: country === "Italia" ? "solid" : "dash" },
-        marker: { size: 7 },
-        hovertemplate: country + "<br>%{x}: %{y:.1f}% del PIL<extra></extra>"
-      };
-    }).filter(Boolean);
-    plot("piOecdChart", traces, {
-      xaxis: { dtick: 5, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       yaxis: { title: "% del PIL", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
     });
@@ -1688,7 +1662,6 @@
     renderRateChart();
     renderContributionCoverageChart();
     renderEuropeChart();
-    renderOecdChart();
     renderReplacementRateChart();
     renderDistributions();
     renderAgeDistributionChart();

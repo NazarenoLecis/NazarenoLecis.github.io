@@ -87,6 +87,34 @@
   font-weight: 800;
 }
 
+.pi-related-dashboard {
+  display: grid;
+  grid-template-columns: minmax(220px, .7fr) minmax(320px, 1.3fr) auto;
+  gap: 22px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 20px 4px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.pi-related-dashboard strong {
+  color: var(--orange);
+  font-size: 1.45rem;
+}
+
+.pi-related-dashboard p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.pi-related-dashboard > span:last-child {
+  color: var(--orange);
+  font-weight: 850;
+}
+
 .pi-source-summary {
   padding-left: 24px;
   border-left: 3px solid var(--orange);
@@ -525,23 +553,7 @@
 }
 
 .pi-export-button {
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--orange);
-  cursor: pointer;
-  font: inherit;
-  font-size: .76rem;
-  font-weight: 850;
-  letter-spacing: .06em;
-}
-
-.pi-export-button:hover,
-.pi-export-button:focus-visible {
-  border-color: var(--orange);
-  outline: none;
+  display: none !important;
 }
 
 .pi-card-note,
@@ -764,6 +776,7 @@
 @media (max-width: 980px) {
   .pi-dashboard .dash-head,
   .pi-dashboard .section-head,
+  .pi-related-dashboard,
   .pi-grid-2,
   .pi-theme-grid,
   .pi-notes-panel {

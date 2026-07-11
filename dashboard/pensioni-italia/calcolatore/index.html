@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mi sono pagato la pensione? | Nazareno Lecis</title>
-  <meta name="description" content="Calcolatore didattico per confrontare montante contributivo, pensione contributiva e pensione effettiva lorda.">
+  <title>Mi sono pagato la pensione?! | Nazareno Lecis</title>
+  <meta name="description" content="Calcolatore per verificare se contributi maturati e rivalutati sono coerenti con la pensione effettivamente ricevuta.">
   <link rel="stylesheet" href="../../../assets/base.css">
   <link rel="stylesheet" href="../../../assets/layout.css">
   <link rel="stylesheet" href="../../../assets/components.css">
@@ -31,8 +31,8 @@
     <section class="dash-head">
       <div>
         <span class="eyebrow">Calcolatore pensioni</span>
-        <h1>Mi sono pagato la pensione?</h1>
-        <p class="lead">Stima quanto valgono i contributi maturati, quale pensione interamente contributiva produrrebbero e dopo quanto tempo la pensione incassata raggiunge quel montante.</p>
+        <h1>Mi sono pagato la pensione?!</h1>
+        <p class="lead">Aver versato contributi non dimostra, da solo, che la pensione ricevuta sia interamente coperta da quanto maturato. Questo calcolatore prova a misurare quella differenza.</p>
       </div>
       <div class="source-panel"><span class="logo"></span><div><strong>Fonti: INPS, ISTAT, Ministero del Lavoro</strong><span>Aliquote FPLD, tassi di capitalizzazione, coefficienti di trasformazione e tavole di mortalita.</span><span class="source-credit"><a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">Repository pensioni</a>. Elaborazione di Nazareno Lecis.</span></div></div>
     </section>
@@ -40,10 +40,17 @@
     <nav class="dashboard-jump-nav" aria-label="Collegamenti calcolatore"><a href="../index.html">Dashboard pensioni</a><a href="#calcolo">Calcolo</a><a href="#risultati">Risultati</a><a href="#grafici">Grafici</a><a href="#metodo">Metodo</a></nav>
     <p id="pcStatus" class="pi-status">Caricamento parametri del calcolatore ...</p>
 
+    <section class="pc-purpose" aria-labelledby="pcPurposeTitle">
+      <span class="eyebrow">La domanda</span>
+      <h2 id="pcPurposeTitle">I contributi versati coprono davvero la pensione ricevuta?</h2>
+      <p>Nel sistema a ripartizione i contributi dei lavoratori finanziano le pensioni correnti: non restano accantonati in un conto personale. Per valutare l'affermazione "la pensione me la sono pagata" bisogna quindi ricostruire gli accrediti della carriera, rivalutarli nel montante, trasformarli in una pensione teorica sostenibile e confrontarla con quella effettiva.</p>
+      <p>Il calcolatore segue questi passaggi e aggiunge il tempo: mostra quanto e' gia' stato ricevuto, quando le prestazioni cumulate raggiungono il montante virtuale e cosa accade entro l'aspettativa di vita media. Non ricalcola la pensione INPS e non rappresenta il montante come un deposito bancario individuale.</p>
+    </section>
+
     <section class="workflow-grid" aria-label="Come usare il calcolatore">
-      <div class="workflow-step"><span>1</span><h2>Scegli la precisione</h2><p>Usa pochi dati, descrivi la carriera media oppure inserisci gli imponibili anno per anno.</p></div>
-      <div class="workflow-step"><span>2</span><h2>Confronta le pensioni</h2><p>Guarda la pensione effettiva, quella contributiva equivalente e la differenza per rata.</p></div>
-      <div class="workflow-step"><span>3</span><h2>Segui il montante</h2><p>La linea temporale mostra quanto hai gia' ricevuto e quando viene raggiunto il montante virtuale.</p></div>
+      <div class="workflow-step"><span>1</span><h2>Ricostruisci i contributi</h2><p>Usa pochi dati, descrivi la carriera media oppure inserisci gli imponibili anno per anno.</p></div>
+      <div class="workflow-step"><span>2</span><h2>Calcola il montante</h2><p>Gli accrediti annuali vengono rivalutati e trasformati in una pensione contributiva equivalente.</p></div>
+      <div class="workflow-step"><span>3</span><h2>Misura la differenza</h2><p>Confronta la pensione teorica con quella effettiva, per rata e lungo gli anni di pensionamento.</p></div>
     </section>
     <p class="pi-gross-note"><strong>Privacy:</strong> il calcolo avviene nel browser. Non inserire nome, codice fiscale o numero di pensione; la pagina non salva i dati individuali.</p>
 

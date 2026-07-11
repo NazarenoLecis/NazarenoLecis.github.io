@@ -2,6 +2,31 @@
   --pc-gap: 14px;
 }
 
+.pc-purpose {
+  max-width: 1050px;
+  margin: 28px auto 0;
+  padding: 8px 0 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pc-purpose h2 {
+  margin: 8px 0 14px;
+  color: var(--orange);
+  font-size: clamp(1.55rem, 3vw, 2.4rem);
+  letter-spacing: 0;
+}
+
+.pc-purpose p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.03rem;
+  line-height: 1.65;
+}
+
+.pc-purpose p + p {
+  margin-top: 12px;
+}
+
 .pc-dashboard [hidden] {
   display: none !important;
 }
