@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-11";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-12";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -869,8 +869,14 @@
     if (measure === "importo_medio_pensione_mensile_classe") {
       return aggregateAverageDistribution(table, population, "pensioni_per_classe_importo", "spesa_per_classe_importo", year, sex);
     }
+    if (measure === "importo_medio_pensione_netto_stimato_mensile_classe") {
+      return aggregateAverageDistribution(table, population, "pensioni_per_classe_importo", "spesa_netta_stimata_per_classe_importo", year, sex);
+    }
     if (measure === "reddito_pensionistico_medio_mensile_classe") {
       return aggregateAverageDistribution(table, population, "pensionati_per_classe_reddito_pensionistico", "reddito_pensionistico_totale", year, sex);
+    }
+    if (measure === "reddito_pensionistico_netto_stimato_medio_mensile_classe") {
+      return aggregateAverageDistribution(table, population, "pensionati_per_classe_reddito_pensionistico", "reddito_pensionistico_netto_stimato_totale", year, sex);
     }
     return aggregateDistributionRows(rowsForDistribution(table, population, measure, year, sex));
   }
@@ -1019,6 +1025,16 @@
 
   function renderProfessionChart() {
     var rows = tableRows("managements");
+    var note = byId("piProfessionNote");
+    var tag = byId("piProfessionTag");
+    if (state.professionMeasure === "importo_medio_pensione") {
+      rows = rows.filter(function (row) { return text(row.fonte_id).indexOf("inps_appendice") === 0; });
+      if (note) note.textContent = "Importo lordo medio mensile per prestazione. La vista usa solo le appendici statistiche 2022-2025: i dati Open Data 2010-2017 non vengono cuciti alla serie per evitare un salto di perimetro non omogeneo.";
+      if (tag) tag.textContent = "appendici 2022-2025";
+    } else {
+      if (note) note.textContent = "La classificazione storica separa ex dipendenti privati, autonomi e parasubordinati, dipendenti pubblici, assistenza e altre gestioni. Gli anni non osservati tra 2018 e 2021 sono interpolati solo per il numero di prestazioni.";
+      if (tag) tag.textContent = "2010-2025";
+    }
     var counts = {};
     rows.filter(function (row) { return row.indicatore_id === "pensioni_vigenti"; }).forEach(function (row) {
       counts[row.anno + "|" + row.gestione_id] = toNumber(row.valore) || 0;
