@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-09";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-10";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -902,7 +902,7 @@
       pensionati: {
         population: "pensionati_inps",
         color: COLORS[2],
-        title: "Pensionati per reddito pensionistico",
+        title: "Reddito pensionistico dei pensionati",
         tag: "persone e redditi lordi",
         source: "Fonte: INPS, Open Data, Appendici statistiche e repository pensioni. Elaborazione di Nazareno Lecis.",
         measures: {
@@ -922,8 +922,8 @@
     if (state.distributionScope === "pensionati") {
       return [
         { value: "count", label: "Numero di pensionati" },
-        { value: "total", label: "Reddito pensionistico annuo lordo per fascia" },
-        { value: "net_total", label: "Reddito pensionistico annuo netto stimato per fascia" }
+        { value: "total", label: "Totale reddito pensionistico lordo per fascia" },
+        { value: "net_total", label: "Totale reddito pensionistico netto stimato per fascia" }
       ];
     }
     return [
