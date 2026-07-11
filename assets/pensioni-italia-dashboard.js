@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-08";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-09";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -908,9 +908,7 @@
         measures: {
           count: { indicator: "pensionati_per_classe_reddito_pensionistico", scale: 1000000, axis: "milioni di pensionati", suffix: " mln pensionati", label: "Numero di pensionati" },
           total: { indicator: "reddito_pensionistico_totale", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Reddito pensionistico annuo lordo" },
-          net_total: { indicator: "reddito_pensionistico_netto_stimato_totale", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Reddito pensionistico annuo netto stimato", net: true, note: "Il netto e' stimato sul reddito pensionistico lordo medio della classe." },
-          average: { indicator: "reddito_pensionistico_medio_mensile_classe", scale: 1, axis: "euro al mese", suffix: " euro al mese", label: "Reddito medio mensile lordo" },
-          net_average: { indicator: "reddito_pensionistico_netto_stimato_medio_mensile_classe", scale: 1, axis: "euro al mese", suffix: " euro al mese", label: "Reddito medio mensile netto stimato", net: true, note: "Il netto e' stimato sul reddito pensionistico lordo medio della classe." }
+          net_total: { indicator: "reddito_pensionistico_netto_stimato_totale", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Reddito pensionistico annuo netto stimato", net: true, note: "Il netto e' stimato sul reddito pensionistico lordo medio della classe." }
         },
         note: "Classifica le persone per reddito pensionistico mensile lordo complessivo. Qui tutte le pensioni percepite dalla stessa persona vengono sommate."
       }
@@ -925,9 +923,7 @@
       return [
         { value: "count", label: "Numero di pensionati" },
         { value: "total", label: "Reddito pensionistico annuo lordo per fascia" },
-        { value: "net_total", label: "Reddito pensionistico annuo netto stimato per fascia" },
-        { value: "average", label: "Reddito pensionistico medio mensile lordo" },
-        { value: "net_average", label: "Reddito pensionistico medio mensile netto stimato" }
+        { value: "net_total", label: "Reddito pensionistico annuo netto stimato per fascia" }
       ];
     }
     return [
