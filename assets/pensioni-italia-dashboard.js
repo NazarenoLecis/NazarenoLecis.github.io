@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-02";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-03";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -12,6 +12,10 @@
     mapMetric: "pensionati",
     mapYear: null,
     distributionYear: null,
+    distributionSex: "Totale",
+    ageDistributionYear: null,
+    ageDistributionSex: "Totale",
+    distributionView: "count",
     pensionDistributionMeasure: "pensioni_per_classe_importo",
     incomeDistributionMeasure: "pensionati_per_classe_reddito_pensionistico",
     professionMeasure: "pensioni_vigenti",
@@ -22,7 +26,6 @@
     replacementWorker: "dipendenti_privati",
     replacementCoverage: "obbligatoria",
     replacementMeasure: "lordo",
-    labourRatioMetric: "both",
     systemSeriesMetric: "funding",
     axisPrefs: {}
   };
@@ -33,8 +36,6 @@
     piSystemSeriesChart: true,
     piTransferComponentsChart: true,
     piRateChart: true,
-    piLabourCountsChart: true,
-    piLabourRatioChart: true,
     piContributionCoverageChart: true,
     piProfessionChart: true
   };
@@ -348,26 +349,24 @@
 
   function renderKpis() {
     var annual = tableRows("annual_pensions");
-    var comparison = tableRows("european_comparison");
-    var parameters = tableRows("system_parameters");
     var node = byId("piKpis");
     clear(node);
 
-    var pil = latest(comparison, function (row) { return row.indicatore_id === "reddito_pensionistico_pil_complessivo" && row.paese === "Italia"; });
     var pensioni = latest(annual, function (row) { return row.indicatore_id === "pensioni_vigenti" && row.area === "Italia - INPS"; });
     var pensionati = latest(annual, function (row) { return row.indicatore_id === "pensionati" && row.area === "Italia - complessivi"; });
     var pensionatiInps = latest(annual, function (row) { return row.indicatore_id === "pensionati" && row.area === "Italia - INPS"; });
     var reddito = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_totale" && row.area === "Italia - complessivi"; });
     var ratio = latest(annual, function (row) { return row.indicatore_id === "trattamenti_per_pensionato" && row.area === "Italia - INPS"; });
     var redditoInps = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_totale" && row.area === "Italia - INPS"; });
-    var rate = latest(parameters, function (row) { return row.parametro_id === "aliquota_ivs_standard_ago_corrente"; });
+    var contributi = latest(annual, function (row) { return row.indicatore_id === "entrate_contributive_inps"; });
+    var medio = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_medio_mensile" && row.area === "Italia - complessivi"; });
 
-    node.appendChild(makeKpi("Reddito pensionistico/PIL", fmt(pil && pil.valore, 1) + "%", "Reddito lordo / PIL nominale " + text(pil && pil.anno)));
+    node.appendChild(makeKpi("Reddito pensionistico lordo", euroBn(reddito && reddito.valore), "Totale " + text(reddito && reddito.anno) + "; di cui pensionati INPS: " + euroBn(redditoInps && redditoInps.valore)));
+    node.appendChild(makeKpi("Contributi INPS", euroBn(contributi && contributi.valore), "Entrate contributive " + text(contributi && contributi.anno)));
     node.appendChild(makeKpi("Pensioni INPS", fmt(pensioni && pensioni.valore), "Prestazioni vigenti " + text(pensioni && pensioni.anno)));
     node.appendChild(makeKpi("Pensionati complessivi", fmt(pensionati && pensionati.valore), "Di cui INPS: " + fmt(pensionatiInps && pensionatiInps.valore)));
     node.appendChild(makeKpi("Pensioni per pensionato", fmt(ratio && ratio.valore, 2), "Rapporto nel perimetro INPS"));
-    node.appendChild(makeKpi("Reddito pensionistico lordo", euroBn(reddito && reddito.valore), "Totale " + text(reddito && reddito.anno) + "; di cui pensionati INPS: " + euroBn(redditoInps && redditoInps.valore)));
-    node.appendChild(makeKpi("Aliquota IVS", fmt(rate && rate.valore, 1) + "%", "Riferimento corrente AGO/FPLD"));
+    node.appendChild(makeKpi("Reddito medio lordo", euro(medio && medio.valore), "Media mensile complessiva " + text(medio && medio.anno)));
   }
 
   function denseYears(rows) {
@@ -437,6 +436,16 @@
     return groups[0].filter(function (year) {
       return groups.every(function (years) { return years.indexOf(year) >= 0; });
     }).sort(function (a, b) { return a - b; });
+  }
+
+  function latestContinuousYears(years) {
+    var sorted = Array.from(new Set(toArray(years).map(toNumber).filter(function (year) { return year !== null; }))).sort(function (a, b) { return a - b; });
+    if (!sorted.length) return [];
+    var available = {};
+    sorted.forEach(function (year) { available[year] = true; });
+    var block = [sorted[sorted.length - 1]];
+    for (var year = block[0] - 1; available[year]; year -= 1) block.unshift(year);
+    return block;
   }
 
   function fundingSeries() {
@@ -577,63 +586,6 @@
     });
   }
 
-  function renderLabourCountsChart() {
-    var demography = tableRows("demography_work");
-    var pensioners = rowsByIndicator(tableRows("annual_pensions"), "pensionati")
-      .filter(function (row) { return row.area === "Italia - complessivi"; });
-    var series = [
-      { indicator: "occupati", rows: rowsByIndicator(demography, "occupati"), name: "Occupati 15-64", color: COLORS[2] },
-      { indicator: "assicurati_inps_ponderati_settimane", rows: rowsByIndicator(demography, "assicurati_inps_ponderati_settimane"), name: "Assicurati INPS ponderati", color: COLORS[1] },
-      { indicator: "assicurati_medi_annui_inps", rows: rowsByIndicator(demography, "assicurati_medi_annui_inps"), name: "Assicurati medi annui INPS", color: COLORS[3] },
-      { indicator: "pensionati", rows: pensioners, name: "Pensionati complessivi", color: COLORS[0] }
-    ];
-    var traces = series.map(function (item) {
-      var data = item.rows.slice().sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
-      return {
-        type: "scatter", mode: "lines+markers", name: item.name,
-        x: data.map(function (row) { return row.anno; }),
-        y: data.map(function (row) { return toNumber(row.valore) / 1000000; }),
-        line: { color: item.color, width: 3 }, marker: { size: 7 }, connectgaps: false,
-        hovertemplate: "%{x}<br>%{y:.2f} milioni<extra>" + item.name + "</extra>"
-      };
-    });
-    plot("piLabourCountsChart", traces, {
-      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { title: "milioni di persone", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
-    });
-  }
-
-  function renderLabourRatioChart() {
-    var demography = tableRows("demography_work");
-    var configs = [
-      { key: "occupati", indicator: "occupati_per_pensionato", name: "Occupati per pensionato", color: COLORS[2] },
-      { key: "assicurati", indicator: "assicurati_inps_per_pensionato", name: "Assicurati INPS ponderati per pensionato", color: COLORS[1] }
-    ];
-    var selected = state.labourRatioMetric === "both" ? configs : configs.filter(function (item) { return item.key === state.labourRatioMetric; });
-    var yearFilter = state.labourRatioMetric === "both" ? commonYears(selected.map(function (item) { return rowsByIndicator(demography, item.indicator); })) : null;
-    var traces = selected.map(function (item) {
-      var rows = rowsByIndicator(demography, item.indicator)
-        .filter(function (row) { return !yearFilter || yearFilter.indexOf(toNumber(row.anno)) >= 0; })
-        .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: item.name,
-        x: rows.map(function (row) { return row.anno; }),
-        y: rows.map(function (row) { return toNumber(row.valore); }),
-        line: { color: item.color, width: 3 },
-        marker: { size: 8 },
-        hovertemplate: "%{x}<br>%{y:.2f} per pensionato<extra>" + item.name + "</extra>"
-      };
-    });
-    plot("piLabourRatioChart", traces, {
-      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { title: "rapporto", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
-    });
-  }
-
   function renderContributionCoverageChart() {
     var rows = rowsByIndicator(tableRows("demography_work"), "copertura_spesa_contributi")
       .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
@@ -752,21 +704,6 @@
         hovertemplate: country + "<br>%{x}: %{y:.1f}% del PIL<extra></extra>"
       };
     }).filter(Boolean);
-    var nationalRatio = rowsByIndicator(comparison, "reddito_pensionistico_pil_complessivo")
-      .filter(function (row) { return row.paese === "Italia" && toNumber(row.anno) >= 2024; })
-      .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
-    if (nationalRatio.length) {
-      traces.push({
-        type: "scatter",
-        mode: "lines+markers",
-        name: "Italia 2024-2025, reddito pensionistico/PIL",
-        x: nationalRatio.map(function (row) { return row.anno; }),
-        y: nationalRatio.map(function (row) { return row.valore; }),
-        line: { color: COLORS[3], width: 3, dash: "dot" },
-        marker: { size: 8, symbol: "diamond" },
-        hovertemplate: "Italia<br>%{x}: %{y:.1f}% del PIL<br>Reddito pensionistico lordo / PIL nominale<extra></extra>"
-      });
-    }
     plot("piEuropeChart", traces, {
       xaxis: { dtick: 2, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       yaxis: { title: "% del PIL", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
@@ -858,14 +795,96 @@
     });
   }
 
+  var COMMON_DISTRIBUTION_BINS = [
+    { label: "Fino a 499,99", min: 0, max: 499.99 },
+    { label: "500,00-999,99", min: 500, max: 999.99 },
+    { label: "1000,00-1499,99", min: 1000, max: 1499.99 },
+    { label: "1500,00-1999,99", min: 1500, max: 1999.99 },
+    { label: "2000,00-2499,99", min: 2000, max: 2499.99 },
+    { label: "2500,00-2999,99", min: 2500, max: 2999.99 },
+    { label: "3000,00 e oltre", min: 3000, max: null }
+  ];
+
+  function commonDistributionBin(row) {
+    var min = toNumber(row.classe_importo_min);
+    var max = toNumber(row.classe_importo_max);
+    if (min === null && max === null) return null;
+    var reference = min === null ? 0 : min;
+    for (var i = 0; i < COMMON_DISTRIBUTION_BINS.length; i += 1) {
+      var bin = COMMON_DISTRIBUTION_BINS[i];
+      if (bin.max === null && reference >= bin.min) return bin;
+      if (bin.max !== null && reference >= bin.min && reference <= bin.max) return bin;
+    }
+    return COMMON_DISTRIBUTION_BINS[COMMON_DISTRIBUTION_BINS.length - 1];
+  }
+
+  function rowsForDistribution(table, population, indicator, year, sex) {
+    var base = table.filter(function (row) {
+      return row.popolazione === population && row.indicatore_id === indicator && toNumber(row.anno) === year;
+    });
+    var selected = base.filter(function (row) { return row.sesso === sex; });
+    return selected.length ? selected : base.filter(function (row) { return row.sesso === "Totale"; });
+  }
+
+  function aggregateDistributionRows(rows) {
+    var grouped = {};
+    orderedDistribution(rows).forEach(function (row) {
+      var bin = commonDistributionBin(row);
+      var value = toNumber(row.valore);
+      if (!bin || value === null) return;
+      grouped[bin.label] = (grouped[bin.label] || 0) + value;
+    });
+    return COMMON_DISTRIBUTION_BINS.map(function (bin) {
+      return { classe_importo: bin.label, valore: grouped[bin.label] };
+    }).filter(function (row) { return row.valore !== undefined; });
+  }
+
+  function aggregateAverageDistribution(table, population, countIndicator, amountIndicator, year, sex) {
+    var counts = aggregateDistributionRows(rowsForDistribution(table, population, countIndicator, year, sex));
+    var amounts = aggregateDistributionRows(rowsForDistribution(table, population, amountIndicator, year, sex));
+    var amountByClass = {};
+    amounts.forEach(function (row) { amountByClass[row.classe_importo] = toNumber(row.valore); });
+    return counts.map(function (row) {
+      var count = toNumber(row.valore);
+      var amount = amountByClass[row.classe_importo];
+      return {
+        classe_importo: row.classe_importo,
+        valore: count && amount ? amount / count / 12 : null
+      };
+    }).filter(function (row) { return row.valore !== null; });
+  }
+
+  function aggregateDistribution(table, population, measure, year, sex) {
+    if (measure === "importo_medio_pensione_mensile_classe") {
+      return aggregateAverageDistribution(table, population, "pensioni_per_classe_importo", "spesa_per_classe_importo", year, sex);
+    }
+    if (measure === "reddito_pensionistico_medio_mensile_classe") {
+      return aggregateAverageDistribution(table, population, "pensionati_per_classe_reddito_pensionistico", "reddito_pensionistico_totale", year, sex);
+    }
+    return aggregateDistributionRows(rowsForDistribution(table, population, measure, year, sex));
+  }
+
+  function hasDistributionSex(table, population, indicator, year, sex) {
+    return table.some(function (row) {
+      return row.popolazione === population && row.indicatore_id === indicator && toNumber(row.anno) === year && row.sesso === sex;
+    });
+  }
+
+  function applyDistributionView() {
+    var measures = {
+      count: ["pensioni_per_classe_importo", "pensionati_per_classe_reddito_pensionistico"],
+      total: ["spesa_per_classe_importo", "reddito_pensionistico_totale"],
+      average: ["importo_medio_pensione_mensile_classe", "reddito_pensionistico_medio_mensile_classe"]
+    }[state.distributionView] || ["pensioni_per_classe_importo", "pensionati_per_classe_reddito_pensionistico"];
+    state.pensionDistributionMeasure = measures[0];
+    state.incomeDistributionMeasure = measures[1];
+  }
+
   function renderDistributions() {
+    applyDistributionView();
     var distribution = tableRows("pensioner_distribution");
-    var pensions = orderedDistribution(distribution.filter(function (row) {
-      return row.popolazione === "pensioni" && row.indicatore_id === state.pensionDistributionMeasure && toNumber(row.anno) === state.distributionYear;
-    }));
-    var pensioners = orderedDistribution(distribution.filter(function (row) {
-      return row.popolazione === "pensionati_inps" && row.indicatore_id === state.incomeDistributionMeasure && toNumber(row.anno) === state.distributionYear;
-    }));
+    var pensions = aggregateDistribution(distribution, "pensioni", state.pensionDistributionMeasure, state.distributionYear, state.distributionSex);
+    var pensioners = aggregateDistribution(distribution, "pensionati_inps", state.incomeDistributionMeasure, state.distributionYear, state.distributionSex);
     var pensionConfig = {
       pensioni_per_classe_importo: { scale: 1000000, title: "milioni di pensioni", suffix: " mln pensioni" },
       spesa_per_classe_importo: { scale: 1000000000, title: "miliardi di euro", suffix: " mld euro" },
@@ -876,6 +895,14 @@
       reddito_pensionistico_totale: { scale: 1000000000, title: "miliardi di euro annui", suffix: " mld euro" },
       reddito_pensionistico_medio_mensile_classe: { scale: 1, title: "euro al mese", suffix: " euro al mese" }
     }[state.incomeDistributionMeasure];
+    var pensionNote = byId("piPensionDistributionNote");
+    var incomeNote = byId("piIncomeDistributionNote");
+    if (pensionNote) {
+      pensionNote.textContent = "Classifica i singoli trattamenti per importo mensile lordo. Il filtro Visualizzazione cambia le barre da numerosita' a miliardi annui o importo medio; le classi sono ricomposte in bande comuni fino a 3000 euro e oltre." + (state.distributionSex !== "Totale" && !hasDistributionSex(distribution, "pensioni", state.pensionDistributionMeasure, state.distributionYear, state.distributionSex) ? " Per questa misura l'anno selezionato e' disponibile solo come totale." : "");
+    }
+    if (incomeNote) {
+      incomeNote.textContent = "Classifica le persone per reddito pensionistico mensile lordo complessivo. Con Visualizzazione = totale miliardi annui, le barre mostrano quanto reddito pensionistico complessivo assorbe ogni fascia.";
+    }
     plot("piPensionDistributionChart", [{
       type: "bar",
       name: "Pensioni",
@@ -892,6 +919,46 @@
       marker: { color: COLORS[2] },
       hovertemplate: "%{x}<br>%{y:,.2f}" + incomeConfig.suffix + "<extra></extra>"
     }], { yaxis: { title: incomeConfig.title, rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") } });
+  }
+
+  function ageSortValue(label) {
+    var value = text(label).toLowerCase();
+    if (value.indexOf("fino") >= 0) return 0;
+    if (value.indexOf("20") >= 0) return 1;
+    if (value.indexOf("40") >= 0) return 2;
+    if (value.indexOf("60 a 64") >= 0) return 3;
+    if (value.indexOf("65 a 69") >= 0) return 4;
+    if (value.indexOf("70") >= 0) return 5;
+    if (value.indexOf("80") >= 0) return 6;
+    return 99;
+  }
+
+  function rowsForAgeDistribution(indicator, year, sex) {
+    var base = tableRows("pensioner_distribution").filter(function (row) {
+      return row.popolazione === "pensionati_inps" && row.indicatore_id === indicator && toNumber(row.anno) === year;
+    });
+    var selected = base.filter(function (row) { return row.sesso === sex; });
+    return (selected.length ? selected : base.filter(function (row) { return row.sesso === "Totale"; }))
+      .sort(function (a, b) { return ageSortValue(a.classe_eta) - ageSortValue(b.classe_eta); });
+  }
+
+  function renderAgeDistributionChart() {
+    var rows = rowsForAgeDistribution("pensionati_per_classe_eta", state.ageDistributionYear, state.ageDistributionSex);
+    var averages = rowsForAgeDistribution("reddito_pensionistico_medio_mensile_eta", state.ageDistributionYear, state.ageDistributionSex);
+    var avgByAge = {};
+    averages.forEach(function (row) { avgByAge[row.classe_eta] = toNumber(row.valore); });
+    plot("piAgeDistributionChart", [{
+      type: "bar",
+      name: "Pensionati",
+      x: rows.map(function (row) { return row.classe_eta; }),
+      y: rows.map(function (row) { return toNumber(row.valore) / 1000000; }),
+      customdata: rows.map(function (row) { return avgByAge[row.classe_eta]; }),
+      marker: { color: COLORS[5] },
+      hovertemplate: "%{x}<br>%{y:.2f} mln pensionati<br>reddito medio: %{customdata:,.0f} euro al mese<extra></extra>"
+    }], {
+      yaxis: { title: "milioni di pensionati", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      margin: { t: 18, r: 18, b: 88, l: 72 }
+    });
   }
 
   function renderProfessionChart() {
@@ -1102,8 +1169,8 @@
     }
 
     var distributionYear = byId("piDistributionYear");
-    var pensionMeasure = byId("piPensionDistributionMeasure");
-    var incomeMeasure = byId("piIncomeDistributionMeasure");
+    var distributionSex = byId("piDistributionSex");
+    var distributionView = byId("piDistributionView");
     function distributionYears(population, indicator) {
       return Array.from(new Set(tableRows("pensioner_distribution").filter(function (row) {
         return row.popolazione === population && row.indicatore_id === indicator;
@@ -1111,10 +1178,12 @@
     }
     function fillDistributionYears() {
       if (!distributionYear) return;
+      applyDistributionView();
       var years = commonYears([
         distributionYears("pensioni", state.pensionDistributionMeasure).map(function (year) { return { anno: year }; }),
         distributionYears("pensionati_inps", state.incomeDistributionMeasure).map(function (year) { return { anno: year }; })
       ]);
+      years = latestContinuousYears(years);
       clear(distributionYear);
       years.forEach(function (year) {
         var option = document.createElement("option");
@@ -1125,19 +1194,18 @@
       state.distributionYear = years.indexOf(state.distributionYear) >= 0 ? state.distributionYear : years[years.length - 1];
       distributionYear.value = state.distributionYear;
     }
-    if (pensionMeasure) {
-      pensionMeasure.value = state.pensionDistributionMeasure;
-      pensionMeasure.addEventListener("change", function () {
-        state.pensionDistributionMeasure = pensionMeasure.value;
+    if (distributionView) {
+      distributionView.value = state.distributionView;
+      distributionView.addEventListener("change", function () {
+        state.distributionView = distributionView.value;
         fillDistributionYears();
         renderDistributions();
       });
     }
-    if (incomeMeasure) {
-      incomeMeasure.value = state.incomeDistributionMeasure;
-      incomeMeasure.addEventListener("change", function () {
-        state.incomeDistributionMeasure = incomeMeasure.value;
-        fillDistributionYears();
+    if (distributionSex) {
+      distributionSex.value = state.distributionSex;
+      distributionSex.addEventListener("change", function () {
+        state.distributionSex = distributionSex.value;
         renderDistributions();
       });
     }
@@ -1146,6 +1214,38 @@
       distributionYear.addEventListener("change", function () {
         state.distributionYear = toNumber(distributionYear.value);
         renderDistributions();
+      });
+    }
+
+    var ageYear = byId("piAgeDistributionYear");
+    var ageSex = byId("piAgeDistributionSex");
+    function fillAgeYears() {
+      if (!ageYear) return;
+      var years = Array.from(new Set(tableRows("pensioner_distribution").filter(function (row) {
+        return row.indicatore_id === "pensionati_per_classe_eta";
+      }).map(function (row) { return toNumber(row.anno); }))).filter(Boolean).sort();
+      clear(ageYear);
+      years.forEach(function (year) {
+        var option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        ageYear.appendChild(option);
+      });
+      state.ageDistributionYear = years.indexOf(state.ageDistributionYear) >= 0 ? state.ageDistributionYear : years[years.length - 1];
+      ageYear.value = state.ageDistributionYear;
+    }
+    if (ageYear) {
+      fillAgeYears();
+      ageYear.addEventListener("change", function () {
+        state.ageDistributionYear = toNumber(ageYear.value);
+        renderAgeDistributionChart();
+      });
+    }
+    if (ageSex) {
+      ageSex.value = state.ageDistributionSex;
+      ageSex.addEventListener("change", function () {
+        state.ageDistributionSex = ageSex.value;
+        renderAgeDistributionChart();
       });
     }
 
@@ -1200,15 +1300,6 @@
     });
     updateReplacementControls();
 
-    var labourRatio = byId("piLabourRatioMetric");
-    if (labourRatio) {
-      labourRatio.value = state.labourRatioMetric;
-      labourRatio.addEventListener("change", function () {
-        state.labourRatioMetric = labourRatio.value;
-        renderLabourRatioChart();
-      });
-    }
-
     var europe = byId("piEuropeCountries");
     var countries = Array.from(new Set(rowsByIndicator(tableRows("european_comparison"), "spesa_pensionistica_pil_esspros").map(function (row) { return row.paese; })))
       .filter(function (country) { return country !== "Italia" && country !== "Unione europea (27)"; }).sort();
@@ -1235,12 +1326,11 @@
     renderSystemSeriesChart();
     renderTransferComponentsChart();
     renderRateChart();
-    renderLabourCountsChart();
-    renderLabourRatioChart();
     renderContributionCoverageChart();
     renderEuropeChart();
     renderReplacementRateChart();
     renderDistributions();
+    renderAgeDistributionChart();
     renderProfessionChart();
     renderRegionalMap();
   }
