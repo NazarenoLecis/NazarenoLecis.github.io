@@ -263,6 +263,12 @@
   font-weight: 850;
 }
 
+.pi-kpi-note {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .pi-filter-panel {
   margin-top: 16px;
 }
@@ -371,6 +377,15 @@
   color: var(--text);
   font-size: clamp(1.45rem, 3vw, 2.15rem);
   line-height: 1.05;
+}
+
+.pi-kpi em {
+  display: block;
+  margin-top: 6px;
+  color: var(--orange);
+  font-size: .86rem;
+  font-style: normal;
+  font-weight: 850;
 }
 
 .pi-kpi small {
@@ -507,6 +522,26 @@
   font-weight: 850;
   letter-spacing: .08em;
   text-transform: uppercase;
+}
+
+.pi-export-button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--orange);
+  cursor: pointer;
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+}
+
+.pi-export-button:hover,
+.pi-export-button:focus-visible {
+  border-color: var(--orange);
+  outline: none;
 }
 
 .pi-card-note,
