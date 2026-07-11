@@ -1,0 +1,260 @@
+.pc-dashboard {
+  --pc-gap: 14px;
+}
+
+.pc-mode-tabs {
+  display: inline-flex;
+  gap: 8px;
+  margin: 10px 0 18px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.pc-mode-tabs button {
+  min-height: 42px;
+  min-width: 150px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+}
+
+.pc-mode-tabs button.active,
+.pc-mode-tabs button:focus-visible,
+.pc-mode-tabs button:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  outline: none;
+}
+
+.pc-form {
+  display: grid;
+  gap: 18px;
+}
+
+.pc-panel {
+  padding: 20px;
+}
+
+.pc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pc-form-grid-small {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.pc-form-grid label,
+.pc-file-label,
+.pc-period-grid label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--orange);
+  font-size: .76rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pc-form-grid input,
+.pc-form-grid select,
+.pc-period-grid input,
+.pc-period-grid select,
+.pc-file-label input,
+.pc-annual-table input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 750;
+}
+
+.pc-form-grid input::placeholder {
+  color: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+.pc-form-grid input:focus,
+.pc-form-grid select:focus,
+.pc-period-grid input:focus,
+.pc-period-grid select:focus,
+.pc-annual-table input:focus {
+  outline: 2px solid color-mix(in srgb, var(--orange) 62%, transparent);
+  outline-offset: 2px;
+}
+
+.pc-wide {
+  grid-column: span 2;
+}
+
+.pc-wide small,
+.pc-form-grid small {
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+.pc-action-row,
+.pc-export-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.pc-export-row {
+  margin-top: 14px;
+}
+
+.pc-button {
+  min-height: 42px;
+  min-width: 116px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+}
+
+.pc-button:hover,
+.pc-button:focus-visible {
+  border-color: var(--orange);
+  color: var(--orange);
+  outline: none;
+}
+
+.pc-primary {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #090909;
+}
+
+.pc-primary:hover,
+.pc-primary:focus-visible {
+  background: transparent;
+  color: var(--orange);
+}
+
+.pc-file-label {
+  min-width: 260px;
+}
+
+.pc-period-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pc-period {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card) 76%, transparent);
+}
+
+.pc-period h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.pc-annual-wrap {
+  margin-top: 16px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.pc-annual-table input {
+  min-width: 110px;
+  min-height: 34px;
+  border-radius: 6px;
+  padding: 0 8px;
+}
+
+.pc-kpis {
+  margin-top: 18px;
+}
+
+.pc-reliability {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--orange);
+  border-radius: 8px;
+  color: var(--muted);
+  line-height: 1.45;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.pc-reliability strong {
+  color: var(--orange);
+}
+
+.pc-message {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-left: 3px solid #f2a541;
+  color: var(--muted);
+  background: color-mix(in srgb, #f2a541 10%, transparent);
+  line-height: 1.4;
+}
+
+.pc-hidden {
+  display: none !important;
+}
+
+@media (max-width: 1100px) {
+  .pc-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pc-period-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .pc-mode-tabs {
+    width: 100%;
+  }
+
+  .pc-mode-tabs button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .pc-form-grid,
+  .pc-form-grid-small {
+    grid-template-columns: 1fr;
+  }
+
+  .pc-wide {
+    grid-column: auto;
+  }
+
+  .pc-button,
+  .pc-file-label {
+    width: 100%;
+  }
+}
