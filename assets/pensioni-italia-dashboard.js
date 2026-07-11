@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-01";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-02";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -11,16 +11,18 @@
     geojson: null,
     mapMetric: "pensionati",
     mapYear: null,
-    pensionDistributionYear: null,
+    distributionYear: null,
     pensionDistributionMeasure: "pensioni_per_classe_importo",
-    incomeDistributionYear: null,
     incomeDistributionMeasure: "pensionati_per_classe_reddito_pensionistico",
     professionMeasure: "pensioni_vigenti",
     europeCountries: ["Germania", "Francia", "Spagna"],
     transferComponents: [],
+    replacementSeries: "eurostat_aggregate",
+    replacementSex: "T",
     replacementWorker: "dipendenti_privati",
     replacementCoverage: "obbligatoria",
     replacementMeasure: "lordo",
+    labourRatioMetric: "both",
     systemSeriesMetric: "funding",
     axisPrefs: {}
   };
@@ -32,8 +34,7 @@
     piTransferComponentsChart: true,
     piRateChart: true,
     piLabourCountsChart: true,
-    piWorkersRatioChart: true,
-    piInsuredRatioChart: true,
+    piLabourRatioChart: true,
     piContributionCoverageChart: true,
     piProfessionChart: true
   };
@@ -361,12 +362,11 @@
     var redditoInps = latest(annual, function (row) { return row.indicatore_id === "reddito_pensionistico_totale" && row.area === "Italia - INPS"; });
     var rate = latest(parameters, function (row) { return row.parametro_id === "aliquota_ivs_standard_ago_corrente"; });
 
-    node.appendChild(makeKpi("Reddito pensionistico/PIL", fmt(pil && pil.valore, 1) + "%", "Stesso anno " + text(pil && pil.anno)));
+    node.appendChild(makeKpi("Reddito pensionistico/PIL", fmt(pil && pil.valore, 1) + "%", "Reddito lordo / PIL nominale " + text(pil && pil.anno)));
     node.appendChild(makeKpi("Pensioni INPS", fmt(pensioni && pensioni.valore), "Prestazioni vigenti " + text(pensioni && pensioni.anno)));
     node.appendChild(makeKpi("Pensionati complessivi", fmt(pensionati && pensionati.valore), "Di cui INPS: " + fmt(pensionatiInps && pensionatiInps.valore)));
     node.appendChild(makeKpi("Pensioni per pensionato", fmt(ratio && ratio.valore, 2), "Rapporto nel perimetro INPS"));
-    node.appendChild(makeKpi("Reddito pensionistico lordo", euroBn(reddito && reddito.valore), "Totale complessivo " + text(reddito && reddito.anno)));
-    node.appendChild(makeKpi("Di cui pensionati INPS", euroBn(redditoInps && redditoInps.valore), "Sottoinsieme " + text(redditoInps && redditoInps.anno)));
+    node.appendChild(makeKpi("Reddito pensionistico lordo", euroBn(reddito && reddito.valore), "Totale " + text(reddito && reddito.anno) + "; di cui pensionati INPS: " + euroBn(redditoInps && redditoInps.valore)));
     node.appendChild(makeKpi("Aliquota IVS", fmt(rate && rate.valore, 1) + "%", "Riferimento corrente AGO/FPLD"));
   }
 
@@ -427,10 +427,21 @@
     });
   }
 
+  function rowYears(rows) {
+    return Array.from(new Set(toArray(rows).map(function (row) { return toNumber(row.anno); }))).filter(function (year) { return year !== null; });
+  }
+
+  function commonYears(rowGroups) {
+    var groups = toArray(rowGroups).map(function (rows) { return rowYears(rows); }).filter(function (years) { return years.length; });
+    if (!groups.length) return [];
+    return groups[0].filter(function (year) {
+      return groups.every(function (years) { return years.indexOf(year) >= 0; });
+    }).sort(function (a, b) { return a - b; });
+  }
+
   function fundingSeries() {
     var annual = tableRows("annual_pensions");
-    var transfers = rowsByIndicator(tableRows("state_transfers"), "trasferimenti_stato_inps_per_componente")
-      .filter(function (row) { return row.categoria_analitica === "oneri_pensionistici"; });
+    var transfers = rowsByIndicator(tableRows("state_transfers"), "trasferimenti_stato_inps");
     var contributions = rowsByIndicator(annual, "entrate_contributive_inps");
     var spending = rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) {
       return row.area === "Italia - complessivi";
@@ -438,8 +449,8 @@
     var inpsSpending = rowsByIndicator(annual, "reddito_pensionistico_totale").filter(function (row) {
       return row.area === "Italia - INPS";
     });
-    var years = Array.from(new Set([].concat(contributions, spending, inpsSpending, transfers).map(function (row) { return toNumber(row.anno); })))
-      .filter(function (year) { return year >= 2013; }).sort(function (a, b) { return a - b; });
+    var years = commonYears([contributions, spending, inpsSpending, transfers])
+      .filter(function (year) { return year >= 2018; });
 
     return {
       years: years,
@@ -447,7 +458,7 @@
         { type: "scatter", mode: "lines+markers", name: "Contributi INPS", x: years, y: valuesByYear(contributions, years, 1000000000), connectgaps: false, line: { color: COLORS[1], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
         { type: "scatter", mode: "lines+markers", name: "Reddito pensionistico complessivo", x: years, y: valuesByYear(spending, years, 1000000000), connectgaps: false, line: { color: COLORS[0], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
         { type: "scatter", mode: "lines+markers", name: "Di cui pensionati INPS", x: years, y: valuesByYear(inpsSpending, years, 1000000000), connectgaps: false, line: { color: COLORS[0], width: 2, dash: "dot" }, marker: { size: 6 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" },
-        { type: "scatter", mode: "lines+markers", name: "Oneri pensionistici Stato", x: years, y: valuesByYear(transfers, years, 1000000000), connectgaps: false, line: { color: COLORS[3], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }
+        { type: "scatter", mode: "lines+markers", name: "Trasferimenti Stato all'INPS", x: years, y: valuesByYear(transfers, years, 1000000000), connectgaps: false, line: { color: COLORS[3], width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}<br>%{y:.1f} miliardi di euro<extra></extra>" }
       ]
     };
   }
@@ -458,9 +469,9 @@
     var note = byId("piSystemSeriesNote");
     var copy = {
       funding: {
-        title: "Reddito pensionistico, contributi e oneri pensionistici",
+        title: "Reddito pensionistico, contributi e trasferimenti",
         tag: "flussi lordi",
-        note: "Il totale complessivo arriva a 370,7 miliardi nel 2025; la linea puntinata isola il sottoinsieme dei pensionati INPS, pari a 361,3 miliardi. Contributi e oneri pensionistici restano voci di bilancio INPS."
+        note: "La vista confronta solo anni comuni 2018-2025: reddito pensionistico lordo, sottoinsieme INPS, contributi incassati e trasferimenti correnti complessivi dallo Stato all'INPS. Le componenti GIAS sono nel grafico successivo."
       },
       spending: {
         title: "Reddito pensionistico lordo",
@@ -566,25 +577,6 @@
     });
   }
 
-  function renderDemographyRatioChart(id, indicator, label, color) {
-    var rows = rowsByIndicator(tableRows("demography_work"), indicator)
-      .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
-    plot(id, [{
-      type: "scatter",
-      mode: "lines+markers",
-      name: label,
-      x: rows.map(function (row) { return row.anno; }),
-      y: rows.map(function (row) { return toNumber(row.valore); }),
-      line: { color: color, width: 3 },
-      marker: { size: 8 },
-      hovertemplate: "%{x}<br>%{y:.2f} per pensionato<extra></extra>"
-    }], {
-      showlegend: false,
-      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
-      yaxis: { title: "rapporto", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
-    });
-  }
-
   function renderLabourCountsChart() {
     var demography = tableRows("demography_work");
     var pensioners = rowsByIndicator(tableRows("annual_pensions"), "pensionati")
@@ -612,12 +604,34 @@
     });
   }
 
-  function renderWorkersRatioChart() {
-    renderDemographyRatioChart("piWorkersRatioChart", "occupati_per_pensionato", "Occupati per pensionato", COLORS[2]);
-  }
-
-  function renderInsuredRatioChart() {
-    renderDemographyRatioChart("piInsuredRatioChart", "assicurati_inps_per_pensionato", "Assicurati INPS per pensionato", COLORS[1]);
+  function renderLabourRatioChart() {
+    var demography = tableRows("demography_work");
+    var configs = [
+      { key: "occupati", indicator: "occupati_per_pensionato", name: "Occupati per pensionato", color: COLORS[2] },
+      { key: "assicurati", indicator: "assicurati_inps_per_pensionato", name: "Assicurati INPS ponderati per pensionato", color: COLORS[1] }
+    ];
+    var selected = state.labourRatioMetric === "both" ? configs : configs.filter(function (item) { return item.key === state.labourRatioMetric; });
+    var yearFilter = state.labourRatioMetric === "both" ? commonYears(selected.map(function (item) { return rowsByIndicator(demography, item.indicator); })) : null;
+    var traces = selected.map(function (item) {
+      var rows = rowsByIndicator(demography, item.indicator)
+        .filter(function (row) { return !yearFilter || yearFilter.indexOf(toNumber(row.anno)) >= 0; })
+        .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: item.name,
+        x: rows.map(function (row) { return row.anno; }),
+        y: rows.map(function (row) { return toNumber(row.valore); }),
+        line: { color: item.color, width: 3 },
+        marker: { size: 8 },
+        hovertemplate: "%{x}<br>%{y:.2f} per pensionato<extra>" + item.name + "</extra>"
+      };
+    });
+    plot("piLabourRatioChart", traces, {
+      xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      yaxis: { title: "rapporto", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+      legend: { orientation: "h", x: 0, y: -0.24, font: { color: cssVar("--muted", "#b9b2aa") } }
+    });
   }
 
   function renderContributionCoverageChart() {
@@ -719,7 +733,8 @@
   }
 
   function renderEuropeChart() {
-    var rows = rowsByIndicator(tableRows("european_comparison"), "spesa_pensionistica_pil_esspros");
+    var comparison = tableRows("european_comparison");
+    var rows = rowsByIndicator(comparison, "spesa_pensionistica_pil_esspros");
     var countries = ["Italia", "Unione europea (27)"].concat(state.europeCountries);
     var colors = { "Italia": COLORS[0], "Unione europea (27)": COLORS[2] };
     var traces = countries.map(function (country, index) {
@@ -737,6 +752,21 @@
         hovertemplate: country + "<br>%{x}: %{y:.1f}% del PIL<extra></extra>"
       };
     }).filter(Boolean);
+    var nationalRatio = rowsByIndicator(comparison, "reddito_pensionistico_pil_complessivo")
+      .filter(function (row) { return row.paese === "Italia" && toNumber(row.anno) >= 2024; })
+      .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+    if (nationalRatio.length) {
+      traces.push({
+        type: "scatter",
+        mode: "lines+markers",
+        name: "Italia 2024-2025, reddito pensionistico/PIL",
+        x: nationalRatio.map(function (row) { return row.anno; }),
+        y: nationalRatio.map(function (row) { return row.valore; }),
+        line: { color: COLORS[3], width: 3, dash: "dot" },
+        marker: { size: 8, symbol: "diamond" },
+        hovertemplate: "Italia<br>%{x}: %{y:.1f}% del PIL<br>Reddito pensionistico lordo / PIL nominale<extra></extra>"
+      });
+    }
     plot("piEuropeChart", traces, {
       xaxis: { dtick: 2, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       yaxis: { title: "% del PIL", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
@@ -769,25 +799,48 @@
   }
 
   function renderReplacementRateChart() {
+    var title = byId("piReplacementTitle");
+    var tag = byId("piReplacementTag");
+    var note = byId("piReplacementNote");
+    var credit = byId("piReplacementCredit");
+    if (state.replacementSeries === "eurostat_aggregate") {
+      var rows = rowsByIndicator(tableRows("european_comparison"), "tasso_sostituzione_aggregato_eurostat")
+        .filter(function (row) { return row.paese === "Italia" && row.definizione === "aggregato|" + state.replacementSex; })
+        .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
+      if (title) title.textContent = "Tasso di sostituzione aggregato";
+      if (tag) tag.textContent = "Eurostat, 2010-2025";
+      if (note) note.textContent = "Rapporto aggregato tra pensione individuale mediana lorda delle persone 65-74 e reddito individuale mediano lordo da lavoro delle persone 50-59. E' annuale e osservato, ma non coincide con il tasso RGS di un profilo tipo.";
+      if (credit) credit.textContent = "Fonte: Eurostat, dataset ilc_pnp3. Elaborazione di Nazareno Lecis.";
+      plot("piReplacementRateChart", [{
+        type: "scatter",
+        mode: "lines+markers",
+        name: "Italia",
+        x: rows.map(function (row) { return row.anno; }),
+        y: rows.map(function (row) { return row.valore; }),
+        line: { color: COLORS[0], width: 3 },
+        marker: { size: 8 },
+        hovertemplate: "%{x}<br>%{y:.1f}%<extra>Tasso aggregato</extra>"
+      }], {
+        showlegend: false,
+        xaxis: { dtick: 1, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
+        yaxis: { title: "%", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") }
+      });
+      return;
+    }
+
     var target = [state.replacementWorker, state.replacementCoverage, state.replacementMeasure].join("|");
-    var rows = rowsByIndicator(tableRows("european_comparison"), "tasso_sostituzione_rgs")
+    var rgsRows = rowsByIndicator(tableRows("european_comparison"), "tasso_sostituzione_rgs")
       .filter(function (row) { return row.definizione === target; })
       .sort(function (a, b) { return toNumber(a.anno) - toNumber(b.anno); });
-    var observed = rows.filter(function (row) { return toNumber(row.anno) <= 2020; });
-    var projections = rows.filter(function (row) { return toNumber(row.anno) >= 2020; });
+    var observed = rgsRows.filter(function (row) { return toNumber(row.anno) <= 2020; });
+    var projections = rgsRows.filter(function (row) { return toNumber(row.anno) >= 2020; });
+    if (title) title.textContent = "Tasso di sostituzione: profilo RGS e proiezioni";
+    if (tag) tag.textContent = "scenario RGS";
+    if (note) note.textContent = "Rapporto tra prima pensione e ultima retribuzione o reddito del profilo selezionato. La tavola RGS pubblica punti decennali; dal 2030 il tratto e' una proiezione.";
+    if (credit) credit.textContent = "Fonte: MEF-RGS, Rapporto n. 26/2025, Tavola 6.4. Elaborazione di Nazareno Lecis.";
     plot("piReplacementRateChart", [
-      {
-        type: "scatter", mode: "lines+markers", name: "Valori di riferimento",
-        x: observed.map(function (row) { return row.anno; }), y: observed.map(function (row) { return row.valore; }),
-        line: { color: COLORS[0], width: 3 }, marker: { size: 8 },
-        hovertemplate: "%{x}<br>%{y:.1f}%<extra>Valore di riferimento</extra>"
-      },
-      {
-        type: "scatter", mode: "lines+markers", name: "Proiezione RGS",
-        x: projections.map(function (row) { return row.anno; }), y: projections.map(function (row) { return row.valore; }),
-        line: { color: COLORS[3], width: 3, dash: "dash" }, marker: { size: 8, symbol: "diamond" },
-        hovertemplate: "%{x}<br>%{y:.1f}%<extra>Proiezione RGS</extra>"
-      }
+      { type: "scatter", mode: "lines+markers", name: "Valori di riferimento", x: observed.map(function (row) { return row.anno; }), y: observed.map(function (row) { return row.valore; }), line: { color: COLORS[0], width: 3 }, marker: { size: 8 }, hovertemplate: "%{x}<br>%{y:.1f}%<extra>Valore di riferimento</extra>" },
+      { type: "scatter", mode: "lines+markers", name: "Proiezione RGS", x: projections.map(function (row) { return row.anno; }), y: projections.map(function (row) { return row.valore; }), line: { color: COLORS[3], width: 3, dash: "dash" }, marker: { size: 8, symbol: "diamond" }, hovertemplate: "%{x}<br>%{y:.1f}%<extra>Proiezione RGS</extra>" }
     ], {
       xaxis: { dtick: 10, fixedrange: true, gridcolor: cssVar("--line", "#303030") },
       yaxis: { title: "% dell'ultima retribuzione o reddito", rangemode: "tozero", fixedrange: true, gridcolor: cssVar("--line", "#303030") },
@@ -808,10 +861,10 @@
   function renderDistributions() {
     var distribution = tableRows("pensioner_distribution");
     var pensions = orderedDistribution(distribution.filter(function (row) {
-      return row.popolazione === "pensioni" && row.indicatore_id === state.pensionDistributionMeasure && toNumber(row.anno) === state.pensionDistributionYear;
+      return row.popolazione === "pensioni" && row.indicatore_id === state.pensionDistributionMeasure && toNumber(row.anno) === state.distributionYear;
     }));
     var pensioners = orderedDistribution(distribution.filter(function (row) {
-      return row.popolazione === "pensionati_inps" && row.indicatore_id === state.incomeDistributionMeasure && toNumber(row.anno) === state.incomeDistributionYear;
+      return row.popolazione === "pensionati_inps" && row.indicatore_id === state.incomeDistributionMeasure && toNumber(row.anno) === state.distributionYear;
     }));
     var pensionConfig = {
       pensioni_per_classe_importo: { scale: 1000000, title: "milioni di pensioni", suffix: " mln pensioni" },
@@ -1011,6 +1064,16 @@
     });
   }
 
+  function updateReplacementControls() {
+    var isRgs = state.replacementSeries === "rgs_profile";
+    ["piReplacementWorker", "piReplacementCoverage", "piReplacementMeasure"].forEach(function (id) {
+      var control = byId(id);
+      if (control && control.parentNode) control.parentNode.style.display = isRgs ? "" : "none";
+    });
+    var sex = byId("piReplacementSex");
+    if (sex && sex.parentNode) sex.parentNode.style.display = isRgs ? "none" : "";
+  }
+
   function setupControls() {
     var metric = byId("piMapMetric");
     var mapYear = byId("piMapYear");
@@ -1038,20 +1101,53 @@
       mapYear.addEventListener("change", function () { state.mapYear = toNumber(mapYear.value); renderRegionalMap(); });
     }
 
-    function setupDistribution(yearId, measureId, population, stateYearKey, stateMeasureKey) {
-      var yearNode = byId(yearId);
-      var measureNode = byId(measureId);
-      var years = Array.from(new Set(tableRows("pensioner_distribution").filter(function (row) { return row.popolazione === population; }).map(function (row) { return toNumber(row.anno); }))).filter(Boolean).sort();
-      clear(yearNode);
-      years.forEach(function (year) { var option = document.createElement("option"); option.value = year; option.textContent = year; yearNode.appendChild(option); });
-      state[stateYearKey] = years[years.length - 1];
-      yearNode.value = state[stateYearKey];
-      measureNode.value = state[stateMeasureKey];
-      yearNode.addEventListener("change", function () { state[stateYearKey] = toNumber(yearNode.value); renderDistributions(); });
-      measureNode.addEventListener("change", function () { state[stateMeasureKey] = measureNode.value; renderDistributions(); });
+    var distributionYear = byId("piDistributionYear");
+    var pensionMeasure = byId("piPensionDistributionMeasure");
+    var incomeMeasure = byId("piIncomeDistributionMeasure");
+    function distributionYears(population, indicator) {
+      return Array.from(new Set(tableRows("pensioner_distribution").filter(function (row) {
+        return row.popolazione === population && row.indicatore_id === indicator;
+      }).map(function (row) { return toNumber(row.anno); }))).filter(Boolean);
     }
-    setupDistribution("piPensionDistributionYear", "piPensionDistributionMeasure", "pensioni", "pensionDistributionYear", "pensionDistributionMeasure");
-    setupDistribution("piIncomeDistributionYear", "piIncomeDistributionMeasure", "pensionati_inps", "incomeDistributionYear", "incomeDistributionMeasure");
+    function fillDistributionYears() {
+      if (!distributionYear) return;
+      var years = commonYears([
+        distributionYears("pensioni", state.pensionDistributionMeasure).map(function (year) { return { anno: year }; }),
+        distributionYears("pensionati_inps", state.incomeDistributionMeasure).map(function (year) { return { anno: year }; })
+      ]);
+      clear(distributionYear);
+      years.forEach(function (year) {
+        var option = document.createElement("option");
+        option.value = year;
+        option.textContent = year;
+        distributionYear.appendChild(option);
+      });
+      state.distributionYear = years.indexOf(state.distributionYear) >= 0 ? state.distributionYear : years[years.length - 1];
+      distributionYear.value = state.distributionYear;
+    }
+    if (pensionMeasure) {
+      pensionMeasure.value = state.pensionDistributionMeasure;
+      pensionMeasure.addEventListener("change", function () {
+        state.pensionDistributionMeasure = pensionMeasure.value;
+        fillDistributionYears();
+        renderDistributions();
+      });
+    }
+    if (incomeMeasure) {
+      incomeMeasure.value = state.incomeDistributionMeasure;
+      incomeMeasure.addEventListener("change", function () {
+        state.incomeDistributionMeasure = incomeMeasure.value;
+        fillDistributionYears();
+        renderDistributions();
+      });
+    }
+    if (distributionYear) {
+      fillDistributionYears();
+      distributionYear.addEventListener("change", function () {
+        state.distributionYear = toNumber(distributionYear.value);
+        renderDistributions();
+      });
+    }
 
     var systemSeries = byId("piSystemSeriesMetric");
     if (systemSeries) {
@@ -1087,6 +1183,8 @@
     }
 
     [
+      ["piReplacementSeries", "replacementSeries"],
+      ["piReplacementSex", "replacementSex"],
       ["piReplacementWorker", "replacementWorker"],
       ["piReplacementCoverage", "replacementCoverage"],
       ["piReplacementMeasure", "replacementMeasure"]
@@ -1094,8 +1192,22 @@
       var control = byId(item[0]);
       if (!control) return;
       control.value = state[item[1]];
-      control.addEventListener("change", function () { state[item[1]] = control.value; renderReplacementRateChart(); });
+      control.addEventListener("change", function () {
+        state[item[1]] = control.value;
+        updateReplacementControls();
+        renderReplacementRateChart();
+      });
     });
+    updateReplacementControls();
+
+    var labourRatio = byId("piLabourRatioMetric");
+    if (labourRatio) {
+      labourRatio.value = state.labourRatioMetric;
+      labourRatio.addEventListener("change", function () {
+        state.labourRatioMetric = labourRatio.value;
+        renderLabourRatioChart();
+      });
+    }
 
     var europe = byId("piEuropeCountries");
     var countries = Array.from(new Set(rowsByIndicator(tableRows("european_comparison"), "spesa_pensionistica_pil_esspros").map(function (row) { return row.paese; })))
@@ -1124,8 +1236,7 @@
     renderTransferComponentsChart();
     renderRateChart();
     renderLabourCountsChart();
-    renderWorkersRatioChart();
-    renderInsuredRatioChart();
+    renderLabourRatioChart();
     renderContributionCoverageChart();
     renderEuropeChart();
     renderReplacementRateChart();
