@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-10";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/dashboard.json?v=20260711-11";
   var GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f"];
@@ -891,9 +891,9 @@
         tag: "trattamenti lordi",
         source: "Fonte: INPS, Open Data, Appendici statistiche, Casellario dei pensionati 2024 e repository pensioni. Elaborazione di Nazareno Lecis.",
         measures: {
-          count: { indicator: "pensioni_per_classe_importo", scale: 1000000, axis: "milioni di pensioni", suffix: " mln pensioni", label: "Numero di pensioni" },
-          total: { indicator: "spesa_per_classe_importo", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Spesa annua lorda" },
-          net_total: { indicator: "spesa_netta_stimata_per_classe_importo", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Spesa annua netta stimata", net: true, note: "Il netto e' simulato sul trattamento medio lordo della classe come se fosse reddito pensionistico imponibile della persona." },
+          count: { indicator: "pensioni_per_classe_importo", scale: 1000000, axis: "milioni di pensioni", suffix: " mln pensioni", label: "Numero di pensioni", title: "Pensioni per classe d'importo" },
+          total: { indicator: "spesa_per_classe_importo", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Ammontare lordo complessivo", amount: true, title: "Spesa lorda per classe d'importo" },
+          net_total: { indicator: "spesa_netta_stimata_per_classe_importo", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Ammontare netto stimato complessivo", amount: true, net: true, title: "Spesa netta stimata per classe d'importo", note: "Il netto e' simulato sul trattamento medio lordo della classe come se fosse reddito pensionistico imponibile della persona." },
           average: { indicator: "importo_medio_pensione_mensile_classe", scale: 1, axis: "euro al mese", suffix: " euro al mese", label: "Importo medio mensile lordo" },
           net_average: { indicator: "importo_medio_pensione_netto_stimato_mensile_classe", scale: 1, axis: "euro al mese", suffix: " euro al mese", label: "Importo medio mensile netto stimato", net: true, note: "Il netto e' simulato sul trattamento medio lordo della classe come se fosse reddito pensionistico imponibile della persona." }
         },
@@ -906,9 +906,9 @@
         tag: "persone e redditi lordi",
         source: "Fonte: INPS, Open Data, Appendici statistiche e repository pensioni. Elaborazione di Nazareno Lecis.",
         measures: {
-          count: { indicator: "pensionati_per_classe_reddito_pensionistico", scale: 1000000, axis: "milioni di pensionati", suffix: " mln pensionati", label: "Numero di pensionati" },
-          total: { indicator: "reddito_pensionistico_totale", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Reddito pensionistico annuo lordo" },
-          net_total: { indicator: "reddito_pensionistico_netto_stimato_totale", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Reddito pensionistico annuo netto stimato", net: true, note: "Il netto e' stimato sul reddito pensionistico lordo medio della classe." }
+          count: { indicator: "pensionati_per_classe_reddito_pensionistico", scale: 1000000, axis: "milioni di pensionati", suffix: " mln pensionati", label: "Numero di pensionati", title: "Pensionati per reddito pensionistico" },
+          total: { indicator: "reddito_pensionistico_totale", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Ammontare lordo complessivo", amount: true, title: "Ammontare lordo del reddito pensionistico" },
+          net_total: { indicator: "reddito_pensionistico_netto_stimato_totale", scale: 1000000000, axis: "miliardi di euro annui", suffix: " mld euro", label: "Ammontare netto stimato complessivo", amount: true, net: true, title: "Ammontare netto stimato del reddito pensionistico", note: "Il netto e' stimato sul reddito pensionistico lordo medio della classe." }
         },
         note: "Classifica le persone per reddito pensionistico mensile lordo complessivo. Qui tutte le pensioni percepite dalla stessa persona vengono sommate."
       }
@@ -921,9 +921,9 @@
   function distributionMetricOptions() {
     if (state.distributionScope === "pensionati") {
       return [
-        { value: "count", label: "Numero di pensionati" },
-        { value: "total", label: "Totale reddito pensionistico lordo per fascia" },
-        { value: "net_total", label: "Totale reddito pensionistico netto stimato per fascia" }
+        { value: "count", label: "Numero di pensionati per fascia di reddito" },
+        { value: "total", label: "Ammontare lordo complessivo per fascia" },
+        { value: "net_total", label: "Ammontare netto stimato complessivo per fascia" }
       ];
     }
     return [
@@ -944,13 +944,19 @@
     var note = byId("piDistributionNote");
     var credit = byId("piDistributionCredit");
     var sexFallback = state.distributionSex !== "Totale" && !hasDistributionSex(distribution, config.population, config.measure.indicator, state.distributionYear, state.distributionSex);
-    if (title) title.textContent = config.title;
+    if (title) title.textContent = config.measure.title || config.title;
     if (tag) tag.textContent = config.measure.label;
     if (note) {
       var methodNote = config.measure.net
         ? " Metodo: scaglioni IRPEF nazionali e detrazione per redditi da pensione applicati al lordo medio annuo della fascia; esclusi addizionali locali, altri redditi, oneri e carichi familiari."
         : "";
-      note.textContent = config.note + " Le classi sono ricomposte in bande comuni fino a 3000 euro e oltre." + (config.measure.note ? " " + config.measure.note : "") + methodNote + (sexFallback ? " Per questa combinazione il dato per sesso non e' disponibile: viene mostrato il totale." : "");
+      var amountNote = "";
+      if (config.measure.amount && config.population === "pensionati_inps") {
+        amountNote = " Questa vista somma il reddito pensionistico annuo dei pensionati nella fascia: non e' il numero di persone. Per contare persone scegli Numero di pensionati.";
+      } else if (config.measure.amount) {
+        amountNote = " Questa vista somma gli importi annui dei trattamenti nella fascia: non e' il numero di pensioni.";
+      }
+      note.textContent = config.note + " Le classi sono ricomposte in bande comuni fino a 3000 euro e oltre." + amountNote + (config.measure.note ? " " + config.measure.note : "") + methodNote + (sexFallback ? " Per questa combinazione il dato per sesso non e' disponibile: viene mostrato il totale." : "");
     }
     if (credit) credit.textContent = config.source;
     plot("piDistributionChart", [{
