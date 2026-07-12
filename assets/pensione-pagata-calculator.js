@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-3";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-4";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1"];
   var PROGRESSION = { nessuna: 0, lenta: 0.01, media: 0.02, rapida: 0.03 };
   var state = { payload: null, mode: "simple", annualRows: [], result: null, career: [], scenario: null, axisMode: "zero" };
@@ -26,6 +26,32 @@
   }
   function euro(value, digits) { return fmt(value, digits) + " euro"; }
   function pct(value, digits) { return fmt((toNumber(value, 0) || 0) * 100, digits === undefined ? 1 : digits) + "%"; }
+  function pensionNetAnnualEstimate(annualGross, year) {
+    annualGross = Math.max(toNumber(annualGross, 0), 0);
+    if (!annualGross) return 0;
+    var middleRate = year >= 2026 ? 0.33 : 0.35, grossTax, detraction;
+    if (annualGross <= 28000) grossTax = annualGross * 0.23;
+    else if (annualGross <= 50000) grossTax = 6440 + (annualGross - 28000) * middleRate;
+    else grossTax = 6440 + 22000 * middleRate + (annualGross - 50000) * 0.43;
+    if (annualGross <= 8500) detraction = 1955;
+    else if (annualGross <= 28000) detraction = 700 + 1255 * (28000 - annualGross) / 19500;
+    else if (annualGross <= 50000) detraction = 700 * (50000 - annualGross) / 22000;
+    else detraction = 0;
+    if (annualGross > 25000 && annualGross <= 29000) detraction += 50;
+    return Math.max(annualGross - Math.max(grossTax - Math.max(detraction, 0), 0) - annualGross * 0.021, 0);
+  }
+  function pensionGrossAnnualFromNet(annualNet, year) {
+    annualNet = Math.max(toNumber(annualNet, 0), 0);
+    if (!annualNet) return 0;
+    var low = annualNet, high = Math.max(annualNet * 2.5, annualNet + 30000);
+    while (pensionNetAnnualEstimate(high, year) < annualNet) high *= 1.5;
+    for (var iteration = 0; iteration < 80; iteration += 1) {
+      var middle = (low + high) / 2;
+      if (pensionNetAnnualEstimate(middle, year) < annualNet) low = middle;
+      else high = middle;
+    }
+    return (low + high) / 2;
+  }
   function setStatus(message, isError) {
     var node = byId("pcStatus");
     if (!node) return;
@@ -109,9 +135,20 @@
     byId("pcCategoryNote").textContent = category.note || "";
     var tag = byId("pcCategoryTag");
     if (tag) tag.textContent = category.gestione || "FPLD";
-    var artisan = category.profilo_aliquota_id === "artigiani";
-    document.querySelectorAll("[data-employee-label][data-artisan-label]").forEach(function (label) {
-      label.textContent = artisan ? label.dataset.artisanLabel : label.dataset.employeeLabel;
+    var business = ["artigiani", "commercianti"].indexOf(category.profilo_aliquota_id) >= 0;
+    var conventional = category.profilo_aliquota_id === "agricoli_autonomi";
+    document.querySelectorAll("[data-employee-label]").forEach(function (label) {
+      if (conventional && label.dataset.conventionalLabel) label.textContent = label.dataset.conventionalLabel;
+      else if (business && label.dataset.businessLabel) label.textContent = label.dataset.businessLabel;
+      else label.textContent = label.dataset.employeeLabel;
+    });
+    var minimum = toNumber(category.anno_minimo_calcolabile, 1976);
+    ["pcSimpleStartYear", "pcStartYear"].forEach(function (id) {
+      var input = byId(id);
+      if (input && toNumber(input.value, minimum) < minimum) input.value = minimum;
+    });
+    document.querySelectorAll('[data-period-field="start"]').forEach(function (input) {
+      if (toNumber(input.value, minimum) < minimum) input.value = minimum;
     });
   }
   function fillSelect(select, values, selected) {
@@ -126,13 +163,11 @@
   }
   function populateSimpleMenus() {
     var current = new Date().getFullYear();
-    var years = [], reverseYears = [], contributionYears = [];
+    var years = [], contributionYears = [];
     for (var year = 1976; year <= current; year += 1) years.push(year);
-    for (var reverse = current; reverse >= 1976; reverse -= 1) reverseYears.push(reverse);
     for (var count = 5; count <= 50; count += 1) contributionYears.push(count);
     fillSelect(byId("pcSimpleStartYear"), years, 1996);
     fillSelect(byId("pcSimpleContributedYears"), contributionYears, 29);
-    fillSelect(byId("pcPensionReferenceYear"), reverseYears, current);
   }
 
   function makePeriod(index, values) {
@@ -142,8 +177,8 @@
     wrapper.innerHTML = '<h4>Periodo ' + (index + 1) + '</h4>' +
       '<label><span>Anno iniziale</span><input data-period-field="start" type="number" min="1976" max="2050" value="' + (values.start || "") + '"></label>' +
       '<label><span>Anno finale</span><input data-period-field="end" type="number" min="1976" max="2050" value="' + (values.end || "") + '"></label>' +
-      '<label><span data-employee-label="RAL iniziale" data-artisan-label="Reddito imponibile iniziale">RAL iniziale</span><input data-period-field="ralStart" type="number" min="0" step="500" value="' + (values.ralStart || "") + '"></label>' +
-      '<label><span data-employee-label="RAL finale" data-artisan-label="Reddito imponibile finale">RAL finale</span><input data-period-field="ralEnd" type="number" min="0" step="500" value="' + (values.ralEnd || "") + '"></label>' +
+      '<label><span data-employee-label="RAL iniziale" data-business-label="Reddito imponibile iniziale" data-conventional-label="Reddito convenzionale iniziale">RAL iniziale</span><input data-period-field="ralStart" type="number" min="0" step="500" value="' + (values.ralStart || "") + '"></label>' +
+      '<label><span data-employee-label="RAL finale" data-business-label="Reddito imponibile finale" data-conventional-label="Reddito convenzionale finale">RAL finale</span><input data-period-field="ralEnd" type="number" min="0" step="500" value="' + (values.ralEnd || "") + '"></label>' +
       '<label><span>Quota lavoro</span><input data-period-field="workShare" type="number" min="1" max="100" value="' + (values.workShare || 100) + '"></label>' +
       '<label><span>Mesi annui</span><input data-period-field="months" type="number" min="0" max="12" step="0.5" value="' + (values.months || 12) + '"></label>';
     return wrapper;
@@ -161,6 +196,12 @@
     var retirement = parseDate(inputText("pcRetirementDate", "2025-01-01"));
     if (!birth || !retirement) throw new Error("Inserisci date di nascita e pensionamento valide.");
     var age = ageParts(birth, retirement);
+    var currentYear = new Date().getFullYear();
+    var pensionMonths = inputNumber("pcPensionMonths", 13);
+    var pensionInput = inputNumber("pcMonthlyPension", 2000);
+    var pensionValueType = inputText("pcPensionValueType", "lordo");
+    var annualGross = pensionValueType === "netto" ? pensionGrossAnnualFromNet(pensionInput * pensionMonths, currentYear) : pensionInput * pensionMonths;
+    var annualNet = pensionValueType === "netto" ? pensionInput * pensionMonths : pensionNetAnnualEstimate(annualGross, currentYear);
     var start, end, contributed, workShare, workMonths, firstRal, finalRal, progression;
     if (state.mode === "simple") {
       start = inputNumber("pcSimpleStartYear", 1996);
@@ -211,17 +252,21 @@
       anni_contribuiti: contributed,
       percentuale_lavoro: workShare,
       mesi_lavorati_annui: workMonths,
-      pensione_lorda_mensile_effettiva: inputNumber("pcMonthlyPension", 2000),
-      mensilita_pensione: inputNumber("pcPensionMonths", 13),
-      anno_riferimento_pensione: inputNumber("pcPensionReferenceYear", new Date().getFullYear()),
+      pensione_mensile_attuale: pensionInput,
+      pensione_valore_tipo: pensionValueType,
+      pensione_lorda_mensile_effettiva: annualGross / pensionMonths,
+      pensione_netto_mensile_stimato: annualNet / pensionMonths,
+      mensilita_pensione: pensionMonths,
+      anno_riferimento_pensione: currentYear,
       rivalutazione_futura_pensione: inputText("pcFutureIndexation", "nessuna"),
       tasso_inflazione_futura: inputNumber("pcFutureInflation", 2) / 100
     };
   }
   function validateScenario(scenario) {
     var category = categoryFor(scenario.categoria_id);
-    if (!category || !truthy(category.abilitata_frontend) || ["fpld", "artigiani"].indexOf(category.profilo_aliquota_id) < 0) throw new Error("La categoria scelta non ha ancora una serie storica utilizzabile.");
-    if (category.anno_minimo_calcolabile && scenario.anno_inizio < toNumber(category.anno_minimo_calcolabile)) throw new Error("Per gli artigiani il calcolo percentuale e' disponibile dal 1990. Per anni precedenti usa una carriera mista con i contributi effettivi anno per anno.");
+    var supported = ["fpld", "artigiani", "commercianti", "pubblico_ctps", "pubblico_enti_locali", "agricoli_dipendenti", "agricoli_autonomi"];
+    if (!category || !truthy(category.abilitata_frontend) || supported.indexOf(category.profilo_aliquota_id) < 0) throw new Error("La categoria scelta non ha ancora una serie storica utilizzabile.");
+    if (category.anno_minimo_calcolabile && scenario.anno_inizio < toNumber(category.anno_minimo_calcolabile)) throw new Error(category.categoria_nome + " e' disponibile dal " + category.anno_minimo_calcolabile + ". Per gli anni precedenti inserisci i contributi effettivi di una gestione supportata.");
     if (scenario.anno_inizio > scenario.anno_fine) throw new Error("L'inizio della carriera deve precedere la fine.");
     if (scenario.anno_fine >= scenario.anno_pensione) throw new Error("La carriera deve terminare prima del pensionamento.");
     if (scenario.eta_pensione < 40 || scenario.eta_pensione > 80) throw new Error("Controlla le date: l'eta al pensionamento non e' plausibile.");
@@ -243,8 +288,9 @@
     var nature = "osservato";
     if (!period.length) {
       nature = "tabella piu' vicina";
-      var latest = Math.max.apply(null, table.map(function (row) { return toNumber(row.periodo_dal, 0); }));
-      period = table.filter(function (row) { return toNumber(row.periodo_dal) === latest; });
+      var periods = table.map(function (row) { return toNumber(row.periodo_dal, 0); }).filter(function (value, index, values) { return values.indexOf(value) === index; });
+      var nearest = periods.sort(function (a, b) { return Math.abs(a - year) - Math.abs(b - year); })[0];
+      period = table.filter(function (row) { return toNumber(row.periodo_dal) === nearest; });
     }
     var byAge = {};
     period.forEach(function (row) { byAge[toNumber(row.eta)] = toNumber(row.coefficiente); });
@@ -306,7 +352,7 @@
       var financial = row.contributi !== null && row.contributi !== undefined ? toNumber(row.contributi, 0) : taxable * financing;
       var credit = taxable * computation + toNumber(row.contributi_figurativi, 0);
       accrued = accrued * (1 + capitalization) + credit;
-      return { scenario_id: "frontend", anno: row.anno, categoria: category.categoria_id, gestione: category.gestione, retribuzione_stimata: taxable, retribuzione_inserita: taxable, mesi_lavorati: toNumber(row.mesi_lavorati, 12), percentuale_part_time: toNumber(row.percentuale_part_time, 100), imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: "inserito dall'utente", indice_anno: index + 1 };
+      return { scenario_id: "frontend", anno: row.anno, categoria: category.categoria_id, gestione: category.gestione, retribuzione_stimata: taxable, retribuzione_inserita: taxable, mesi_lavorati: toNumber(row.mesi_lavorati, 12), percentuale_part_time: toNumber(row.percentuale_part_time, 100), imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: row.natura_dato || "stimato_periodi", indice_anno: index + 1 };
     });
   }
 
@@ -362,8 +408,12 @@
     var before = career.filter(function (row) { return row.anno < 1996; }).length;
     return !before ? "contributivo" : before >= 18 ? "prevalentemente retributivo" : "misto";
   }
-  function reliability() {
-    if (state.mode === "accurate") return { level: "alta", note: "Gli imponibili sono inseriti anno per anno; restano le approssimazioni dei parametri storici e della pensione indicata." };
+  function reliability(career) {
+    if (state.mode === "accurate") {
+      var actual = career.length && career.every(function (row) { return row.natura_dato === "inserito_utente"; });
+      if (actual) return { level: "alta", note: "Gli imponibili effettivi sono stati inseriti anno per anno; restano le approssimazioni fiscali e dei parametri non osservabili." };
+      return { level: "media", note: "Le righe annuali sono precompilate da periodi medi. Sostituisci ogni imponibile con il dato dell'estratto contributivo INPS per ottenere la modalita accurata." };
+    }
     if (state.mode === "guided") return { level: "media", note: "La carriera usa valori medi. Gli imponibili dell'estratto contributivo renderebbero la stima piu' precisa." };
     return { level: "bassa", note: "La carriera e' ricostruita con pochi dati e va letta come ordine di grandezza." };
   }
@@ -377,8 +427,8 @@
     var timeline = calculateTimeline(scenario, accrued, actualAtRetirement), expected = 0;
     var futureRate = scenario.rivalutazione_futura_pensione === "inflazione_costante" ? scenario.tasso_inflazione_futura : 0;
     for (var horizon = 0; horizon <= 55; horizon += 1) expected += actualAtRetirement * Math.pow(1 + futureRate, horizon) * survival(scenario, timeline.retirementAge, horizon);
-    var rel = reliability(), months = scenario.mensilita_pensione || 13;
-    return { anni_contribuzione: career.reduce(function (sum, row) { return sum + toNumber(row.mesi_lavorati, 0) / 12; }, 0), contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0), montante_contributivo: accrued, coefficiente_trasformazione: coefficient.coefficiente, anno_riferimento_confronto: scenario.anno_riferimento_pensione, pensione_contributiva_annua_equivalente: contributive, pensione_effettiva_annua_lorda: actualAtRetirement, pensione_contributiva_annua_equivalente_anno_riferimento: contributiveAtReference, pensione_effettiva_annua_lorda_anno_riferimento: actualAtReference, pensione_contributiva_mensile_equivalente: contributiveAtReference / months, pensione_effettiva_mensile_lorda_anno_riferimento: actualAtReference / months, differenza_mensile_lorda: (actualAtReference - contributiveAtReference) / months, differenza_annua_lorda: actualAtReference - contributiveAtReference, differenza_percentuale_su_contributiva: contributiveAtReference ? (actualAtReference - contributiveAtReference) / contributiveAtReference : 0, valore_atteso_prestazioni_lorde: expected, eta_pareggio: timeline.exhaustionAge, regime_indicativo: classifyRegime(career), livello_affidabilita: rel.level, input_migliorativi: rel.note, natura_coefficiente: coefficient.natura, timeline: timeline };
+    var rel = reliability(career), months = scenario.mensilita_pensione || 13;
+    return { anni_contribuzione: career.reduce(function (sum, row) { return sum + toNumber(row.mesi_lavorati, 0) / 12; }, 0), contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0), montante_contributivo: accrued, coefficiente_trasformazione: coefficient.coefficiente, eta_coefficiente: coefficient.eta_usata, anno_riferimento_confronto: scenario.anno_riferimento_pensione, pensione_contributiva_annua_equivalente: contributive, pensione_effettiva_annua_lorda: actualAtRetirement, pensione_contributiva_annua_equivalente_anno_riferimento: contributiveAtReference, pensione_effettiva_annua_lorda_anno_riferimento: actualAtReference, pensione_contributiva_mensile_equivalente: contributiveAtReference / months, pensione_effettiva_mensile_lorda_anno_riferimento: actualAtReference / months, differenza_mensile_lorda: (actualAtReference - contributiveAtReference) / months, differenza_annua_lorda: actualAtReference - contributiveAtReference, differenza_percentuale_su_contributiva: contributiveAtReference ? (actualAtReference - contributiveAtReference) / contributiveAtReference : 0, valore_atteso_prestazioni_lorde: expected, eta_pareggio: timeline.exhaustionAge, regime_indicativo: classifyRegime(career), livello_affidabilita: rel.level, input_migliorativi: rel.note, natura_coefficiente: coefficient.natura, timeline: timeline };
   }
 
   function makeKpi(label, value, note) {
@@ -391,10 +441,12 @@
     var node = byId("pcKpis"), timeline = result.timeline;
     clear(node);
     var exhaustionLabel = timeline.exhaustionDate ? formatDate(timeline.exhaustionDate) : "non raggiunto";
+    var pensionInputNote = scenario.pensione_valore_tipo === "netto" ? "lordo stimato dalla pensione netta inserita" : "pensione lorda attuale inserita";
     [
       ["Montante contributivo", euro(result.montante_contributivo), "accrediti rivalutati a fine carriera"],
-      ["Pensione effettiva", euro(result.pensione_effettiva_mensile_lorda_anno_riferimento), "lordo per rata nel " + result.anno_riferimento_confronto],
+      ["Pensione effettiva", euro(result.pensione_effettiva_mensile_lorda_anno_riferimento), pensionInputNote],
       ["Pensione contributiva", euro(result.pensione_contributiva_mensile_equivalente), "lordo equivalente per rata nel " + result.anno_riferimento_confronto],
+      ["Coefficiente", pct(result.coefficiente_trasformazione, 3), "eta " + fmt(result.eta_coefficiente, 2) + " alla data di pensionamento"],
       ["Differenza per rata", euro(result.differenza_mensile_lorda), pct(result.differenza_percentuale_su_contributiva) + " rispetto alla contributiva"],
       ["Tempo in pensione", timeline.yearsRetired ? fmt(timeline.yearsRetired, 1) + " anni" : "non ancora", "calcolato dalla data inserita"],
       ["Gia' ricevuto", euro(timeline.received), "stima lorda cumulata fino a oggi"],
@@ -410,7 +462,7 @@
     narrative += "All'eta attesa media di " + fmt(timeline.expectedAge, 1) + " anni, il totale lordo cumulato sarebbe circa " + euro(timeline.cumulativeAtExpected) + ".";
     byId("pcResultNarrative").textContent = narrative;
     byId("pcReliability").innerHTML = "<strong>Affidabilita " + result.livello_affidabilita + ".</strong> " + result.input_migliorativi + " Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.";
-    byId("pcPensionChartNote").textContent = "Nel " + result.anno_riferimento_confronto + " la rata effettiva inserita e' " + euro(result.pensione_effettiva_mensile_lorda_anno_riferimento) + "; quella contributiva equivalente, rivalutata in modo omogeneo, e' " + euro(result.pensione_contributiva_mensile_equivalente) + ". La differenza e' " + euro(result.differenza_mensile_lorda) + " per rata.";
+    byId("pcPensionChartNote").textContent = "Con pensionamento il " + new Date(scenario.data_pensionamento + "T00:00:00").toLocaleDateString("it-IT") + ", il coefficiente applicato e' " + pct(result.coefficiente_trasformazione, 3) + ". Nel " + result.anno_riferimento_confronto + " la rata effettiva lorda e' " + euro(result.pensione_effettiva_mensile_lorda_anno_riferimento) + "; quella contributiva equivalente e' " + euro(result.pensione_contributiva_mensile_equivalente) + ".";
     byId("pcCumulativeChartNote").textContent = "La soglia del montante viene " + (timeline.exhaustionDate ? "raggiunta intorno a " + formatDate(timeline.exhaustionDate) : "non raggiunta nell'orizzonte simulato") + ". La linea dopo oggi e' una proiezione fino all'eta attesa media; non descrive un conto che viene materialmente esaurito.";
   }
 
@@ -454,7 +506,7 @@
       var ralStart = field("ralStart") || field("ralEnd") || 0, ralEnd = field("ralEnd") || ralStart, months = field("months") || 12, workShare = field("workShare") || 100;
       for (var year = start; year <= end; year += 1) {
         var share = start === end ? 0 : (year - start) / (end - start), salary = ralStart + (ralEnd - ralStart) * share;
-        output.push({ anno: year, categoria: categoryId, imponibile_previdenziale: salary * workShare / 100 * months / 12, mesi_lavorati: months, percentuale_part_time: workShare, contributi: null, contributi_figurativi: 0 });
+        output.push({ anno: year, categoria: categoryId, imponibile_previdenziale: salary * workShare / 100 * months / 12, mesi_lavorati: months, percentuale_part_time: workShare, contributi: null, contributi_figurativi: 0, natura_dato: "stimato_periodi" });
       }
     });
     state.annualRows = output.sort(function (a, b) { return a.anno - b.anno; });
@@ -472,7 +524,7 @@
         '<td><input data-row="' + index + '" data-field="contributi" type="number" placeholder="auto" value="' + (row.contributi || "") + '"></td>';
       tbody.appendChild(tr);
     });
-    tbody.querySelectorAll("input").forEach(function (input) { input.addEventListener("input", function () { var row = state.annualRows[toNumber(input.dataset.row, 0)]; row[input.dataset.field] = input.value === "" ? null : toNumber(input.value, 0); }); });
+    tbody.querySelectorAll("input").forEach(function (input) { input.addEventListener("input", function () { var row = state.annualRows[toNumber(input.dataset.row, 0)]; row[input.dataset.field] = input.value === "" ? null : toNumber(input.value, 0); row.natura_dato = "inserito_utente"; }); });
   }
   function parseCsv(text) {
     var lines = text.trim().split(/\r?\n/).filter(Boolean);
@@ -482,7 +534,7 @@
       var values = line.split(/[;,]/), object = {};
       header.forEach(function (key, index) { object[key] = values[index]; });
       var weeks = toNumber(object.settimane_contributive, null);
-      return { anno: toNumber(object.anno), categoria: object.categoria_id || inputText("pcCategory", "generica_fpld"), imponibile_previdenziale: toNumber(object.imponibile_previdenziale, 0), mesi_lavorati: weeks ? weeks / 52 * 12 : toNumber(object.mesi_lavorati, 12), percentuale_part_time: toNumber(object.percentuale_part_time, 100), contributi: toNumber(object.contributi, null), contributi_figurativi: toNumber(object.contributi_figurativi, 0) };
+      return { anno: toNumber(object.anno), categoria: object.categoria_id || inputText("pcCategory", "generica_fpld"), imponibile_previdenziale: toNumber(object.imponibile_previdenziale, 0), mesi_lavorati: weeks ? weeks / 52 * 12 : toNumber(object.mesi_lavorati, 12), percentuale_part_time: toNumber(object.percentuale_part_time, 100), contributi: toNumber(object.contributi, null), contributi_figurativi: toNumber(object.contributi_figurativi, 0), natura_dato: "inserito_utente" };
     }).filter(function (row) { return row.anno; });
   }
   function setMode(mode) {
@@ -492,7 +544,7 @@
     document.querySelectorAll(".pc-guided-only").forEach(function (node) { node.hidden = state.mode !== "guided"; });
     document.querySelectorAll(".pc-accurate-only").forEach(function (node) { node.hidden = state.mode !== "accurate"; });
     document.querySelectorAll(".pc-non-simple-only").forEach(function (node) { node.hidden = state.mode === "simple"; });
-    var notes = { simple: "Stima rapida basata su inizio carriera, anni contribuiti e ultima RAL.", guided: "Stima intermedia basata su valori medi della carriera.", accurate: "Calcolo sugli imponibili previdenziali inseriti anno per anno." };
+    var notes = { simple: "Stima rapida basata su inizio carriera, anni contribuiti e ultimo imponibile.", guided: "Stima intermedia basata su periodi e valori medi della carriera.", accurate: "Diventa accurata quando sostituisci la precompilazione con gli imponibili INPS effettivi anno per anno." };
     byId("pcModeNote").textContent = notes[state.mode];
     if (state.mode === "accurate" && !state.annualRows.length) generateAnnualRows();
     calculate();
@@ -507,11 +559,16 @@
     download("calcolatore-pensione-carriera.csv", lines.join("\n"), "text/csv;charset=utf-8");
   }
   function exportJson() { download("calcolatore-pensione-risultato.json", JSON.stringify({ result: state.result, career: state.career }, null, 2), "application/json;charset=utf-8"); }
+  function updatePensionValueLabel() {
+    var net = inputText("pcPensionValueType", "lordo") === "netto";
+    byId("pcPensionValueLabel").textContent = net ? "Pensione netta mensile attuale" : "Pensione lorda mensile attuale";
+  }
   function bindEvents() {
     byId("pcMode").addEventListener("change", function () { setMode(byId("pcMode").value); });
     byId("pcCategory").addEventListener("change", function () { updateCategoryNote(); if (state.mode === "accurate") { state.annualRows.forEach(function (row) { row.categoria = byId("pcCategory").value; }); renderAnnualTable(); } calculate(); });
     byId("pcAxisMode").addEventListener("change", function () { state.axisMode = byId("pcAxisMode").value; if (state.result) renderCharts(state.career, state.result, state.scenario); });
     byId("pcCalculate").addEventListener("click", calculate);
+    byId("pcPensionValueType").addEventListener("change", function () { updatePensionValueLabel(); calculate(); });
     byId("pcReset").addEventListener("click", function () { location.reload(); });
     byId("pcGenerateAnnualRows").addEventListener("click", function () { generateAnnualRows(); calculate(); });
     byId("pcExportCsv").addEventListener("click", exportCsv);
@@ -519,6 +576,14 @@
     byId("pcShareLink").addEventListener("click", function () { var link = location.origin + location.pathname + "?mode=" + encodeURIComponent(state.mode); if (navigator.clipboard) navigator.clipboard.writeText(link); setStatus("Link copiato senza dati personali: contiene solo la modalita selezionata.", false); });
     byId("pcCsvInput").addEventListener("change", function (event) { var file = event.target.files && event.target.files[0]; if (!file) return; file.text().then(function (text) { state.annualRows = parseCsv(text); renderAnnualTable(); calculate(); }); event.target.value = ""; });
     document.querySelectorAll("#pcCalculatorForm input, #pcCalculatorForm select").forEach(function (node) { node.addEventListener("change", function () { if (!node.closest(".pc-period") && !node.closest(".pc-annual-table")) calculate(); }); });
+    var dateTimer;
+    ["pcBirthDate", "pcRetirementDate"].forEach(function (id) {
+      byId(id).addEventListener("input", function () {
+        clearTimeout(dateTimer);
+        dateTimer = setTimeout(calculate, 180);
+      });
+    });
+    updatePensionValueLabel();
   }
 
   document.addEventListener("DOMContentLoaded", function () {
