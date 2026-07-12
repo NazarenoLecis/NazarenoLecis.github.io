@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-2";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-3";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1"];
   var PROGRESSION = { nessuna: 0, lenta: 0.01, media: 0.02, rapida: 0.03 };
   var state = { payload: null, mode: "simple", annualRows: [], result: null, career: [], scenario: null, axisMode: "zero" };
@@ -109,6 +109,10 @@
     byId("pcCategoryNote").textContent = category.note || "";
     var tag = byId("pcCategoryTag");
     if (tag) tag.textContent = category.gestione || "FPLD";
+    var artisan = category.profilo_aliquota_id === "artigiani";
+    document.querySelectorAll("[data-employee-label][data-artisan-label]").forEach(function (label) {
+      label.textContent = artisan ? label.dataset.artisanLabel : label.dataset.employeeLabel;
+    });
   }
   function fillSelect(select, values, selected) {
     clear(select);
@@ -138,8 +142,8 @@
     wrapper.innerHTML = '<h4>Periodo ' + (index + 1) + '</h4>' +
       '<label><span>Anno iniziale</span><input data-period-field="start" type="number" min="1976" max="2050" value="' + (values.start || "") + '"></label>' +
       '<label><span>Anno finale</span><input data-period-field="end" type="number" min="1976" max="2050" value="' + (values.end || "") + '"></label>' +
-      '<label><span>RAL iniziale</span><input data-period-field="ralStart" type="number" min="0" step="500" value="' + (values.ralStart || "") + '"></label>' +
-      '<label><span>RAL finale</span><input data-period-field="ralEnd" type="number" min="0" step="500" value="' + (values.ralEnd || "") + '"></label>' +
+      '<label><span data-employee-label="RAL iniziale" data-artisan-label="Reddito imponibile iniziale">RAL iniziale</span><input data-period-field="ralStart" type="number" min="0" step="500" value="' + (values.ralStart || "") + '"></label>' +
+      '<label><span data-employee-label="RAL finale" data-artisan-label="Reddito imponibile finale">RAL finale</span><input data-period-field="ralEnd" type="number" min="0" step="500" value="' + (values.ralEnd || "") + '"></label>' +
       '<label><span>Quota lavoro</span><input data-period-field="workShare" type="number" min="1" max="100" value="' + (values.workShare || 100) + '"></label>' +
       '<label><span>Mesi annui</span><input data-period-field="months" type="number" min="0" max="12" step="0.5" value="' + (values.months || 12) + '"></label>';
     return wrapper;
@@ -216,17 +220,22 @@
   }
   function validateScenario(scenario) {
     var category = categoryFor(scenario.categoria_id);
-    if (!category || !truthy(category.abilitata_frontend) || category.profilo_aliquota_id !== "fpld") throw new Error("La categoria scelta non ha ancora una serie storica utilizzabile.");
+    if (!category || !truthy(category.abilitata_frontend) || ["fpld", "artigiani"].indexOf(category.profilo_aliquota_id) < 0) throw new Error("La categoria scelta non ha ancora una serie storica utilizzabile.");
+    if (category.anno_minimo_calcolabile && scenario.anno_inizio < toNumber(category.anno_minimo_calcolabile)) throw new Error("Per gli artigiani il calcolo percentuale e' disponibile dal 1990. Per anni precedenti usa una carriera mista con i contributi effettivi anno per anno.");
     if (scenario.anno_inizio > scenario.anno_fine) throw new Error("L'inizio della carriera deve precedere la fine.");
     if (scenario.anno_fine >= scenario.anno_pensione) throw new Error("La carriera deve terminare prima del pensionamento.");
     if (scenario.eta_pensione < 40 || scenario.eta_pensione > 80) throw new Error("Controlla le date: l'eta al pensionamento non e' plausibile.");
     if (scenario.percentuale_lavoro <= 0 || scenario.percentuale_lavoro > 100) throw new Error("La quota di lavoro deve essere tra 1 e 100.");
   }
-  function rateForYear(year) {
-    var table = paramRows("annual");
+  function rateForYear(year, categoryId) {
+    var category = categoryFor(categoryId);
+    var profile = category ? category.profilo_aliquota_id : "fpld";
+    var table = paramRows("annual").filter(function (row) { return (row.profilo_aliquota_id || "fpld") === profile; });
     var exact = table.find(function (row) { return toNumber(row.anno) === year; });
     if (exact) return exact;
-    return table.filter(function (row) { return toNumber(row.anno, 0) <= year; }).sort(function (a, b) { return toNumber(b.anno) - toNumber(a.anno); })[0] || table[table.length - 1];
+    var previous = table.filter(function (row) { return toNumber(row.anno, 0) <= year; }).sort(function (a, b) { return toNumber(b.anno) - toNumber(a.anno); })[0];
+    if (!previous) throw new Error("Non esiste un'aliquota disponibile per la categoria e l'anno selezionati.");
+    return previous;
   }
   function coefficientFor(year, age, months) {
     var table = paramRows("coefficients");
@@ -271,7 +280,7 @@
     var workShare = (scenario.percentuale_lavoro || 100) / 100;
     var accrued = 0;
     return years.map(function (year, index) {
-      var rate = rateForYear(year);
+      var rate = rateForYear(year, scenario.categoria_id);
       var gross = Math.max(salary.profile[year], 0);
       var taxable = gross * workShare * months / 12;
       var financing = toNumber(rate.aliquota_finanziamento, 0.327);
@@ -291,7 +300,7 @@
       if (seen[row.anno]) throw new Error("Anno duplicato nella tabella accurata: " + row.anno);
       seen[row.anno] = true;
       var category = categoryFor(row.categoria || scenario.categoria_id) || categoryFor(scenario.categoria_id);
-      var rate = rateForYear(row.anno);
+      var rate = rateForYear(row.anno, category.categoria_id);
       var taxable = Math.max(toNumber(row.imponibile_previdenziale, 0), 0);
       var financing = toNumber(rate.aliquota_finanziamento, 0.327), computation = toNumber(rate.aliquota_computo, 0.33), capitalization = toNumber(rate.tasso_capitalizzazione, 0);
       var financial = row.contributi !== null && row.contributi !== undefined ? toNumber(row.contributi, 0) : taxable * financing;
@@ -406,37 +415,8 @@
   }
 
   function axis(title) { return { title: title, rangemode: state.axisMode === "zero" ? "tozero" : "normal" }; }
-  function secondaryAxis(title) {
-    return {
-      title: title,
-      overlaying: "y",
-      side: "right",
-      fixedrange: true,
-      rangemode: state.axisMode === "zero" ? "tozero" : "normal",
-      showgrid: false,
-      zeroline: false,
-      tickfont: { color: cssVar("--muted", "#c5beb5") },
-      titlefont: { color: cssVar("--muted", "#c5beb5") }
-    };
-  }
-  function renderCharts(career, result, scenario) {
-    var years = career.map(function (row) { return row.anno; });
-    var financingValues = career.map(function (row) { return row.aliquota_finanziamento * 100; });
-    var computationValues = career.map(function (row) { return row.aliquota_computo * 100; });
-    var ratesOverlap = financingValues.every(function (value, index) { return Math.abs(value - computationValues[index]) < 0.05; });
-    byId("pcRatesChartNote").textContent = ratesOverlap
-      ? "Finanziamento e computo coincidono quasi sempre nello scenario selezionato: la linea blu tratteggiata rende visibile la sovrapposizione. La capitalizzazione usa l'asse destro."
-      : "Finanziamento e computo usano l'asse sinistro. La capitalizzazione annua del montante, molto piu' piccola e talvolta negativa, usa l'asse destro.";
-    plot("pcRatesChart", [
-      { type: "scatter", mode: "lines", name: "Finanziamento", x: years, y: financingValues, line: { color: COLORS[0], width: 4 }, hovertemplate: "Finanziamento %{x}<br>%{y:.2f}%<extra></extra>" },
-      { type: "scatter", mode: "lines+markers", name: "Computo", x: years, y: computationValues, line: { color: COLORS[1], width: 2.5, dash: "dash" }, marker: { color: COLORS[1], size: 4 }, hovertemplate: "Computo %{x}<br>%{y:.2f}%<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Capitalizzazione", x: years, y: career.map(function (row) { return row.tasso_rivalutazione * 100; }), yaxis: "y2", line: { color: COLORS[3], width: 3, dash: "dot" }, hovertemplate: "Capitalizzazione %{x}<br>%{y:.2f}%<extra></extra>" }
-    ], { margin: { t: 24, r: 82, b: 64, l: 78 }, yaxis: axis("finanziamento e computo (%)"), yaxis2: secondaryAxis("capitalizzazione (%)") });
-    plot("pcCapitalChart", [
-      { type: "bar", name: "Contributi dell'anno", x: years, y: career.map(function (row) { return row.contributi_finanziari; }), yaxis: "y2", marker: { color: "rgba(78,121,167,0.62)" }, hovertemplate: "Contributi %{x}<br>%{y:,.0f} euro<extra></extra>" },
-      { type: "scatter", mode: "lines+markers", name: "Montante accumulato", x: years, y: career.map(function (row) { return row.montante_fine_anno; }), line: { color: COLORS[0], width: 4 }, marker: { color: COLORS[0], size: 4 }, hovertemplate: "Montante %{x}<br>%{y:,.0f} euro<extra></extra>" }
-    ], { margin: { t: 24, r: 92, b: 64, l: 82 }, yaxis: axis("montante accumulato (euro)"), yaxis2: secondaryAxis("contributi annui (euro)") });
-    plot("pcPensionChart", [{ type: "bar", x: ["Effettiva", "Contributiva", "Differenza"], y: [result.pensione_effettiva_mensile_lorda_anno_riferimento, result.pensione_contributiva_mensile_equivalente, result.differenza_mensile_lorda], marker: { color: [COLORS[0], COLORS[2], result.differenza_mensile_lorda >= 0 ? COLORS[3] : COLORS[4]] }, hovertemplate: "%{x}<br>%{y:,.0f} euro per rata<extra></extra>" }], { yaxis: axis("euro lordi per rata"), showlegend: false });
+  function renderCharts(career, result) {
+    plot("pcPensionChart", [{ type: "bar", x: ["Pensione effettiva", "Pensione maturata"], y: [result.pensione_effettiva_mensile_lorda_anno_riferimento, result.pensione_contributiva_mensile_equivalente], marker: { color: [COLORS[0], COLORS[2]] }, text: [euro(result.pensione_effettiva_mensile_lorda_anno_riferimento), euro(result.pensione_contributiva_mensile_equivalente)], textposition: "outside", cliponaxis: false, hovertemplate: "%{x}<br>%{y:,.0f} euro lordi per rata<extra></extra>" }], { margin: { t: 44, r: 24, b: 64, l: 82 }, yaxis: axis("euro lordi per rata"), showlegend: false });
 
     var timeline = result.timeline;
     var horizonAge = Math.max(timeline.expectedAge + 2, timeline.exhaustionAge ? timeline.exhaustionAge + 2 : timeline.expectedAge + 2);
@@ -453,29 +433,6 @@
     if (timeline.elapsedMonths > 0) cumulativeTraces.push({ type: "scatter", mode: "markers", name: "Oggi", x: [timeline.retirementAge + timeline.elapsedMonths / 12], y: [timeline.received], marker: { color: COLORS[1], size: 11, symbol: "circle" }, hovertemplate: "Oggi, eta %{x:.1f}<br>%{y:,.0f} euro ricevuti<extra></extra>" });
     if (timeline.exhaustionAge) cumulativeTraces.push({ type: "scatter", mode: "markers", name: "Raggiungimento montante", x: [timeline.exhaustionAge], y: [result.montante_contributivo], marker: { color: COLORS[4], size: 12, symbol: "x" }, hovertemplate: "Montante raggiunto<br>Eta %{x:.1f}<extra></extra>" });
     plot("pcCumulativeChart", cumulativeTraces, { xaxis: { title: "eta", range: [timeline.retirementAge, horizonAge] }, yaxis: axis("pensioni lorde cumulate (euro)") });
-    renderScenarioChart(scenario);
-    renderCompositionChart(career);
-  }
-  function renderScenarioChart(scenario) {
-    if (state.mode !== "simple") return;
-    var labels = [], montantes = [], pensions = [];
-    [["RAL -15%", 0.85], ["Centrale", 1], ["RAL +15%", 1.15]].forEach(function (item) {
-      var copy = Object.assign({}, scenario, { ral_finale: scenario.ral_finale * item[1] });
-      var career = buildCareer(copy), result = calculateMetrics(career, copy);
-      labels.push(item[0]); montantes.push(result.montante_contributivo); pensions.push(result.pensione_contributiva_annua_equivalente);
-    });
-    var centralMontante = montantes[1] || 1;
-    var centralPension = pensions[1] || 1;
-    plot("pcScenarioChart", [
-      { type: "bar", name: "Montante", x: labels, y: montantes.map(function (value) { return value / centralMontante * 100; }), marker: { color: COLORS[1] }, hovertemplate: "%{x}<br>Montante: %{y:.1f}<extra>centrale = 100</extra>" },
-      { type: "bar", name: "Pensione contributiva", x: labels, y: pensions.map(function (value) { return value / centralPension * 100; }), marker: { color: COLORS[0] }, hovertemplate: "%{x}<br>Pensione: %{y:.1f}<extra>centrale = 100</extra>" }
-    ], { barmode: "group", yaxis: axis("indice (centrale = 100)") });
-  }
-  function renderCompositionChart(career) {
-    if (state.mode !== "accurate") return;
-    var grouped = {};
-    career.forEach(function (row) { var category = categoryFor(row.categoria); var label = category ? category.categoria_nome : row.categoria; grouped[label] = (grouped[label] || 0) + row.imponibile_previdenziale; });
-    plot("pcCompositionChart", [{ type: "bar", x: Object.keys(grouped), y: Object.keys(grouped).map(function (key) { return grouped[key]; }), marker: { color: COLORS[2] }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }], { yaxis: axis("imponibile complessivo"), showlegend: false });
   }
 
   function calculate() {

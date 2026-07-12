@@ -14,7 +14,7 @@
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/calcolatore.json" as="fetch" crossorigin>
   <script defer src="../../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-4"></script>
+  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-5"></script>
 </head>
 <body>
   <header class="site-header">
@@ -80,7 +80,7 @@
           <div class="pc-form-grid">
             <label><span>Primo anno di contributi</span><select id="pcSimpleStartYear"></select></label>
             <label><span>Anni di contributi</span><select id="pcSimpleContributedYears"></select></label>
-            <label><span>Ultima RAL lorda</span><input id="pcSimpleFinalRal" type="number" min="0" step="500" value="38000"></label>
+            <label><span data-employee-label="Ultima RAL lorda" data-artisan-label="Ultimo reddito imponibile annuo">Ultima RAL lorda</span><input id="pcSimpleFinalRal" type="number" min="0" step="500" value="38000"></label>
             <label><span>Regime di lavoro prevalente</span><select id="pcSimpleWorkPattern"><option value="100">Tempo pieno</option><option value="75">Part-time circa 75%</option><option value="50">Part-time circa 50%</option><option value="seasonal">Stagionale - 8 mesi</option></select></label>
           </div>
         </article>
@@ -95,8 +95,8 @@
             <label><span>Quota lavoro media</span><input id="pcWorkShare" type="number" min="1" max="100" step="1" value="100"></label>
             <label><span>Mesi medi annui</span><input id="pcWorkMonths" type="number" min="0" max="12" step="0.5" value="12"></label>
             <label><span>Progressione retributiva</span><select id="pcProgression"><option value="nessuna">Nessuna</option><option value="lenta">Lenta</option><option value="media" selected>Media</option><option value="rapida">Rapida</option></select></label>
-            <label><span>Prima RAL</span><input id="pcInitialRal" type="number" min="0" step="500" placeholder="opzionale"></label>
-            <label><span>Ultima RAL</span><input id="pcFinalRal" type="number" min="0" step="500" value="38000"></label>
+            <label><span data-employee-label="Prima RAL" data-artisan-label="Primo reddito imponibile">Prima RAL</span><input id="pcInitialRal" type="number" min="0" step="500" placeholder="opzionale"></label>
+            <label><span data-employee-label="Ultima RAL" data-artisan-label="Ultimo reddito imponibile">Ultima RAL</span><input id="pcFinalRal" type="number" min="0" step="500" value="38000"></label>
           </div>
         </article>
 
@@ -128,15 +128,11 @@
     </section>
 
     <section class="dashboard-section" id="grafici">
-      <div class="section-head"><span class="eyebrow">Grafici</span><div><h2>Dalla carriera al montante virtuale</h2><p>I grafici distinguono cio' che deriva dai tuoi input, i parametri previdenziali e le proiezioni legate alla sopravvivenza.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Grafici</span><div><h2>Il confronto che risponde alla domanda</h2><p>Prima confronta la pensione effettiva con quella maturata; poi osserva quando le pensioni incassate raggiungono il montante virtuale.</p></div></div>
       <label class="pc-axis-select"><span>Scala verticale</span><select id="pcAxisMode"><option value="zero">Inizia da zero</option><option value="data">Adatta ai dati</option></select></label>
       <div class="pi-stack">
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Le tre percentuali del montante</h3><span>due scale</span></div><p class="pi-card-note" id="pcRatesChartNote">Finanziamento e computo si leggono sull'asse sinistro; la capitalizzazione annua, molto piu' piccola, usa l'asse destro.</p><div class="pi-chart pi-chart-wide" id="pcRatesChart"></div><p class="pi-chart-credit">Fonte: INPS, aliquote storiche FPLD; ISTAT, capitalizzazione del montante. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Dal contributo annuale al montante</h3><span>due scale</span></div><p class="pi-card-note" id="pcCapitalChartNote">Le barre mostrano i contributi stimati nell'anno sull'asse destro. La linea arancione mostra il montante totale accumulato e rivalutato sull'asse sinistro.</p><div class="pi-chart pi-chart-wide" id="pcCapitalChart"></div><p class="pi-chart-credit">Fonte: INPS e ISTAT. Input retributivi forniti dall'utente. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensione effettiva e pensione maturata</h3><span>lordo per rata</span></div><p class="pi-card-note" id="pcPensionChartNote">Confronta la rata lorda inserita con la rata che risulterebbe trasformando il montante simulato in una pensione interamente contributiva.</p><div class="pi-chart pi-chart-wide" id="pcPensionChart"></div><p class="pi-chart-credit">Fonte: INPS e Ministero del Lavoro, coefficienti di trasformazione; input utente. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Quando la pensione raggiunge il montante</h3><span>eta</span></div><p class="pi-card-note" id="pcCumulativeChartNote">Le pensioni cumulate sono confrontate con il montante virtuale. La parte successiva a oggi e' una proiezione; il montante non e' un conto individuale che viene materialmente svuotato.</p><div class="pi-chart pi-chart-wide" id="pcCumulativeChart"></div><p class="pi-chart-credit">Fonte: ISTAT, tavole di mortalita. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block pc-simple-only"><div class="pi-card-title"><h3>Effetto di una RAL diversa</h3><span>centrale = 100</span></div><p class="pi-card-note">Confronta montante e pensione contributiva se la RAL fosse inferiore o superiore del 15%. I valori sono indici: 100 rappresenta il risultato centrale, non euro.</p><div class="pi-chart pi-chart-wide" id="pcScenarioChart"></div><p class="pi-chart-credit">Simulazione di sensibilita sugli input inseriti. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block pc-accurate-only" hidden><div class="pi-card-title"><h3>Composizione della carriera</h3><span>categoria</span></div><p class="pi-card-note">Somma gli imponibili annuali per categoria. Le categorie private abilitate condividono il profilo previdenziale FPLD.</p><div class="pi-chart pi-chart-wide" id="pcCompositionChart"></div><p class="pi-chart-credit">Input: carriera inserita dall'utente. Elaborazione di Nazareno Lecis.</p></article>
       </div>
     </section>
 
@@ -149,10 +145,11 @@
           <li><strong>Montante virtuale:</strong> e' la base di calcolo della pensione, non un conto bancario personale. La data di esaurimento indica quando le pensioni lorde cumulate raggiungono quella soglia.</li>
           <li><strong>Tempo gia' in pensione:</strong> deriva dalle date inserite. Le prestazioni gia' ricevute sono stimate con una rivalutazione convenzionale del 2% annuo e non sostituiscono i cedolini storici.</li>
           <li><strong>Aspettativa di vita:</strong> usa sesso ed eta al pensionamento nelle tavole ISTAT. E' una media di popolazione, non una previsione individuale.</li>
-          <li><strong>Categorie:</strong> metalmeccanica, commercio, edilizia, turismo e trasporti sono operative come settori del FPLD. Pubblico impiego, autonomi e Gestione separata restano disabilitati finche' non e' caricata una serie storica specifica.</li>
+          <li><strong>Categorie:</strong> il lavoro dipendente e i suoi settori usano il profilo FPLD. Gli artigiani usano la serie IVS della propria gestione dal 1990; l'input economico e' il reddito imponibile d'impresa, non una RAL.</li>
+          <li><strong>Limiti artigiani:</strong> la stima non ricostruisce minimali, massimali, maggiorazione oltre la prima fascia, riduzioni per eta' o agevolazioni. Per carriere anteriori al 1990 o miste servono i contributi effettivi anno per anno.</li>
           <li><strong>Pre-1996:</strong> gli anni precedenti il 1996 sono un controfattuale approssimato; il calcolatore non ricostruisce quote retributive o miste liquidate dall'INPS.</li>
         </ul></div>
-        <div><h3>Fonti</h3><p>INPS: aliquote storiche FPLD, montante contributivo e coefficienti di trasformazione.</p><p>ISTAT: tassi annui di capitalizzazione e tavole di mortalita della popolazione residente.</p><p>Ministero del Lavoro: decreti sui coefficienti di trasformazione.</p><p><strong>Codice, dati e metodologia:</strong> <a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">repository pensioni_italia su GitHub</a>.</p><p>Elaborazione di Nazareno Lecis.</p></div>
+        <div><h3>Fonti</h3><p>INPS: aliquote storiche FPLD e Gestione artigiani, montante contributivo e coefficienti di trasformazione.</p><p>ISTAT: tassi annui di capitalizzazione e tavole di mortalita della popolazione residente.</p><p>Ministero del Lavoro: decreti sui coefficienti di trasformazione.</p><p><strong>Codice, dati e metodologia:</strong> <a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">repository pensioni_italia su GitHub</a>.</p><p>Elaborazione di Nazareno Lecis.</p></div>
       </div>
     </section>
   </main>
