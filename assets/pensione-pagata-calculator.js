@@ -406,21 +406,46 @@
   }
 
   function axis(title) { return { title: title, rangemode: state.axisMode === "zero" ? "tozero" : "normal" }; }
+  function secondaryAxis(title) {
+    return {
+      title: title,
+      overlaying: "y",
+      side: "right",
+      fixedrange: true,
+      rangemode: state.axisMode === "zero" ? "tozero" : "normal",
+      showgrid: false,
+      zeroline: false,
+      tickfont: { color: cssVar("--muted", "#c5beb5") },
+      titlefont: { color: cssVar("--muted", "#c5beb5") }
+    };
+  }
   function renderCharts(career, result, scenario) {
     var years = career.map(function (row) { return row.anno; });
+    var grossValues = career.map(function (row) { return row.retribuzione_stimata; });
+    var taxableValues = career.map(function (row) { return row.imponibile_previdenziale; });
+    var salaryOverlap = grossValues.every(function (value, index) { return Math.abs(value - taxableValues[index]) < 1; });
+    byId("pcSalaryChartNote").textContent = salaryOverlap
+      ? "Retribuzione lorda e imponibile coincidono in questo scenario perche' il lavoro e' a tempo pieno per 12 mesi. La linea arancione tratteggiata e i punti mostrano la retribuzione sopra la linea azzurra."
+      : "La linea arancione tratteggiata mostra la retribuzione lorda ricostruita. L'area azzurra mostra l'imponibile dopo quota di lavoro, mesi lavorati e anni contribuiti.";
     plot("pcSalaryChart", [
-      { type: "scatter", mode: "lines", name: "Retribuzione lorda", x: years, y: career.map(function (row) { return row.retribuzione_stimata; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Imponibile previdenziale", x: years, y: career.map(function (row) { return row.imponibile_previdenziale; }), line: { color: COLORS[2], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }
+      { type: "scatter", mode: "lines", name: "Imponibile contributivo", x: years, y: taxableValues, fill: "tozeroy", fillcolor: "rgba(118,183,178,0.16)", line: { color: COLORS[2], width: 4 }, hovertemplate: "Imponibile %{x}<br>%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "lines+markers", name: "Retribuzione lorda", x: years, y: grossValues, line: { color: COLORS[0], width: 3, dash: "dash" }, marker: { color: COLORS[0], size: 5 }, hovertemplate: "Retribuzione lorda %{x}<br>%{y:,.0f} euro<extra></extra>" }
     ], { yaxis: axis("euro annui") });
+    var financingValues = career.map(function (row) { return row.aliquota_finanziamento * 100; });
+    var computationValues = career.map(function (row) { return row.aliquota_computo * 100; });
+    var ratesOverlap = financingValues.every(function (value, index) { return Math.abs(value - computationValues[index]) < 0.05; });
+    byId("pcRatesChartNote").textContent = ratesOverlap
+      ? "Finanziamento e computo coincidono quasi sempre nello scenario selezionato: la linea blu tratteggiata rende visibile la sovrapposizione. La capitalizzazione usa l'asse destro."
+      : "Finanziamento e computo usano l'asse sinistro. La capitalizzazione annua del montante, molto piu' piccola e talvolta negativa, usa l'asse destro.";
     plot("pcRatesChart", [
-      { type: "scatter", mode: "lines", name: "Finanziamento", x: years, y: career.map(function (row) { return row.aliquota_finanziamento * 100; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Computo", x: years, y: career.map(function (row) { return row.aliquota_computo * 100; }), line: { color: COLORS[1], width: 3 }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Capitalizzazione", x: years, y: career.map(function (row) { return row.tasso_rivalutazione * 100; }), line: { color: COLORS[3], width: 2, dash: "dot" }, hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>" }
-    ], { yaxis: axis("percentuale") });
+      { type: "scatter", mode: "lines", name: "Finanziamento", x: years, y: financingValues, line: { color: COLORS[0], width: 4 }, hovertemplate: "Finanziamento %{x}<br>%{y:.2f}%<extra></extra>" },
+      { type: "scatter", mode: "lines+markers", name: "Computo", x: years, y: computationValues, line: { color: COLORS[1], width: 2.5, dash: "dash" }, marker: { color: COLORS[1], size: 4 }, hovertemplate: "Computo %{x}<br>%{y:.2f}%<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Capitalizzazione", x: years, y: career.map(function (row) { return row.tasso_rivalutazione * 100; }), yaxis: "y2", line: { color: COLORS[3], width: 3, dash: "dot" }, hovertemplate: "Capitalizzazione %{x}<br>%{y:.2f}%<extra></extra>" }
+    ], { margin: { t: 24, r: 82, b: 64, l: 78 }, yaxis: axis("finanziamento e computo (%)"), yaxis2: secondaryAxis("capitalizzazione (%)") });
     plot("pcCapitalChart", [
-      { type: "bar", name: "Contributi finanziari", x: years, y: career.map(function (row) { return row.contributi_finanziari; }), marker: { color: COLORS[1] }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" },
-      { type: "scatter", mode: "lines", name: "Montante rivalutato", x: years, y: career.map(function (row) { return row.montante_fine_anno; }), line: { color: COLORS[0], width: 3 }, hovertemplate: "%{x}<br>%{y:,.0f} euro<extra></extra>" }
-    ], { yaxis: axis("euro") });
+      { type: "bar", name: "Contributi dell'anno", x: years, y: career.map(function (row) { return row.contributi_finanziari; }), yaxis: "y2", marker: { color: "rgba(78,121,167,0.62)" }, hovertemplate: "Contributi %{x}<br>%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "lines+markers", name: "Montante accumulato", x: years, y: career.map(function (row) { return row.montante_fine_anno; }), line: { color: COLORS[0], width: 4 }, marker: { color: COLORS[0], size: 4 }, hovertemplate: "Montante %{x}<br>%{y:,.0f} euro<extra></extra>" }
+    ], { margin: { t: 24, r: 92, b: 64, l: 82 }, yaxis: axis("montante accumulato (euro)"), yaxis2: secondaryAxis("contributi annui (euro)") });
     plot("pcPensionChart", [{ type: "bar", x: ["Effettiva", "Contributiva", "Differenza"], y: [result.pensione_effettiva_mensile_lorda_anno_riferimento, result.pensione_contributiva_mensile_equivalente, result.differenza_mensile_lorda], marker: { color: [COLORS[0], COLORS[2], result.differenza_mensile_lorda >= 0 ? COLORS[3] : COLORS[4]] }, hovertemplate: "%{x}<br>%{y:,.0f} euro per rata<extra></extra>" }], { yaxis: axis("euro lordi per rata"), showlegend: false });
 
     var timeline = result.timeline;
@@ -429,12 +454,15 @@
     var past = visible.filter(function (point) { return point.month <= timeline.elapsedMonths; });
     var future = visible.filter(function (point) { return point.month >= timeline.elapsedMonths; });
     if (past.length && future.length && past[past.length - 1].month !== future[0].month) future.unshift(past[past.length - 1]);
-    plot("pcCumulativeChart", [
+    var cumulativeTraces = [
       { type: "scatter", mode: "lines", name: "Ricevuto fino a oggi", x: past.map(function (point) { return point.age; }), y: past.map(function (point) { return point.cumulative; }), line: { color: COLORS[0], width: 4 }, hovertemplate: "Eta %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" },
       { type: "scatter", mode: "lines", name: "Proiezione", x: future.map(function (point) { return point.age; }), y: future.map(function (point) { return point.cumulative; }), line: { color: COLORS[0], width: 3, dash: "dash" }, hovertemplate: "Eta %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" },
       { type: "scatter", mode: "lines", name: "Montante virtuale", x: visible.map(function (point) { return point.age; }), y: visible.map(function () { return result.montante_contributivo; }), line: { color: COLORS[2], width: 2, dash: "dot" }, hovertemplate: "%{y:,.0f} euro<extra></extra>" },
       { type: "scatter", mode: "markers", name: "Eta attesa media", x: [timeline.expectedAge], y: [timeline.cumulativeAtExpected], marker: { color: COLORS[3], size: 10, symbol: "diamond" }, hovertemplate: "Eta attesa %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" }
-    ], { xaxis: { title: "eta", range: [timeline.retirementAge, horizonAge] }, yaxis: axis("pensioni lorde cumulate") });
+    ];
+    if (timeline.elapsedMonths > 0) cumulativeTraces.push({ type: "scatter", mode: "markers", name: "Oggi", x: [timeline.retirementAge + timeline.elapsedMonths / 12], y: [timeline.received], marker: { color: COLORS[1], size: 11, symbol: "circle" }, hovertemplate: "Oggi, eta %{x:.1f}<br>%{y:,.0f} euro ricevuti<extra></extra>" });
+    if (timeline.exhaustionAge) cumulativeTraces.push({ type: "scatter", mode: "markers", name: "Raggiungimento montante", x: [timeline.exhaustionAge], y: [result.montante_contributivo], marker: { color: COLORS[4], size: 12, symbol: "x" }, hovertemplate: "Montante raggiunto<br>Eta %{x:.1f}<extra></extra>" });
+    plot("pcCumulativeChart", cumulativeTraces, { xaxis: { title: "eta", range: [timeline.retirementAge, horizonAge] }, yaxis: axis("pensioni lorde cumulate (euro)") });
     renderScenarioChart(scenario);
     renderCompositionChart(career);
   }
@@ -446,7 +474,12 @@
       var career = buildCareer(copy), result = calculateMetrics(career, copy);
       labels.push(item[0]); montantes.push(result.montante_contributivo); pensions.push(result.pensione_contributiva_annua_equivalente);
     });
-    plot("pcScenarioChart", [{ type: "bar", name: "Montante", x: labels, y: montantes, marker: { color: COLORS[1] } }, { type: "bar", name: "Pensione contributiva annua", x: labels, y: pensions, marker: { color: COLORS[0] } }], { barmode: "group", yaxis: axis("euro") });
+    var centralMontante = montantes[1] || 1;
+    var centralPension = pensions[1] || 1;
+    plot("pcScenarioChart", [
+      { type: "bar", name: "Montante", x: labels, y: montantes.map(function (value) { return value / centralMontante * 100; }), marker: { color: COLORS[1] }, hovertemplate: "%{x}<br>Montante: %{y:.1f}<extra>centrale = 100</extra>" },
+      { type: "bar", name: "Pensione contributiva", x: labels, y: pensions.map(function (value) { return value / centralPension * 100; }), marker: { color: COLORS[0] }, hovertemplate: "%{x}<br>Pensione: %{y:.1f}<extra>centrale = 100</extra>" }
+    ], { barmode: "group", yaxis: axis("indice (centrale = 100)") });
   }
   function renderCompositionChart(career) {
     if (state.mode !== "accurate") return;

@@ -27,6 +27,34 @@
   margin-top: 12px;
 }
 
+.pc-system-link {
+  display: grid;
+  grid-template-columns: minmax(220px, .7fr) minmax(320px, 1.3fr) auto;
+  gap: 20px;
+  align-items: center;
+  margin: 22px 0 0;
+  padding: 20px 4px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.pc-system-link strong {
+  color: var(--orange);
+  font-size: 1.3rem;
+}
+
+.pc-system-link p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.pc-system-link > span:last-child {
+  color: var(--orange);
+  font-weight: 850;
+}
+
 .pc-dashboard [hidden] {
   display: none !important;
 }
@@ -280,6 +308,10 @@
   }
 
   .pc-period-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pc-system-link {
     grid-template-columns: 1fr;
   }
 }
