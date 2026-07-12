@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260712-2">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-1">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260712-2"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -47,7 +47,7 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard salari">
-      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#europa">Europa</a><a href="#serie">Serie</a><a href="#metodo">Metodo</a>
+      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#serie">Serie</a><a href="#giornate">Giornate</a><a href="#europa">UE27</a><a href="#ocse">OCSE</a><a href="#gender-gap">Gender pay gap</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo</a>
     </nav>
 
     <p id="siStatus" class="si-status">Caricamento dati salari ...</p>
@@ -64,7 +64,7 @@
     <section class="dashboard-section" id="distribuzione">
       <div class="section-head">
         <span class="eyebrow">Distribuzione salariale</span>
-        <div><h2>Media, mediana e decili</h2><p>La distribuzione usa punti ufficiali pubblicati da ISTAT ed Eurostat: primo decile, mediana, nono decile e media, senza ricostruire microdati.</p></div>
+        <div><h2>Punti ufficiali della distribuzione</h2><p>Le fonti aggregate pubblicano media, mediana, primo e nono decile. Una distribuzione piena viene mostrata solo se esiste una tavola ufficiale con classi o frequenze.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri distribuzione</summary><div id="siDistributionFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
@@ -85,7 +85,7 @@
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3 id="siWorkerTitle">Retribuzione per caratteristica</h3><span id="siWorkerTag">lordo</span></div>
           <div id="siWorkerChart" class="si-chart si-chart-wide"></div>
-          <p class="si-chart-credit">Fonte: ISTAT RACLI per retribuzioni orarie private; Eurostat SES per tavole europee e 2022.</p>
+          <p class="si-chart-credit">Fonte: ISTAT RACLI per retribuzioni orarie private; Eurostat SES per tavole europee e 2022. Titolo di studio, paese di nascita, orario, contratto e dimensione d'impresa sono filtri quando la fonte li pubblica.</p>
         </article>
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3>Quota di lavoratori a bassa retribuzione</h3><span>low wage</span></div>
@@ -127,33 +127,51 @@
     <section class="dashboard-section" id="territorio">
       <div class="section-head">
         <span class="eyebrow">Territorio</span>
-        <div><h2>Province e limiti territoriali</h2><p>Il payload integra le aree provinciali pubblicate da ISTAT RACLI; comuni e territorio di residenza non sono stimati.</p></div>
+        <div><h2>Regioni, province e limiti territoriali</h2><p>Il payload integra regioni e aree provinciali pubblicate da ISTAT RACLI. I comuni non sono mostrati se non sono disponibili come serie ufficiali.</p></div>
       </div>
+      <details class="chart-filter-panel" open><summary>Filtri territorio</summary><div id="siTerritoryFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Retribuzione oraria per provincia</h3><span>ISTAT RACLI</span></div>
+        <div class="si-card-title"><h3 id="siTerritoryTitle">Retribuzione oraria territoriale</h3><span id="siTerritoryTag">ISTAT RACLI</span></div>
         <div id="siTerritoryChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Territorio di riferimento: area provinciale pubblicata da ISTAT RACLI. Non equivale a comune fiscale o reddito di residenza.</p>
+        <p class="si-chart-credit">Territorio di riferimento: area pubblicata da ISTAT RACLI. Non equivale a comune fiscale o reddito di residenza; i comuni non sono stimati.</p>
       </article>
     </section>
 
     <section class="dashboard-section" id="europa">
       <div class="section-head">
         <span class="eyebrow">Confronto europeo</span>
-        <div><h2>Italia, UE27 e principali paesi europei</h2><p>Confronto armonizzato su retribuzioni lorde e gender pay gap non corretto.</p></div>
+        <div><h2>Italia, UE27 e principali paesi europei</h2><p>Confronto armonizzato sulle retribuzioni lorde. Il gender pay gap ha una sezione dedicata.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri confronto europeo</summary><div id="siEuropeFilters" class="filter-grid"></div></details>
-      <div class="si-grid-2">
-        <article class="si-card si-chart-block">
-          <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span>SES</span></div>
-          <div id="siEuropeChart" class="si-chart si-chart-wide"></div>
-          <p class="si-chart-credit">Fonte: Eurostat SES. Anni pubblicati secondo disponibilità della fonte.</p>
-        </article>
-        <article class="si-card si-chart-block">
-          <div class="si-card-title"><h3>Gender pay gap</h3><span>non corretto</span></div>
-          <div id="siGenderGapChart" class="si-chart si-chart-wide"></div>
-          <p class="si-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. Il dato non controlla per composizione occupazionale.</p>
-        </article>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span>SES</span></div>
+        <div id="siEuropeChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: Eurostat SES. Anni pubblicati secondo disponibilità della fonte.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="ocse">
+      <div class="section-head">
+        <span class="eyebrow">Confronto OCSE</span>
+        <div><h2>Salario medio annuo in dollari PPP</h2><p>Serie OCSE separata dalle retribuzioni Eurostat: misura il salario medio annuo per dipendente equivalente full-time nell'economia totale.</p></div>
       </div>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Italia, media OCSE e principali paesi</h3><span>OECD</span></div>
+        <div id="siOecdChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: OECD Data Explorer, <code>DSD_EARNINGS@AV_AN_WAGE</code>. Unità: dollari USA PPP, base 2025.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="gender-gap">
+      <div class="section-head">
+        <span class="eyebrow">Gender pay gap</span>
+        <div><h2>Divario retributivo di genere</h2><p>Il grafico usa la serie ufficiale non corretta. Le misure adjusted vengono mostrate solo se disponibili da fonte ufficiale o modello documentato.</p></div>
+      </div>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Gender pay gap non corretto</h3><span>Eurostat</span></div>
+        <div id="siGenderGapChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. Il dato adjusted non viene stimato senza microdati o modello ufficiale.</p>
+      </article>
     </section>
 
     <section class="dashboard-section" id="serie">
@@ -166,6 +184,19 @@
         <div class="si-card-title"><h3 id="siSeriesTitle">Serie salariale italiana</h3><span id="siSeriesTag">Italia</span></div>
         <div id="siSeriesChart" class="si-chart si-chart-wide"></div>
         <p class="si-chart-credit">Fonte: ISTAT RACLI ed Eurostat. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="giornate">
+      <div class="section-head">
+        <span class="eyebrow">Giornate retribuite</span>
+        <div><h2>Continuità e stagionalità del lavoro</h2><p>Le classi di giornate retribuite aiutano a leggere differenze tra lavori brevi/stagionali e posizioni più continue. La fonte pubblica retribuzioni per classe, non conteggi di lavoratori.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri giornate</summary><div id="siPaidDaysFilters" class="filter-grid"></div></details>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Retribuzione per classi di giornate retribuite</h3><span id="siPaidDaysTag">ISTAT RACLI</span></div>
+        <div id="siPaidDaysChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI. Le classi sono pubblicate dalla fonte; non sono stime della distribuzione individuale.</p>
       </article>
     </section>
 

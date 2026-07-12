@@ -1,8 +1,33 @@
+:root {
+  --si-chart-bg: #1c1c1c;
+}
+
+html[data-theme="light"] {
+  --si-chart-bg: #fffaf4;
+}
+
 .si-dashboard {
   --max: 1500px;
-  --si-chart-bg: #151515;
+  display: flex;
+  flex-direction: column;
   padding-bottom: 54px;
 }
+
+.si-dashboard .dash-head { order: 0; }
+.si-dashboard .dashboard-jump-nav { order: 1; }
+.si-status { order: 2; }
+.si-note { order: 3; }
+#indicatori { order: 4; }
+#distribuzione { order: 5; }
+#serie { order: 6; }
+#giornate { order: 7; }
+#europa { order: 8; }
+#ocse { order: 9; }
+#gender-gap { order: 10; }
+#lavoratore { order: 11; }
+#lavoro { order: 12; }
+#territorio { order: 13; }
+#metodo { order: 14; }
 
 html[data-theme="light"] .si-dashboard,
 body.light .si-dashboard {
@@ -291,7 +316,10 @@ body.light .si-dashboard {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
+  max-height: 190px;
   margin: 0 0 14px;
+  padding-right: 6px;
+  overflow: auto;
 }
 
 .si-sector-picker label {

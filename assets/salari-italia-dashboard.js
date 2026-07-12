@@ -1,9 +1,9 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260712-2";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-1";
   var MISSING = "ND";
-  var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#59a14f", "#b07aa1", "#8cd17d"];
+  var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
     mean: "Media",
     median: "Mediana",
@@ -16,6 +16,24 @@
   };
   var PERIOD_LABELS = { hourly: "Orario", monthly: "Mensile", annual: "Annuale" };
   var TOTAL_VALUES = ["T", "TOTAL", "9", "99", "0010", "WORLD", "GE10"];
+  var ANALYSIS_FILTER_KEYS = [
+    "sex",
+    "age_class",
+    "education",
+    "country_birth",
+    "working_time",
+    "contract_type",
+    "contractual_occupation",
+    "sector",
+    "firm_size",
+    "seniority",
+    "paid_days"
+  ];
+  var DISPLAY_OPTIONS = [
+    { value: "25", label: "25 categorie" },
+    { value: "50", label: "50 categorie" },
+    { value: "all", label: "Tutte" }
+  ];
   var DIMENSIONS = {
     sex: { field: "sex", labelField: "sex_label", label: "Sesso" },
     age_class: { field: "age_class", labelField: "age_label", label: "Età" },
@@ -26,6 +44,7 @@
     working_time: { field: "working_time", labelField: "working_time_label", label: "Orario" },
     firm_size: { field: "firm_size", labelField: "firm_size_label", label: "Dimensione impresa" },
     seniority: { field: "seniority", labelField: "seniority_label", label: "Anzianità" },
+    paid_days: { field: "paid_days", labelField: "paid_days_label", label: "Giornate retribuite" },
     contract_type: { field: "contract_type", labelField: "contract_type_label", label: "Contratto" },
     country_birth: { field: "country_birth", labelField: "country_birth_label", label: "Paese di nascita" },
     geography_code: { field: "geography_code", labelField: "geography_name", label: "Territorio" }
@@ -40,6 +59,7 @@
     contract_type: "contract_type",
     working_time: "working_time",
     seniority: "seniority",
+    paid_days: "paid_days",
     sector: "sector",
     firm_size: "firm_size",
     public_private: "public_private",
@@ -50,16 +70,278 @@
     year: "year"
   };
   var LABEL_IT = {
+    "1 000 employees or more": "1.000 addetti e oltre",
+    "10 employees or more": "10 addetti e oltre",
+    "15-29 years": "15-29 anni",
+    "30-49 years": "30-49 anni",
+    "50 years and over": "50 anni e oltre",
+    "60 years or over": "60 anni e oltre",
+    "accommodation": "Alloggio",
+    "activities auxiliary to financial services and insurance activities": "Attivita' ausiliarie dei servizi finanziari e assicurativi",
+    "activities of head offices, management consultancy activities": "Direzione aziendale e consulenza gestionale",
+    "advertising and market research": "Pubblicita' e ricerche di mercato",
+    "air transport": "Trasporto aereo",
+    "All ISCED 2011 levels": "Totale",
+    "Apprentice or trainee": "Apprendista o tirocinante",
     "average": "Media",
     "Average": "Media",
+    "Business economy": "Economia di mercato",
+    "civil engineering": "Ingegneria civile",
+    "computer programming, consultancy and related activities": "Programmazione, consulenza informatica e attivita' connesse",
+    "construction of buildings": "Costruzione di edifici",
+    "creative, arts and entertainment activities": "Attivita' creative, artistiche e di intrattenimento",
+    "education": "Istruzione",
+    "electricity, gas, steam and air conditioning supply": "Energia elettrica, gas, vapore e aria condizionata",
+    "employment activities": "Attivita' di ricerca, selezione e fornitura di personale",
+    "European Union - 27 countries (from 2020)": "Unione europea a 27",
+    "extraction of crude petroleum and natural gas": "Estrazione di petrolio greggio e gas naturale",
     "females": "Femmine",
+    "financial service activities, except insurance and pension funding": "Servizi finanziari esclusi assicurazioni e fondi pensione",
     "full-time": "Tempo pieno",
+    "Full-time": "Tempo pieno",
+    "From 1 to 9 employees": "1-9 addetti",
+    "From 10 to 49 employees": "10-49 addetti",
+    "From 20 to 29 years": "20-29 anni",
+    "From 250 to 499 employees": "250-499 addetti",
+    "From 30 to 39 years": "30-39 anni",
+    "From 40 to 49 years": "40-49 anni",
+    "From 50 to 59 years": "50-59 anni",
+    "From 50 to 249 employees": "50-249 addetti",
+    "From 500 to 999 employees": "500-999 addetti",
+    "food service activities": "Ristorazione",
+    "France": "Francia",
+    "gambling and betting activities": "Lotterie, scommesse e case da gioco",
+    "Germany": "Germania",
+    "Gross hourly wage per hour paid of employee jobs in euro (average).": "Retribuzione oraria lorda media",
+    "Gross hourly wage per hour paid of employee jobs in euro (first decile).": "Primo decile della retribuzione oraria lorda",
+    "Gross hourly wage per hour paid of employee jobs in euro (ninth decile).": "Nono decile della retribuzione oraria lorda",
+    "Gross hourly wage per hour paid of employee jobs  in euros (median).": "Retribuzione oraria lorda mediana",
+    "human health activities": "Sanita'",
+    "Industry and construction": "Industria e costruzioni",
+    "Industry, construction and services (except public administration, defense, compulsory social security)": "Industria, costruzioni e servizi esclusa PA",
+    "information service activities": "Servizi d'informazione",
+    "insurance, reinsurance and pension funding, except compulsory social security": "Assicurazioni, riassicurazioni e fondi pensione",
+    "Italy": "Italia",
+    "land transport and transport via pipelines": "Trasporto terrestre e mediante condotte",
+    "legal and accounting activities": "Attivita' legali e contabilita'",
+    "Less than 20 years": "Meno di 20 anni",
+    "Less than 30 years": "Meno di 30 anni",
+    "Less than primary, primary and lower secondary education (levels 0-2)": "Fino alla licenza media",
+    "libraries, archives, museums and other cultural activities": "Biblioteche, archivi, musei e altre attivita' culturali",
+    "Limited duration except apprentice and trainee": "Tempo determinato esclusi apprendisti e tirocinanti",
     "males": "Maschi",
+    "manufacture of basic metals": "Metallurgia",
+    "manufacture of basic pharmaceutical products and pharmaceutical preparations": "Prodotti farmaceutici di base e preparati farmaceutici",
+    "manufacture of beverages": "Bevande",
+    "manufacture of chemicals and chemical products": "Prodotti chimici",
+    "manufacture of coke and refined petroleum products": "Coke e prodotti petroliferi raffinati",
+    "manufacture of computer, electronic and optical products": "Computer, elettronica e ottica",
+    "manufacture of electrical equipment and of non-electric domestic appliances": "Apparecchiature elettriche",
+    "manufacture of fabricated metal products, except machinery and equipment": "Prodotti in metallo esclusi macchinari",
+    "manufacture of food products": "Prodotti alimentari",
+    "manufacture of furniture": "Mobili",
+    "manufacture of leather and related products": "Pelle e prodotti in pelle",
+    "manufacture of machinery and equipment n.e.c.": "Macchinari e apparecchiature n.c.a.",
+    "manufacture of motor vehicles, trailers and semi-trailers": "Autoveicoli, rimorchi e semirimorchi",
+    "manufacture of other non-metallic mineral products": "Altri prodotti della lavorazione di minerali non metalliferi",
+    "manufacture of other transport equipment": "Altri mezzi di trasporto",
+    "manufacture of paper and paper products": "Carta e prodotti di carta",
+    "manufacture of rubber and plastic products": "Gomma e materie plastiche",
+    "manufacture of textiles": "Prodotti tessili",
+    "manufacture of tobacco products": "Tabacco",
+    "manufacture of wearing apparel": "Abbigliamento",
+    "manufacture of wood and of products of wood and cork, except furniture, manufacture of articles of straw and plaiting materials": "Legno, sughero, paglia e materiali da intreccio",
     "median": "Mediana",
+    "mining support service activities": "Attivita' di supporto all'estrazione",
+    "motion picture, video and television programme production, sound recording and music publishing activities": "Cinema, video, televisione, musica ed editoria sonora",
+    "Netherlands": "Paesi Bassi",
+    "office administrative, office support and other business support activities": "Supporto per funzioni d'ufficio e altri servizi alle imprese",
+    "other manufacturing": "Altre attivita' manifatturiere",
+    "other mining and quarrying": "Altre attivita' estrattive",
+    "other personal service activities": "Altri servizi alla persona",
+    "other professional, scientific and technical activities": "Altre attivita' professionali, scientifiche e tecniche",
     "part-time": "Tempo parziale",
+    "Part-time": "Tempo parziale",
     "permanent employees": "Tempo indeterminato",
+    "postal and courier activities": "Servizi postali e corrieri",
+    "printing and reproduction of recorded media": "Stampa e riproduzione di supporti registrati",
+    "programming and broadcasting activities": "Programmazione e trasmissioni radio-televisive",
+    "publishing activities": "Editoria",
+    "real estate activities": "Attivita' immobiliari",
+    "remediation activities and other waste management services": "Risanamento e gestione rifiuti",
+    "rental and leasing activities": "Noleggio e leasing operativo",
+    "repair and installation of machinery and equipment": "Riparazione e installazione di macchinari",
+    "repair of computers and personal and household goods": "Riparazione di computer e beni personali",
+    "residential care activities": "Assistenza sociale residenziale",
+    "retail trade, except of motor vehicles and motorcycles": "Commercio al dettaglio esclusi autoveicoli e motocicli",
+    "scientific research and development": "Ricerca scientifica e sviluppo",
+    "security and investigation activities": "Servizi di vigilanza e investigazione",
+    "Services of the business economy": "Servizi dell'economia di mercato",
+    "services (g to s, except o)": "Servizi esclusa PA",
+    "services to buildings and landscape activities": "Servizi per edifici e paesaggio",
+    "sewerage": "Reti fognarie",
+    "social work activities without accommodation": "Assistenza sociale non residenziale",
+    "Spain": "Spagna",
+    "specialised construction activities": "Lavori di costruzione specializzati",
+    "sports activities and amusement and recreation activities": "Sport, intrattenimento e divertimento",
+    "telecommunications": "Telecomunicazioni",
     "temporary employees": "Tempo determinato",
-    "total": "Totale"
+    "Tertiary education (levels 5-8)": "Istruzione terziaria",
+    "TOTAL INDUSTRY EXCLUDING CONSTRUCTION (b to e)": "Industria esclusa costruzioni",
+    "temporary employees": "Tempo determinato",
+    "total": "Totale",
+    "Total": "Totale",
+    "travel agency, tour operator and other reservation service and related activities": "Agenzie di viaggio, tour operator e servizi di prenotazione",
+    "Unadjusted gender pay gap": "Gender pay gap non corretto",
+    "Unlimited duration": "Tempo indeterminato",
+    "Unknown": "Non noto",
+    "Upper secondary and post-secondary non-tertiary education (levels 3 and 4)": "Diploma e post-secondario non terziario",
+    "veterinary activities": "Servizi veterinari",
+    "warehousing and support activities for transportation": "Magazzinaggio e supporto ai trasporti",
+    "waste collection, treatment and disposal activities, materials recovery": "Raccolta e trattamento rifiuti, recupero materiali",
+    "water collection, treatment and supply": "Raccolta, trattamento e fornitura di acqua",
+    "water transport": "Trasporto marittimo e per vie d'acqua",
+    "wholesale and retail trade and repair of motor vehicles and motorcycles": "Commercio e riparazione di autoveicoli e motocicli",
+    "wholesale trade, except of motor vehicles and motorcycles": "Commercio all'ingrosso esclusi autoveicoli e motocicli",
+    "apprentice": "Apprendisti"
+  };
+  var CODE_LABEL_IT = {
+    geography_code: {
+      EU27_2020: "Unione europea a 27",
+      DE: "Germania",
+      ES: "Spagna",
+      FR: "Francia",
+      IT: "Italia",
+      NL: "Paesi Bassi"
+    },
+    education: {
+      TOTAL: "Totale",
+      "ED0-2": "Fino alla licenza media",
+      ED3_4: "Diploma e post-secondario non terziario",
+      "ED5-8": "Istruzione terziaria",
+      UNK: "Non noto"
+    },
+    working_time: {
+      FT: "Tempo pieno",
+      PT: "Tempo parziale",
+      "1": "Tempo pieno",
+      "2": "Tempo parziale",
+      TOTAL: "Totale",
+      "9": "Totale"
+    },
+    firm_size: {
+      GE1000: "1.000 addetti e oltre",
+      GE10: "10 addetti e oltre",
+      "1-9": "1-9 addetti",
+      "10-49": "10-49 addetti",
+      "50-249": "50-249 addetti",
+      "250-499": "250-499 addetti",
+      "500-999": "500-999 addetti"
+    },
+    contract_type: {
+      APP_TRN: "Apprendista o tirocinante",
+      LTD_X_APP_TRN: "Tempo determinato esclusi apprendisti e tirocinanti",
+      NLTD: "Tempo indeterminato",
+      "1": "Tempo determinato",
+      "2": "Tempo indeterminato",
+      TOTAL: "Totale",
+      "9": "Totale"
+    },
+    contractual_occupation: {
+      "7": "Apprendisti"
+    },
+    paid_days: {
+      D_UN90: "Fino a 90 giornate retribuite",
+      D_GE91: "91 giornate retribuite e oltre",
+      TOTAL: "Totale"
+    },
+    sector: {
+      "B-N": "Economia di mercato",
+      "P-S": "Istruzione, sanita', arte e altri servizi",
+      "B-F": "Industria e costruzioni",
+      "B-S_X_O": "Industria, costruzioni e servizi esclusa PA",
+      "G-N": "Servizi dell'economia di mercato",
+      "0020": "Industria esclusa costruzioni",
+      "0038": "Servizi esclusa PA",
+      "55": "Alloggio",
+      "66": "Attivita' ausiliarie dei servizi finanziari e assicurativi",
+      "70": "Direzione aziendale e consulenza gestionale",
+      "73": "Pubblicita' e ricerche di mercato",
+      "51": "Trasporto aereo",
+      "71": "Architettura, ingegneria, collaudi e analisi tecniche",
+      "42": "Ingegneria civile",
+      "62": "Programmazione, consulenza informatica e attivita' connesse",
+      "41": "Costruzione di edifici",
+      "90": "Attivita' creative, artistiche e di intrattenimento",
+      "85": "Istruzione",
+      "35": "Energia elettrica, gas, vapore e aria condizionata",
+      "78": "Ricerca, selezione e fornitura di personale",
+      "06": "Estrazione di petrolio greggio e gas naturale",
+      "64": "Servizi finanziari esclusi assicurazioni e fondi pensione",
+      "56": "Ristorazione",
+      "92": "Lotterie, scommesse e case da gioco",
+      "86": "Sanita'",
+      "63": "Servizi d'informazione",
+      "65": "Assicurazioni, riassicurazioni e fondi pensione",
+      "49": "Trasporto terrestre e mediante condotte",
+      "69": "Attivita' legali e contabilita'",
+      "91": "Biblioteche, archivi, musei e altre attivita' culturali",
+      "24": "Metallurgia",
+      "21": "Prodotti farmaceutici",
+      "11": "Bevande",
+      "20": "Prodotti chimici",
+      "19": "Coke e prodotti petroliferi raffinati",
+      "26": "Computer, elettronica e ottica",
+      "27": "Apparecchiature elettriche",
+      "25": "Prodotti in metallo esclusi macchinari",
+      "10": "Prodotti alimentari",
+      "31": "Mobili",
+      "15": "Pelle e prodotti in pelle",
+      "28": "Macchinari e apparecchiature n.c.a.",
+      "29": "Autoveicoli, rimorchi e semirimorchi",
+      "23": "Minerali non metalliferi",
+      "30": "Altri mezzi di trasporto",
+      "17": "Carta e prodotti di carta",
+      "22": "Gomma e materie plastiche",
+      "13": "Prodotti tessili",
+      "12": "Tabacco",
+      "14": "Abbigliamento",
+      "16": "Legno, sughero e materiali da intreccio",
+      "09": "Supporto all'estrazione",
+      "59": "Cinema, video, televisione e musica",
+      "82": "Supporto d'ufficio e altri servizi alle imprese",
+      "32": "Altre attivita' manifatturiere",
+      "08": "Altre attivita' estrattive",
+      "96": "Altri servizi alla persona",
+      "74": "Altre attivita' professionali, scientifiche e tecniche",
+      "53": "Servizi postali e corrieri",
+      "18": "Stampa e riproduzione di supporti registrati",
+      "60": "Programmazione e trasmissioni radio-televisive",
+      "58": "Editoria",
+      "68": "Attivita' immobiliari",
+      "39": "Risanamento e gestione rifiuti",
+      "77": "Noleggio e leasing operativo",
+      "33": "Riparazione e installazione di macchinari",
+      "95": "Riparazione di computer e beni personali",
+      "87": "Assistenza sociale residenziale",
+      "47": "Commercio al dettaglio esclusi autoveicoli e motocicli",
+      "72": "Ricerca scientifica e sviluppo",
+      "80": "Vigilanza e investigazione",
+      "81": "Servizi per edifici e paesaggio",
+      "37": "Reti fognarie",
+      "88": "Assistenza sociale non residenziale",
+      "43": "Lavori di costruzione specializzati",
+      "93": "Sport, intrattenimento e divertimento",
+      "61": "Telecomunicazioni",
+      "79": "Agenzie di viaggio e tour operator",
+      "75": "Servizi veterinari",
+      "52": "Magazzinaggio e supporto ai trasporti",
+      "38": "Raccolta e trattamento rifiuti",
+      "36": "Raccolta, trattamento e fornitura di acqua",
+      "50": "Trasporto marittimo e per vie d'acqua",
+      "45": "Commercio e riparazione di autoveicoli e motocicli",
+      "46": "Commercio all'ingrosso esclusi autoveicoli e motocicli"
+    }
   };
 
   var state = {
@@ -78,6 +360,7 @@
       contractual_occupation: "99",
       firm_size: "TOTAL",
       country_birth: "WORLD",
+      paid_days: "TOTAL",
       pay_period: "hourly"
     },
     worker: {
@@ -85,18 +368,69 @@
       year: null,
       geography_code: "IT",
       sex: "T",
+      age_class: "all",
+      education: "all",
+      country_birth: "all",
+      working_time: "all",
+      contract_type: "all",
+      contractual_occupation: "all",
+      sector: "all",
+      firm_size: "all",
+      seniority: "all",
+      paid_days: "all",
       pay_period: "hourly",
-      statistic: "median"
+      statistic: "median",
+      max_items: "50"
     },
     job: {
       dimension: "sector",
       year: null,
       geography_code: "IT",
       sex: "T",
+      age_class: "all",
+      education: "all",
+      country_birth: "all",
+      working_time: "all",
+      contract_type: "all",
+      contractual_occupation: "all",
+      sector: "all",
+      firm_size: "all",
+      seniority: "all",
+      paid_days: "all",
       pay_period: "hourly",
-      statistic: "median"
+      statistic: "median",
+      max_items: "50"
     },
     selectedSectors: [],
+    territory: {
+      level: "region",
+      year: null,
+      sex: "T",
+      age_class: "all",
+      education: "all",
+      country_birth: "all",
+      working_time: "all",
+      contract_type: "all",
+      contractual_occupation: "all",
+      firm_size: "all",
+      paid_days: "all",
+      statistic: "median",
+      max_items: "50"
+    },
+    paidDays: {
+      year: null,
+      geography_code: "IT",
+      sex: "T",
+      age_class: "all",
+      education: "all",
+      country_birth: "all",
+      working_time: "all",
+      contract_type: "all",
+      contractual_occupation: "all",
+      sector: "0010",
+      firm_size: "all",
+      statistic: "median"
+    },
     europe: { pay_period: "hourly", statistic: "median", sex: "T" },
     series: {
       pay_period: "hourly",
@@ -110,7 +444,8 @@
       working_time: "9",
       contractual_occupation: "99",
       firm_size: "TOTAL",
-      country_birth: "WORLD"
+      country_birth: "WORLD",
+      paid_days: "TOTAL"
     }
   };
 
@@ -153,10 +488,25 @@
     });
   }
 
+  function labelFromCode(field, value) {
+    if (field === null || field === undefined || value === null || value === undefined) return null;
+    var fieldLabels = CODE_LABEL_IT[field];
+    if (!fieldLabels) return null;
+    return fieldLabels[String(value)] || null;
+  }
+
+  function italianLabel(value) {
+    if (value === null || value === undefined || value === "") return null;
+    var label = String(value);
+    return LABEL_IT[label] || LABEL_IT[label.toLowerCase()] || label;
+  }
+
   function lookupLabel(field, value) {
     if (value === null || value === undefined) return null;
+    var codeLabel = labelFromCode(field, value);
+    if (codeLabel) return codeLabel;
     var label = state.lookups[field] && state.lookups[field][String(value)];
-    return label ? (LABEL_IT[label] || label) : null;
+    return label ? italianLabel(label) : null;
   }
 
   function text(value, fallback) {
@@ -260,9 +610,10 @@
   }
 
   function optionLabel(row, field, labelField) {
-    var rawLabel = labelField && row[labelField] ? row[labelField] : lookupLabel(field, row[field]) || row[field];
+    var codeLabel = labelFromCode(field, row[field]);
+    var rawLabel = codeLabel || (labelField && row[labelField] ? row[labelField] : lookupLabel(field, row[field]) || row[field]);
     var label = text(rawLabel, text(row[field]));
-    return LABEL_IT[label] || label;
+    return italianLabel(label) || label;
   }
 
   function isTotal(field, value) {
@@ -337,13 +688,22 @@
     return node;
   }
 
-  function preferredOption(options) {
-    for (var index = 0; index < TOTAL_VALUES.length; index += 1) {
-      var totalValue = TOTAL_VALUES[index];
-      var match = options.find(function (option) { return String(option.value) === String(totalValue); });
-      if (match) return match.value;
+  function preferredOption(options, spec) {
+    if (!options.length) return "";
+    var allMatch = options.find(function (option) { return String(option.value) === "all"; });
+    if (allMatch && (!spec || spec.preferAll !== false)) return allMatch.value;
+    if (!spec || spec.preferTotal !== false) {
+      for (var index = 0; index < TOTAL_VALUES.length; index += 1) {
+        var totalValue = TOTAL_VALUES[index];
+        var match = options.find(function (option) { return String(option.value) === String(totalValue); });
+        if (match) return match.value;
+      }
     }
-    return options[0] ? options[0].value : "";
+    if (spec && spec.preferNonTotal) {
+      var nonTotal = options.find(function (option) { return !isTotal(spec.field, option.value); });
+      if (nonTotal) return nonTotal.value;
+    }
+    return options[0].value;
   }
 
   function syncFilters(containerId, specs, rows, targetState, onChange) {
@@ -364,7 +724,7 @@
       var current = targetState[spec.key];
       var allowed = options.some(function (option) { return String(option.value) === String(current); });
       if (!allowed) {
-        targetState[spec.key] = preferredOption(options);
+        targetState[spec.key] = preferredOption(options, spec);
         current = targetState[spec.key];
       }
       ensureSelect(container, spec, options, current, function (key, value) {
@@ -372,6 +732,23 @@
         onChange();
       });
     });
+  }
+
+  function optionalDimensionOptions(rows, field, labelField, label) {
+    var options = uniqueOptions(rows, field, labelField, false);
+    if (!options.length) return [];
+    return [{ value: "all", label: label || "Tutto" }].concat(options);
+  }
+
+  function displayOptions() {
+    return DISPLAY_OPTIONS;
+  }
+
+  function displayRows(rows, maxItems) {
+    if (String(maxItems) === "all") return rows;
+    var limit = Number(maxItems);
+    if (!Number.isFinite(limit) || limit <= 0) return rows;
+    return rows.slice(0, limit);
   }
 
   function grossRows() {
@@ -492,6 +869,7 @@
       { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true },
       { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true },
       { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true },
+      { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true },
       { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true }
     ];
     if (!state.distribution.year) {
@@ -510,6 +888,7 @@
       contractual_occupation: state.distribution.contractual_occupation,
       firm_size: state.distribution.firm_size,
       country_birth: state.distribution.country_birth,
+      paid_days: state.distribution.paid_days,
       pay_period: state.distribution.pay_period
     }).sort(function (a, b) { return statOrder(a) - statOrder(b); });
     var byStat = {};
@@ -518,8 +897,12 @@
       if (!byStat[key] || row.source === "ISTAT") byStat[key] = row;
     });
     selected = Object.keys(byStat).map(function (key) { return byStat[key]; }).sort(function (a, b) { return statOrder(a) - statOrder(b); });
-    byId("siDistributionTitle").textContent = "Distribuzione " + text(PERIOD_LABELS[state.distribution.pay_period], state.distribution.pay_period).toLowerCase();
+    byId("siDistributionTitle").textContent = "Punti distributivi " + text(PERIOD_LABELS[state.distribution.pay_period], state.distribution.pay_period).toLowerCase();
     byId("siDistributionTag").textContent = text(state.distribution.year) + " · " + text(lookupLabel("geography_code", state.distribution.geography_code), state.distribution.geography_code);
+    var note = byId("siDistributionNote");
+    if (note) {
+      note.textContent = "Le fonti aggregate pubblicano media, mediana e decili. La distribuzione piena viene mostrata solo se esiste una tavola ufficiale con classi o frequenze, non ricostruita.";
+    }
     if (!selected.length) {
       showEmpty("siDistributionChart", "Nessun punto distributivo disponibile per questa selezione.");
       return;
@@ -568,6 +951,25 @@
     });
   }
 
+  function analysisFilterSpecs(activeDimensionKey, includeKeys) {
+    return ANALYSIS_FILTER_KEYS.filter(function (key) {
+      return key !== "sex" && includeKeys.indexOf(key) >= 0 && key !== activeDimensionKey;
+    }).map(function (key) {
+      var dimension = DIMENSIONS[key];
+      return {
+        key: key,
+        field: dimension.field,
+        label: dimension.label,
+        labelField: dimension.labelField,
+        options: function (optionRows) {
+          return optionalDimensionOptions(optionRows, dimension.field, dimension.labelField, "Tutto");
+        },
+        preferAll: true,
+        preferTotal: false
+      };
+    });
+  }
+
   function analysisRows(targetState, dimensionKey) {
     var dimension = DIMENSIONS[dimensionKey];
     return grossRows().filter(function (row) {
@@ -577,7 +979,13 @@
       if (targetState.geography_code && String(row.geography_code) !== String(targetState.geography_code)) return false;
       if (targetState.pay_period && String(row.pay_period) !== String(targetState.pay_period)) return false;
       if (targetState.statistic && String(row.statistic) !== String(targetState.statistic)) return false;
-      if (dimension.field !== "sex" && targetState.sex && String(row.sex || "T") !== String(targetState.sex)) return false;
+      for (var index = 0; index < ANALYSIS_FILTER_KEYS.length; index += 1) {
+        var key = ANALYSIS_FILTER_KEYS[index];
+        var item = DIMENSIONS[key];
+        var value = targetState[key];
+        if (!item || item.field === dimension.field || value === null || value === undefined || value === "" || String(value) === "all") continue;
+        if (String(row[item.field] || "") !== String(value)) return false;
+      }
       return true;
     });
   }
@@ -589,14 +997,16 @@
       if (!activeDimension || row[activeDimension.field] === undefined || row[activeDimension.field] === null) return false;
       return !isTotal(activeDimension.field, row[activeDimension.field]);
     });
+    var includedFilters = dimensionKeys.concat(["sector", "working_time", "firm_size", "contractual_occupation", "contract_type", "country_birth", "education", "age_class", "paid_days"]);
     var specs = [
       { key: "dimension", label: "Dimensione", options: function () { return dimensionOptions(dimensionKeys, rows); } },
       { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
       { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
       { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true }
-    ];
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
+      { key: "max_items", label: "Categorie", options: displayOptions, preferAll: false, preferTotal: false }
+    ].concat(analysisFilterSpecs(targetState.dimension, includedFilters));
     if (!targetState.year) {
       targetState.year = latestYear(rows, { geography_code: "IT", pay_period: targetState.pay_period, statistic: targetState.statistic });
     }
@@ -604,9 +1014,10 @@
     var dimension = DIMENSIONS[targetState.dimension];
     var selected = analysisRows(targetState, targetState.dimension);
     selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
-    selected = selected.reverse();
+    var totalSelected = selected.length;
+    selected = displayRows(selected, targetState.max_items).reverse();
     byId(titleId).textContent = dimension ? "Retribuzione per " + dimension.label.toLowerCase() : "Retribuzione";
-    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic].join(" · ");
+    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic, selected.length + "/" + totalSelected + " categorie"].join(" · ");
     if (!selected.length || !dimension) {
       showEmpty(chartId, "Nessun dato disponibile per questa combinazione.");
       return;
@@ -619,7 +1030,7 @@
       marker: { color: COLORS[1] },
       hovertemplate: "%{y}<br>%{x:.2f} €<extra></extra>"
     }], {
-      height: Math.max(420, selected.length * 26 + 120),
+      height: 540,
       margin: { t: 22, r: 18, b: 52, l: 180 },
       xaxis: { title: "Euro", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
@@ -651,12 +1062,12 @@
       var key = String(row.sector);
       grouped[key] = grouped[key] || {
         sector: key,
-        label: row.sector_label || key,
+        label: optionLabel(row, "sector", "sector_label"),
         values: [],
         qualifications: []
       };
       grouped[key].values.push(row.value);
-      grouped[key].qualifications.push(row.contractual_occupation_label || row.contractual_occupation);
+      grouped[key].qualifications.push(optionLabel(row, "contractual_occupation", "contractual_occupation_label"));
     });
     return Object.keys(grouped).map(function (key) { return grouped[key]; }).filter(function (item) {
       return item.values.length >= 2;
@@ -691,7 +1102,7 @@
       return available.indexOf(sector) >= 0;
     });
     if (!state.selectedSectors.length) {
-      state.selectedSectors = groups.slice(0, 10).map(function (item) { return item.sector; });
+      state.selectedSectors = groups.slice(0, 8).map(function (item) { return item.sector; });
     }
     clear(picker);
     groups.forEach(function (item) {
@@ -727,21 +1138,24 @@
       return;
     }
     var traces = selected.map(function (item, index) {
+      var color = COLORS[index % COLORS.length];
       return {
         type: "box",
-        name: item.label,
+        name: item.label.length > 28 ? item.label.slice(0, 27) + "..." : item.label,
         y: item.values,
         text: item.qualifications,
-        marker: { color: COLORS[index % COLORS.length], size: 7 },
-        line: { color: COLORS[index % COLORS.length], width: 2 },
+        customdata: item.values.map(function () { return item.label; }),
+        marker: { color: color, opacity: 0.74, size: 7 },
+        line: { color: color, width: 1.7 },
+        fillcolor: "rgba(160,160,160,.18)",
         boxpoints: "all",
-        jitter: 0.35,
+        jitter: 0.32,
         pointpos: 0,
-        hovertemplate: "%{text}<br>%{y:.2f} €<extra>" + item.label + "</extra>"
+        hovertemplate: "<b>%{customdata}</b><br>Qualifica: %{text}<br>Retribuzione: %{y:.2f} €<extra></extra>"
       };
     });
     plot("siSectorBoxChart", traces, {
-      height: Math.max(500, selected.length * 34 + 180),
+      height: 560,
       margin: { t: 22, r: 18, b: 140, l: 70 },
       xaxis: { title: "", automargin: true, tickangle: -35 },
       yaxis: { title: "Euro per ora", rangemode: "tozero" },
@@ -762,7 +1176,7 @@
     var year = latestYear(rows, {});
     rows = rows.filter(function (row) { return String(row.year) === String(year); });
     rows.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
-    rows = rows.reverse();
+    rows = displayRows(rows, "25").reverse();
     if (!rows.length) {
       showEmpty("siLowWageChart", "Quota low-wage non disponibile per questa dimensione.");
       return;
@@ -775,7 +1189,7 @@
       marker: { color: COLORS[4] },
       hovertemplate: "%{y}<br>%{x:.1f}%<extra></extra>"
     }], {
-      height: Math.max(420, rows.length * 26 + 120),
+      height: 460,
       margin: { t: 22, r: 18, b: 52, l: 170 },
       xaxis: { title: "% dipendenti", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
@@ -807,34 +1221,231 @@
     });
   }
 
-  function renderTerritory() {
-    var rows = grossRows().filter(function (row) {
-      return row.source_request === "istat_racli_province_gender"
-        && row.pay_period === "hourly"
-        && row.statistic === "median"
-        && row.sex === "T"
-        && row.sector === "0010"
-        && row.geography_code !== "IT";
+  function geographyLevel(code) {
+    var value = String(code || "");
+    if (value === "IT") return "country";
+    if (/^\d{6}$/.test(value)) return "municipality";
+    if (value.length >= 5) return "province";
+    if (value.length === 4) return "region";
+    if (value.length === 3) return "macroarea";
+    return "other";
+  }
+
+  function territoryLevelLabel(level) {
+    return {
+      region: "Regioni",
+      province: "Province e citta' metropolitane",
+      municipality: "Comuni"
+    }[level] || level;
+  }
+
+  function territoryLevelOptions(rows) {
+    var levels = {};
+    toArray(rows).forEach(function (row) {
+      var level = geographyLevel(row.geography_code);
+      if (["region", "province", "municipality"].indexOf(level) >= 0) levels[level] = true;
     });
-    var year = latestYear(rows, {});
-    rows = rows.filter(function (row) { return String(row.year) === String(year); });
-    rows.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
-    if (!rows.length) {
-      showEmpty("siTerritoryChart", "Confronto territoriale non disponibile.");
+    return ["region", "province", "municipality"].filter(function (level) {
+      return levels[level];
+    }).map(function (level) {
+      return { value: level, label: territoryLevelLabel(level) };
+    });
+  }
+
+  function activeTerritoryFilters() {
+    return ANALYSIS_FILTER_KEYS.filter(function (key) {
+      var value = state.territory[key];
+      return key !== "sex" && value !== null && value !== undefined && value !== "" && String(value) !== "all";
+    });
+  }
+
+  function territoryBaseRows() {
+    return grossRows().filter(function (row) {
+      return String(row.source_request || "").indexOf("istat_racli_province_") === 0
+        && row.pay_period === "hourly"
+        && row.geography_code
+        && row.geography_code !== "IT"
+        && row.sector === "0010";
+    });
+  }
+
+  function territoryPriority(row, activeKeys) {
+    var request = String(row.source_request || "");
+    if (!activeKeys.length && request === "istat_racli_province_gender") return 0;
+    if (activeKeys.indexOf("education") >= 0 && request === "istat_racli_province_education") return 0;
+    if (activeKeys.indexOf("country_birth") >= 0 && request === "istat_racli_province_country_birth") return 0;
+    if (activeKeys.indexOf("working_time") >= 0 && request === "istat_racli_province_working_time") return 0;
+    if (activeKeys.indexOf("contract_type") >= 0 && request === "istat_racli_province_contract") return 0;
+    if (activeKeys.indexOf("firm_size") >= 0 && request === "istat_racli_province_firm_size") return 0;
+    if (activeKeys.indexOf("contractual_occupation") >= 0 && request === "istat_racli_province_qualification") return 0;
+    if (activeKeys.indexOf("age_class") >= 0 && request === "istat_racli_province_age") return 0;
+    if (activeKeys.indexOf("paid_days") >= 0 && request === "istat_racli_province_paid_days") return 0;
+    return request === "istat_racli_province_gender" ? 1 : 2;
+  }
+
+  function dedupeTerritoryRows(rows, activeKeys) {
+    var selected = {};
+    toArray(rows).forEach(function (row) {
+      var key = row.geography_code;
+      var existing = selected[key];
+      if (!existing || territoryPriority(row, activeKeys) < territoryPriority(existing, activeKeys)) {
+        selected[key] = row;
+      }
+    });
+    return Object.keys(selected).map(function (key) { return selected[key]; });
+  }
+
+  function hasOnlyTotalAnalysisDimensions(row) {
+    return ANALYSIS_FILTER_KEYS.every(function (key) {
+      if (key === "sex") return true;
+      var item = DIMENSIONS[key];
+      if (!item) return true;
+      var value = row[item.field];
+      return value === null || value === undefined || value === "" || isTotal(item.field, value);
+    });
+  }
+
+  function renderTerritory() {
+    var rows = territoryBaseRows();
+    var specs = [
+      { key: "level", label: "Regione o provincia", options: territoryLevelOptions, preferAll: false, preferTotal: false },
+      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
+      { key: "max_items", label: "Territori", options: displayOptions, preferAll: false, preferTotal: false }
+    ].concat(analysisFilterSpecs("", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"]));
+    if (!state.territory.year) {
+      state.territory.year = latestYear(rows, { sex: "T", statistic: "median" });
+    }
+    syncFilters("siTerritoryFilters", specs, rows, state.territory, renderAll);
+    var activeKeys = activeTerritoryFilters();
+    var selected = rows.filter(function (row) {
+      if (geographyLevel(row.geography_code) !== state.territory.level) return false;
+      if (String(row.year) !== String(state.territory.year)) return false;
+      if (String(row.statistic) !== String(state.territory.statistic)) return false;
+      if (state.territory.sex && String(row.sex || "T") !== String(state.territory.sex)) return false;
+      for (var index = 0; index < ANALYSIS_FILTER_KEYS.length; index += 1) {
+        var key = ANALYSIS_FILTER_KEYS[index];
+        var item = DIMENSIONS[key];
+        var value = state.territory[key];
+        if (!item || key === "sex" || value === null || value === undefined || value === "" || String(value) === "all") continue;
+        if (String(row[item.field] || "") !== String(value)) return false;
+      }
+      if (!activeKeys.length && !hasOnlyTotalAnalysisDimensions(row)) return false;
+      return true;
+    });
+    selected = dedupeTerritoryRows(selected, activeKeys);
+    selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
+    var totalSelected = selected.length;
+    selected = displayRows(selected, state.territory.max_items).reverse();
+    byId("siTerritoryTitle").textContent = "Retribuzione per " + territoryLevelLabel(state.territory.level).toLowerCase();
+    byId("siTerritoryTag").textContent = [text(state.territory.year), STAT_LABELS[state.territory.statistic] || state.territory.statistic, selected.length + "/" + totalSelected].join(" · ");
+    if (!selected.length) {
+      showEmpty("siTerritoryChart", "Confronto territoriale non disponibile per questa combinazione.");
       return;
     }
     plot("siTerritoryChart", [{
       type: "bar",
       orientation: "h",
-      y: rows.slice().reverse().map(function (row) { return optionLabel(row, "geography_code", "geography_name"); }),
-      x: rows.slice().reverse().map(function (row) { return row.value; }),
+      y: selected.map(function (row) { return optionLabel(row, "geography_code", "geography_name"); }),
+      x: selected.map(function (row) { return row.value; }),
       marker: { color: COLORS[2] },
       hovertemplate: "%{y}<br>%{x:.2f} €<extra></extra>"
     }], {
-      height: Math.max(520, rows.length * 22 + 120),
-      margin: { t: 22, r: 18, b: 52, l: 170 },
-      xaxis: { title: "Mediana oraria lorda", rangemode: "tozero" },
+      height: 560,
+      margin: { t: 22, r: 18, b: 52, l: 190 },
+      xaxis: { title: "Retribuzione oraria lorda", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
+    });
+  }
+
+  function paidDaysRows() {
+    return grossRows().filter(function (row) {
+      return String(row.source_request || "").indexOf("paid_days") >= 0
+        && row.pay_period === "hourly"
+        && row.paid_days
+        && !isTotal("paid_days", row.paid_days);
+    });
+  }
+
+  function paidDaysOrder(value) {
+    return {
+      D_UN90: 1,
+      D1_3: 2,
+      "D1-3": 2,
+      D4_30: 3,
+      "D4-30": 3,
+      D31_60: 4,
+      "D31-60": 4,
+      D61_90: 5,
+      "D61-90": 5,
+      D_GE91: 6,
+      D91_180: 7,
+      "D91-180": 7,
+      D181_270: 8,
+      "D181-270": 8,
+      D271_364: 9,
+      "D271-364": 9
+    }[String(value)] || 99;
+  }
+
+  function dedupePaidDaysRows(rows) {
+    var selected = {};
+    toArray(rows).forEach(function (row) {
+      var key = String(row.paid_days);
+      var existing = selected[key];
+      if (!existing || seriesPriority(row) < seriesPriority(existing)) selected[key] = row;
+    });
+    return Object.keys(selected).map(function (key) { return selected[key]; });
+  }
+
+  function renderPaidDays() {
+    var rows = paidDaysRows();
+    var specs = [
+      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
+      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
+      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true },
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true }
+    ].concat(analysisFilterSpecs("paid_days", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size"]));
+    if (!state.paidDays.year) {
+      state.paidDays.year = latestYear(rows, { geography_code: "IT", sex: "T", sector: "0010", statistic: "median" });
+    }
+    syncFilters("siPaidDaysFilters", specs, rows, state.paidDays, renderAll);
+    var selected = filterRows(rows, {
+      year: state.paidDays.year,
+      geography_code: state.paidDays.geography_code,
+      sex: state.paidDays.sex,
+      sector: state.paidDays.sector,
+      age_class: state.paidDays.age_class,
+      education: state.paidDays.education,
+      country_birth: state.paidDays.country_birth,
+      working_time: state.paidDays.working_time,
+      contract_type: state.paidDays.contract_type,
+      contractual_occupation: state.paidDays.contractual_occupation,
+      firm_size: state.paidDays.firm_size,
+      statistic: state.paidDays.statistic
+    });
+    selected = dedupePaidDaysRows(selected).sort(function (a, b) {
+      return paidDaysOrder(a.paid_days) - paidDaysOrder(b.paid_days);
+    });
+    byId("siPaidDaysTag").textContent = [text(state.paidDays.year), STAT_LABELS[state.paidDays.statistic] || state.paidDays.statistic].join(" · ");
+    if (!selected.length) {
+      showEmpty("siPaidDaysChart", "Classi di giornate retribuite non disponibili per questa selezione.");
+      return;
+    }
+    plot("siPaidDaysChart", [{
+      type: "bar",
+      x: selected.map(function (row) { return optionLabel(row, "paid_days", "paid_days_label"); }),
+      y: selected.map(function (row) { return row.value; }),
+      marker: { color: COLORS[3] },
+      text: selected.map(function (row) { return euro(row.value, 2); }),
+      textposition: "outside",
+      hovertemplate: "%{x}<br>%{text}<extra></extra>"
+    }], {
+      height: 500,
+      yaxis: { title: "Euro per ora", rangemode: "tozero" },
+      xaxis: { title: "", automargin: true }
     });
   }
 
@@ -847,11 +1458,21 @@
     ];
     syncFilters("siEuropeFilters", specs, rows, state.europe, renderAll);
     var selected = rows.filter(function (row) {
-      return row.pay_period === state.europe.pay_period && row.statistic === state.europe.statistic && row.sex === state.europe.sex;
+      var sourceMatch = state.europe.pay_period === "hourly"
+        ? row.source_request === "ses_by_working_time" && row.sector === "B-S_X_O" && row.working_time === "TOTAL"
+        : row.source_request === (state.europe.pay_period === "monthly" ? "ses_monthly_distribution" : "ses_annual_distribution");
+      return sourceMatch
+        && row.pay_period === state.europe.pay_period
+        && row.statistic === state.europe.statistic
+        && row.sex === state.europe.sex;
     });
     var countries = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
     var traces = countries.map(function (country, index) {
-      var countryRows = selected.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
+      var byYear = {};
+      selected.filter(function (row) { return row.geography_code === country; }).forEach(function (row) {
+        byYear[String(row.year)] = row;
+      });
+      var countryRows = Object.keys(byYear).map(function (year) { return byYear[year]; }).sort(function (a, b) {
         return Number(a.year) - Number(b.year);
       });
       return {
@@ -868,7 +1489,34 @@
       yaxis: { title: "Euro", rangemode: "tozero" },
       xaxis: { title: "" }
     });
-    renderGenderGap();
+  }
+
+  function renderOecd() {
+    var rows = state.records.filter(function (row) {
+      return row.source === "OECD"
+        && row.pay_concept === "average_annual_wage_oecd"
+        && row.statistic === "mean"
+        && row.pay_period === "annual";
+    });
+    var countries = ["ITA", "OECD", "DEU", "FRA", "ESP", "NLD", "USA"];
+    var traces = countries.map(function (country, index) {
+      var countryRows = rows.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
+        return Number(a.year) - Number(b.year);
+      });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
+        x: countryRows.map(function (row) { return row.year; }),
+        y: countryRows.map(function (row) { return row.value; }),
+        line: { color: COLORS[index % COLORS.length], width: country === "ITA" ? 4 : 2, dash: country === "OECD" ? "dot" : "solid" },
+        hovertemplate: "%{fullData.name}<br>%{x}: %{y:,.0f} $ PPP<extra></extra>"
+      };
+    }).filter(function (trace) { return trace.x.length; });
+    plot("siOecdChart", traces, {
+      yaxis: { title: "Dollari USA PPP 2025", rangemode: "tozero" },
+      xaxis: { title: "" }
+    });
   }
 
   function renderGenderGap() {
@@ -890,9 +1538,64 @@
         hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f}%<extra></extra>"
       };
     }).filter(function (trace) { return trace.x.length; });
+    var istat = {};
+    grossRows().forEach(function (row) {
+      if (row.source_request !== "istat_racli_sector_gender") return;
+      if (row.geography_code !== "IT" || row.sector !== "0010" || row.pay_period !== "hourly" || row.statistic !== "mean") return;
+      if (["M", "F"].indexOf(row.sex) < 0) return;
+      istat[row.year] = istat[row.year] || {};
+      istat[row.year][row.sex] = row.value;
+    });
+    var istatYears = Object.keys(istat).map(Number).filter(Number.isFinite).sort(function (a, b) { return a - b; });
+    var istatGap = istatYears.map(function (year) {
+      var item = istat[year];
+      if (!item || !toNumber(item.M) || !toNumber(item.F)) return null;
+      return { year: year, value: ((toNumber(item.M) - toNumber(item.F)) / toNumber(item.M)) * 100 };
+    }).filter(Boolean);
+    if (istatGap.length) {
+      traces.unshift({
+        type: "scatter",
+        mode: "lines+markers",
+        name: "Italia ISTAT privato, grezzo",
+        x: istatGap.map(function (row) { return row.year; }),
+        y: istatGap.map(function (row) { return row.value; }),
+        line: { color: COLORS[0], width: 4, dash: "dot" },
+        hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f}%<extra></extra>"
+      });
+    }
     plot("siGenderGapChart", traces, {
       yaxis: { title: "%", zeroline: true },
       xaxis: { title: "" }
+    });
+  }
+
+  function seriesPriority(row) {
+    if (row.source === "ISTAT") {
+      if (String(row.source_request || "").indexOf("istat_racli_sector_") === 0) return 0;
+      return 1;
+    }
+    return 2;
+  }
+
+  function dedupeSeriesRows(rows) {
+    var selected = {};
+    toArray(rows).forEach(function (row) {
+      var key = [statName(row), row.year].join("|");
+      var existing = selected[key];
+      if (!existing || seriesPriority(row) < seriesPriority(existing)) selected[key] = row;
+    });
+    return Object.keys(selected).map(function (key) { return selected[key]; });
+  }
+
+  function uniqueYearRows(rows) {
+    var selected = {};
+    toArray(rows).forEach(function (row) {
+      var key = String(row.year);
+      var existing = selected[key];
+      if (!existing || seriesPriority(row) < seriesPriority(existing)) selected[key] = row;
+    });
+    return Object.keys(selected).map(function (key) { return selected[key]; }).sort(function (a, b) {
+      return Number(a.year) - Number(b.year);
     });
   }
 
@@ -910,7 +1613,8 @@
       { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true },
       { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true },
       { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true },
-      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true }
+      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true },
+      { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true }
     ];
     syncFilters("siSeriesFilters", specs, rows, state.series, renderAll);
     var selected = filterRows(rows, {
@@ -924,10 +1628,12 @@
       contractual_occupation: state.series.contractual_occupation,
       firm_size: state.series.firm_size,
       country_birth: state.series.country_birth,
+      paid_days: state.series.paid_days,
       pay_period: state.series.pay_period
     }).filter(function (row) {
       return state.series.statistic === "all" || row.statistic === state.series.statistic;
-    }).sort(function (a, b) { return Number(a.year) - Number(b.year); });
+    });
+    selected = dedupeSeriesRows(selected).sort(function (a, b) { return Number(a.year) - Number(b.year); });
     byId("siSeriesTitle").textContent = "Serie " + text(PERIOD_LABELS[state.series.pay_period], state.series.pay_period).toLowerCase();
     byId("siSeriesTag").textContent = state.series.statistic === "all" ? "tutte le misure" : STAT_LABELS[state.series.statistic] || state.series.statistic;
     if (!selected.length) {
@@ -941,7 +1647,7 @@
       seriesGroups[key].push(row);
     });
     var traces = Object.keys(seriesGroups).sort().map(function (key, index) {
-      var values = seriesGroups[key].sort(function (a, b) { return Number(a.year) - Number(b.year); });
+      var values = uniqueYearRows(seriesGroups[key]);
       return {
         type: "scatter",
         mode: "lines+markers",
@@ -965,10 +1671,13 @@
       clear(notes);
       [
         "Retribuzione oraria, mensile e annuale sono periodi distinti e non vengono convertiti tra loro.",
+        "La distribuzione piena non viene ricostruita da pochi percentili: quando la fonte pubblica solo D1, mediana, D9 e media, il grafico mostra solo quei punti.",
         "Le retribuzioni pubblicate sono lorde; il netto non viene stimato nel browser.",
         "Il costo del lavoro proviene da una tavola separata e non rappresenta il salario ricevuto dal lavoratore.",
+        "Le giornate retribuite sono classi ufficiali RACLI: indicano continuita' o stagionalita' della posizione, ma non conteggi di lavoratori ricostruiti.",
         "Le tavole 2022 su istruzione, anzianità e dimensione impresa sono punti dell'edizione SES 2022.",
-        "Territorio di residenza, luogo di lavoro e sede dell'impresa non sono intercambiabili."
+        "Territorio di residenza, luogo di lavoro e sede dell'impresa non sono intercambiabili.",
+        "Il gender pay gap adjusted non viene stimato senza microdati o una tavola ufficiale gia' corretta."
       ].forEach(function (note) {
         var item = document.createElement("li");
         item.textContent = note;
@@ -1000,7 +1709,10 @@
     renderWorker();
     renderJob();
     renderTerritory();
+    renderPaidDays();
     renderEurope();
+    renderOecd();
+    renderGenderGap();
     renderSeries();
     renderMethod();
   }
@@ -1028,7 +1740,7 @@
       })
       .catch(function (error) {
         setStatus("Non riesco a caricare i dati salari: " + error.message, true);
-        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siEuropeChart", "siGenderGapChart", "siSeriesChart"].forEach(function (id) {
+        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siGenderGapChart", "siSeriesChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
       });
