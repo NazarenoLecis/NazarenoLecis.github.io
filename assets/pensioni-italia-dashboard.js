@@ -9,10 +9,10 @@
     totale: "Totale",
     ivs: "IVS",
     vecchiaia: "Vecchiaia",
-    invalidita: "Invalidita'",
+    invalidita: "Invalidita' previdenziale",
     superstiti: "Superstiti",
     indennitaria: "Indennitarie",
-    assistenziale: "Assistenziali"
+    assistenziale: "Assistenziali totali"
   };
   var MAP_CATEGORY_ORDER = ["totale", "ivs", "vecchiaia", "invalidita", "superstiti", "indennitaria", "assistenziale"];
 
@@ -1304,7 +1304,7 @@
     var subtitle = byId("piMapSubtitle");
     var note = byId("piMapNote");
     if (subtitle) subtitle.textContent = metricLabel(metric, category) + " - " + categoryLabel(category) + " - " + rows[0].anno;
-    if (note) note.textContent = "Scala cromatica fissa per indicatore e categoria su tutti gli anni disponibili. Con categoria Totale il primo indicatore conta persone pensionate; con le categorie pensionistiche conta prestazioni.";
+    if (note) note.textContent = "Scala cromatica fissa per indicatore e categoria su tutti gli anni disponibili. Con categoria Totale il primo indicatore conta persone pensionate; con le categorie pensionistiche conta prestazioni. Invalidita' previdenziale e assistenziali restano separati: invalidita' civile e assegno sociale sostitutivo sono dentro l'aggregato assistenziale quando la fonte territoriale non li distingue.";
     plot("piRegionalMap", [{
       type: "choropleth",
       geojson: state.geojson,
