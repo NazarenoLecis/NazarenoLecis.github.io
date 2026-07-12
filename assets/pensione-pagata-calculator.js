@@ -1,9 +1,11 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-4";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-5";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1"];
   var PROGRESSION = { nessuna: 0, lenta: 0.01, media: 0.02, rapida: 0.03 };
+  var LIRE_PER_EURO = 1936.27;
+  var LIFE_EXPECTANCY_BASE_AGE = 65;
   var state = { payload: null, mode: "simple", annualRows: [], result: null, career: [], scenario: null, axisMode: "zero" };
 
   function byId(id) { return document.getElementById(id); }
@@ -26,6 +28,16 @@
   }
   function euro(value, digits) { return fmt(value, digits) + " euro"; }
   function pct(value, digits) { return fmt((toNumber(value, 0) || 0) * 100, digits === undefined ? 1 : digits) + "%"; }
+  function careerAmountToEuro(value, currency) {
+    var amount = toNumber(value, 0);
+    return String(currency).toLowerCase() === "lire" ? amount / LIRE_PER_EURO : amount;
+  }
+  function updateLireConverter() {
+    var input = byId("pcLireInput"), output = byId("pcEuroOutput");
+    if (!input || !output) return;
+    var euroValue = careerAmountToEuro(input.value, "lire");
+    output.value = euroValue ? Math.round(euroValue).toLocaleString("it-IT") : "";
+  }
   function pensionNetAnnualEstimate(annualGross, year) {
     annualGross = Math.max(toNumber(annualGross, 0), 0);
     if (!annualGross) return 0;
@@ -143,7 +155,7 @@
       else label.textContent = label.dataset.employeeLabel;
     });
     var minimum = toNumber(category.anno_minimo_calcolabile, 1976);
-    ["pcSimpleStartYear", "pcStartYear"].forEach(function (id) {
+    ["pcSimpleStartYear"].forEach(function (id) {
       var input = byId(id);
       if (input && toNumber(input.value, minimum) < minimum) input.value = minimum;
     });
@@ -211,17 +223,8 @@
       workShare = pattern === "seasonal" ? 100 : toNumber(pattern, 100);
       workMonths = pattern === "seasonal" ? 8 : 12;
       firstRal = null;
-      finalRal = inputNumber("pcSimpleFinalRal", 38000);
+      finalRal = careerAmountToEuro(inputNumber("pcSimpleFinalRal", 38000), inputText("pcSimpleCurrency", "euro"));
       progression = "media";
-    } else if (state.mode === "guided") {
-      start = inputNumber("pcStartYear", 1996);
-      end = inputNumber("pcEndYear", retirement.getFullYear() - 1);
-      contributed = inputNumber("pcContributedYears", end - start + 1);
-      workShare = inputNumber("pcWorkShare", 100);
-      workMonths = inputNumber("pcWorkMonths", 12);
-      firstRal = inputNumber("pcInitialRal", null);
-      finalRal = inputNumber("pcFinalRal", 38000);
-      progression = inputText("pcProgression", "media");
     } else {
       var annualYears = state.annualRows.map(function (row) { return row.anno; });
       start = annualYears.length ? Math.min.apply(null, annualYears) : 1996;
@@ -301,7 +304,37 @@
     if (upper !== lower && byAge[upper] !== undefined) coefficient += (byAge[upper] - byAge[lower]) * (rawAge - lower);
     return { coefficiente: coefficient, eta_usata: rawAge, natura: nature };
   }
+  function contractualSalaryProfile(years, scenario) {
+    var category = categoryFor(scenario.categoria_id);
+    var agreementId = category && category.indice_ccnl_id;
+    if (!agreementId || state.mode === "accurate") return null;
+    var table = paramRows("contract_wages").filter(function (row) { return row.indice_ccnl_id === agreementId; });
+    if (!table.length) return null;
+    var indexByYear = {};
+    table.forEach(function (row) { indexByYear[toNumber(row.anno)] = toNumber(row.indice_retribuzione_contrattuale); });
+    var observedYears = Object.keys(indexByYear).map(Number).sort(function (a, b) { return a - b; });
+    var firstObserved = observedYears[0], lastObserved = observedYears[observedYears.length - 1];
+    function indexFor(year) {
+      if (indexByYear[year] !== undefined) return indexByYear[year];
+      if (year < firstObserved) return indexByYear[firstObserved] / Math.pow(1.02, firstObserved - year);
+      return indexByYear[lastObserved] * Math.pow(1.02, year - lastObserved);
+    }
+    var start = years[0], end = years[years.length - 1];
+    var firstRal = scenario.ral_iniziale;
+    var finalRal = scenario.ral_finale || 36000;
+    if (!firstRal) firstRal = finalRal * indexFor(start) / indexFor(end);
+    var contractualRatio = indexFor(end) / indexFor(start);
+    var targetRatio = finalRal / Math.max(firstRal, 1);
+    var correction = Math.pow(targetRatio / Math.max(contractualRatio, 0.0001), 1 / Math.max(1, end - start));
+    var profile = {};
+    years.forEach(function (year) {
+      profile[year] = firstRal * indexFor(year) / indexFor(start) * Math.pow(correction, year - start);
+    });
+    return { profile: profile, nature: "indice retribuzioni contrattuali ISTAT " + agreementId + ", calibrato sugli input" };
+  }
   function salaryProfile(years, scenario) {
+    var contractual = contractualSalaryProfile(years, scenario);
+    if (contractual) return contractual;
     var growth = PROGRESSION[scenario.progressione] === undefined ? PROGRESSION.media : PROGRESSION[scenario.progressione];
     var start = years[0], end = years[years.length - 1], profile = {};
     if (scenario.ral_iniziale && scenario.ral_finale) {
@@ -386,7 +419,9 @@
     var retirementAge = ageParts(birth, retirement).total;
     var elapsed = retirement <= today ? elapsedYears(retirement, today) : 0;
     var elapsedMonths = retirement <= today ? Math.max(0, Math.floor(elapsed * 12)) : 0;
-    var remainingLife = lifeExpectancy(scenario, retirementAge);
+    var lifeAt65 = lifeExpectancy(scenario, LIFE_EXPECTANCY_BASE_AGE);
+    var expectedAge = LIFE_EXPECTANCY_BASE_AGE + lifeAt65;
+    var remainingLife = Math.max(0, expectedAge - retirementAge);
     var expectedMonths = Math.max(1, Math.round(remainingLife * 12));
     var futureRate = scenario.rivalutazione_futura_pensione === "inflazione_costante" ? scenario.tasso_inflazione_futura : 0;
     var cumulative = 0, received = 0, atExpected = 0, exhaustionMonth = null, points = [{ month: 0, age: retirementAge, cumulative: 0 }];
@@ -402,7 +437,7 @@
     }
     if (!elapsedMonths) received = 0;
     var exhaustionDate = exhaustionMonth === null ? null : addMonths(retirement, exhaustionMonth);
-    return { retirementAge: retirementAge, yearsRetired: elapsed, elapsedMonths: elapsedMonths, lifeRemaining: remainingLife, expectedAge: retirementAge + remainingLife, expectedMonths: expectedMonths, received: received, remainingToday: accrued - received, cumulativeAtExpected: atExpected, balanceAtExpected: accrued - atExpected, exhaustionMonth: exhaustionMonth, exhaustionAge: exhaustionMonth === null ? null : retirementAge + exhaustionMonth / 12, exhaustionDate: exhaustionDate, points: points };
+    return { retirementAge: retirementAge, yearsRetired: elapsed, elapsedMonths: elapsedMonths, lifeRemaining: remainingLife, lifeExpectancyBaseAge: LIFE_EXPECTANCY_BASE_AGE, lifeExpectancyAtBase: lifeAt65, expectedAge: expectedAge, expectedMonths: expectedMonths, received: received, remainingToday: accrued - received, cumulativeAtExpected: atExpected, balanceAtExpected: accrued - atExpected, exhaustionMonth: exhaustionMonth, exhaustionAge: exhaustionMonth === null ? null : retirementAge + exhaustionMonth / 12, exhaustionDate: exhaustionDate, points: points };
   }
   function classifyRegime(career) {
     var before = career.filter(function (row) { return row.anno < 1996; }).length;
@@ -414,7 +449,8 @@
       if (actual) return { level: "alta", note: "Gli imponibili effettivi sono stati inseriti anno per anno; restano le approssimazioni fiscali e dei parametri non osservabili." };
       return { level: "media", note: "Le righe annuali sono precompilate da periodi medi. Sostituisci ogni imponibile con il dato dell'estratto contributivo INPS per ottenere la modalita accurata." };
     }
-    if (state.mode === "guided") return { level: "media", note: "La carriera usa valori medi. Gli imponibili dell'estratto contributivo renderebbero la stima piu' precisa." };
+    var contractBased = career.length && career.every(function (row) { return String(row.natura_dato || "").indexOf("indice retribuzioni contrattuali ISTAT") === 0; });
+    if (contractBased) return { level: "media", note: "La carriera semplificata usa l'indice ISTAT delle retribuzioni contrattuali del contratto scelto, calibrato sull'importo inserito. Gli imponibili INPS effettivi restano piu' precisi." };
     return { level: "bassa", note: "La carriera e' ricostruita con pochi dati e va letta come ordine di grandezza." };
   }
   function calculateMetrics(career, scenario) {
@@ -452,14 +488,14 @@
       ["Gia' ricevuto", euro(timeline.received), "stima lorda cumulata fino a oggi"],
       ["Montante virtuale residuo", euro(timeline.remainingToday), timeline.remainingToday >= 0 ? "soglia ancora da raggiungere" : "soglia gia' superata"],
       ["Raggiungimento montante", exhaustionLabel, timeline.exhaustionAge ? "circa " + fmt(timeline.exhaustionAge, 1) + " anni di eta" : "entro l'orizzonte simulato"],
-      ["Eta attesa media", fmt(timeline.expectedAge, 1) + " anni", "tavola ISTAT per sesso ed eta"],
+      ["Eta attesa media", fmt(timeline.expectedAge, 1) + " anni", "65 anni + vita residua a 65 anni"],
       ["Affidabilita", result.livello_affidabilita, result.input_migliorativi]
     ].forEach(function (item) { node.appendChild(makeKpi(item[0], item[1], item[2])); });
 
     var direction = result.differenza_mensile_lorda >= 0 ? "superiore" : "inferiore";
     var narrative = "La pensione inserita e' " + direction + " di " + euro(Math.abs(result.differenza_mensile_lorda)) + " per rata rispetto alla pensione interamente contributiva stimata. ";
     narrative += timeline.exhaustionDate ? "Le prestazioni lorde cumulate raggiungono il montante virtuale intorno a " + formatDate(timeline.exhaustionDate) + ". " : "Nell'orizzonte simulato le prestazioni non raggiungono il montante virtuale. ";
-    narrative += "All'eta attesa media di " + fmt(timeline.expectedAge, 1) + " anni, il totale lordo cumulato sarebbe circa " + euro(timeline.cumulativeAtExpected) + ".";
+    narrative += "All'eta attesa media di " + fmt(timeline.expectedAge, 1) + " anni, calcolata dalla vita residua a 65 anni, il totale lordo cumulato sarebbe circa " + euro(timeline.cumulativeAtExpected) + ".";
     byId("pcResultNarrative").textContent = narrative;
     byId("pcReliability").innerHTML = "<strong>Affidabilita " + result.livello_affidabilita + ".</strong> " + result.input_migliorativi + " Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.";
     byId("pcPensionChartNote").textContent = "Con pensionamento il " + new Date(scenario.data_pensionamento + "T00:00:00").toLocaleDateString("it-IT") + ", il coefficiente applicato e' " + pct(result.coefficiente_trasformazione, 3) + ". Nel " + result.anno_riferimento_confronto + " la rata effettiva lorda e' " + euro(result.pensione_effettiva_mensile_lorda_anno_riferimento) + "; quella contributiva equivalente e' " + euro(result.pensione_contributiva_mensile_equivalente) + ".";
@@ -471,7 +507,7 @@
     plot("pcPensionChart", [{ type: "bar", x: ["Pensione effettiva", "Pensione maturata"], y: [result.pensione_effettiva_mensile_lorda_anno_riferimento, result.pensione_contributiva_mensile_equivalente], marker: { color: [COLORS[0], COLORS[2]] }, text: [euro(result.pensione_effettiva_mensile_lorda_anno_riferimento), euro(result.pensione_contributiva_mensile_equivalente)], textposition: "outside", cliponaxis: false, hovertemplate: "%{x}<br>%{y:,.0f} euro lordi per rata<extra></extra>" }], { margin: { t: 44, r: 24, b: 64, l: 82 }, yaxis: axis("euro lordi per rata"), showlegend: false });
 
     var timeline = result.timeline;
-    var horizonAge = Math.max(timeline.expectedAge + 2, timeline.exhaustionAge ? timeline.exhaustionAge + 2 : timeline.expectedAge + 2);
+    var horizonAge = Math.max(timeline.retirementAge + 2, timeline.expectedAge + 2, timeline.exhaustionAge ? timeline.exhaustionAge + 2 : timeline.expectedAge + 2);
     var visible = timeline.points.filter(function (point) { return point.age <= horizonAge; });
     var past = visible.filter(function (point) { return point.month <= timeline.elapsedMonths; });
     var future = visible.filter(function (point) { return point.month >= timeline.elapsedMonths; });
@@ -494,7 +530,7 @@
       var result = calculateMetrics(career, scenario);
       state.scenario = scenario; state.career = career; state.result = result;
       renderResults(result, scenario); renderCharts(career, result, scenario);
-      setStatus("Calcolo aggiornato in modalita " + (state.mode === "simple" ? "semplificata" : state.mode === "guided" ? "intermedia" : "accurata") + ". Tutti i valori sono lordi.", false);
+      setStatus("Calcolo aggiornato in modalita " + (state.mode === "simple" ? "semplificata" : "accurata") + ". Tutti i valori sono lordi.", false);
     } catch (error) { setStatus(error.message || "Errore nel calcolo", true); }
   }
   function generateAnnualRows() {
@@ -503,7 +539,11 @@
       function field(name) { var input = period.querySelector('[data-period-field="' + name + '"]'); return input ? toNumber(input.value, null) : null; }
       var start = field("start"), end = field("end");
       if (!start || !end) return;
-      var ralStart = field("ralStart") || field("ralEnd") || 0, ralEnd = field("ralEnd") || ralStart, months = field("months") || 12, workShare = field("workShare") || 100;
+      var currency = inputText("pcPeriodCurrency", "euro");
+      var rawRalStart = field("ralStart"), rawRalEnd = field("ralEnd");
+      if (!rawRalStart) rawRalStart = rawRalEnd || 0;
+      if (!rawRalEnd) rawRalEnd = rawRalStart;
+      var ralStart = careerAmountToEuro(rawRalStart, currency), ralEnd = careerAmountToEuro(rawRalEnd, currency), months = field("months") || 12, workShare = field("workShare") || 100;
       for (var year = start; year <= end; year += 1) {
         var share = start === end ? 0 : (year - start) / (end - start), salary = ralStart + (ralEnd - ralStart) * share;
         output.push({ anno: year, categoria: categoryId, imponibile_previdenziale: salary * workShare / 100 * months / 12, mesi_lavorati: months, percentuale_part_time: workShare, contributi: null, contributi_figurativi: 0, natura_dato: "stimato_periodi" });
@@ -534,17 +574,17 @@
       var values = line.split(/[;,]/), object = {};
       header.forEach(function (key, index) { object[key] = values[index]; });
       var weeks = toNumber(object.settimane_contributive, null);
-      return { anno: toNumber(object.anno), categoria: object.categoria_id || inputText("pcCategory", "generica_fpld"), imponibile_previdenziale: toNumber(object.imponibile_previdenziale, 0), mesi_lavorati: weeks ? weeks / 52 * 12 : toNumber(object.mesi_lavorati, 12), percentuale_part_time: toNumber(object.percentuale_part_time, 100), contributi: toNumber(object.contributi, null), contributi_figurativi: toNumber(object.contributi_figurativi, 0), natura_dato: "inserito_utente" };
+      var currency = String(object.valuta || object.currency || "euro").toLowerCase();
+      return { anno: toNumber(object.anno), categoria: object.categoria_id || inputText("pcCategory", "generica_fpld"), imponibile_previdenziale: careerAmountToEuro(object.imponibile_previdenziale, currency), mesi_lavorati: weeks ? weeks / 52 * 12 : toNumber(object.mesi_lavorati, 12), percentuale_part_time: toNumber(object.percentuale_part_time, 100), contributi: object.contributi === undefined || object.contributi === "" ? null : careerAmountToEuro(object.contributi, currency), contributi_figurativi: careerAmountToEuro(object.contributi_figurativi, currency), natura_dato: "inserito_utente" };
     }).filter(function (row) { return row.anno; });
   }
   function setMode(mode) {
-    state.mode = ["simple", "guided", "accurate"].indexOf(mode) >= 0 ? mode : "simple";
+    state.mode = ["simple", "accurate"].indexOf(mode) >= 0 ? mode : "simple";
     byId("pcMode").value = state.mode;
     document.querySelectorAll(".pc-simple-only").forEach(function (node) { node.hidden = state.mode !== "simple"; });
-    document.querySelectorAll(".pc-guided-only").forEach(function (node) { node.hidden = state.mode !== "guided"; });
     document.querySelectorAll(".pc-accurate-only").forEach(function (node) { node.hidden = state.mode !== "accurate"; });
     document.querySelectorAll(".pc-non-simple-only").forEach(function (node) { node.hidden = state.mode === "simple"; });
-    var notes = { simple: "Stima rapida basata su inizio carriera, anni contribuiti e ultimo imponibile.", guided: "Stima intermedia basata su periodi e valori medi della carriera.", accurate: "Diventa accurata quando sostituisci la precompilazione con gli imponibili INPS effettivi anno per anno." };
+    var notes = { simple: "Stima rapida basata su categoria, anni contribuiti, importo finale e indice contrattuale quando disponibile.", accurate: "Diventa accurata quando sostituisci la precompilazione con gli imponibili INPS effettivi anno per anno." };
     byId("pcModeNote").textContent = notes[state.mode];
     if (state.mode === "accurate" && !state.annualRows.length) generateAnnualRows();
     calculate();
@@ -569,6 +609,7 @@
     byId("pcAxisMode").addEventListener("change", function () { state.axisMode = byId("pcAxisMode").value; if (state.result) renderCharts(state.career, state.result, state.scenario); });
     byId("pcCalculate").addEventListener("click", calculate);
     byId("pcPensionValueType").addEventListener("change", function () { updatePensionValueLabel(); calculate(); });
+    if (byId("pcLireInput")) byId("pcLireInput").addEventListener("input", updateLireConverter);
     byId("pcReset").addEventListener("click", function () { location.reload(); });
     byId("pcGenerateAnnualRows").addEventListener("click", function () { generateAnnualRows(); calculate(); });
     byId("pcExportCsv").addEventListener("click", exportCsv);
@@ -591,7 +632,8 @@
       state.payload = payload; populateCategories(); populateSimpleMenus(); initPeriods(); bindEvents();
       var example = exampleRows("results")[0];
       if (example) setStatus("Parametri caricati. Il calcolo avviene interamente nel browser.", false);
-      var mode = new URLSearchParams(location.search).get("mode"); setMode(["simple", "guided", "accurate"].indexOf(mode) >= 0 ? mode : "simple");
+      updateLireConverter();
+      var mode = new URLSearchParams(location.search).get("mode"); setMode(["simple", "accurate"].indexOf(mode) >= 0 ? mode : "simple");
     }).catch(function (error) { setStatus(error.message || "Errore nel caricamento dati.", true); });
   });
 }());

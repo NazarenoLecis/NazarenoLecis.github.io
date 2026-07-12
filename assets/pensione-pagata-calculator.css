@@ -231,6 +231,50 @@
   gap: 14px;
 }
 
+.pc-converter {
+  display: grid;
+  grid-template-columns: minmax(170px, .8fr) repeat(2, minmax(180px, 1fr)) minmax(220px, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin: 14px 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.pc-converter strong {
+  color: var(--orange);
+  font-size: .8rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pc-converter label {
+  display: grid;
+  gap: 6px;
+  color: var(--orange);
+  font-size: .76rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pc-converter input {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 750;
+}
+
+.pc-converter small {
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .pc-period {
   display: grid;
   gap: 12px;
@@ -311,6 +355,10 @@
     grid-template-columns: 1fr;
   }
 
+  .pc-converter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .pc-system-link {
     grid-template-columns: 1fr;
   }
@@ -333,5 +381,9 @@
 
   .pc-axis-select {
     margin-left: 0;
+  }
+
+  .pc-converter {
+    grid-template-columns: 1fr;
   }
 }

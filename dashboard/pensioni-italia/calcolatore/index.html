@@ -10,11 +10,11 @@
   <link rel="stylesheet" href="../../../assets/components.css">
   <link rel="stylesheet" href="../../../assets/almalaurea-dashboard.css">
   <link rel="stylesheet" href="../../../assets/pensioni-italia-dashboard.css?v=20260712-1">
-  <link rel="stylesheet" href="../../../assets/pensione-pagata-calculator.css?v=20260712-3">
+  <link rel="stylesheet" href="../../../assets/pensione-pagata-calculator.css?v=20260712-4">
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/calcolatore.json" as="fetch" crossorigin>
   <script defer src="../../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-7"></script>
+  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-8"></script>
 </head>
 <body>
   <header class="site-header">
@@ -49,15 +49,15 @@
     <a class="pc-system-link" href="../index.html"><span class="eyebrow">Prima del calcolo individuale</span><strong>Guarda il problema pensionistico italiano</strong><p>Spesa sul PIL, contributi incassati, trasferimenti dello Stato, pensioni e pensionati spiegano il contesto nel quale va letto il risultato personale.</p><span>Apri la dashboard pensioni</span></a>
 
     <section class="workflow-grid" aria-label="Come usare il calcolatore">
-      <div class="workflow-step"><span>1</span><h2>Ricostruisci i contributi</h2><p>Usa pochi dati, descrivi la carriera media oppure inserisci gli imponibili anno per anno.</p></div>
+      <div class="workflow-step"><span>1</span><h2>Ricostruisci i contributi</h2><p>Usa pochi dati con il contratto scelto oppure inserisci gli imponibili anno per anno.</p></div>
       <div class="workflow-step"><span>2</span><h2>Calcola il montante</h2><p>Gli accrediti annuali vengono rivalutati e trasformati in una pensione contributiva equivalente.</p></div>
       <div class="workflow-step"><span>3</span><h2>Misura la differenza</h2><p>Confronta la pensione teorica con quella effettiva, per rata e lungo gli anni di pensionamento.</p></div>
     </section>
     <p class="pi-gross-note"><strong>Privacy:</strong> il calcolo avviene nel browser. Non inserire nome, codice fiscale o numero di pensione; la pagina non salva i dati individuali.</p>
 
     <section class="dashboard-section" id="calcolo">
-      <div class="section-head"><span class="eyebrow">Input</span><div><h2>Tre livelli di precisione</h2><p>La modalita cambia il numero di informazioni richieste, non il significato del risultato.</p></div></div>
-      <label class="pc-mode-select"><span>Modalita di calcolo</span><select id="pcMode"><option value="simple">Semplificata - pochi dati</option><option value="guided">Intermedia - carriera e contratto</option><option value="accurate">Accurata - imponibili INPS anno per anno</option></select><small id="pcModeNote">Stima rapida basata su inizio carriera, anni contribuiti e ultima RAL.</small></label>
+      <div class="section-head"><span class="eyebrow">Input</span><div><h2>Due livelli di precisione</h2><p>La modalita cambia il numero di informazioni richieste, non il significato del risultato.</p></div></div>
+      <label class="pc-mode-select"><span>Modalita di calcolo</span><select id="pcMode"><option value="simple">Semplificata - pochi dati e contratto</option><option value="accurate">Accurata - imponibili INPS anno per anno</option></select><small id="pcModeNote">Stima rapida basata su categoria, anni contribuiti, importo finale e indice contrattuale quando disponibile.</small></label>
 
       <form id="pcCalculatorForm" class="pc-form">
         <article class="pi-card pc-panel">
@@ -76,33 +76,28 @@
 
         <article class="pi-card pc-panel pc-simple-only">
           <div class="pi-card-title"><h3>Carriera in breve</h3><span id="pcCategoryTag">FPLD</span></div>
-          <p class="pi-card-note">Quattro dati bastano per una prima stima. Gli anni mancanti vengono ricostruiti con un profilo retributivo regolare.</p>
+          <p class="pi-card-note">Pochi dati bastano per una prima stima. Quando la categoria ha un indice contrattuale ISTAT, gli anni mancanti seguono quel profilo e vengono calibrati sull'importo inserito.</p>
           <div class="pc-form-grid">
             <label><span>Primo anno di contributi</span><select id="pcSimpleStartYear"></select></label>
             <label><span>Anni di contributi</span><select id="pcSimpleContributedYears"></select></label>
+            <label><span>Valuta importo carriera</span><select id="pcSimpleCurrency"><option value="euro" selected>Euro</option><option value="lire">Lire</option></select></label>
             <label><span data-employee-label="Ultima RAL lorda" data-business-label="Ultimo reddito imponibile annuo" data-conventional-label="Ultimo reddito convenzionale contributivo">Ultima RAL lorda</span><input id="pcSimpleFinalRal" type="number" min="0" step="500" value="38000"></label>
             <label><span>Regime di lavoro prevalente</span><select id="pcSimpleWorkPattern"><option value="100">Tempo pieno</option><option value="75">Part-time circa 75%</option><option value="50">Part-time circa 50%</option><option value="seasonal">Stagionale - 8 mesi</option></select></label>
-          </div>
-        </article>
-
-        <article class="pi-card pc-panel pc-guided-only" hidden>
-          <div class="pi-card-title"><h3>Carriera media</h3><span>intermedia</span></div>
-          <p class="pi-card-note">Descrive la carriera con valori osservati e, dove disponibili, dinamiche contrattuali ufficiali. Resta meno precisa degli imponibili annuali effettivi.</p>
-          <div class="pc-form-grid">
-            <label><span>Anno inizio</span><input id="pcStartYear" type="number" min="1976" max="2050" value="1996"></label>
-            <label><span>Anno fine</span><input id="pcEndYear" type="number" min="1976" max="2050" value="2024"></label>
-            <label><span>Anni contribuiti</span><input id="pcContributedYears" type="number" min="0" max="50" step="0.5" value="29"></label>
-            <label><span>Quota lavoro media</span><input id="pcWorkShare" type="number" min="1" max="100" step="1" value="100"></label>
-            <label><span>Mesi medi annui</span><input id="pcWorkMonths" type="number" min="0" max="12" step="0.5" value="12"></label>
-            <label><span>Progressione retributiva</span><select id="pcProgression"><option value="nessuna">Nessuna</option><option value="lenta">Lenta</option><option value="media" selected>Media</option><option value="rapida">Rapida</option></select></label>
-            <label><span data-employee-label="Prima RAL" data-business-label="Primo reddito imponibile" data-conventional-label="Primo reddito convenzionale">Prima RAL</span><input id="pcInitialRal" type="number" min="0" step="500" placeholder="opzionale"></label>
-            <label><span data-employee-label="Ultima RAL" data-business-label="Ultimo reddito imponibile" data-conventional-label="Ultimo reddito convenzionale">Ultima RAL</span><input id="pcFinalRal" type="number" min="0" step="500" value="38000"></label>
           </div>
         </article>
 
         <article class="pi-card pc-panel pc-accurate-only" hidden>
           <div class="pi-card-title"><h3>Carriera anno per anno</h3><span>accurata</span></div>
           <p class="pi-card-note">La precompilazione e' solo una traccia stimata. Il risultato diventa accurato quando ogni anno contiene l'imponibile dell'estratto contributivo INPS o di documenti equivalenti; i minimi CCNL non sostituiscono la retribuzione effettiva.</p>
+          <div class="pc-form-grid pc-form-grid-small">
+            <label><span>Valuta periodi precompilati</span><select id="pcPeriodCurrency"><option value="euro" selected>Euro</option><option value="lire">Lire</option></select></label>
+          </div>
+          <div class="pc-converter" aria-label="Convertitore lire euro">
+            <strong>Convertitore lire/euro</strong>
+            <label><span>Lire</span><input id="pcLireInput" type="number" min="0" step="1000" placeholder="es. 50000000"></label>
+            <label><span>Euro</span><input id="pcEuroOutput" type="text" readonly></label>
+            <small>Cambio ufficiale: 1 euro = 1.936,27 lire.</small>
+          </div>
           <div id="pcPeriods" class="pc-period-grid"></div>
           <div class="pc-action-row"><button class="pc-button" type="button" id="pcGenerateAnnualRows">Precompila anni da verificare</button><label class="pc-file-label"><span>Carica CSV INPS</span><input id="pcCsvInput" type="file" accept=".csv,text/csv"></label></div>
           <div class="pi-table-wrap pc-annual-wrap"><table class="pi-table pc-annual-table"><thead><tr><th>Anno</th><th>Categoria</th><th>Imponibile</th><th>Mesi</th><th>Quota lavoro</th><th>Contributi</th></tr></thead><tbody id="pcAnnualRows"></tbody></table></div>
@@ -145,12 +140,13 @@
           <li><strong>Differenza mensile:</strong> pensione lorda inserita meno pensione contributiva equivalente, divise per lo stesso numero di mensilita.</li>
           <li><strong>Montante virtuale:</strong> e' la base di calcolo della pensione, non un conto bancario personale. La data di esaurimento indica quando le pensioni lorde cumulate raggiungono quella soglia.</li>
           <li><strong>Tempo gia' in pensione:</strong> deriva dalle date inserite. Le prestazioni gia' ricevute sono stimate con una rivalutazione convenzionale del 2% annuo e non sostituiscono i cedolini storici.</li>
-          <li><strong>Aspettativa di vita:</strong> usa sesso ed eta al pensionamento nelle tavole ISTAT. E' una media di popolazione, non una previsione individuale.</li>
+          <li><strong>Aspettativa di vita:</strong> usa la speranza di vita residua a 65 anni nelle tavole ISTAT: eta attesa = 65 + e65. E' una media di popolazione, non una previsione individuale.</li>
           <li><strong>Lordo dal netto:</strong> se inserisci la pensione netta attuale, il lordo e' stimato con scaglioni IRPEF 2026, detrazione da pensione e addizionali regionali/comunali medie del 2,1%. Non considera altri redditi, deduzioni, detrazioni o carichi familiari e non sottrae contributi previdenziali.</li>
           <li><strong>Data di pensionamento:</strong> determina eta e mesi al pensionamento, tabella storica e interpolazione del coefficiente di trasformazione, anni di perequazione e pensioni gia' ricevute.</li>
           <li><strong>Categorie:</strong> dipendenti privati, pubblici CTPS, pubblici CPDEL/CPS/CPI/CPUG, operai agricoli, artigiani, commercianti e autonomi agricoli usano profili previdenziali distinti.</li>
           <li><strong>Autonomi:</strong> per artigiani e commercianti l'input e' il reddito imponibile d'impresa; per CD/CM/IAP e' il reddito convenzionale contributivo. Minimali, massimali, fasce, addizionali fisse, riduzioni e agevolazioni non sono ricostruiti.</li>
-          <li><strong>CCNL e dato effettivo:</strong> i contratti e gli indici delle retribuzioni contrattuali possono ricostruire gli anni mancanti nella modalita intermedia. Nella modalita accurata prevale sempre l'imponibile annuale dell'estratto INPS, che include la carriera realmente svolta.</li>
+          <li><strong>CCNL e dato effettivo:</strong> i contratti e gli indici ISTAT delle retribuzioni contrattuali danno forma alla carriera semplificata quando disponibili. Nella modalita accurata prevale sempre l'imponibile annuale dell'estratto INPS, che include la carriera realmente svolta.</li>
+          <li><strong>Lire/euro:</strong> gli importi di carriera possono essere convertiti con il cambio ufficiale 1 euro = 1.936,27 lire. La pensione attuale va invece inserita in euro.</li>
           <li><strong>Pre-1996:</strong> gli anni precedenti il 1996 sono un controfattuale approssimato; il calcolatore non ricostruisce quote retributive o miste liquidate dall'INPS.</li>
         </ul></div>
         <div><h3>Fonti</h3><p>INPS: aliquote storiche FPLD, gestioni pubbliche, artigiani, commercianti e agricoltura; montante, estratto contributivo e coefficienti di trasformazione.</p><p>ISTAT: livelli annuali del PIL nominale, tavole di mortalita e retribuzioni contrattuali. I coefficienti di capitalizzazione sono ricalcolati dai livelli del PIL; le revisioni dei conti nazionali possono generare scarti rispetto ai tassi fissati nelle pubblicazioni storiche.</p><p>Ministero del Lavoro, ARAN e CNEL: coefficienti e contratti collettivi ufficiali.</p><p>Normattiva: disciplina IRPEF 2026 usata nella stima dal netto.</p><p><strong>Codice, dati e metodologia:</strong> <a href="https://github.com/NazarenoLecis/pensioni_italia" target="_blank" rel="noopener">repository pensioni_italia su GitHub</a>.</p><p>Elaborazione di Nazareno Lecis.</p></div>
