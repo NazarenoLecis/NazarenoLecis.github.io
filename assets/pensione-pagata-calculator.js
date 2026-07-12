@@ -189,8 +189,8 @@
     wrapper.innerHTML = '<h4>Periodo ' + (index + 1) + '</h4>' +
       '<label><span>Anno iniziale</span><input data-period-field="start" type="number" min="1976" max="2050" value="' + (values.start || "") + '"></label>' +
       '<label><span>Anno finale</span><input data-period-field="end" type="number" min="1976" max="2050" value="' + (values.end || "") + '"></label>' +
-      '<label><span data-employee-label="RAL iniziale" data-business-label="Reddito imponibile iniziale" data-conventional-label="Reddito convenzionale iniziale">RAL iniziale</span><input data-period-field="ralStart" type="number" min="0" step="500" value="' + (values.ralStart || "") + '"></label>' +
-      '<label><span data-employee-label="RAL finale" data-business-label="Reddito imponibile finale" data-conventional-label="Reddito convenzionale finale">RAL finale</span><input data-period-field="ralEnd" type="number" min="0" step="500" value="' + (values.ralEnd || "") + '"></label>' +
+      '<label><span data-employee-label="Retribuzione annua lorda (RAL) iniziale" data-business-label="Reddito imponibile iniziale" data-conventional-label="Reddito convenzionale iniziale">Retribuzione annua lorda (RAL) iniziale</span><input data-period-field="ralStart" type="number" min="0" step="500" value="' + (values.ralStart || "") + '"></label>' +
+      '<label><span data-employee-label="Retribuzione annua lorda (RAL) finale" data-business-label="Reddito imponibile finale" data-conventional-label="Reddito convenzionale finale">Retribuzione annua lorda (RAL) finale</span><input data-period-field="ralEnd" type="number" min="0" step="500" value="' + (values.ralEnd || "") + '"></label>' +
       '<label><span>Quota lavoro</span><input data-period-field="workShare" type="number" min="1" max="100" value="' + (values.workShare || 100) + '"></label>' +
       '<label><span>Mesi annui</span><input data-period-field="months" type="number" min="0" max="12" step="0.5" value="' + (values.months || 12) + '"></label>';
     return wrapper;
