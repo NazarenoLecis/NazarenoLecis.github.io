@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-5";
+  var DATA_URL = "https://data.nazarenolecis.com/pensioni-italia/calcolatore.json?v=20260712-6";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1"];
   var PROGRESSION = { nessuna: 0, lenta: 0.01, media: 0.02, rapida: 0.03 };
   var LIRE_PER_EURO = 1936.27;
@@ -276,7 +276,7 @@
       pensione_netto_mensile_stimato: annualNet / pensionMonths,
       mensilita_pensione: pensionMonths,
       anno_riferimento_pensione: currentYear,
-      rivalutazione_futura_pensione: inputText("pcFutureIndexation", "nessuna"),
+      rivalutazione_futura_pensione: inputText("pcFutureIndexation", "inflazione_costante"),
       tasso_inflazione_futura: inputNumber("pcFutureInflation", 2) / 100
     };
   }
@@ -459,6 +459,20 @@
     if (scenario.anno_riferimento_pensione > scenario.anno_pensione) annual /= Math.pow(1.02, scenario.anno_riferimento_pensione - scenario.anno_pensione);
     return annual;
   }
+  function futureIndexationRate(scenario) {
+    return scenario.rivalutazione_futura_pensione === "inflazione_costante" ? Math.max(0, toNumber(scenario.tasso_inflazione_futura, 0.02)) : 0;
+  }
+  function indexedAnnuityMultiplier(scenario, age) {
+    var futureRate = futureIndexationRate(scenario);
+    if (!futureRate) return 1;
+    var flat = 0, indexed = 0;
+    for (var horizon = 0; horizon <= 55; horizon += 1) {
+      var probability = survival(scenario, age, horizon);
+      flat += probability;
+      indexed += probability * Math.pow(1 + futureRate, horizon);
+    }
+    return flat ? indexed / flat : 1;
+  }
   function calculateTimeline(scenario, accrued, actualAnnual) {
     var birth = parseDate(scenario.data_nascita), retirement = parseDate(scenario.data_pensionamento), today = new Date();
     var retirementAge = ageParts(birth, retirement).total;
@@ -468,7 +482,7 @@
     var expectedAge = LIFE_EXPECTANCY_BASE_AGE + lifeAt65;
     var remainingLife = Math.max(0, expectedAge - retirementAge);
     var expectedMonths = Math.max(1, Math.round(remainingLife * 12));
-    var futureRate = scenario.rivalutazione_futura_pensione === "inflazione_costante" ? scenario.tasso_inflazione_futura : 0;
+    var futureRate = futureIndexationRate(scenario);
     var cumulative = 0, received = 0, atExpected = 0, exhaustionMonth = null, points = [{ month: 0, age: retirementAge, cumulative: 0 }];
     for (var month = 1; month <= 960; month += 1) {
       var annualPayment;
@@ -502,17 +516,18 @@
     var last = career[career.length - 1] || {};
     var accrued = toNumber(last.montante_fine_anno, 0), coefficient = coefficientFor(scenario.anno_pensione, scenario.eta_pensione, scenario.mesi_eta_pensione);
     var contributive = accrued * coefficient.coefficiente, actualAtRetirement = effectiveAnnualPension(scenario);
-    var actuarialRequired = coefficient.coefficiente ? actualAtRetirement / coefficient.coefficiente : null;
+    var indexationMultiplier = indexedAnnuityMultiplier(scenario, scenario.eta_pensione);
+    var actuarialRequired = coefficient.coefficiente ? actualAtRetirement / coefficient.coefficiente * indexationMultiplier : null;
     var actuarialGap = actuarialRequired ? accrued - actuarialRequired : null;
     var actuarialCoverage = actuarialRequired ? accrued / actuarialRequired : null;
     var referenceFactor = Math.pow(1.02, Math.max(0, scenario.anno_riferimento_pensione - scenario.anno_pensione));
     var contributiveAtReference = contributive * referenceFactor;
     var actualAtReference = scenario.pensione_lorda_mensile_effettiva * scenario.mensilita_pensione;
     var timeline = calculateTimeline(scenario, accrued, actualAtRetirement), expected = 0;
-    var futureRate = scenario.rivalutazione_futura_pensione === "inflazione_costante" ? scenario.tasso_inflazione_futura : 0;
+    var futureRate = futureIndexationRate(scenario);
     for (var horizon = 0; horizon <= 55; horizon += 1) expected += actualAtRetirement * Math.pow(1 + futureRate, horizon) * survival(scenario, timeline.retirementAge, horizon);
     var rel = reliability(career), months = scenario.mensilita_pensione || 13;
-    return { anni_contribuzione: career.reduce(function (sum, row) { return sum + toNumber(row.mesi_lavorati, 0) / 12; }, 0), contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0), contributi_lavoratore_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_lavoratore, 0); }, 0), contributi_datore_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_datore, 0); }, 0), accredito_totale_montante: career.reduce(function (sum, row) { return sum + toNumber(row.accredito_montante, 0); }, 0), montante_contributivo: accrued, capitale_attuariale_necessario: actuarialRequired, gap_attuariale_montante: actuarialGap, copertura_attuariale: actuarialCoverage, coefficiente_trasformazione: coefficient.coefficiente, eta_coefficiente: coefficient.eta_usata, anno_riferimento_confronto: scenario.anno_riferimento_pensione, pensione_contributiva_annua_equivalente: contributive, pensione_effettiva_annua_lorda: actualAtRetirement, pensione_contributiva_annua_equivalente_anno_riferimento: contributiveAtReference, pensione_effettiva_annua_lorda_anno_riferimento: actualAtReference, pensione_contributiva_mensile_equivalente: contributiveAtReference / months, pensione_effettiva_mensile_lorda_anno_riferimento: actualAtReference / months, differenza_mensile_lorda: (actualAtReference - contributiveAtReference) / months, differenza_annua_lorda: actualAtReference - contributiveAtReference, differenza_percentuale_su_contributiva: contributiveAtReference ? (actualAtReference - contributiveAtReference) / contributiveAtReference : 0, valore_atteso_prestazioni_lorde: expected, eta_pareggio: timeline.exhaustionAge, regime_indicativo: classifyRegime(career), livello_affidabilita: rel.level, input_migliorativi: rel.note, natura_coefficiente: coefficient.natura, timeline: timeline };
+    return { anni_contribuzione: career.reduce(function (sum, row) { return sum + toNumber(row.mesi_lavorati, 0) / 12; }, 0), contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0), contributi_lavoratore_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_lavoratore, 0); }, 0), contributi_datore_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_datore, 0); }, 0), accredito_totale_montante: career.reduce(function (sum, row) { return sum + toNumber(row.accredito_montante, 0); }, 0), montante_contributivo: accrued, capitale_attuariale_necessario: actuarialRequired, fattore_capitale_perequazione: indexationMultiplier, rivalutazione_futura_pensione: scenario.rivalutazione_futura_pensione, tasso_inflazione_futura: futureRate, gap_attuariale_montante: actuarialGap, copertura_attuariale: actuarialCoverage, coefficiente_trasformazione: coefficient.coefficiente, eta_coefficiente: coefficient.eta_usata, anno_riferimento_confronto: scenario.anno_riferimento_pensione, pensione_contributiva_annua_equivalente: contributive, pensione_effettiva_annua_lorda: actualAtRetirement, pensione_contributiva_annua_equivalente_anno_riferimento: contributiveAtReference, pensione_effettiva_annua_lorda_anno_riferimento: actualAtReference, pensione_contributiva_mensile_equivalente: contributiveAtReference / months, pensione_effettiva_mensile_lorda_anno_riferimento: actualAtReference / months, differenza_mensile_lorda: (actualAtReference - contributiveAtReference) / months, differenza_annua_lorda: actualAtReference - contributiveAtReference, differenza_percentuale_su_contributiva: contributiveAtReference ? (actualAtReference - contributiveAtReference) / contributiveAtReference : 0, valore_atteso_prestazioni_lorde: expected, eta_pareggio: timeline.exhaustionAge, regime_indicativo: classifyRegime(career), livello_affidabilita: rel.level, input_migliorativi: rel.note, natura_coefficiente: coefficient.natura, timeline: timeline };
   }
 
   function makeKpi(label, value, note) {
@@ -527,13 +542,15 @@
     var exhaustionLabel = timeline.exhaustionDate ? formatDate(timeline.exhaustionDate) : "non raggiunto";
     var pensionInputNote = scenario.pensione_valore_tipo === "netto" ? "lordo stimato dalla pensione netta inserita" : "pensione lorda attuale inserita";
     var gap = toNumber(result.gap_attuariale_montante, null);
+    var futureRate = toNumber(result.tasso_inflazione_futura, 0);
+    var indexationNote = futureRate ? "include rivalutazione futura al " + pct(futureRate) + " annuo" : "senza rivalutazione futura";
     var coverageNote = gap === null ? "montante / capitale necessario" : (gap >= 0 ? "avanzo attuariale di " + euro(gap) : "mancano " + euro(Math.abs(gap)));
     [
       ["Montante contributivo", euro(result.montante_contributivo), "accrediti rivalutati a fine carriera"],
       ["Contributi lavoratore", euro(result.contributi_lavoratore_versati), "quota trattenuta o versata personalmente"],
       ["Contributi impresa", euro(result.contributi_datore_versati), "quota a carico del datore; zero per autonomi"],
       ["Contributi totali", euro(result.contributi_finanziari_versati), "lavoratore + datore/impresa, al netto delle approssimazioni"],
-      ["Capitale necessario", euro(result.capitale_attuariale_necessario), "per finanziare la pensione inserita con lo stesso coefficiente"],
+      ["Capitale necessario", euro(result.capitale_attuariale_necessario), indexationNote],
       ["Copertura attuariale", pct(result.copertura_attuariale), coverageNote],
       ["Pensione effettiva", euro(result.pensione_effettiva_mensile_lorda_anno_riferimento), pensionInputNote],
       ["Pensione contributiva", euro(result.pensione_contributiva_mensile_equivalente), "lordo equivalente per rata nel " + result.anno_riferimento_confronto],
@@ -549,13 +566,13 @@
 
     var direction = result.differenza_mensile_lorda >= 0 ? "superiore" : "inferiore";
     var narrative = "La pensione inserita e' " + direction + " di " + euro(Math.abs(result.differenza_mensile_lorda)) + " per rata rispetto alla pensione interamente contributiva stimata. ";
-    narrative += "Il montante stimato copre il " + pct(result.copertura_attuariale) + " del capitale necessario a finanziare la pensione inserita con lo stesso coefficiente di trasformazione. ";
+    narrative += "Il montante stimato copre il " + pct(result.copertura_attuariale) + " del capitale necessario a finanziare la pensione inserita, includendo la rivalutazione futura selezionata. ";
     narrative += timeline.exhaustionDate ? "Il cumulato nominale delle rate raggiunge il montante virtuale intorno a " + formatDate(timeline.exhaustionDate) + ", ma questa non e' una prova di pareggio attuariale. " : "Nell'orizzonte simulato il cumulato nominale delle rate non raggiunge il montante virtuale. ";
     narrative += "All'eta attesa media di " + fmt(timeline.expectedAge, 1) + " anni, calcolata dalla vita residua a 65 anni, il totale lordo cumulato sarebbe circa " + euro(timeline.cumulativeAtExpected) + ".";
     byId("pcResultNarrative").textContent = narrative;
     byId("pcReliability").innerHTML = "<strong>Affidabilita " + result.livello_affidabilita + ".</strong> " + result.input_migliorativi + " Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.";
     byId("pcPensionChartNote").textContent = "Con pensionamento il " + new Date(scenario.data_pensionamento + "T00:00:00").toLocaleDateString("it-IT") + ", il coefficiente applicato e' " + pct(result.coefficiente_trasformazione, 3) + ". Nel " + result.anno_riferimento_confronto + " la rata effettiva lorda e' " + euro(result.pensione_effettiva_mensile_lorda_anno_riferimento) + "; quella contributiva equivalente e' " + euro(result.pensione_contributiva_mensile_equivalente) + ".";
-    byId("pcCumulativeChartNote").textContent = "La linea del montante mostra quando il cumulato nominale delle rate lo supera; la linea del capitale necessario mostra invece la soglia coerente con il coefficiente di trasformazione. Il pareggio corretto e' la copertura attuariale, non il semplice incrocio nominale.";
+    byId("pcCumulativeChartNote").textContent = "La linea del montante mostra quando il cumulato nominale delle rate lo supera; la linea del capitale necessario include la rivalutazione futura selezionata. Il pareggio corretto e' la copertura attuariale, non il semplice incrocio nominale.";
   }
 
   function axis(title) { return { title: title, rangemode: state.axisMode === "zero" ? "tozero" : "normal" }; }

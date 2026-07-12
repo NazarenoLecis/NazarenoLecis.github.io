@@ -14,7 +14,7 @@
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/calcolatore.json" as="fetch" crossorigin>
   <script defer src="../../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-10"></script>
+  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-11"></script>
 </head>
 <body>
   <header class="site-header">
@@ -103,10 +103,10 @@
           <div class="pi-table-wrap pc-annual-wrap"><table class="pi-table pc-annual-table"><thead><tr><th>Anno</th><th>Categoria</th><th>Imponibile</th><th>Mesi</th><th>Quota lavoro</th><th>Contributi</th></tr></thead><tbody id="pcAnnualRows"></tbody></table></div>
         </article>
 
-        <article class="pi-card pc-panel pc-non-simple-only" hidden>
+        <article class="pi-card pc-panel">
           <div class="pi-card-title"><h3>Ipotesi future</h3><span>proiezione</span></div>
           <div class="pc-form-grid pc-form-grid-small">
-            <label><span>Rivalutazione futura pensione</span><select id="pcFutureIndexation"><option value="nessuna">Nessuna</option><option value="inflazione_costante">Inflazione costante</option></select></label>
+            <label><span>Rivalutazione futura pensione</span><select id="pcFutureIndexation"><option value="inflazione_costante" selected>Inflazione costante</option><option value="nessuna">Nessuna</option></select></label>
             <label><span>Tasso annuo futuro</span><input id="pcFutureInflation" type="number" min="0" max="10" step="0.1" value="2"></label>
           </div>
         </article>
@@ -141,7 +141,8 @@
           <li><strong>Rivalutazione del montante:</strong> ogni anno il montante gia accumulato e' rivalutato con la variazione media geometrica del PIL nominale dei cinque anni precedenti: (PIL t-1 / PIL t-6) elevato a 1/5, meno 1. Il contributo dell'anno viene aggiunto dopo la rivalutazione e non si rivaluta nello stesso anno.</li>
           <li><strong>Differenza mensile:</strong> pensione lorda inserita meno pensione contributiva equivalente, divise per lo stesso numero di mensilita.</li>
           <li><strong>Montante virtuale:</strong> e' la base di calcolo della pensione, non un conto bancario personale. La data di raggiungimento indica solo quando le pensioni lorde cumulate superano quella soglia nominale.</li>
-          <li><strong>Copertura attuariale:</strong> confronta il montante stimato con il capitale necessario a finanziare la pensione inserita usando lo stesso coefficiente di trasformazione. Questa e' la misura corretta per dire se quanto maturato copre davvero la rata, mentre l'incrocio nominale nel tempo e' solo descrittivo.</li>
+          <li><strong>Copertura attuariale:</strong> confronta il montante stimato con il capitale necessario a finanziare la pensione inserita usando lo stesso coefficiente di trasformazione e la rivalutazione futura selezionata. Questa e' la misura corretta per dire se quanto maturato copre davvero la rata, mentre l'incrocio nominale nel tempo e' solo descrittivo.</li>
+          <li><strong>Rivalutazione della pensione:</strong> per default la proiezione usa inflazione costante, perche' le pensioni sono normalmente adeguate al costo della vita tramite perequazione. L'opzione nessuna rivalutazione serve solo come scenario di sensibilita'.</li>
           <li><strong>Tempo gia' in pensione:</strong> deriva dalle date inserite. Le prestazioni gia' ricevute sono stimate con una rivalutazione convenzionale del 2% annuo e non sostituiscono i cedolini storici.</li>
           <li><strong>Aspettativa di vita:</strong> usa la speranza di vita residua a 65 anni nelle tavole ISTAT: eta attesa = 65 + e65. E' una media di popolazione, non una previsione individuale.</li>
           <li><strong>Lordo dal netto:</strong> se inserisci la pensione netta attuale, il lordo e' stimato con scaglioni IRPEF 2026, detrazione da pensione e addizionali regionali/comunali medie del 2,1%. Non considera altri redditi, deduzioni, detrazioni o carichi familiari e non sottrae contributi previdenziali.</li>
