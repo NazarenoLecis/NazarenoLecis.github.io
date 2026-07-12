@@ -14,7 +14,7 @@
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/calcolatore.json" as="fetch" crossorigin>
   <script defer src="../../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-3"></script>
+  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-4"></script>
 </head>
 <body>
   <header class="site-header">
@@ -131,7 +131,6 @@
       <div class="section-head"><span class="eyebrow">Grafici</span><div><h2>Dalla carriera al montante virtuale</h2><p>I grafici distinguono cio' che deriva dai tuoi input, i parametri previdenziali e le proiezioni legate alla sopravvivenza.</p></div></div>
       <label class="pc-axis-select"><span>Scala verticale</span><select id="pcAxisMode"><option value="zero">Inizia da zero</option><option value="data">Adatta ai dati</option></select></label>
       <div class="pi-stack">
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Retribuzione lorda e imponibile contributivo</h3><span>euro annui</span></div><p class="pi-card-note" id="pcSalaryChartNote">La linea arancione e' la retribuzione lorda ricostruita; la linea azzurra e' la parte sulla quale vengono calcolati i contributi.</p><div class="pi-chart pi-chart-wide" id="pcSalaryChart"></div><p class="pi-chart-credit">Input: dati di carriera inseriti dall'utente. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Le tre percentuali del montante</h3><span>due scale</span></div><p class="pi-card-note" id="pcRatesChartNote">Finanziamento e computo si leggono sull'asse sinistro; la capitalizzazione annua, molto piu' piccola, usa l'asse destro.</p><div class="pi-chart pi-chart-wide" id="pcRatesChart"></div><p class="pi-chart-credit">Fonte: INPS, aliquote storiche FPLD; ISTAT, capitalizzazione del montante. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Dal contributo annuale al montante</h3><span>due scale</span></div><p class="pi-card-note" id="pcCapitalChartNote">Le barre mostrano i contributi stimati nell'anno sull'asse destro. La linea arancione mostra il montante totale accumulato e rivalutato sull'asse sinistro.</p><div class="pi-chart pi-chart-wide" id="pcCapitalChart"></div><p class="pi-chart-credit">Fonte: INPS e ISTAT. Input retributivi forniti dall'utente. Elaborazione di Nazareno Lecis.</p></article>
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensione effettiva e pensione maturata</h3><span>lordo per rata</span></div><p class="pi-card-note" id="pcPensionChartNote">Confronta la rata lorda inserita con la rata che risulterebbe trasformando il montante simulato in una pensione interamente contributiva.</p><div class="pi-chart pi-chart-wide" id="pcPensionChart"></div><p class="pi-chart-credit">Fonte: INPS e Ministero del Lavoro, coefficienti di trasformazione; input utente. Elaborazione di Nazareno Lecis.</p></article>

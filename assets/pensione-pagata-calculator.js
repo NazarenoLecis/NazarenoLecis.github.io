@@ -421,16 +421,6 @@
   }
   function renderCharts(career, result, scenario) {
     var years = career.map(function (row) { return row.anno; });
-    var grossValues = career.map(function (row) { return row.retribuzione_stimata; });
-    var taxableValues = career.map(function (row) { return row.imponibile_previdenziale; });
-    var salaryOverlap = grossValues.every(function (value, index) { return Math.abs(value - taxableValues[index]) < 1; });
-    byId("pcSalaryChartNote").textContent = salaryOverlap
-      ? "Retribuzione lorda e imponibile coincidono in questo scenario perche' il lavoro e' a tempo pieno per 12 mesi. La linea arancione tratteggiata e i punti mostrano la retribuzione sopra la linea azzurra."
-      : "La linea arancione tratteggiata mostra la retribuzione lorda ricostruita. L'area azzurra mostra l'imponibile dopo quota di lavoro, mesi lavorati e anni contribuiti.";
-    plot("pcSalaryChart", [
-      { type: "scatter", mode: "lines", name: "Imponibile contributivo", x: years, y: taxableValues, fill: "tozeroy", fillcolor: "rgba(118,183,178,0.16)", line: { color: COLORS[2], width: 4 }, hovertemplate: "Imponibile %{x}<br>%{y:,.0f} euro<extra></extra>" },
-      { type: "scatter", mode: "lines+markers", name: "Retribuzione lorda", x: years, y: grossValues, line: { color: COLORS[0], width: 3, dash: "dash" }, marker: { color: COLORS[0], size: 5 }, hovertemplate: "Retribuzione lorda %{x}<br>%{y:,.0f} euro<extra></extra>" }
-    ], { yaxis: axis("euro annui") });
     var financingValues = career.map(function (row) { return row.aliquota_finanziamento * 100; });
     var computationValues = career.map(function (row) { return row.aliquota_computo * 100; });
     var ratesOverlap = financingValues.every(function (value, index) { return Math.abs(value - computationValues[index]) < 0.05; });
