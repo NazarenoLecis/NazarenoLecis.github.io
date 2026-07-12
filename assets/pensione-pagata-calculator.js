@@ -162,6 +162,7 @@
     document.querySelectorAll('[data-period-field="start"]').forEach(function (input) {
       if (toNumber(input.value, minimum) < minimum) input.value = minimum;
     });
+    updateSimpleContributionYearOptions();
   }
   function fillSelect(select, values, selected) {
     clear(select);
@@ -175,11 +176,25 @@
   }
   function populateSimpleMenus() {
     var current = new Date().getFullYear();
-    var years = [], contributionYears = [];
+    var years = [];
     for (var year = 1976; year <= current; year += 1) years.push(year);
-    for (var count = 5; count <= 50; count += 1) contributionYears.push(count);
     fillSelect(byId("pcSimpleStartYear"), years, 1996);
-    fillSelect(byId("pcSimpleContributedYears"), contributionYears, 29);
+    updateSimpleContributionYearOptions(29);
+  }
+  function updateSimpleContributionYearOptions(preferred) {
+    var select = byId("pcSimpleContributedYears");
+    if (!select) return;
+    var retirement = parseDate(inputText("pcRetirementDate", "2025-01-01"));
+    var end = (retirement ? retirement.getFullYear() : 2025) - 1;
+    var start = inputNumber("pcSimpleStartYear", 1996);
+    var possible = Math.max(1, end - start + 1);
+    var currentValue = preferred || inputNumber("pcSimpleContributedYears", Math.min(possible, 29));
+    var selected = Math.max(1, Math.min(currentValue, possible));
+    var values = [];
+    for (var count = 1; count <= possible; count += 1) values.push(count);
+    fillSelect(select, values, selected);
+    var note = byId("pcSimpleContributedYearsNote");
+    if (note) note.textContent = "Massimo " + possible + " anni tra " + start + " e " + end + ".";
   }
 
   function makePeriod(index, values) {
@@ -354,8 +369,8 @@
     var years = [];
     for (var year = scenario.anno_inizio; year <= scenario.anno_fine; year += 1) years.push(year);
     var salary = salaryProfile(years, scenario);
-    var monthsFromYears = years.length ? 12 * Math.min(scenario.anni_contribuiti || years.length, years.length) / years.length : 0;
-    var months = Math.min(scenario.mesi_lavorati_annui || 12, monthsFromYears || 12);
+    var contributionShare = years.length ? Math.min(scenario.anni_contribuiti || years.length, years.length) / years.length : 0;
+    var months = (scenario.mesi_lavorati_annui || 12) * (contributionShare || 1);
     var workShare = (scenario.percentuale_lavoro || 100) / 100;
     var accrued = 0;
     return years.map(function (year, index) {
@@ -610,6 +625,7 @@
     byId("pcCalculate").addEventListener("click", calculate);
     byId("pcPensionValueType").addEventListener("change", function () { updatePensionValueLabel(); calculate(); });
     if (byId("pcLireInput")) byId("pcLireInput").addEventListener("input", updateLireConverter);
+    byId("pcSimpleStartYear").addEventListener("change", function () { updateSimpleContributionYearOptions(); calculate(); });
     byId("pcReset").addEventListener("click", function () { location.reload(); });
     byId("pcGenerateAnnualRows").addEventListener("click", function () { generateAnnualRows(); calculate(); });
     byId("pcExportCsv").addEventListener("click", exportCsv);
@@ -621,7 +637,7 @@
     ["pcBirthDate", "pcRetirementDate"].forEach(function (id) {
       byId(id).addEventListener("input", function () {
         clearTimeout(dateTimer);
-        dateTimer = setTimeout(calculate, 180);
+        dateTimer = setTimeout(function () { updateSimpleContributionYearOptions(); calculate(); }, 180);
       });
     });
     updatePensionValueLabel();

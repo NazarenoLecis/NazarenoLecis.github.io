@@ -14,7 +14,7 @@
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/calcolatore.json" as="fetch" crossorigin>
   <script defer src="../../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-8"></script>
+  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-9"></script>
 </head>
 <body>
   <header class="site-header">
@@ -43,7 +43,7 @@
     <section class="pc-purpose" aria-labelledby="pcPurposeTitle">
       <span class="eyebrow">La domanda</span>
       <h2 id="pcPurposeTitle">I contributi versati coprono davvero la pensione ricevuta?</h2>
-      <p>Nel sistema a ripartizione i contributi dei lavoratori finanziano le pensioni correnti: non restano accantonati in un conto personale. Per valutare l'affermazione "la pensione me la sono pagata" bisogna quindi ricostruire gli accrediti della carriera, rivalutarli nel montante, trasformarli in una pensione teorica sostenibile e confrontarla con quella effettiva.</p>
+      <p>Il sistema pubblico italiano e' a ripartizione: i contributi versati oggi finanziano le pensioni pagate oggi, quindi nessuno si paga davvero la propria pensione come se accumulasse un conto personale. Il calcolatore serve a un controllo diverso: ricostruire quanto e' stato versato o accreditato, trasformarlo in una pensione teorica sostenibile e confrontarlo con quanto si sta incassando.</p>
       <p>Il calcolatore segue questi passaggi e aggiunge il tempo: mostra quanto e' gia' stato ricevuto, quando le prestazioni cumulate raggiungono il montante virtuale e cosa accade entro l'aspettativa di vita media. Non ricalcola la pensione INPS e non rappresenta il montante come un deposito bancario individuale.</p>
     </section>
     <a class="pc-system-link" href="../index.html"><span class="eyebrow">Prima del calcolo individuale</span><strong>Guarda il problema pensionistico italiano</strong><p>Spesa sul PIL, contributi incassati, trasferimenti dello Stato, pensioni e pensionati spiegano il contesto nel quale va letto il risultato personale.</p><span>Apri la dashboard pensioni</span></a>
@@ -79,7 +79,7 @@
           <p class="pi-card-note">Pochi dati bastano per una prima stima. Quando la categoria ha un indice contrattuale ISTAT, gli anni mancanti seguono quel profilo e vengono calibrati sull'importo inserito.</p>
           <div class="pc-form-grid">
             <label><span>Primo anno di contributi</span><select id="pcSimpleStartYear"></select></label>
-            <label><span>Anni di contributi</span><select id="pcSimpleContributedYears"></select></label>
+            <label><span>Anni di contributi</span><select id="pcSimpleContributedYears"></select><small id="pcSimpleContributedYearsNote"></small></label>
             <label><span>Valuta importo carriera</span><select id="pcSimpleCurrency"><option value="euro" selected>Euro</option><option value="lire">Lire</option></select></label>
             <label><span data-employee-label="Ultima retribuzione annua lorda (RAL)" data-business-label="Ultimo reddito imponibile annuo" data-conventional-label="Ultimo reddito convenzionale contributivo">Ultima retribuzione annua lorda (RAL)</span><input id="pcSimpleFinalRal" type="number" min="0" step="500" value="38000"></label>
             <label><span>Regime di lavoro prevalente</span><select id="pcSimpleWorkPattern"><option value="100">Tempo pieno</option><option value="75">Part-time circa 75%</option><option value="50">Part-time circa 50%</option><option value="seasonal">Stagionale - 8 mesi</option></select></label>
