@@ -1,0 +1,473 @@
+.si-dashboard {
+  --max: 1500px;
+  padding-bottom: 54px;
+}
+
+.si-dashboard .dashboard-section {
+  scroll-margin-top: 126px;
+}
+
+.si-dashboard .dash-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 28px;
+  align-items: end;
+  padding: 42px 0 26px;
+  border-bottom: 1px solid var(--line);
+}
+
+.si-dashboard .dash-head h1 {
+  margin: 0;
+  max-width: 980px;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.si-dashboard .dash-head .lead {
+  max-width: 900px;
+  margin-top: 18px;
+}
+
+.si-dashboard .source-panel,
+.si-dashboard .chart-filter-panel,
+.si-card,
+.si-kpi {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 90%, transparent);
+}
+
+.si-dashboard .source-panel {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+}
+
+.si-dashboard .source-panel .logo {
+  width: 58px;
+  height: 58px;
+}
+
+.si-dashboard .source-panel strong,
+.si-dashboard .source-panel span {
+  display: block;
+}
+
+.si-dashboard .source-panel strong {
+  color: var(--orange);
+  font-size: 1rem;
+}
+
+.si-dashboard .source-panel span {
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.35;
+  font-size: .94rem;
+}
+
+.si-dashboard .source-panel .source-credit {
+  margin-top: 8px;
+}
+
+.si-dashboard .source-panel a,
+.si-notes-panel a {
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.si-dashboard .dashboard-jump-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 22px;
+  padding-bottom: 4px;
+}
+
+.si-dashboard .dashboard-jump-nav a {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.si-dashboard .dashboard-jump-nav a:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.si-status {
+  margin: 18px 0 0;
+  color: var(--orange);
+  font-size: .98rem;
+  font-weight: 850;
+}
+
+.si-note {
+  margin: 14px 0 0;
+  padding: 12px 0 12px 16px;
+  border-left: 3px solid var(--orange);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.si-note strong {
+  color: var(--text);
+}
+
+.si-dashboard .section-head {
+  display: grid;
+  grid-template-columns: minmax(0, 860px);
+  justify-content: center;
+  text-align: center;
+  margin: 44px 0 16px;
+}
+
+.si-dashboard .section-head .eyebrow {
+  margin-bottom: 8px;
+}
+
+.si-dashboard .section-head h2 {
+  margin: 0;
+  color: var(--orange);
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.si-dashboard .section-head p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.si-dashboard .chart-filter-panel {
+  padding: 16px;
+  margin: 0 0 16px;
+}
+
+.si-dashboard .chart-filter-panel > summary {
+  display: none;
+}
+
+.si-dashboard .filter-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.si-dashboard .filter-grid label {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--orange);
+  font-size: .78rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.si-dashboard .filter-grid select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 12px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 750;
+}
+
+.si-dashboard .filter-grid select:focus {
+  outline: 2px solid color-mix(in srgb, var(--orange) 60%, transparent);
+  outline-offset: 2px;
+}
+
+.si-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.si-kpi {
+  min-width: 0;
+  padding: 18px;
+}
+
+.si-kpi span {
+  display: block;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.si-kpi strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--text);
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+  line-height: 1.05;
+}
+
+.si-kpi em {
+  display: block;
+  margin-top: 6px;
+  color: var(--orange);
+  font-size: .86rem;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.si-kpi small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.si-card {
+  min-width: 0;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.si-chart-block {
+  padding: 22px;
+}
+
+.si-card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.si-card-title h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.12rem;
+  letter-spacing: 0;
+}
+
+.si-card-title span {
+  color: var(--orange);
+  font-size: .78rem;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.si-card-note {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.si-section-gap {
+  margin-bottom: 16px;
+}
+
+.si-sector-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 0 0 14px;
+}
+
+.si-sector-picker label {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--text);
+  font-size: .86rem;
+  font-weight: 760;
+}
+
+.si-sector-picker input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--orange);
+}
+
+.si-sector-picker label:has(input:checked) {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.si-chart {
+  min-height: 330px;
+  width: 100%;
+}
+
+.si-chart-wide {
+  min-height: 410px;
+}
+
+.si-chart-credit {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.4;
+}
+
+.si-chart-credit code {
+  color: var(--text);
+}
+
+.si-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.si-empty {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.4;
+  padding: 18px;
+}
+
+.si-notes-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  gap: 42px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.si-notes-panel h3 {
+  margin: 0 0 12px;
+  color: var(--orange);
+  font-size: 1.08rem;
+  letter-spacing: 0;
+}
+
+.si-notes-panel p,
+.si-notes-panel li {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.si-notes-panel ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.si-notes-panel li + li {
+  margin-top: 9px;
+}
+
+.si-coverage-list {
+  display: grid;
+  gap: 10px;
+}
+
+.si-coverage-item {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.si-coverage-item strong,
+.si-coverage-item span {
+  display: block;
+}
+
+.si-coverage-item strong {
+  color: var(--text);
+}
+
+.si-coverage-item span {
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.4;
+  font-size: .92rem;
+}
+
+.si-coverage-item em {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--orange) 14%, transparent);
+  color: var(--orange);
+  font-style: normal;
+  font-size: .78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+@media (max-width: 1180px) {
+  .si-dashboard .filter-grid {
+    grid-template-columns: repeat(3, minmax(160px, 1fr));
+  }
+
+  .si-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .si-dashboard .dash-head {
+    grid-template-columns: 1fr;
+  }
+
+  .si-grid-2,
+  .si-notes-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .si-dashboard .dashboard-section {
+    scroll-margin-top: 214px;
+  }
+}
+
+@media (max-width: 680px) {
+  .si-dashboard .dash-head {
+    padding-top: 28px;
+  }
+
+  .si-dashboard .filter-grid,
+  .si-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .si-chart,
+  .si-chart-wide {
+    min-height: 360px;
+  }
+
+  .si-card,
+  .si-chart-block,
+  .si-dashboard .chart-filter-panel {
+    padding: 16px;
+  }
+}

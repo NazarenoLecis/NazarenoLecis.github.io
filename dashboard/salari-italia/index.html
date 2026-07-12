@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Salari in Italia | Nazareno Lecis</title>
+  <meta name="description" content="Dashboard sui salari italiani: distribuzione, differenze per caratteristiche, confronto europeo e fonti ufficiali.">
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260712-1">
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260712-1"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html"><span class="logo"></span><span><span class="brand-name">Nazareno Lecis</span><span class="brand-tag">Data &amp; Risk Analysis</span></span></a>
+      <nav class="nav" aria-label="Navigazione principale">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap si-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Salari in Italia</span>
+        <h1>Distribuzione salariale, differenze e confronto europeo</h1>
+        <p class="lead">Una dashboard statica su retribuzioni lorde orarie, mensili e annuali. I dati arrivano dalla pipeline pubblica e mantengono separati salario, reddito, imponibile, netto e costo del lavoro.</p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonti ufficiali e riproducibili</strong>
+          <span>Eurostat Structure of Earnings Survey, low-wage earners, gender pay gap e labour cost levels.</span>
+          <span class="source-credit"><a href="https://github.com/NazarenoLecis/Salari_Italia" target="_blank" rel="noopener">Repository salari</a>. Elaborazione di Nazareno Lecis.</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard salari">
+      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#europa">Europa</a><a href="#serie">Serie</a><a href="#metodo">Metodo</a>
+    </nav>
+
+    <p id="siStatus" class="si-status">Caricamento dati salari ...</p>
+    <p class="si-note"><strong>Perimetro:</strong> la SES copre dipendenti e imprese secondo la metodologia Eurostat. Le tavole territoriali subnazionali, i netti e gli imponibili contributivi non sono stimati.</p>
+
+    <section id="indicatori" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Quadro rapido</span>
+        <div><h2>Indicatori principali</h2><p>Ultimi valori disponibili per l'Italia. Ogni scheda riporta misura, anno e fonte del relativo indicatore.</p></div>
+      </div>
+      <div id="siKpis" class="si-kpi-grid" aria-label="Indicatori principali salari"></div>
+    </section>
+
+    <section class="dashboard-section" id="distribuzione">
+      <div class="section-head">
+        <span class="eyebrow">Distribuzione salariale</span>
+        <div><h2>Media, mediana e decili</h2><p>La distribuzione usa soltanto punti pubblicati da Eurostat: non ricostruisce microdati né istogrammi completi.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri distribuzione</summary><div id="siDistributionFilters" class="filter-grid"></div></details>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3 id="siDistributionTitle">Distribuzione lorda</h3><span id="siDistributionTag">Eurostat SES</span></div>
+        <p class="si-card-note" id="siDistributionNote">Scegli anno, territorio, sesso e periodo retributivo.</p>
+        <div id="siDistributionChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: Eurostat, Structure of Earnings Survey. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="lavoratore">
+      <div class="section-head">
+        <span class="eyebrow">Caratteristiche del lavoratore</span>
+        <div><h2>Sesso, età, titolo di studio, professione e anzianità</h2><p>I filtri appaiono solo quando il payload contiene osservazioni per quella dimensione.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri lavoratore</summary><div id="siWorkerFilters" class="filter-grid"></div></details>
+      <div class="si-grid-2">
+        <article class="si-card si-chart-block">
+          <div class="si-card-title"><h3 id="siWorkerTitle">Retribuzione per caratteristica</h3><span id="siWorkerTag">lordo</span></div>
+          <div id="siWorkerChart" class="si-chart si-chart-wide"></div>
+          <p class="si-chart-credit">Fonte: Eurostat SES. Le tavole su istruzione e anzianità sono punti 2022.</p>
+        </article>
+        <article class="si-card si-chart-block">
+          <div class="si-card-title"><h3>Quota di lavoratori a bassa retribuzione</h3><span>low wage</span></div>
+          <p class="si-card-note">Dipendenti con retribuzione oraria lorda inferiore a due terzi della mediana nazionale.</p>
+          <div id="siLowWageChart" class="si-chart si-chart-wide"></div>
+          <p class="si-chart-credit">Fonte: Eurostat <code>earn_ses_pub1s</code>, <code>earn_ses_pub1a</code>, <code>earn_ses_pub1i</code>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="lavoro">
+      <div class="section-head">
+        <span class="eyebrow">Lavoro e impresa</span>
+        <div><h2>Settore, orario, professione, dimensione e costo del lavoro</h2><p>Il costo del lavoro è separato dalla retribuzione percepita dal lavoratore.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri lavoro</summary><div id="siJobFilters" class="filter-grid"></div></details>
+      <article class="si-card si-chart-block si-section-gap">
+        <div class="si-card-title"><h3>Distribuzione salariale settoriale</h3><span>D1 · mediana · D9</span></div>
+        <p class="si-card-note">Eurostat pubblica D1, mediana e D9, non i quartili completi: il grafico mostra l'intervallo tra salari bassi e alti per settore senza inventare Q1 e Q3.</p>
+        <div id="siSectorPicker" class="si-sector-picker" aria-label="Settori da mostrare"></div>
+        <div id="siSectorBoxChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: Eurostat SES. I settori possono essere aggiunti o rimossi dal grafico.</p>
+      </article>
+      <div class="si-grid-2">
+        <article class="si-card si-chart-block">
+          <div class="si-card-title"><h3 id="siJobTitle">Retribuzione per lavoro e impresa</h3><span id="siJobTag">lordo</span></div>
+          <div id="siJobChart" class="si-chart si-chart-wide"></div>
+          <p class="si-chart-credit">Fonte: Eurostat SES. Dimensione d'impresa disponibile nelle tavole 2022.</p>
+        </article>
+        <article class="si-card si-chart-block">
+          <div class="si-card-title"><h3>Costo orario del lavoro</h3><span>separato dal salario</span></div>
+          <p class="si-card-note">Livelli del costo del lavoro per ora lavorata, non retribuzione lorda o netta ricevuta.</p>
+          <div id="siLabourCostChart" class="si-chart si-chart-wide"></div>
+          <p class="si-chart-credit">Fonte: Eurostat <code>lc_lci_lev</code>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="territorio">
+      <div class="section-head">
+        <span class="eyebrow">Territorio</span>
+        <div><h2>Paesi disponibili e limiti territoriali</h2><p>Il payload pubblicato contiene paesi e aggregato UE27; regioni, province e comuni non sono presenti nelle tavole integrate.</p></div>
+      </div>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Confronto territoriale disponibile</h3><span>paesi</span></div>
+        <div id="siTerritoryChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Territorio di riferimento: paese dichiarante Eurostat. Non equivale a regione di residenza, luogo di lavoro o comune fiscale.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="europa">
+      <div class="section-head">
+        <span class="eyebrow">Confronto europeo</span>
+        <div><h2>Italia, UE27 e principali paesi europei</h2><p>Confronto armonizzato su retribuzioni lorde e gender pay gap non corretto.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri confronto europeo</summary><div id="siEuropeFilters" class="filter-grid"></div></details>
+      <div class="si-grid-2">
+        <article class="si-card si-chart-block">
+          <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span>SES</span></div>
+          <div id="siEuropeChart" class="si-chart si-chart-wide"></div>
+          <p class="si-chart-credit">Fonte: Eurostat SES. Anni pubblicati secondo disponibilità della fonte.</p>
+        </article>
+        <article class="si-card si-chart-block">
+          <div class="si-card-title"><h3>Gender pay gap</h3><span>non corretto</span></div>
+          <div id="siGenderGapChart" class="si-chart si-chart-wide"></div>
+          <p class="si-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. Il dato non controlla per composizione occupazionale.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="serie">
+      <div class="section-head">
+        <span class="eyebrow">Serie storiche</span>
+        <div><h2>Andamento dei salari nel tempo</h2><p>Serie per Italia con la misura scelta. Dove la fonte è quadriennale, il grafico mostra solo gli anni disponibili.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri serie</summary><div id="siSeriesFilters" class="filter-grid"></div></details>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3 id="siSeriesTitle">Serie salariale italiana</h3><span id="siSeriesTag">Italia</span></div>
+        <div id="siSeriesChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="metodo">
+      <div class="section-head">
+        <span class="eyebrow">Fonti e metodologia</span>
+        <div><h2>Definizioni, copertura e dimensioni mancanti</h2><p>La dashboard dichiara esplicitamente cosa è disponibile e cosa non viene stimato.</p></div>
+      </div>
+      <div class="si-notes-panel">
+        <div>
+          <h3>Metodo</h3>
+          <ul id="siMethodNotes"></ul>
+        </div>
+        <div>
+          <h3>Copertura</h3>
+          <div id="siCoverageList" class="si-coverage-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><div class="wrap footer-inner social-links"><a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a><a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a><a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a><a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a></div></footer>
+</body>
+</html>
