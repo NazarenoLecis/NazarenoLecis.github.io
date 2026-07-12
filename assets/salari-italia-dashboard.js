@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260712-1";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260712-2";
   var MISSING = "ND";
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#59a14f", "#b07aa1", "#8cd17d"];
   var STAT_LABELS = {
@@ -15,22 +15,71 @@
     mean_gap: "Gender pay gap"
   };
   var PERIOD_LABELS = { hourly: "Orario", monthly: "Mensile", annual: "Annuale" };
+  var TOTAL_VALUES = ["T", "TOTAL", "9", "99", "0010", "WORLD", "GE10"];
   var DIMENSIONS = {
     sex: { field: "sex", labelField: "sex_label", label: "Sesso" },
     age_class: { field: "age_class", labelField: "age_label", label: "Età" },
     education: { field: "education", labelField: "education_label", label: "Titolo di studio" },
     occupation: { field: "occupation", labelField: "occupation_label", label: "Professione" },
+    contractual_occupation: { field: "contractual_occupation", labelField: "contractual_occupation_label", label: "Qualifica" },
     sector: { field: "sector", labelField: "sector_label", label: "Settore" },
     working_time: { field: "working_time", labelField: "working_time_label", label: "Orario" },
     firm_size: { field: "firm_size", labelField: "firm_size_label", label: "Dimensione impresa" },
     seniority: { field: "seniority", labelField: "seniority_label", label: "Anzianità" },
-    contract_type: { field: "contract_type", labelField: "contract_type_label", label: "Contratto" }
+    contract_type: { field: "contract_type", labelField: "contract_type_label", label: "Contratto" },
+    country_birth: { field: "country_birth", labelField: "country_birth_label", label: "Paese di nascita" },
+    geography_code: { field: "geography_code", labelField: "geography_name", label: "Territorio" }
+  };
+  var FIELD_FILTER_ID = {
+    geography_code: "geography",
+    sex: "sex",
+    age_class: "age",
+    education: "education",
+    occupation: "occupation",
+    contractual_occupation: "contractual_occupation",
+    contract_type: "contract_type",
+    working_time: "working_time",
+    seniority: "seniority",
+    sector: "sector",
+    firm_size: "firm_size",
+    public_private: "public_private",
+    citizenship: "citizenship",
+    country_birth: "country_birth",
+    pay_period: "pay_period",
+    statistic: "statistic",
+    year: "year"
+  };
+  var LABEL_IT = {
+    "average": "Media",
+    "Average": "Media",
+    "females": "Femmine",
+    "full-time": "Tempo pieno",
+    "males": "Maschi",
+    "median": "Mediana",
+    "part-time": "Tempo parziale",
+    "permanent employees": "Tempo indeterminato",
+    "temporary employees": "Tempo determinato",
+    "total": "Totale"
   };
 
   var state = {
     payload: null,
     records: [],
-    distribution: { year: null, geography_code: "IT", sex: "T", pay_period: "hourly" },
+    lookups: {},
+    distribution: {
+      year: null,
+      geography_code: "IT",
+      sex: "T",
+      age_class: "TOTAL",
+      education: "99",
+      sector: "0010",
+      contract_type: "9",
+      working_time: "9",
+      contractual_occupation: "99",
+      firm_size: "TOTAL",
+      country_birth: "WORLD",
+      pay_period: "hourly"
+    },
     worker: {
       dimension: "age_class",
       year: null,
@@ -49,7 +98,20 @@
     },
     selectedSectors: [],
     europe: { pay_period: "hourly", statistic: "median", sex: "T" },
-    series: { pay_period: "hourly", statistic: "all", sex: "T" }
+    series: {
+      pay_period: "hourly",
+      statistic: "all",
+      geography_code: "IT",
+      sex: "T",
+      age_class: "TOTAL",
+      education: "99",
+      sector: "0010",
+      contract_type: "9",
+      working_time: "9",
+      contractual_occupation: "99",
+      firm_size: "TOTAL",
+      country_birth: "WORLD"
+    }
   };
 
   function byId(id) {
@@ -63,6 +125,38 @@
   function toNumber(value) {
     var parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function buildLookups(payload) {
+    var lookups = {};
+    Object.keys(FIELD_FILTER_ID).forEach(function (field) {
+      var filterId = FIELD_FILTER_ID[field];
+      lookups[field] = {};
+      toArray(payload.filters && payload.filters[filterId]).forEach(function (option) {
+        lookups[field][String(option.value)] = option.label;
+      });
+    });
+    return lookups;
+  }
+
+  function recordsFromPayload(payload) {
+    var schema = toArray(payload.record_schema);
+    var records = toArray(payload.records);
+    if (!schema.length || !records.length || !Array.isArray(records[0])) return records;
+    return records.map(function (record) {
+      var row = {};
+      schema.forEach(function (field, index) {
+        var value = record[index];
+        if (value !== null && value !== undefined) row[field] = value;
+      });
+      return row;
+    });
+  }
+
+  function lookupLabel(field, value) {
+    if (value === null || value === undefined) return null;
+    var label = state.lookups[field] && state.lookups[field][String(value)];
+    return label ? (LABEL_IT[label] || label) : null;
   }
 
   function text(value, fallback) {
@@ -134,10 +228,11 @@
     var muted = cssVar("--muted", "#b9b2aa");
     var line = cssVar("--line", "#303030");
     var panel = cssVar("--panel", "#090909");
+    var chartBg = cssVar("--si-chart-bg", panel);
     return Object.assign({
       autosize: true,
       paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: chartBg,
       font: { color: textColor, family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", size: 12 },
       margin: { t: 24, r: 18, b: 58, l: 70 },
       hoverlabel: { bgcolor: panel, bordercolor: line, font: { color: textColor } },
@@ -165,14 +260,16 @@
   }
 
   function optionLabel(row, field, labelField) {
-    return text(labelField ? row[labelField] : row[field], text(row[field]));
+    var rawLabel = labelField && row[labelField] ? row[labelField] : lookupLabel(field, row[field]) || row[field];
+    var label = text(rawLabel, text(row[field]));
+    return LABEL_IT[label] || label;
   }
 
   function isTotal(field, value) {
     if (value === null || value === undefined) return true;
     var raw = String(value);
     if (field === "sex") return raw === "T" || raw === "TOTAL";
-    return raw === "TOTAL" || raw === "B-S_X_O" || raw === "GE10";
+    return TOTAL_VALUES.indexOf(raw) >= 0 || raw === "B-S_X_O";
   }
 
   function uniqueOptions(rows, field, labelField, includeTotals) {
@@ -240,6 +337,15 @@
     return node;
   }
 
+  function preferredOption(options) {
+    for (var index = 0; index < TOTAL_VALUES.length; index += 1) {
+      var totalValue = TOTAL_VALUES[index];
+      var match = options.find(function (option) { return String(option.value) === String(totalValue); });
+      if (match) return match.value;
+    }
+    return options[0] ? options[0].value : "";
+  }
+
   function syncFilters(containerId, specs, rows, targetState, onChange) {
     var container = byId(containerId);
     if (!container) return;
@@ -258,7 +364,7 @@
       var current = targetState[spec.key];
       var allowed = options.some(function (option) { return String(option.value) === String(current); });
       if (!allowed) {
-        targetState[spec.key] = options[0].value;
+        targetState[spec.key] = preferredOption(options);
         current = targetState[spec.key];
       }
       ensureSelect(container, spec, options, current, function (key, value) {
@@ -277,6 +383,18 @@
   function distributionRows() {
     return state.records.filter(function (row) {
       return row.pay_concept === "gross_earnings" && ["mean", "median", "percentile"].indexOf(row.statistic) >= 0;
+    });
+  }
+
+  function istatDistributionRows() {
+    return distributionRows().filter(function (row) {
+      return row.source === "ISTAT" && row.pay_period === "hourly";
+    });
+  }
+
+  function eurostatDistributionRows() {
+    return distributionRows().filter(function (row) {
+      return row.source === "Eurostat";
     });
   }
 
@@ -311,7 +429,7 @@
     label.textContent = title;
     value.textContent = record ? formatter(record.value) : MISSING;
     year.textContent = record ? text(record.year) + " · " + text(record.dataset) : "Dato non disponibile";
-    small.textContent = note || (record ? text(record.geography_name, record.geography_code) : "");
+    small.textContent = note || (record ? text(lookupLabel("geography_code", record.geography_code), record.geography_code) : "");
     card.appendChild(label);
     card.appendChild(value);
     card.appendChild(year);
@@ -325,13 +443,13 @@
     clear(container);
     var records = state.records;
     appendKpi(container, "Mediana oraria lorda", latestRecord(records, {
-      geography_code: "IT", sex: "T", pay_concept: "gross_earnings", pay_period: "hourly", statistic: "median"
-    }), function (value) { return euro(value, 2); }, "Structure of Earnings Survey");
+      geography_code: "IT", sex: "T", age_class: "TOTAL", education: "99", sector: "0010", contract_type: "9", working_time: "9", contractual_occupation: "99", firm_size: "TOTAL", country_birth: "WORLD", pay_concept: "gross_earnings", pay_period: "hourly", statistic: "median"
+    }), function (value) { return euro(value, 2); }, "ISTAT RACLI");
     appendKpi(container, "Media mensile lorda", latestRecord(records, {
       geography_code: "IT", sex: "T", pay_concept: "gross_earnings", pay_period: "monthly", statistic: "mean"
     }), function (value) { return euro(value, 0); }, "Retribuzione mensile, non netto");
     appendKpi(container, "D9 / D1 orario", latestRecord(records, {
-      geography_code: "IT", sex: "T", pay_concept: "gross_earnings_ratio", pay_period: "hourly", statistic: "d9_d1"
+      geography_code: "IT", sex: "T", age_class: "TOTAL", education: "99", sector: "0010", contract_type: "9", working_time: "9", contractual_occupation: "99", firm_size: "TOTAL", country_birth: "WORLD", pay_concept: "gross_earnings_ratio", pay_period: "hourly", statistic: "d9_d1"
     }), function (value) { return fmt(value, 2) + "x"; }, "Rapporto tra salari alti e bassi");
     appendKpi(container, "Bassa retribuzione", latestRecord(records, {
       geography_code: "IT", pay_concept: "low_wage_earners", statistic: "share_below_two_thirds_median"
@@ -359,11 +477,21 @@
   }
 
   function renderDistribution() {
-    var rows = distributionRows();
+    var rows = istatDistributionRows().concat(eurostatDistributionRows().filter(function (row) {
+      return row.source_request === "ses_monthly_distribution" || row.source_request === "ses_annual_distribution";
+    }));
     var specs = [
       { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
       { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
+      { key: "age_class", field: "age_class", label: "Età", labelField: "age_label", includeTotals: true },
+      { key: "education", field: "education", label: "Titolo di studio", labelField: "education_label", includeTotals: true },
+      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true },
+      { key: "contract_type", field: "contract_type", label: "Contratto", labelField: "contract_type_label", includeTotals: true },
+      { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true },
+      { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true },
+      { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true },
+      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true },
       { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true }
     ];
     if (!state.distribution.year) {
@@ -374,10 +502,24 @@
       year: state.distribution.year,
       geography_code: state.distribution.geography_code,
       sex: state.distribution.sex,
+      age_class: state.distribution.age_class,
+      education: state.distribution.education,
+      sector: state.distribution.sector,
+      contract_type: state.distribution.contract_type,
+      working_time: state.distribution.working_time,
+      contractual_occupation: state.distribution.contractual_occupation,
+      firm_size: state.distribution.firm_size,
+      country_birth: state.distribution.country_birth,
       pay_period: state.distribution.pay_period
     }).sort(function (a, b) { return statOrder(a) - statOrder(b); });
+    var byStat = {};
+    selected.forEach(function (row) {
+      var key = statName(row);
+      if (!byStat[key] || row.source === "ISTAT") byStat[key] = row;
+    });
+    selected = Object.keys(byStat).map(function (key) { return byStat[key]; }).sort(function (a, b) { return statOrder(a) - statOrder(b); });
     byId("siDistributionTitle").textContent = "Distribuzione " + text(PERIOD_LABELS[state.distribution.pay_period], state.distribution.pay_period).toLowerCase();
-    byId("siDistributionTag").textContent = text(state.distribution.year) + " · " + text(state.distribution.geography_code);
+    byId("siDistributionTag").textContent = text(state.distribution.year) + " · " + text(lookupLabel("geography_code", state.distribution.geography_code), state.distribution.geography_code);
     if (!selected.length) {
       showEmpty("siDistributionChart", "Nessun punto distributivo disponibile per questa selezione.");
       return;
@@ -462,7 +604,7 @@
     var dimension = DIMENSIONS[targetState.dimension];
     var selected = analysisRows(targetState, targetState.dimension);
     selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
-    selected = selected.slice(0, 18).reverse();
+    selected = selected.reverse();
     byId(titleId).textContent = dimension ? "Retribuzione per " + dimension.label.toLowerCase() : "Retribuzione";
     byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic].join(" · ");
     if (!selected.length || !dimension) {
@@ -477,6 +619,7 @@
       marker: { color: COLORS[1] },
       hovertemplate: "%{y}<br>%{x:.2f} €<extra></extra>"
     }], {
+      height: Math.max(420, selected.length * 26 + 120),
       margin: { t: 22, r: 18, b: 52, l: 180 },
       xaxis: { title: "Euro", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
@@ -484,52 +627,56 @@
   }
 
   function renderWorker() {
-    renderBarByDimension("siWorkerChart", "siWorkerTitle", "siWorkerTag", state.worker, ["sex", "age_class", "education", "occupation", "seniority"], "siWorkerFilters");
+    renderBarByDimension("siWorkerChart", "siWorkerTitle", "siWorkerTag", state.worker, ["sex", "age_class", "education", "country_birth", "occupation", "seniority"], "siWorkerFilters");
     renderLowWage();
   }
 
   function renderJob() {
-    renderBarByDimension("siJobChart", "siJobTitle", "siJobTag", state.job, ["sector", "working_time", "firm_size", "occupation", "contract_type"], "siJobFilters");
+    renderBarByDimension("siJobChart", "siJobTitle", "siJobTag", state.job, ["sector", "working_time", "firm_size", "contractual_occupation", "occupation", "contract_type"], "siJobFilters");
     renderSectorBox();
     renderLabourCost();
   }
 
   function sectorDistributionGroups() {
     var grouped = {};
-    distributionRows().forEach(function (row) {
+    grossRows().forEach(function (row) {
+      if (row.source_request !== "istat_racli_sector_qualification") return;
       if (!row.sector || isTotal("sector", row.sector)) return;
+      if (!row.contractual_occupation || isTotal("contractual_occupation", row.contractual_occupation)) return;
       if (String(row.year) !== String(state.job.year)) return;
       if (String(row.geography_code) !== String(state.job.geography_code)) return;
       if (String(row.sex || "T") !== String(state.job.sex)) return;
       if (String(row.pay_period) !== String(state.job.pay_period)) return;
+      if (String(row.statistic) !== String(state.job.statistic)) return;
       var key = String(row.sector);
       grouped[key] = grouped[key] || {
         sector: key,
         label: row.sector_label || key,
-        d1: null,
-        median: null,
-        d9: null,
-        mean: null
+        values: [],
+        qualifications: []
       };
-      if (row.percentile === 10) grouped[key].d1 = row.value;
-      if (row.percentile === 90) grouped[key].d9 = row.value;
-      if (row.statistic === "median") grouped[key].median = row.value;
-      if (row.statistic === "mean") grouped[key].mean = row.value;
+      grouped[key].values.push(row.value);
+      grouped[key].qualifications.push(row.contractual_occupation_label || row.contractual_occupation);
     });
     return Object.keys(grouped).map(function (key) { return grouped[key]; }).filter(function (item) {
-      return item.d1 !== null && item.median !== null && item.d9 !== null;
+      return item.values.length >= 2;
     }).sort(function (a, b) {
-      return (toNumber(b.median) || 0) - (toNumber(a.median) || 0);
+      var aMedian = a.values.slice().sort(function (x, y) { return x - y; })[Math.floor(a.values.length / 2)];
+      var bMedian = b.values.slice().sort(function (x, y) { return x - y; })[Math.floor(b.values.length / 2)];
+      return (toNumber(bMedian) || 0) - (toNumber(aMedian) || 0);
     });
   }
 
   function latestSectorBoxYear() {
     var years = {};
-    distributionRows().forEach(function (row) {
+    grossRows().forEach(function (row) {
+      if (row.source_request !== "istat_racli_sector_qualification") return;
       if (!row.sector || isTotal("sector", row.sector)) return;
+      if (!row.contractual_occupation || isTotal("contractual_occupation", row.contractual_occupation)) return;
       if (String(row.geography_code) !== String(state.job.geography_code)) return;
       if (String(row.sex || "T") !== String(state.job.sex)) return;
       if (String(row.pay_period) !== String(state.job.pay_period)) return;
+      if (String(row.statistic) !== String(state.job.statistic)) return;
       years[row.year] = true;
     });
     var ordered = Object.keys(years).map(Number).filter(Number.isFinite).sort(function (a, b) { return b - a; });
@@ -544,7 +691,7 @@
       return available.indexOf(sector) >= 0;
     });
     if (!state.selectedSectors.length) {
-      state.selectedSectors = groups.slice(0, 6).map(function (item) { return item.sector; });
+      state.selectedSectors = groups.slice(0, 10).map(function (item) { return item.sector; });
     }
     clear(picker);
     groups.forEach(function (item) {
@@ -574,45 +721,31 @@
     renderSectorPicker(groups);
     var selected = groups.filter(function (item) {
       return state.selectedSectors.indexOf(item.sector) >= 0;
-    }).slice().reverse();
+    });
     if (!selected.length) {
-      showEmpty("siSectorBoxChart", "D1, mediana e D9 settoriali non disponibili per questa selezione.");
+      showEmpty("siSectorBoxChart", "Boxplot settoriale non disponibile per questa selezione.");
       return;
     }
-    var rangeTraces = selected.map(function (item, index) {
+    var traces = selected.map(function (item, index) {
       return {
-        type: "scatter",
-        mode: "lines",
+        type: "box",
         name: item.label,
-        x: [item.d1, item.d9],
-        y: [item.label, item.label],
-        line: { color: COLORS[index % COLORS.length], width: 8 },
-        hovertemplate: item.label + "<br>D1: " + euro(item.d1, 2) + "<br>D9: " + euro(item.d9, 2) + "<extra></extra>",
-        showlegend: false
+        y: item.values,
+        text: item.qualifications,
+        marker: { color: COLORS[index % COLORS.length], size: 7 },
+        line: { color: COLORS[index % COLORS.length], width: 2 },
+        boxpoints: "all",
+        jitter: 0.35,
+        pointpos: 0,
+        hovertemplate: "%{text}<br>%{y:.2f} €<extra>" + item.label + "</extra>"
       };
     });
-    var medianTrace = {
-      type: "scatter",
-      mode: "markers",
-      name: "Mediana",
-      x: selected.map(function (item) { return item.median; }),
-      y: selected.map(function (item) { return item.label; }),
-      marker: { color: cssVar("--text", "#f5f2ed"), size: 11, symbol: "diamond" },
-      hovertemplate: "%{y}<br>Mediana: %{x:.2f} €<extra></extra>"
-    };
-    var meanTrace = {
-      type: "scatter",
-      mode: "markers",
-      name: "Media",
-      x: selected.map(function (item) { return item.mean; }),
-      y: selected.map(function (item) { return item.label; }),
-      marker: { color: COLORS[0], size: 9, symbol: "circle" },
-      hovertemplate: "%{y}<br>Media: %{x:.2f} €<extra></extra>"
-    };
-    plot("siSectorBoxChart", rangeTraces.concat([medianTrace, meanTrace]), {
-      margin: { t: 22, r: 18, b: 52, l: 210 },
-      xaxis: { title: "Euro", rangemode: "tozero" },
-      yaxis: { title: "", automargin: true }
+    plot("siSectorBoxChart", traces, {
+      height: Math.max(500, selected.length * 34 + 180),
+      margin: { t: 22, r: 18, b: 140, l: 70 },
+      xaxis: { title: "", automargin: true, tickangle: -35 },
+      yaxis: { title: "Euro per ora", rangemode: "tozero" },
+      boxmode: "group"
     });
   }
 
@@ -629,7 +762,7 @@
     var year = latestYear(rows, {});
     rows = rows.filter(function (row) { return String(row.year) === String(year); });
     rows.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
-    rows = rows.slice(0, 14).reverse();
+    rows = rows.reverse();
     if (!rows.length) {
       showEmpty("siLowWageChart", "Quota low-wage non disponibile per questa dimensione.");
       return;
@@ -642,6 +775,7 @@
       marker: { color: COLORS[4] },
       hovertemplate: "%{y}<br>%{x:.1f}%<extra></extra>"
     }], {
+      height: Math.max(420, rows.length * 26 + 120),
       margin: { t: 22, r: 18, b: 52, l: 170 },
       xaxis: { title: "% dipendenti", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
@@ -652,7 +786,7 @@
     var rows = state.records.filter(function (row) {
       return row.pay_concept === "labour_cost" && row.geography_code === state.job.geography_code;
     });
-    var sectors = uniqueOptions(rows, "sector", "sector_label", false).slice(0, 5);
+    var sectors = uniqueOptions(rows, "sector", "sector_label", false);
     var traces = sectors.map(function (sector, index) {
       var sectorRows = rows.filter(function (row) { return String(row.sector) === sector.value; }).sort(function (a, b) {
         return Number(a.year) - Number(b.year);
@@ -674,8 +808,13 @@
   }
 
   function renderTerritory() {
-    var rows = distributionRows().filter(function (row) {
-      return row.pay_period === "hourly" && row.statistic === "median" && row.sex === "T";
+    var rows = grossRows().filter(function (row) {
+      return row.source_request === "istat_racli_province_gender"
+        && row.pay_period === "hourly"
+        && row.statistic === "median"
+        && row.sex === "T"
+        && row.sector === "0010"
+        && row.geography_code !== "IT";
     });
     var year = latestYear(rows, {});
     rows = rows.filter(function (row) { return String(row.year) === String(year); });
@@ -686,18 +825,21 @@
     }
     plot("siTerritoryChart", [{
       type: "bar",
-      x: rows.map(function (row) { return row.geography_name || row.geography_code; }),
-      y: rows.map(function (row) { return row.value; }),
-      marker: { color: rows.map(function (row) { return row.geography_code === "IT" ? COLORS[0] : COLORS[2]; }) },
-      hovertemplate: "%{x}<br>%{y:.2f} €<extra></extra>"
+      orientation: "h",
+      y: rows.slice().reverse().map(function (row) { return optionLabel(row, "geography_code", "geography_name"); }),
+      x: rows.slice().reverse().map(function (row) { return row.value; }),
+      marker: { color: COLORS[2] },
+      hovertemplate: "%{y}<br>%{x:.2f} €<extra></extra>"
     }], {
-      yaxis: { title: "Mediana oraria lorda", rangemode: "tozero" },
-      xaxis: { title: "" }
+      height: Math.max(520, rows.length * 22 + 120),
+      margin: { t: 22, r: 18, b: 52, l: 170 },
+      xaxis: { title: "Mediana oraria lorda", rangemode: "tozero" },
+      yaxis: { title: "", automargin: true }
     });
   }
 
   function renderEurope() {
-    var rows = distributionRows();
+    var rows = eurostatDistributionRows();
     var specs = [
       { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
@@ -715,7 +857,7 @@
       return {
         type: "scatter",
         mode: "lines+markers",
-        name: countryRows[0] ? countryRows[0].geography_name : country,
+        name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
         x: countryRows.map(function (row) { return row.year; }),
         y: countryRows.map(function (row) { return row.value; }),
         line: { color: COLORS[index % COLORS.length], width: country === "IT" ? 4 : 2 },
@@ -741,7 +883,7 @@
       return {
         type: "scatter",
         mode: "lines+markers",
-        name: countryRows[0] ? countryRows[0].geography_name : country,
+        name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
         x: countryRows.map(function (row) { return row.year; }),
         y: countryRows.map(function (row) { return row.value; }),
         line: { color: COLORS[index % COLORS.length], width: country === "IT" ? 4 : 2 },
@@ -755,18 +897,36 @@
   }
 
   function renderSeries() {
-    var rows = distributionRows().filter(function (row) {
-      return row.geography_code === "IT";
-    });
+    var rows = istatDistributionRows().concat(eurostatDistributionRows());
     var specs = [
       { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: seriesStatisticOptions, includeTotals: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true }
+      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
+      { key: "age_class", field: "age_class", label: "Età", labelField: "age_label", includeTotals: true },
+      { key: "education", field: "education", label: "Titolo di studio", labelField: "education_label", includeTotals: true },
+      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true },
+      { key: "contract_type", field: "contract_type", label: "Contratto", labelField: "contract_type_label", includeTotals: true },
+      { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true },
+      { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true },
+      { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true },
+      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true }
     ];
     syncFilters("siSeriesFilters", specs, rows, state.series, renderAll);
-    var selected = rows.filter(function (row) {
-      var statOk = state.series.statistic === "all" || row.statistic === state.series.statistic;
-      return row.pay_period === state.series.pay_period && statOk && row.sex === state.series.sex;
+    var selected = filterRows(rows, {
+      geography_code: state.series.geography_code,
+      sex: state.series.sex,
+      age_class: state.series.age_class,
+      education: state.series.education,
+      sector: state.series.sector,
+      contract_type: state.series.contract_type,
+      working_time: state.series.working_time,
+      contractual_occupation: state.series.contractual_occupation,
+      firm_size: state.series.firm_size,
+      country_birth: state.series.country_birth,
+      pay_period: state.series.pay_period
+    }).filter(function (row) {
+      return state.series.statistic === "all" || row.statistic === state.series.statistic;
     }).sort(function (a, b) { return Number(a.year) - Number(b.year); });
     byId("siSeriesTitle").textContent = "Serie " + text(PERIOD_LABELS[state.series.pay_period], state.series.pay_period).toLowerCase();
     byId("siSeriesTag").textContent = state.series.statistic === "all" ? "tutte le misure" : STAT_LABELS[state.series.statistic] || state.series.statistic;
@@ -846,7 +1006,7 @@
   }
 
   function initializeDefaults() {
-    var rows = distributionRows();
+    var rows = istatDistributionRows();
     state.distribution.year = latestYear(rows, { geography_code: "IT", sex: "T", pay_period: "hourly" });
     state.worker.year = latestYear(grossRows(), { geography_code: "IT", sex: "T", pay_period: "hourly", statistic: "median" });
     state.job.year = latestSectorBoxYear() || state.worker.year;
@@ -860,7 +1020,8 @@
       })
       .then(function (payload) {
         state.payload = payload;
-        state.records = toArray(payload.records);
+        state.lookups = buildLookups(payload);
+        state.records = recordsFromPayload(payload);
         initializeDefaults();
         setStatus("Dati caricati: " + fmt(state.records.length, 0) + " osservazioni. Aggiornamento " + text(payload.meta && payload.meta.updated_at, MISSING) + ".");
         renderAll();

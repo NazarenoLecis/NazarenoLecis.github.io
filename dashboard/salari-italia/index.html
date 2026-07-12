@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260712-1">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260712-2">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260712-1"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260712-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -40,7 +40,7 @@
         <span class="logo"></span>
         <div>
           <strong>Fonti ufficiali e riproducibili</strong>
-          <span>Eurostat Structure of Earnings Survey, low-wage earners, gender pay gap e labour cost levels.</span>
+          <span>ISTAT RACLI per il dettaglio italiano; Eurostat per confronti europei, low-wage earners, gender pay gap e labour cost.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Salari_Italia" target="_blank" rel="noopener">Repository salari</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
       </div>
@@ -51,7 +51,7 @@
     </nav>
 
     <p id="siStatus" class="si-status">Caricamento dati salari ...</p>
-    <p class="si-note"><strong>Perimetro:</strong> la SES copre dipendenti e imprese secondo la metodologia Eurostat. Le tavole territoriali subnazionali, i netti e gli imponibili contributivi non sono stimati.</p>
+    <p class="si-note"><strong>Perimetro:</strong> ISTAT RACLI copre retribuzioni orarie lorde dei dipendenti del settore privato. Netti, imponibili contributivi, redditi fiscali, comuni di residenza e microdati individuali non sono stimati.</p>
 
     <section id="indicatori" class="dashboard-section">
       <div class="section-head">
@@ -64,14 +64,14 @@
     <section class="dashboard-section" id="distribuzione">
       <div class="section-head">
         <span class="eyebrow">Distribuzione salariale</span>
-        <div><h2>Media, mediana e decili</h2><p>La distribuzione usa soltanto punti pubblicati da Eurostat: non ricostruisce microdati né istogrammi completi.</p></div>
+        <div><h2>Media, mediana e decili</h2><p>La distribuzione usa punti ufficiali pubblicati da ISTAT ed Eurostat: primo decile, mediana, nono decile e media, senza ricostruire microdati.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri distribuzione</summary><div id="siDistributionFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
         <div class="si-card-title"><h3 id="siDistributionTitle">Distribuzione lorda</h3><span id="siDistributionTag">Eurostat SES</span></div>
         <p class="si-card-note" id="siDistributionNote">Scegli anno, territorio, sesso e periodo retributivo.</p>
         <div id="siDistributionChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: Eurostat, Structure of Earnings Survey. Elaborazione di Nazareno Lecis.</p>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI ed Eurostat SES. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -85,7 +85,7 @@
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3 id="siWorkerTitle">Retribuzione per caratteristica</h3><span id="siWorkerTag">lordo</span></div>
           <div id="siWorkerChart" class="si-chart si-chart-wide"></div>
-          <p class="si-chart-credit">Fonte: Eurostat SES. Le tavole su istruzione e anzianità sono punti 2022.</p>
+          <p class="si-chart-credit">Fonte: ISTAT RACLI per retribuzioni orarie private; Eurostat SES per tavole europee e 2022.</p>
         </article>
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3>Quota di lavoratori a bassa retribuzione</h3><span>low wage</span></div>
@@ -103,17 +103,17 @@
       </div>
       <details class="chart-filter-panel" open><summary>Filtri lavoro</summary><div id="siJobFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block si-section-gap">
-        <div class="si-card-title"><h3>Distribuzione salariale settoriale</h3><span>D1 · mediana · D9</span></div>
-        <p class="si-card-note">Eurostat pubblica D1, mediana e D9, non i quartili completi: il grafico mostra l'intervallo tra salari bassi e alti per settore senza inventare Q1 e Q3.</p>
+        <div class="si-card-title"><h3>Boxplot salariale settoriale</h3><span>ISTAT RACLI</span></div>
+        <p class="si-card-note">Ogni box mostra la distribuzione dei valori ufficiali per qualifica contrattuale dentro il settore selezionato. Non è una distribuzione individuale: i microdati non sono pubblicati nel payload.</p>
         <div id="siSectorPicker" class="si-sector-picker" aria-label="Settori da mostrare"></div>
         <div id="siSectorBoxChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: Eurostat SES. I settori possono essere aggiunti o rimossi dal grafico.</p>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI. I settori possono essere aggiunti o rimossi dal grafico.</p>
       </article>
       <div class="si-grid-2">
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3 id="siJobTitle">Retribuzione per lavoro e impresa</h3><span id="siJobTag">lordo</span></div>
           <div id="siJobChart" class="si-chart si-chart-wide"></div>
-          <p class="si-chart-credit">Fonte: Eurostat SES. Dimensione d'impresa disponibile nelle tavole 2022.</p>
+          <p class="si-chart-credit">Fonte: ISTAT RACLI per settore, orario, qualifica e dimensione d'impresa; Eurostat SES per confronti europei.</p>
         </article>
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3>Costo orario del lavoro</h3><span>separato dal salario</span></div>
@@ -127,12 +127,12 @@
     <section class="dashboard-section" id="territorio">
       <div class="section-head">
         <span class="eyebrow">Territorio</span>
-        <div><h2>Paesi disponibili e limiti territoriali</h2><p>Il payload pubblicato contiene paesi e aggregato UE27; regioni, province e comuni non sono presenti nelle tavole integrate.</p></div>
+        <div><h2>Province e limiti territoriali</h2><p>Il payload integra le aree provinciali pubblicate da ISTAT RACLI; comuni e territorio di residenza non sono stimati.</p></div>
       </div>
       <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Confronto territoriale disponibile</h3><span>paesi</span></div>
+        <div class="si-card-title"><h3>Retribuzione oraria per provincia</h3><span>ISTAT RACLI</span></div>
         <div id="siTerritoryChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Territorio di riferimento: paese dichiarante Eurostat. Non equivale a regione di residenza, luogo di lavoro o comune fiscale.</p>
+        <p class="si-chart-credit">Territorio di riferimento: area provinciale pubblicata da ISTAT RACLI. Non equivale a comune fiscale o reddito di residenza.</p>
       </article>
     </section>
 
@@ -165,7 +165,7 @@
       <article class="si-card si-chart-block">
         <div class="si-card-title"><h3 id="siSeriesTitle">Serie salariale italiana</h3><span id="siSeriesTag">Italia</span></div>
         <div id="siSeriesChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</p>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI ed Eurostat. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
