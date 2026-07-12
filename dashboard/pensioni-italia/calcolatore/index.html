@@ -14,7 +14,7 @@
   <link rel="preload" href="https://data.nazarenolecis.com/pensioni-italia/calcolatore.json" as="fetch" crossorigin>
   <script defer src="../../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-9"></script>
+  <script defer src="../../../assets/pensione-pagata-calculator.js?v=20260712-10"></script>
 </head>
 <body>
   <header class="site-header">
@@ -123,11 +123,11 @@
     </section>
 
     <section class="dashboard-section" id="grafici">
-      <div class="section-head"><span class="eyebrow">Grafici</span><div><h2>Il confronto che risponde alla domanda</h2><p>Prima confronta la pensione effettiva con quella maturata; poi osserva quando le pensioni incassate raggiungono il montante virtuale.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Grafici</span><div><h2>Il confronto che risponde alla domanda</h2><p>Prima confronta la pensione effettiva con quella maturata; poi separa il cumulato nominale dal capitale necessario a finanziare davvero quella rata.</p></div></div>
       <label class="pc-axis-select"><span>Scala verticale</span><select id="pcAxisMode"><option value="zero">Inizia da zero</option><option value="data">Adatta ai dati</option></select></label>
       <div class="pi-stack">
         <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Pensione effettiva e pensione maturata</h3><span>lordo per rata</span></div><p class="pi-card-note" id="pcPensionChartNote">Confronta la rata lorda inserita con la rata che risulterebbe trasformando il montante simulato in una pensione interamente contributiva.</p><div class="pi-chart pi-chart-wide" id="pcPensionChart"></div><p class="pi-chart-credit">Fonte: INPS e Ministero del Lavoro, coefficienti di trasformazione; input utente. Elaborazione di Nazareno Lecis.</p></article>
-        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Quando la pensione raggiunge il montante</h3><span>eta</span></div><p class="pi-card-note" id="pcCumulativeChartNote">Le pensioni cumulate sono confrontate con il montante virtuale. La parte successiva a oggi e' una proiezione; il montante non e' un conto individuale che viene materialmente svuotato.</p><div class="pi-chart pi-chart-wide" id="pcCumulativeChart"></div><p class="pi-chart-credit">Fonte: ISTAT, tavole di mortalita. Elaborazione di Nazareno Lecis.</p></article>
+        <article class="pi-card pi-chart-block"><div class="pi-card-title"><h3>Cumulato pensione e soglie</h3><span>eta</span></div><p class="pi-card-note" id="pcCumulativeChartNote">Le pensioni cumulate sono confrontate con il montante virtuale e con il capitale necessario. La parte successiva a oggi e' una proiezione; il montante non e' un conto individuale che viene materialmente svuotato.</p><div class="pi-chart pi-chart-wide" id="pcCumulativeChart"></div><p class="pi-chart-credit">Fonte: ISTAT, tavole di mortalita. Elaborazione di Nazareno Lecis.</p></article>
       </div>
     </section>
 
@@ -135,10 +135,13 @@
       <div class="section-head"><span class="eyebrow">Metodo</span><div><h2>Formule, fonti e limiti</h2><p>Il calcolatore mostra un controfattuale contributivo e non riliquida la pensione amministrata dall'INPS.</p></div></div>
       <div class="pi-notes-panel">
         <div><h3>Note metodologiche</h3><ul>
+          <li><strong>Anni contribuiti:</strong> se gli anni dichiarati sono meno degli anni tra primo contributo e pensionamento, il modello li assegna agli anni piu vicini alla pensione e lascia vuoti gli anni iniziali della finestra. I buchi non vengono spalmati su tutta la carriera.</li>
+          <li><strong>Quote contributive:</strong> il calcolo separa quota lavoratore, quota datore/impresa, contributi finanziari totali e accredito al montante. La pensione contributiva dipende dall'accredito al montante, non dalla sola trattenuta in busta paga.</li>
           <li><strong>Pensione contributiva equivalente:</strong> montante simulato moltiplicato per il coefficiente di trasformazione dell'anno e dell'eta di pensionamento.</li>
           <li><strong>Rivalutazione del montante:</strong> ogni anno il montante gia accumulato e' rivalutato con la variazione media geometrica del PIL nominale dei cinque anni precedenti: (PIL t-1 / PIL t-6) elevato a 1/5, meno 1. Il contributo dell'anno viene aggiunto dopo la rivalutazione e non si rivaluta nello stesso anno.</li>
           <li><strong>Differenza mensile:</strong> pensione lorda inserita meno pensione contributiva equivalente, divise per lo stesso numero di mensilita.</li>
-          <li><strong>Montante virtuale:</strong> e' la base di calcolo della pensione, non un conto bancario personale. La data di esaurimento indica quando le pensioni lorde cumulate raggiungono quella soglia.</li>
+          <li><strong>Montante virtuale:</strong> e' la base di calcolo della pensione, non un conto bancario personale. La data di raggiungimento indica solo quando le pensioni lorde cumulate superano quella soglia nominale.</li>
+          <li><strong>Copertura attuariale:</strong> confronta il montante stimato con il capitale necessario a finanziare la pensione inserita usando lo stesso coefficiente di trasformazione. Questa e' la misura corretta per dire se quanto maturato copre davvero la rata, mentre l'incrocio nominale nel tempo e' solo descrittivo.</li>
           <li><strong>Tempo gia' in pensione:</strong> deriva dalle date inserite. Le prestazioni gia' ricevute sono stimate con una rivalutazione convenzionale del 2% annuo e non sostituiscono i cedolini storici.</li>
           <li><strong>Aspettativa di vita:</strong> usa la speranza di vita residua a 65 anni nelle tavole ISTAT: eta attesa = 65 + e65. E' una media di popolazione, non una previsione individuale.</li>
           <li><strong>Lordo dal netto:</strong> se inserisci la pensione netta attuale, il lordo e' stimato con scaglioni IRPEF 2026, detrazione da pensione e addizionali regionali/comunali medie del 2,1%. Non considera altri redditi, deduzioni, detrazioni o carichi familiari e non sottrae contributi previdenziali.</li>

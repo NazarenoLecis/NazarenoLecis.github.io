@@ -363,27 +363,55 @@
     years.forEach(function (year) { profile[year] = finalRal / Math.pow(1 + Math.max(growth, 0.015), end - year); });
     return { profile: profile, nature: "stimato su ultima RAL" };
   }
+  function contributionMonthsByYear(years, contributedYears, annualMonths) {
+    var allocation = {};
+    years.forEach(function (year) { allocation[year] = 0; });
+    var cappedYears = Math.max(0, Math.min(toNumber(contributedYears, years.length), years.length));
+    var cappedMonths = Math.max(0, Math.min(toNumber(annualMonths, 12), 12));
+    var remaining = cappedYears * cappedMonths;
+    years.slice().reverse().some(function (year) {
+      var months = Math.min(cappedMonths, remaining);
+      allocation[year] = months;
+      remaining -= months;
+      return remaining <= 0.0000001;
+    });
+    return allocation;
+  }
+  function contributionSplit(taxable, rate, financial) {
+    var financing = toNumber(rate.aliquota_finanziamento, 0);
+    var total = financial === undefined || financial === null ? taxable * financing : toNumber(financial, 0);
+    var worker, employer;
+    if (financial === undefined || financial === null || financing <= 0) {
+      worker = taxable * toNumber(rate.quota_lavoratore, 0);
+      employer = taxable * toNumber(rate.quota_datore, 0);
+    } else {
+      worker = total * toNumber(rate.quota_lavoratore, 0) / financing;
+      employer = total * toNumber(rate.quota_datore, 0) / financing;
+    }
+    return { total: total, worker: worker, employer: employer };
+  }
   function buildCareer(scenario) {
     validateScenario(scenario);
     var category = categoryFor(scenario.categoria_id);
     var years = [];
     for (var year = scenario.anno_inizio; year <= scenario.anno_fine; year += 1) years.push(year);
     var salary = salaryProfile(years, scenario);
-    var contributionShare = years.length ? Math.min(scenario.anni_contribuiti || years.length, years.length) / years.length : 0;
-    var months = (scenario.mesi_lavorati_annui || 12) * (contributionShare || 1);
+    var monthsByYear = contributionMonthsByYear(years, scenario.anni_contribuiti || years.length, scenario.mesi_lavorati_annui || 12);
     var workShare = (scenario.percentuale_lavoro || 100) / 100;
     var accrued = 0;
     return years.map(function (year, index) {
       var rate = rateForYear(year, scenario.categoria_id);
       var gross = Math.max(salary.profile[year], 0);
+      var months = monthsByYear[year] || 0;
       var taxable = gross * workShare * months / 12;
       var financing = toNumber(rate.aliquota_finanziamento, 0.327);
       var computation = toNumber(rate.aliquota_computo, 0.33);
       var capitalization = toNumber(rate.tasso_capitalizzazione, 0);
-      var financial = taxable * financing;
+      var split = contributionSplit(taxable, rate);
+      var financial = split.total;
       var credit = taxable * computation;
       accrued = accrued * (1 + capitalization) + credit;
-      return { scenario_id: "frontend", anno: year, categoria: scenario.categoria_id, gestione: category.gestione, retribuzione_stimata: gross, retribuzione_inserita: null, mesi_lavorati: months, percentuale_part_time: workShare * 100, imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: salary.nature, indice_anno: index + 1 };
+      return { scenario_id: "frontend", anno: year, categoria: scenario.categoria_id, gestione: category.gestione, retribuzione_stimata: gross, retribuzione_inserita: null, mesi_lavorati: months, percentuale_part_time: workShare * 100, imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, contributi_lavoratore: split.worker, contributi_datore: split.employer, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: salary.nature, indice_anno: index + 1 };
     });
   }
   function buildAccurateCareer(scenario) {
@@ -397,10 +425,12 @@
       var rate = rateForYear(row.anno, category.categoria_id);
       var taxable = Math.max(toNumber(row.imponibile_previdenziale, 0), 0);
       var financing = toNumber(rate.aliquota_finanziamento, 0.327), computation = toNumber(rate.aliquota_computo, 0.33), capitalization = toNumber(rate.tasso_capitalizzazione, 0);
-      var financial = row.contributi !== null && row.contributi !== undefined ? toNumber(row.contributi, 0) : taxable * financing;
+      var explicitFinancial = row.contributi !== null && row.contributi !== undefined ? toNumber(row.contributi, 0) : null;
+      var split = contributionSplit(taxable, rate, explicitFinancial);
+      var financial = split.total;
       var credit = taxable * computation + toNumber(row.contributi_figurativi, 0);
       accrued = accrued * (1 + capitalization) + credit;
-      return { scenario_id: "frontend", anno: row.anno, categoria: category.categoria_id, gestione: category.gestione, retribuzione_stimata: taxable, retribuzione_inserita: taxable, mesi_lavorati: toNumber(row.mesi_lavorati, 12), percentuale_part_time: toNumber(row.percentuale_part_time, 100), imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: row.natura_dato || "stimato_periodi", indice_anno: index + 1 };
+      return { scenario_id: "frontend", anno: row.anno, categoria: category.categoria_id, gestione: category.gestione, retribuzione_stimata: taxable, retribuzione_inserita: taxable, mesi_lavorati: toNumber(row.mesi_lavorati, 12), percentuale_part_time: toNumber(row.percentuale_part_time, 100), imponibile_previdenziale: taxable, aliquota_finanziamento: financing, aliquota_computo: computation, quota_lavoratore: toNumber(rate.quota_lavoratore, 0), quota_datore: toNumber(rate.quota_datore, 0), contributi_finanziari: financial, contributi_lavoratore: split.worker, contributi_datore: split.employer, accredito_montante: credit, tasso_rivalutazione: capitalization, montante_fine_anno: accrued, natura_dato: row.natura_dato || "stimato_periodi", indice_anno: index + 1 };
     });
   }
 
@@ -472,6 +502,9 @@
     var last = career[career.length - 1] || {};
     var accrued = toNumber(last.montante_fine_anno, 0), coefficient = coefficientFor(scenario.anno_pensione, scenario.eta_pensione, scenario.mesi_eta_pensione);
     var contributive = accrued * coefficient.coefficiente, actualAtRetirement = effectiveAnnualPension(scenario);
+    var actuarialRequired = coefficient.coefficiente ? actualAtRetirement / coefficient.coefficiente : null;
+    var actuarialGap = actuarialRequired ? accrued - actuarialRequired : null;
+    var actuarialCoverage = actuarialRequired ? accrued / actuarialRequired : null;
     var referenceFactor = Math.pow(1.02, Math.max(0, scenario.anno_riferimento_pensione - scenario.anno_pensione));
     var contributiveAtReference = contributive * referenceFactor;
     var actualAtReference = scenario.pensione_lorda_mensile_effettiva * scenario.mensilita_pensione;
@@ -479,7 +512,7 @@
     var futureRate = scenario.rivalutazione_futura_pensione === "inflazione_costante" ? scenario.tasso_inflazione_futura : 0;
     for (var horizon = 0; horizon <= 55; horizon += 1) expected += actualAtRetirement * Math.pow(1 + futureRate, horizon) * survival(scenario, timeline.retirementAge, horizon);
     var rel = reliability(career), months = scenario.mensilita_pensione || 13;
-    return { anni_contribuzione: career.reduce(function (sum, row) { return sum + toNumber(row.mesi_lavorati, 0) / 12; }, 0), contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0), montante_contributivo: accrued, coefficiente_trasformazione: coefficient.coefficiente, eta_coefficiente: coefficient.eta_usata, anno_riferimento_confronto: scenario.anno_riferimento_pensione, pensione_contributiva_annua_equivalente: contributive, pensione_effettiva_annua_lorda: actualAtRetirement, pensione_contributiva_annua_equivalente_anno_riferimento: contributiveAtReference, pensione_effettiva_annua_lorda_anno_riferimento: actualAtReference, pensione_contributiva_mensile_equivalente: contributiveAtReference / months, pensione_effettiva_mensile_lorda_anno_riferimento: actualAtReference / months, differenza_mensile_lorda: (actualAtReference - contributiveAtReference) / months, differenza_annua_lorda: actualAtReference - contributiveAtReference, differenza_percentuale_su_contributiva: contributiveAtReference ? (actualAtReference - contributiveAtReference) / contributiveAtReference : 0, valore_atteso_prestazioni_lorde: expected, eta_pareggio: timeline.exhaustionAge, regime_indicativo: classifyRegime(career), livello_affidabilita: rel.level, input_migliorativi: rel.note, natura_coefficiente: coefficient.natura, timeline: timeline };
+    return { anni_contribuzione: career.reduce(function (sum, row) { return sum + toNumber(row.mesi_lavorati, 0) / 12; }, 0), contributi_finanziari_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_finanziari, 0); }, 0), contributi_lavoratore_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_lavoratore, 0); }, 0), contributi_datore_versati: career.reduce(function (sum, row) { return sum + toNumber(row.contributi_datore, 0); }, 0), accredito_totale_montante: career.reduce(function (sum, row) { return sum + toNumber(row.accredito_montante, 0); }, 0), montante_contributivo: accrued, capitale_attuariale_necessario: actuarialRequired, gap_attuariale_montante: actuarialGap, copertura_attuariale: actuarialCoverage, coefficiente_trasformazione: coefficient.coefficiente, eta_coefficiente: coefficient.eta_usata, anno_riferimento_confronto: scenario.anno_riferimento_pensione, pensione_contributiva_annua_equivalente: contributive, pensione_effettiva_annua_lorda: actualAtRetirement, pensione_contributiva_annua_equivalente_anno_riferimento: contributiveAtReference, pensione_effettiva_annua_lorda_anno_riferimento: actualAtReference, pensione_contributiva_mensile_equivalente: contributiveAtReference / months, pensione_effettiva_mensile_lorda_anno_riferimento: actualAtReference / months, differenza_mensile_lorda: (actualAtReference - contributiveAtReference) / months, differenza_annua_lorda: actualAtReference - contributiveAtReference, differenza_percentuale_su_contributiva: contributiveAtReference ? (actualAtReference - contributiveAtReference) / contributiveAtReference : 0, valore_atteso_prestazioni_lorde: expected, eta_pareggio: timeline.exhaustionAge, regime_indicativo: classifyRegime(career), livello_affidabilita: rel.level, input_migliorativi: rel.note, natura_coefficiente: coefficient.natura, timeline: timeline };
   }
 
   function makeKpi(label, value, note) {
@@ -493,8 +526,15 @@
     clear(node);
     var exhaustionLabel = timeline.exhaustionDate ? formatDate(timeline.exhaustionDate) : "non raggiunto";
     var pensionInputNote = scenario.pensione_valore_tipo === "netto" ? "lordo stimato dalla pensione netta inserita" : "pensione lorda attuale inserita";
+    var gap = toNumber(result.gap_attuariale_montante, null);
+    var coverageNote = gap === null ? "montante / capitale necessario" : (gap >= 0 ? "avanzo attuariale di " + euro(gap) : "mancano " + euro(Math.abs(gap)));
     [
       ["Montante contributivo", euro(result.montante_contributivo), "accrediti rivalutati a fine carriera"],
+      ["Contributi lavoratore", euro(result.contributi_lavoratore_versati), "quota trattenuta o versata personalmente"],
+      ["Contributi impresa", euro(result.contributi_datore_versati), "quota a carico del datore; zero per autonomi"],
+      ["Contributi totali", euro(result.contributi_finanziari_versati), "lavoratore + datore/impresa, al netto delle approssimazioni"],
+      ["Capitale necessario", euro(result.capitale_attuariale_necessario), "per finanziare la pensione inserita con lo stesso coefficiente"],
+      ["Copertura attuariale", pct(result.copertura_attuariale), coverageNote],
       ["Pensione effettiva", euro(result.pensione_effettiva_mensile_lorda_anno_riferimento), pensionInputNote],
       ["Pensione contributiva", euro(result.pensione_contributiva_mensile_equivalente), "lordo equivalente per rata nel " + result.anno_riferimento_confronto],
       ["Coefficiente", pct(result.coefficiente_trasformazione, 3), "eta " + fmt(result.eta_coefficiente, 2) + " alla data di pensionamento"],
@@ -502,19 +542,20 @@
       ["Tempo in pensione", timeline.yearsRetired ? fmt(timeline.yearsRetired, 1) + " anni" : "non ancora", "calcolato dalla data inserita"],
       ["Gia' ricevuto", euro(timeline.received), "stima lorda cumulata fino a oggi"],
       ["Montante virtuale residuo", euro(timeline.remainingToday), timeline.remainingToday >= 0 ? "soglia ancora da raggiungere" : "soglia gia' superata"],
-      ["Raggiungimento montante", exhaustionLabel, timeline.exhaustionAge ? "circa " + fmt(timeline.exhaustionAge, 1) + " anni di eta" : "entro l'orizzonte simulato"],
+      ["Raggiungimento nominale", exhaustionLabel, timeline.exhaustionAge ? "cumulato pensioni = montante, non pareggio attuariale" : "entro l'orizzonte simulato"],
       ["Eta attesa media", fmt(timeline.expectedAge, 1) + " anni", "65 anni + vita residua a 65 anni"],
       ["Affidabilita", result.livello_affidabilita, result.input_migliorativi]
     ].forEach(function (item) { node.appendChild(makeKpi(item[0], item[1], item[2])); });
 
     var direction = result.differenza_mensile_lorda >= 0 ? "superiore" : "inferiore";
     var narrative = "La pensione inserita e' " + direction + " di " + euro(Math.abs(result.differenza_mensile_lorda)) + " per rata rispetto alla pensione interamente contributiva stimata. ";
-    narrative += timeline.exhaustionDate ? "Le prestazioni lorde cumulate raggiungono il montante virtuale intorno a " + formatDate(timeline.exhaustionDate) + ". " : "Nell'orizzonte simulato le prestazioni non raggiungono il montante virtuale. ";
+    narrative += "Il montante stimato copre il " + pct(result.copertura_attuariale) + " del capitale necessario a finanziare la pensione inserita con lo stesso coefficiente di trasformazione. ";
+    narrative += timeline.exhaustionDate ? "Il cumulato nominale delle rate raggiunge il montante virtuale intorno a " + formatDate(timeline.exhaustionDate) + ", ma questa non e' una prova di pareggio attuariale. " : "Nell'orizzonte simulato il cumulato nominale delle rate non raggiunge il montante virtuale. ";
     narrative += "All'eta attesa media di " + fmt(timeline.expectedAge, 1) + " anni, calcolata dalla vita residua a 65 anni, il totale lordo cumulato sarebbe circa " + euro(timeline.cumulativeAtExpected) + ".";
     byId("pcResultNarrative").textContent = narrative;
     byId("pcReliability").innerHTML = "<strong>Affidabilita " + result.livello_affidabilita + ".</strong> " + result.input_migliorativi + " Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.";
     byId("pcPensionChartNote").textContent = "Con pensionamento il " + new Date(scenario.data_pensionamento + "T00:00:00").toLocaleDateString("it-IT") + ", il coefficiente applicato e' " + pct(result.coefficiente_trasformazione, 3) + ". Nel " + result.anno_riferimento_confronto + " la rata effettiva lorda e' " + euro(result.pensione_effettiva_mensile_lorda_anno_riferimento) + "; quella contributiva equivalente e' " + euro(result.pensione_contributiva_mensile_equivalente) + ".";
-    byId("pcCumulativeChartNote").textContent = "La soglia del montante viene " + (timeline.exhaustionDate ? "raggiunta intorno a " + formatDate(timeline.exhaustionDate) : "non raggiunta nell'orizzonte simulato") + ". La linea dopo oggi e' una proiezione fino all'eta attesa media; non descrive un conto che viene materialmente esaurito.";
+    byId("pcCumulativeChartNote").textContent = "La linea del montante mostra quando il cumulato nominale delle rate lo supera; la linea del capitale necessario mostra invece la soglia coerente con il coefficiente di trasformazione. Il pareggio corretto e' la copertura attuariale, non il semplice incrocio nominale.";
   }
 
   function axis(title) { return { title: title, rangemode: state.axisMode === "zero" ? "tozero" : "normal" }; }
@@ -531,6 +572,7 @@
       { type: "scatter", mode: "lines", name: "Ricevuto fino a oggi", x: past.map(function (point) { return point.age; }), y: past.map(function (point) { return point.cumulative; }), line: { color: COLORS[0], width: 4 }, hovertemplate: "Eta %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" },
       { type: "scatter", mode: "lines", name: "Proiezione", x: future.map(function (point) { return point.age; }), y: future.map(function (point) { return point.cumulative; }), line: { color: COLORS[0], width: 3, dash: "dash" }, hovertemplate: "Eta %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" },
       { type: "scatter", mode: "lines", name: "Montante virtuale", x: visible.map(function (point) { return point.age; }), y: visible.map(function () { return result.montante_contributivo; }), line: { color: COLORS[2], width: 2, dash: "dot" }, hovertemplate: "%{y:,.0f} euro<extra></extra>" },
+      { type: "scatter", mode: "lines", name: "Capitale necessario", x: visible.map(function (point) { return point.age; }), y: visible.map(function () { return result.capitale_attuariale_necessario; }), line: { color: COLORS[5], width: 2, dash: "dashdot" }, hovertemplate: "%{y:,.0f} euro<extra></extra>" },
       { type: "scatter", mode: "markers", name: "Eta attesa media", x: [timeline.expectedAge], y: [timeline.cumulativeAtExpected], marker: { color: COLORS[3], size: 10, symbol: "diamond" }, hovertemplate: "Eta attesa %{x:.1f}<br>%{y:,.0f} euro<extra></extra>" }
     ];
     if (timeline.elapsedMonths > 0) cumulativeTraces.push({ type: "scatter", mode: "markers", name: "Oggi", x: [timeline.retirementAge + timeline.elapsedMonths / 12], y: [timeline.received], marker: { color: COLORS[1], size: 11, symbol: "circle" }, hovertemplate: "Oggi, eta %{x:.1f}<br>%{y:,.0f} euro ricevuti<extra></extra>" });
@@ -609,7 +651,7 @@
     link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
   }
   function exportCsv() {
-    var header = ["anno", "categoria", "retribuzione_stimata", "imponibile_previdenziale", "aliquota_finanziamento", "aliquota_computo", "contributi_finanziari", "accredito_montante", "tasso_rivalutazione", "montante_fine_anno"];
+    var header = ["anno", "categoria", "retribuzione_stimata", "imponibile_previdenziale", "mesi_lavorati", "aliquota_finanziamento", "aliquota_computo", "quota_lavoratore", "quota_datore", "contributi_lavoratore", "contributi_datore", "contributi_finanziari", "accredito_montante", "tasso_rivalutazione", "montante_fine_anno"];
     var lines = [header.join(",")].concat(state.career.map(function (row) { return header.map(function (key) { return row[key] === null || row[key] === undefined ? "" : row[key]; }).join(","); }));
     download("calcolatore-pensione-carriera.csv", lines.join("\n"), "text/csv;charset=utf-8");
   }
