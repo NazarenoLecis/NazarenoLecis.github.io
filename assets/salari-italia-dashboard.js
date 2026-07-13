@@ -1,7 +1,8 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-6";
+  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260713-8";
+  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260713-8";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -357,7 +358,12 @@
   var state = {
     payload: null,
     records: [],
+    grossRecords: [],
+    distributionRecords: [],
+    istatDistributionRecords: [],
+    eurostatDistributionRecords: [],
     lookups: {},
+    fullDataset: false,
     distribution: {
       year: null,
       geography_code: "IT",
@@ -464,6 +470,8 @@
       paid_days: "TOTAL"
     }
   };
+  var lazyObserver = null;
+  var renderedLazySections = {};
 
   function byId(id) {
     return document.getElementById(id);
@@ -562,6 +570,12 @@
   function setStatus(message, isError) {
     var node = byId("siStatus");
     if (!node) return;
+    if (!message) {
+      node.textContent = "";
+      node.hidden = true;
+      return;
+    }
+    node.hidden = false;
     node.textContent = message;
     node.style.color = isError ? "#e15759" : "";
   }
@@ -571,9 +585,20 @@
     return value || fallback;
   }
 
-  function dataUrl() {
+  function fullDataUrl() {
     var params = new URLSearchParams(window.location.search);
-    return params.get("data") || window.SALARI_ITALIA_DATA_URL || DEFAULT_DATA_URL;
+    return params.get("data") || window.SALARI_ITALIA_DATA_URL || DEFAULT_FULL_DATA_URL;
+  }
+
+  function initialDataUrl() {
+    var params = new URLSearchParams(window.location.search);
+    var explicitUrl = params.get("initialData") || window.SALARI_ITALIA_INITIAL_DATA_URL;
+    var fullUrl = fullDataUrl();
+    if (explicitUrl) return explicitUrl;
+    if (fullUrl.indexOf("dashboard-site.json") >= 0) {
+      return fullUrl.replace("dashboard-site.json", "dashboard-site-initial.json");
+    }
+    return DEFAULT_INITIAL_DATA_URL;
   }
 
   function showEmpty(id, message) {
@@ -848,27 +873,19 @@
   }
 
   function grossRows() {
-    return state.records.filter(function (row) {
-      return row.pay_concept === "gross_earnings";
-    });
+    return state.grossRecords;
   }
 
   function distributionRows() {
-    return state.records.filter(function (row) {
-      return row.pay_concept === "gross_earnings" && ["mean", "median", "percentile"].indexOf(row.statistic) >= 0;
-    });
+    return state.distributionRecords;
   }
 
   function istatDistributionRows() {
-    return distributionRows().filter(function (row) {
-      return row.source === "ISTAT" && row.pay_period === "hourly";
-    });
+    return state.istatDistributionRecords;
   }
 
   function eurostatDistributionRows() {
-    return distributionRows().filter(function (row) {
-      return row.source === "Eurostat";
-    });
+    return state.eurostatDistributionRecords;
   }
 
   function rowMatches(row, filters) {
@@ -899,7 +916,7 @@
     var small = document.createElement("small");
     label.textContent = title;
     value.textContent = record ? formatter(record.value) : MISSING;
-    year.textContent = record ? text(record.year) + " · " + text(record.dataset) : "Dato non disponibile";
+    year.textContent = record ? text(record.year) + " · " + text(record.source_request || record.source, "fonte") : "Dato non disponibile";
     small.textContent = note || (record ? text(lookupLabel("geography_code", record.geography_code), record.geography_code) : "");
     card.appendChild(label);
     card.appendChild(value);
@@ -948,6 +965,52 @@
     return 9;
   }
 
+  function plotDistributionRows(selected) {
+    plot("siDistributionChart", [{
+      type: "bar",
+      x: selected.map(statName),
+      y: selected.map(function (row) { return row.value; }),
+      marker: { color: COLORS[0] },
+      text: selected.map(function (row) { return euro(row.value, state.distribution.pay_period === "hourly" ? 2 : 0); }),
+      textposition: "outside",
+      hovertemplate: "%{x}<br>%{text}<extra></extra>"
+    }], {
+      yaxis: { title: payAxisTitle(state.distribution.pay_period), rangemode: "tozero" },
+      xaxis: { title: "" }
+    });
+  }
+
+  function renderDistributionPreview(rows) {
+    var filters = byId("siDistributionFilters");
+    if (filters) clear(filters);
+    var selected = filterRows(rows, {
+      year: state.distribution.year,
+      geography_code: state.distribution.geography_code,
+      sex: state.distribution.sex,
+      age_class: state.distribution.age_class,
+      education: state.distribution.education,
+      sector: state.distribution.sector,
+      contract_type: state.distribution.contract_type,
+      working_time: state.distribution.working_time,
+      contractual_occupation: state.distribution.contractual_occupation,
+      firm_size: state.distribution.firm_size,
+      country_birth: state.distribution.country_birth,
+      paid_days: state.distribution.paid_days,
+      pay_period: state.distribution.pay_period
+    }).sort(function (a, b) { return statOrder(a) - statOrder(b); });
+    byId("siDistributionTitle").textContent = "Punti ufficiali della " + payPeriodText(state.distribution.pay_period);
+    byId("siDistributionTag").textContent = text(state.distribution.year) + " · " + text(lookupLabel("geography_code", state.distribution.geography_code), state.distribution.geography_code);
+    var note = byId("siDistributionNote");
+    if (note) {
+      note.textContent = "Le fonti aggregate integrate pubblicano D1/P10, mediana/P50, D9/P90 e media. D2-D8 e distribuzione piena non vengono interpolati se non esiste una tavola ufficiale con classi o frequenze.";
+    }
+    if (!selected.length) {
+      showEmpty("siDistributionChart", "Nessun punto distributivo disponibile per questa selezione.");
+      return;
+    }
+    plotDistributionRows(selected);
+  }
+
   function renderDistribution() {
     var rows = istatDistributionRows().concat(eurostatDistributionRows().filter(function (row) {
       return row.source_request === "ses_monthly_distribution" || row.source_request === "ses_annual_distribution";
@@ -969,6 +1032,10 @@
     ];
     if (!state.distribution.year) {
       state.distribution.year = latestYear(rows, { geography_code: "IT", sex: "T", pay_period: "hourly" });
+    }
+    if (!state.fullDataset) {
+      renderDistributionPreview(rows);
+      return;
     }
     syncFilters("siDistributionFilters", specs, rows, state.distribution, renderDistribution);
     var selected = filterRows(rows, {
@@ -1002,18 +1069,7 @@
       showEmpty("siDistributionChart", "Nessun punto distributivo disponibile per questa selezione.");
       return;
     }
-    plot("siDistributionChart", [{
-      type: "bar",
-      x: selected.map(statName),
-      y: selected.map(function (row) { return row.value; }),
-      marker: { color: COLORS[0] },
-      text: selected.map(function (row) { return euro(row.value, state.distribution.pay_period === "hourly" ? 2 : 0); }),
-      textposition: "outside",
-      hovertemplate: "%{x}<br>%{text}<extra></extra>"
-    }], {
-      yaxis: { title: payAxisTitle(state.distribution.pay_period), rangemode: "tozero" },
-      xaxis: { title: "" }
-    });
+    plotDistributionRows(selected);
   }
 
   function periodOptions(rows) {
@@ -2008,46 +2064,131 @@
     }
   }
 
+  function renderLazySection(sectionId, force) {
+    if (!state.fullDataset) return;
+    if (!force && renderedLazySections[sectionId]) return;
+    renderedLazySections[sectionId] = true;
+    if (sectionId === "lavoratore") renderWorker();
+    if (sectionId === "lavoro") renderJob();
+    if (sectionId === "territorio") renderTerritory();
+    if (sectionId === "giornate") renderPaidDays();
+    if (sectionId === "europa") renderEurope();
+    if (sectionId === "ocse") renderOecd();
+    if (sectionId === "gender-gap") renderGenderGap();
+    if (sectionId === "serie") renderSeries();
+  }
+
+  function renderVisibleLazySections() {
+    Object.keys(renderedLazySections).forEach(function (sectionId) {
+      renderLazySection(sectionId, true);
+    });
+  }
+
+  function setupLazySections() {
+    var sectionIds = ["lavoratore", "lavoro", "territorio", "europa", "ocse", "gender-gap", "serie", "giornate"];
+    if (!("IntersectionObserver" in window)) {
+      sectionIds.forEach(function (sectionId) {
+        renderLazySection(sectionId);
+      });
+      return;
+    }
+    if (lazyObserver) lazyObserver.disconnect();
+    lazyObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        renderLazySection(entry.target.id);
+        lazyObserver.unobserve(entry.target);
+      });
+    }, { rootMargin: "650px 0px" });
+    sectionIds.forEach(function (sectionId) {
+      var section = byId(sectionId);
+      if (!section || renderedLazySections[sectionId]) return;
+      lazyObserver.observe(section);
+    });
+  }
+
   function renderAll() {
     renderKpis();
     renderDistribution();
-    renderWorker();
-    renderJob();
-    renderTerritory();
-    renderPaidDays();
-    renderEurope();
-    renderOecd();
-    renderGenderGap();
-    renderSeries();
     renderMethod();
+    if (state.fullDataset) {
+      renderVisibleLazySections();
+      setupLazySections();
+    }
   }
 
   function initializeDefaults() {
     var rows = istatDistributionRows();
-    state.distribution.year = latestYear(rows, { geography_code: "IT", sex: "T", pay_period: "hourly" });
-    state.worker.year = latestYear(grossRows(), { geography_code: "IT", sex: "T", pay_period: "hourly", statistic: "median" });
-    state.job.year = latestSectorBoxYear() || state.worker.year;
+    if (!state.distribution.year) {
+      state.distribution.year = latestYear(rows, { geography_code: "IT", sex: "T", pay_period: "hourly" });
+    }
+    if (!state.worker.year) {
+      state.worker.year = latestYear(grossRows(), { geography_code: "IT", sex: "T", pay_period: "hourly", statistic: "median" });
+    }
+    if (!state.job.year) {
+      state.job.year = latestSectorBoxYear() || state.worker.year;
+    }
   }
 
-  function load() {
-    fetch(dataUrl(), { cache: "no-store" })
+  function applyPayload(payload, fullDataset) {
+    state.payload = payload;
+    state.lookups = buildLookups(payload);
+    state.records = recordsFromPayload(payload);
+    state.grossRecords = state.records.filter(function (row) {
+      return row.pay_concept === "gross_earnings";
+    });
+    state.distributionRecords = state.grossRecords.filter(function (row) {
+      return ["mean", "median", "percentile"].indexOf(row.statistic) >= 0;
+    });
+    state.istatDistributionRecords = state.distributionRecords.filter(function (row) {
+      return row.source === "ISTAT" && row.pay_period === "hourly";
+    });
+    state.eurostatDistributionRecords = state.distributionRecords.filter(function (row) {
+      return row.source === "Eurostat";
+    });
+    state.fullDataset = fullDataset;
+    initializeDefaults();
+    setStatus("");
+    renderAll();
+  }
+
+  function loadFullPayload(preserveInitial) {
+    return fetch(fullDataUrl(), { cache: "no-store" })
       .then(function (response) {
         if (!response.ok) throw new Error("HTTP " + response.status);
         return response.json();
       })
       .then(function (payload) {
-        state.payload = payload;
-        state.lookups = buildLookups(payload);
-        state.records = recordsFromPayload(payload);
-        initializeDefaults();
-        setStatus("Dati caricati: " + fmt(state.records.length, 0) + " osservazioni. Aggiornamento " + text(payload.meta && payload.meta.updated_at, MISSING) + ".");
-        renderAll();
+        applyPayload(payload, true);
+        return payload;
       })
       .catch(function (error) {
         setStatus("Non riesco a caricare i dati salari: " + error.message, true);
+        if (preserveInitial) return;
         ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siGenderGapChart", "siSeriesChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
+      });
+  }
+
+  function load() {
+    var initialUrl = initialDataUrl();
+    var completeUrl = fullDataUrl();
+    fetch(initialUrl, { cache: "no-store" })
+      .then(function (response) {
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json();
+      })
+      .then(function (payload) {
+        applyPayload(payload, initialUrl === completeUrl);
+        if (initialUrl !== completeUrl) {
+          window.setTimeout(function () {
+            loadFullPayload(true);
+          }, 900);
+        }
+      })
+      .catch(function () {
+        loadFullPayload(false);
       });
   }
 
