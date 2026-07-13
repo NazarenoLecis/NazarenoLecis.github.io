@@ -773,6 +773,18 @@
     });
   }
 
+  function matchingOption(options, spec, current) {
+    var exact = options.find(function (option) {
+      return String(option.value) === String(current);
+    });
+    if (exact) return exact;
+    return options.find(function (option) {
+      if (!spec || !spec.field) return false;
+      if (isTotal(spec.field, option.value) && isTotal(spec.field, current)) return true;
+      return optionIdentity(spec.field, option.value) === optionIdentity(spec.field, current);
+    }) || null;
+  }
+
   function activeFilterValue(spec, value) {
     if (!spec || !spec.field) return false;
     if (value === null || value === undefined || value === "" || String(value) === "all") return false;
@@ -836,9 +848,13 @@
         return;
       }
       var current = targetState[spec.key];
-      var allowed = optionAllowed(options, spec, current);
+      var matched = matchingOption(options, spec, current);
+      var allowed = Boolean(matched) || optionAllowed(options, spec, current);
       if (!allowed) {
         targetState[spec.key] = preferredOption(options, spec);
+        current = targetState[spec.key];
+      } else if (matched && String(matched.value) !== String(current)) {
+        targetState[spec.key] = matched.value;
         current = targetState[spec.key];
       }
       if (spec.hideSingle && options.length <= 1) {
@@ -1950,6 +1966,41 @@
     };
   }
 
+  function coherentSeriesRows(rows) {
+    var candidates = toArray(rows);
+    var istatRows = candidates.filter(function (row) {
+      return row.source === "ISTAT";
+    });
+    var eurostatRows = candidates.filter(function (row) {
+      return row.source === "Eurostat";
+    });
+    if (state.series.geography_code === "IT" && state.series.pay_period === "hourly" && hasSeriesYears(istatRows, 2)) {
+      return istatRows;
+    }
+    if (state.series.geography_code !== "IT" && hasSeriesYears(eurostatRows, 2)) {
+      return eurostatRows;
+    }
+    if (hasSeriesYears(istatRows, 2)) return istatRows;
+    if (hasSeriesYears(eurostatRows, 2)) return eurostatRows;
+    return candidates;
+  }
+
+  function seriesSourceText(rows) {
+    var sources = {};
+    toArray(rows).forEach(function (row) {
+      if (row.source) sources[row.source] = true;
+    });
+    var names = Object.keys(sources);
+    if (names.length === 1 && names[0] === "ISTAT") return "ISTAT RACLI";
+    if (names.length === 1 && names[0] === "Eurostat") return "Eurostat SES";
+    if (names.length === 1) return names[0];
+    return names.length ? "fonti non omogenee" : "";
+  }
+
+  function seriesMeasureText() {
+    return state.series.statistic === "all" ? "tutte le misure" : STAT_LABELS[state.series.statistic] || state.series.statistic;
+  }
+
   function renderSeries() {
     var rows = istatDistributionRows().concat(eurostatDistributionRows());
     var specs = [
@@ -1994,9 +2045,10 @@
     }).filter(function (row) {
       return state.series.statistic === "all" || row.statistic === state.series.statistic;
     });
+    selected = coherentSeriesRows(selected);
     selected = dedupeSeriesRows(selected).sort(function (a, b) { return Number(a.year) - Number(b.year); });
     byId("siSeriesTitle").textContent = "Serie della " + payPeriodText(state.series.pay_period);
-    byId("siSeriesTag").textContent = state.series.statistic === "all" ? "tutte le misure" : STAT_LABELS[state.series.statistic] || state.series.statistic;
+    byId("siSeriesTag").textContent = [seriesMeasureText(), seriesSourceText(selected)].filter(Boolean).join(" · ");
     if (!selected.length) {
       showEmpty("siSeriesChart", "Serie non disponibile per questa selezione.");
       return;
