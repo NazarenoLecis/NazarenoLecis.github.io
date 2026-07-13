@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-10">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-12">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-10"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-12"></script>
 </head>
 <body>
   <header class="site-header">
@@ -139,11 +139,11 @@
     <section class="dashboard-section" id="europa">
       <div class="section-head">
         <span class="eyebrow">Confronto europeo</span>
-        <div><h2>Italia, UE27 e principali paesi europei</h2><p>Confronto armonizzato sulle retribuzioni lorde. Il gender pay gap ha una sezione dedicata.</p></div>
+        <div><h2>Paesi europei disponibili</h2><p>Confronto armonizzato sulle retribuzioni lorde. Il menu paesi mostra solo aree con dati ufficiali nella selezione corrente.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri confronto europeo</summary><div id="siEuropeFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span>SES</span></div>
+        <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span id="siEuropeTag">SES</span></div>
         <div id="siEuropeChart" class="si-chart si-chart-wide"></div>
         <p class="si-chart-credit">Fonte: Eurostat SES. Anni pubblicati secondo disponibilità della fonte.</p>
       </article>

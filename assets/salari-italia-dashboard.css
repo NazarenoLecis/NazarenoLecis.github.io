@@ -220,6 +220,11 @@ body.light .si-dashboard {
   font-weight: 750;
 }
 
+.si-dashboard .filter-grid select[multiple] {
+  min-height: 154px;
+  padding: 8px 12px;
+}
+
 .si-dashboard .filter-grid select:focus {
   outline: 2px solid color-mix(in srgb, var(--orange) 60%, transparent);
   outline-offset: 2px;

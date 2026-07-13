@@ -30,11 +30,6 @@
     "seniority",
     "paid_days"
   ];
-  var DISPLAY_OPTIONS = [
-    { value: "25", label: "Primi 25" },
-    { value: "50", label: "Primi 50" },
-    { value: "all", label: "Tutti" }
-  ];
   var DIMENSIONS = {
     sex: { field: "sex", labelField: "sex_label", label: "Sesso" },
     age_class: { field: "age_class", labelField: "age_label", label: "Età" },
@@ -209,11 +204,37 @@
   var CODE_LABEL_IT = {
     geography_code: {
       EU27_2020: "Unione europea a 27",
+      AT: "Austria",
+      BE: "Belgio",
+      BG: "Bulgaria",
+      CH: "Svizzera",
+      CY: "Cipro",
+      CZ: "Cechia",
       DE: "Germania",
+      DK: "Danimarca",
+      EE: "Estonia",
+      EL: "Grecia",
       ES: "Spagna",
+      FI: "Finlandia",
       FR: "Francia",
+      HR: "Croazia",
+      HU: "Ungheria",
+      IE: "Irlanda",
+      IS: "Islanda",
       IT: "Italia",
-      NL: "Paesi Bassi"
+      LT: "Lituania",
+      LU: "Lussemburgo",
+      LV: "Lettonia",
+      MT: "Malta",
+      NL: "Paesi Bassi",
+      NO: "Norvegia",
+      PL: "Polonia",
+      PT: "Portogallo",
+      RO: "Romania",
+      SE: "Svezia",
+      SI: "Slovenia",
+      SK: "Slovacchia",
+      UK: "Regno Unito"
     },
     education: {
       TOTAL: "Totale",
@@ -396,7 +417,6 @@
       paid_days: "all",
       pay_period: "hourly",
       statistic: "median",
-      max_items: "50"
     },
     job: {
       dimension: "sector",
@@ -415,7 +435,6 @@
       paid_days: "all",
       pay_period: "hourly",
       statistic: "median",
-      max_items: "50"
     },
     lowWage: {
       dimension: "geography_code",
@@ -437,7 +456,6 @@
       firm_size: "all",
       paid_days: "all",
       statistic: "median",
-      max_items: "50"
     },
     paidDays: {
       year: null,
@@ -453,7 +471,7 @@
       firm_size: "all",
       statistic: "median"
     },
-    europe: { pay_period: "hourly", statistic: "median", sex: "T" },
+    europe: { pay_period: "hourly", statistic: "median", sex: "T", countries: [], start_year: null, end_year: null },
     series: {
       pay_period: "hourly",
       statistic: "all",
@@ -467,7 +485,9 @@
       contractual_occupation: "99",
       firm_size: "TOTAL",
       country_birth: "WORLD",
-      paid_days: "TOTAL"
+      paid_days: "TOTAL",
+      start_year: null,
+      end_year: null
     }
   };
   var lazyObserver = null;
@@ -710,6 +730,47 @@
     });
   }
 
+  function yearsAscending(rows) {
+    return yearsFrom(rows).sort(function (a, b) {
+      return Number(a.value) - Number(b.value);
+    });
+  }
+
+  function syncYearRange(containerId, rows, targetState, onChange) {
+    var container = byId(containerId);
+    var options = yearsAscending(rows);
+    if (!container || !options.length) return;
+    var firstYear = options[0].value;
+    var lastYear = options[options.length - 1].value;
+    var values = options.map(function (option) { return String(option.value); });
+    if (!targetState.start_year || values.indexOf(String(targetState.start_year)) < 0) targetState.start_year = firstYear;
+    if (!targetState.end_year || values.indexOf(String(targetState.end_year)) < 0) targetState.end_year = lastYear;
+    if (Number(targetState.start_year) > Number(targetState.end_year)) {
+      targetState.start_year = firstYear;
+      targetState.end_year = lastYear;
+    }
+    ensureSelect(container, { key: "start_year", label: "Da anno" }, options, targetState.start_year, function (key, value) {
+      targetState[key] = value;
+      if (Number(targetState.start_year) > Number(targetState.end_year)) targetState.end_year = value;
+      onChange(key);
+    });
+    ensureSelect(container, { key: "end_year", label: "Ad anno" }, options, targetState.end_year, function (key, value) {
+      targetState[key] = value;
+      if (Number(targetState.start_year) > Number(targetState.end_year)) targetState.start_year = value;
+      onChange(key);
+    });
+  }
+
+  function applyYearRange(rows, targetState) {
+    return toArray(rows).filter(function (row) {
+      var year = Number(row.year);
+      if (!Number.isFinite(year)) return false;
+      if (targetState.start_year && year < Number(targetState.start_year)) return false;
+      if (targetState.end_year && year > Number(targetState.end_year)) return false;
+      return true;
+    });
+  }
+
   function filterRows(rows, filters, skipKey) {
     return toArray(rows).filter(function (row) {
       return Object.keys(filters).every(function (key) {
@@ -747,6 +808,45 @@
       node.appendChild(item);
     });
     node.value = String(current);
+    return node;
+  }
+
+  function ensureMultiSelect(container, spec, options, selectedValues, onChange) {
+    var wrapper = container.querySelector('[data-filter="' + spec.key + '"]');
+    if (!options.length) {
+      if (wrapper) wrapper.remove();
+      return null;
+    }
+    if (!wrapper) {
+      wrapper = document.createElement("label");
+      wrapper.setAttribute("data-filter", spec.key);
+      var label = document.createElement("span");
+      var select = document.createElement("select");
+      label.textContent = spec.label;
+      select.multiple = true;
+      select.addEventListener("change", function () {
+        onChange(Array.prototype.slice.call(select.selectedOptions).map(function (option) {
+          return option.value;
+        }));
+      });
+      wrapper.appendChild(label);
+      wrapper.appendChild(select);
+      container.appendChild(wrapper);
+    }
+    var node = wrapper.querySelector("select");
+    var selected = {};
+    toArray(selectedValues).forEach(function (value) {
+      selected[String(value)] = true;
+    });
+    clear(node);
+    node.size = Math.min(Math.max(options.length, 4), 9);
+    options.forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.value;
+      item.textContent = option.label;
+      item.selected = Boolean(selected[String(option.value)]);
+      node.appendChild(item);
+    });
     return node;
   }
 
@@ -877,20 +977,8 @@
     return [{ value: "all", label: label || "Tutto" }].concat(options);
   }
 
-  function displayOptions() {
-    return DISPLAY_OPTIONS;
-  }
-
-  function displayRows(rows, maxItems) {
-    if (String(maxItems) === "all") return rows;
-    var limit = Number(maxItems);
-    if (!Number.isFinite(limit) || limit <= 0) return rows;
-    return rows.slice(0, limit);
-  }
-
-  function displayedCountText(shown, total, noun) {
-    if (shown === total) return "tutti: " + total + " " + noun;
-    return "mostrati " + shown + " di " + total + " " + noun;
+  function totalCountText(total, noun) {
+    return total + " " + noun;
   }
 
   function grossRows() {
@@ -1265,6 +1353,11 @@
     });
   }
 
+  function barChartHeight(count) {
+    var rows = Math.max(Number(count) || 0, 1);
+    return Math.max(460, rows * 24 + 150);
+  }
+
   function renderBarByDimension(chartId, titleId, tagId, targetState, dimensionKeys, containerId, onFilterChange) {
     var rows = grossRows();
     var includedFilters = dimensionKeys.concat(["sector", "working_time", "firm_size", "contractual_occupation", "contract_type", "country_birth", "education", "age_class", "paid_days"]);
@@ -1274,8 +1367,7 @@
       { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
       { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, hideSingle: true, stableOptions: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true },
-      { key: "max_items", label: "Elementi mostrati", options: displayOptions, preferAll: false, preferTotal: false }
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true }
     ].concat(analysisFilterSpecs(targetState.dimension, includedFilters));
     if (!targetState.year) {
       targetState.year = latestYear(rows, { geography_code: "IT", pay_period: targetState.pay_period, statistic: targetState.statistic });
@@ -1285,9 +1377,9 @@
     var selected = dedupeAnalysisRows(analysisRows(targetState, targetState.dimension), targetState.dimension);
     selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
     var totalSelected = selected.length;
-    selected = displayRows(selected, targetState.max_items).reverse();
+    selected = selected.reverse();
     byId(titleId).textContent = dimension ? "Retribuzione per " + dimension.label.toLowerCase() : "Retribuzione";
-    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic, displayedCountText(selected.length, totalSelected, "elementi")].join(" · ");
+    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic, totalCountText(totalSelected, "elementi")].join(" · ");
     if (!selected.length || !dimension) {
       showEmpty(chartId, "Nessun dato disponibile per questa combinazione.");
       return;
@@ -1300,7 +1392,7 @@
       marker: { color: COLORS[1] },
       hovertemplate: "%{y}<br>%{x:.2f} €<extra></extra>"
     }], {
-      height: 540,
+      height: barChartHeight(selected.length),
       margin: { t: 22, r: 18, b: 52, l: 180 },
       xaxis: { title: payAxisTitle(targetState.pay_period), rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
@@ -1665,8 +1757,7 @@
       { key: "province_code", label: "Provincia", options: provinceOptions, preferAll: false, preferTotal: false, stableOptions: true },
       { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true, stableOptions: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true },
-      { key: "max_items", label: "Territori mostrati", options: displayOptions, preferAll: false, preferTotal: false }
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true }
     ].concat(analysisFilterSpecs("", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"]));
     if (!state.territory.year) {
       state.territory.year = latestYear(rows, { sex: "T", statistic: "median" });
@@ -1694,10 +1785,10 @@
     selected = dedupeTerritoryRows(selected, activeKeys);
     selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
     var totalSelected = selected.length;
-    selected = displayRows(selected, state.territory.max_items).reverse();
+    selected = selected.reverse();
     var regionName = state.territory.region_code && state.territory.region_code !== "all" ? lookupLabel("geography_code", state.territory.region_code) : "";
     byId("siTerritoryTitle").textContent = selectedLevel === "province" && regionName ? "Retribuzione per province: " + regionName : "Retribuzione per " + territoryLevelLabel(selectedLevel).toLowerCase();
-    byId("siTerritoryTag").textContent = [text(state.territory.year), STAT_LABELS[state.territory.statistic] || state.territory.statistic, displayedCountText(selected.length, totalSelected, "territori")].join(" · ");
+    byId("siTerritoryTag").textContent = [text(state.territory.year), STAT_LABELS[state.territory.statistic] || state.territory.statistic, totalCountText(totalSelected, "territori")].join(" · ");
     if (!selected.length) {
       showEmpty("siTerritoryChart", "Confronto territoriale non disponibile per questa combinazione.");
       return;
@@ -1710,7 +1801,7 @@
       marker: { color: COLORS[2] },
       hovertemplate: "%{y}<br>%{x:.2f} €<extra></extra>"
     }], {
-      height: 560,
+      height: barChartHeight(selected.length),
       margin: { t: 22, r: 18, b: 52, l: 190 },
       xaxis: { title: "Retribuzione oraria lorda", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
@@ -1807,6 +1898,66 @@
     });
   }
 
+  function countryOptionOrder(option) {
+    var preferred = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
+    var index = preferred.indexOf(String(option.value));
+    return index >= 0 ? index : 100;
+  }
+
+  function europeCountryOptions(rows) {
+    var groups = {};
+    toArray(rows).forEach(function (row) {
+      if (!row.geography_code) return;
+      groups[String(row.geography_code)] = groups[String(row.geography_code)] || [];
+      groups[String(row.geography_code)].push(row);
+    });
+    var eligibleRows = toArray(rows).filter(function (row) {
+      return row.geography_code && hasSeriesYears(groups[String(row.geography_code)], 2);
+    });
+    return uniqueOptions(eligibleRows, "geography_code", "geography_name", true).sort(function (a, b) {
+      var orderA = countryOptionOrder(a);
+      var orderB = countryOptionOrder(b);
+      if (orderA !== orderB) return orderA - orderB;
+      return a.label.localeCompare(b.label, "it");
+    });
+  }
+
+  function defaultEuropeCountries(options) {
+    var available = {};
+    options.forEach(function (option) {
+      available[String(option.value)] = true;
+    });
+    var preferred = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
+    var selected = preferred.filter(function (country) {
+      return available[country];
+    });
+    if (selected.length) return selected;
+    return options.slice(0, 6).map(function (option) {
+      return option.value;
+    });
+  }
+
+  function syncEuropeCountries(rows) {
+    var container = byId("siEuropeFilters");
+    if (!container) return [];
+    var options = europeCountryOptions(rows);
+    var available = {};
+    options.forEach(function (option) {
+      available[String(option.value)] = true;
+    });
+    state.europe.countries = toArray(state.europe.countries).filter(function (country) {
+      return available[String(country)];
+    });
+    if (!state.europe.countries.length) {
+      state.europe.countries = defaultEuropeCountries(options);
+    }
+    ensureMultiSelect(container, { key: "countries", label: "Paesi nel grafico" }, options, state.europe.countries, function (values) {
+      state.europe.countries = values;
+      renderEurope();
+    });
+    return state.europe.countries;
+  }
+
   function renderEurope() {
     var rows = eurostatDistributionRows();
     var specs = [
@@ -1824,7 +1975,9 @@
         && row.statistic === state.europe.statistic
         && row.sex === state.europe.sex;
     });
-    var countries = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
+    var countries = syncEuropeCountries(selected);
+    syncYearRange("siEuropeFilters", selected, state.europe, renderEurope);
+    selected = applyYearRange(selected, state.europe);
     var traces = countries.map(function (country, index) {
       var byYear = {};
       selected.filter(function (row) { return row.geography_code === country; }).forEach(function (row) {
@@ -1843,8 +1996,10 @@
         hovertemplate: "%{fullData.name}<br>%{x}: %{y:.2f} €<extra></extra>"
       };
     }).filter(function (trace) { return trace.x.length; });
+    var tag = byId("siEuropeTag");
+    if (tag) tag.textContent = countries.length + " paesi · " + text(state.europe.start_year) + "-" + text(state.europe.end_year);
     plot("siEuropeChart", traces, {
-      yaxis: { title: "Euro", rangemode: "tozero" },
+      yaxis: { title: "Euro" },
       xaxis: { title: "" }
     });
   }
@@ -2051,13 +2206,15 @@
       return state.series.statistic === "all" || row.statistic === state.series.statistic;
     });
     selected = coherentSeriesRows(selected);
+    syncYearRange("siSeriesFilters", selected, state.series, renderSeries);
+    selected = applyYearRange(selected, state.series);
     selected = dedupeSeriesRows(selected).sort(function (a, b) { return Number(a.year) - Number(b.year); });
-    byId("siSeriesTitle").textContent = "Serie della " + payPeriodText(state.series.pay_period);
-    byId("siSeriesTag").textContent = [seriesMeasureText(), seriesSourceText(selected)].filter(Boolean).join(" · ");
     if (!selected.length) {
       showEmpty("siSeriesChart", "Serie non disponibile per questa selezione.");
       return;
     }
+    byId("siSeriesTitle").textContent = "Serie della " + payPeriodText(state.series.pay_period);
+    byId("siSeriesTag").textContent = [seriesMeasureText(), seriesSourceText(selected), text(state.series.start_year) + "-" + text(state.series.end_year)].filter(Boolean).join(" · ");
     var seriesGroups = {};
     selected.forEach(function (row) {
       var key = statName(row);
@@ -2077,7 +2234,7 @@
       };
     });
     plot("siSeriesChart", traces, {
-      yaxis: { title: "Euro", rangemode: "tozero" },
+      yaxis: { title: "Euro" },
       xaxis: { title: "" }
     });
   }
