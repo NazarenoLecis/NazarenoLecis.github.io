@@ -252,6 +252,10 @@
     firm_size: {
       GE1000: "1.000 addetti e oltre",
       GE10: "10 addetti e oltre",
+      W0_9: "0-9 addetti",
+      W10_49: "10-49 addetti",
+      W50_249: "50-249 addetti",
+      W_GE250: "250 addetti e oltre",
       "1-9": "1-9 addetti",
       "10-49": "10-49 addetti",
       "50-249": "50-249 addetti",
@@ -373,6 +377,21 @@
       "46": "Commercio all'ingrosso esclusi autoveicoli e motocicli"
     }
   };
+  var OPTION_ORDER = {
+    firm_size: {
+      W0_9: 0,
+      "1-9": 1,
+      W10_49: 2,
+      "10-49": 3,
+      W50_249: 4,
+      "50-249": 5,
+      "250-499": 6,
+      "500-999": 7,
+      W_GE250: 8,
+      GE1000: 9,
+      GE10: 10
+    }
+  };
 
   var state = {
     payload: null,
@@ -437,6 +456,15 @@
     lowWage: {
       dimension: "geography_code",
       year: null,
+      geography_code: "IT"
+    },
+    sectorBox: {
+      year: null,
+      statistic: "median",
+      dimension: "total",
+      value: "all"
+    },
+    labourCost: {
       geography_code: "IT"
     },
     selectedSectors: [],
@@ -716,6 +744,12 @@
       map[optionIdentity(field, value)] = { value: String(value), label: optionLabel(row, field, labelField) };
     });
     return Object.keys(map).map(function (key) { return map[key]; }).sort(function (a, b) {
+      var order = OPTION_ORDER[field];
+      if (order) {
+        var ar = order[String(a.value)];
+        var br = order[String(b.value)];
+        if (ar !== undefined && br !== undefined && ar !== br) return ar - br;
+      }
       var an = toNumber(a.value);
       var bn = toNumber(b.value);
       if (an !== null && bn !== null) return an - bn;
@@ -1424,12 +1458,8 @@
     renderLabourCost();
   }
 
-  function activeJobBoxFilters() {
-    return ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"].filter(function (key) {
-      var value = state.job[key];
-      return value !== null && value !== undefined && value !== "" && String(value) !== "all";
-    });
-  }
+  var SECTOR_BOX_DETAIL_KEYS = ["sex", "age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"];
+  var SECTOR_BOX_TOTAL_REQUEST = "istat_racli_sector_paid_days";
 
   function sectorBoxBaseRows() {
     return grossRows().filter(function (row) {
@@ -1441,8 +1471,23 @@
     });
   }
 
+  function sectorBoxRequestForKey(key) {
+    return {
+      sex: "istat_racli_sector_gender",
+      education: "istat_racli_sector_education",
+      country_birth: "istat_racli_sector_country_birth",
+      working_time: "istat_racli_sector_working_time",
+      contract_type: "istat_racli_sector_contract",
+      firm_size: "istat_racli_sector_firm_size",
+      contractual_occupation: "istat_racli_sector_qualification",
+      age_class: "istat_racli_sector_age",
+      paid_days: "istat_racli_sector_paid_days"
+    }[key] || "";
+  }
+
   function sectorBoxPriority(row, activeKeys) {
     var request = String(row.source_request || "");
+    if (!activeKeys.length && request === SECTOR_BOX_TOTAL_REQUEST) return 0;
     if (!activeKeys.length && request === "istat_racli_sector_gender") return 0;
     if (activeKeys.indexOf("education") >= 0 && request === "istat_racli_sector_education") return 0;
     if (activeKeys.indexOf("country_birth") >= 0 && request === "istat_racli_sector_country_birth") return 0;
@@ -1467,22 +1512,38 @@
     return Object.keys(selected).map(function (key) { return selected[key]; });
   }
 
+  function sectorBoxCurrentDimension() {
+    var key = state.sectorBox.dimension || "total";
+    return key === "total" ? null : DIMENSIONS[key];
+  }
+
+  function sectorBoxCurrentRequest() {
+    return state.sectorBox.dimension === "total"
+      ? SECTOR_BOX_TOTAL_REQUEST
+      : sectorBoxRequestForKey(state.sectorBox.dimension);
+  }
+
+  function sectorBoxMatchesCurrentValue(row) {
+    var dimension = sectorBoxCurrentDimension();
+    if (!dimension) {
+      return isTotal("sex", row.sex) && hasOnlyTotalAnalysisDimensionsExcept(row, ["sector"]);
+    }
+    if (String(state.sectorBox.value) === "all") {
+      return isTotal(dimension.field, row[dimension.field]);
+    }
+    return matchesFilterValue(row, dimension.field, state.sectorBox.value);
+  }
+
   function sectorBoxRows() {
-    if (String(state.job.geography_code) !== "IT") return [];
-    var activeKeys = activeJobBoxFilters();
+    var request = sectorBoxCurrentRequest();
+    if (!request) return [];
     var rows = sectorBoxBaseRows().filter(function (row) {
-      if (String(row.year) !== String(state.job.year)) return false;
-      if (String(row.statistic) !== String(state.job.statistic)) return false;
-      if (!matchesFilterValue(row, "sex", state.job.sex)) return false;
-      for (var index = 0; index < activeKeys.length; index += 1) {
-        var key = activeKeys[index];
-        var item = DIMENSIONS[key];
-        if (!item || !matchesFilterValue(row, item.field, state.job[key])) return false;
-      }
-      if (!activeKeys.length && !hasOnlyTotalAnalysisDimensionsExcept(row, ["sector"])) return false;
-      return true;
+      if (String(row.source_request || "") !== request) return false;
+      if (String(row.year) !== String(state.sectorBox.year)) return false;
+      if (String(row.statistic) !== String(state.sectorBox.statistic)) return false;
+      return sectorBoxMatchesCurrentValue(row);
     });
-    return dedupeSectorRows(rows, activeKeys).filter(function (row) {
+    return dedupeSectorRows(rows, state.sectorBox.dimension === "total" ? [] : [state.sectorBox.dimension]).filter(function (row) {
       return toNumber(row.value) !== null;
     }).sort(function (a, b) {
       return (toNumber(a.value) || 0) - (toNumber(b.value) || 0);
@@ -1491,6 +1552,104 @@
 
   function latestSectorBoxYear() {
     return latestYear(sectorBoxBaseRows(), { sex: "T", statistic: "median" });
+  }
+
+  function sectorBoxDimensionOptions() {
+    var options = [];
+    var hasTotalRows = sectorBoxBaseRows().some(function (row) {
+      return String(row.source_request || "") === SECTOR_BOX_TOTAL_REQUEST
+        && String(row.year) === String(state.sectorBox.year)
+        && String(row.statistic) === String(state.sectorBox.statistic)
+        && isTotal("paid_days", row.paid_days)
+        && hasOnlyTotalAnalysisDimensionsExcept(row, ["sector"]);
+    });
+    if (hasTotalRows) options.push({ value: "total", label: "Totale" });
+    SECTOR_BOX_DETAIL_KEYS.forEach(function (key) {
+      var request = sectorBoxRequestForKey(key);
+      if (!request || !DIMENSIONS[key]) return;
+      var hasRows = sectorBoxBaseRows().some(function (row) {
+        return String(row.source_request || "") === request
+          && String(row.year) === String(state.sectorBox.year)
+          && String(row.statistic) === String(state.sectorBox.statistic);
+      });
+      if (hasRows) options.push({ value: key, label: DIMENSIONS[key].label });
+    });
+    return options;
+  }
+
+  function sectorBoxValueRows() {
+    var request = sectorBoxCurrentRequest();
+    if (!request) return [];
+    return sectorBoxBaseRows().filter(function (row) {
+      return String(row.source_request || "") === request
+        && String(row.year) === String(state.sectorBox.year)
+        && String(row.statistic) === String(state.sectorBox.statistic);
+    });
+  }
+
+  function sectorBoxValueOptions() {
+    var dimension = sectorBoxCurrentDimension();
+    if (!dimension) return [{ value: "all", label: "Totale" }];
+    var rows = sectorBoxValueRows();
+    var options = uniqueOptions(rows, dimension.field, dimension.labelField, false);
+    var hasTotal = rows.some(function (row) {
+      return isTotal(dimension.field, row[dimension.field]);
+    });
+    return hasTotal ? [{ value: "all", label: "Tutto" }].concat(options) : options;
+  }
+
+  function syncSectorBoxFilters() {
+    var container = byId("siSectorBoxFilters");
+    if (!container) return;
+    var baseRows = sectorBoxBaseRows();
+    if (!state.sectorBox.year) state.sectorBox.year = latestSectorBoxYear();
+    var yearOptions = yearsFrom(baseRows);
+    if (!optionAllowed(yearOptions, { field: "year" }, state.sectorBox.year)) {
+      state.sectorBox.year = yearOptions[0] ? yearOptions[0].value : state.sectorBox.year;
+    }
+    var statisticOptionsList = statisticOptions(baseRows);
+    if (!optionAllowed(statisticOptionsList, { field: "statistic" }, state.sectorBox.statistic)) {
+      state.sectorBox.statistic = statisticOptionsList.some(function (option) { return option.value === "median"; })
+        ? "median"
+        : (statisticOptionsList[0] ? statisticOptionsList[0].value : state.sectorBox.statistic);
+    }
+    var dimensionOptionsList = sectorBoxDimensionOptions();
+    if (!optionAllowed(dimensionOptionsList, null, state.sectorBox.dimension)) {
+      state.sectorBox.dimension = dimensionOptionsList[0] ? dimensionOptionsList[0].value : "total";
+      state.sectorBox.value = "all";
+    }
+    var valueOptionsList = sectorBoxValueOptions();
+    if (!optionAllowed(valueOptionsList, sectorBoxCurrentDimension(), state.sectorBox.value)) {
+      state.sectorBox.value = preferredOption(valueOptionsList, sectorBoxCurrentDimension()) || "all";
+    }
+    ensureSelect(container, { key: "year", label: "Anno" }, yearOptions, state.sectorBox.year, function (key, value) {
+      state.sectorBox[key] = value;
+      state.sectorBox.value = "all";
+      state.sectorSelectionTouched = false;
+      renderSectorBox();
+    });
+    ensureSelect(container, { key: "statistic", label: "Statistica" }, statisticOptionsList, state.sectorBox.statistic, function (key, value) {
+      state.sectorBox[key] = value;
+      state.sectorBox.value = "all";
+      state.sectorSelectionTouched = false;
+      renderSectorBox();
+    });
+    ensureSelect(container, { key: "dimension", label: "Dimensione filtro" }, dimensionOptionsList, state.sectorBox.dimension, function (key, value) {
+      state.sectorBox[key] = value;
+      state.sectorBox.value = "all";
+      state.sectorSelectionTouched = false;
+      renderSectorBox();
+    });
+    if (state.sectorBox.dimension === "total") {
+      var valueNode = container.querySelector('[data-filter="value"]');
+      if (valueNode) valueNode.remove();
+    } else {
+      ensureSelect(container, { key: "value", label: "Valore" }, valueOptionsList, state.sectorBox.value, function (key, value) {
+        state.sectorBox[key] = value;
+        state.sectorSelectionTouched = false;
+        renderSectorBox();
+      });
+    }
   }
 
   function sectorBoxReferenceRequest(activeKeys) {
@@ -1519,21 +1678,23 @@
   }
 
   function selectedOrTotalDimensionValue(key, activeKeys) {
-    return activeKeys.indexOf(key) >= 0 ? state.job[key] : totalDimensionValue(key);
+    if (activeKeys.indexOf(key) < 0) return totalDimensionValue(key);
+    return String(state.sectorBox.value) === "all" ? totalDimensionValue(key) : state.sectorBox.value;
   }
 
   function sectorBoxReferenceFilters() {
-    if (String(state.job.geography_code) !== "IT") return null;
-    var activeKeys = activeJobBoxFilters();
-    var request = !activeKeys.length && !isTotal("sex", state.job.sex)
+    var activeKeys = state.sectorBox.dimension === "total" || state.sectorBox.dimension === "sex"
+      ? []
+      : [state.sectorBox.dimension];
+    var request = state.sectorBox.dimension === "sex" && String(state.sectorBox.value) !== "all"
       ? "istat_racli_province_gender"
       : sectorBoxReferenceRequest(activeKeys);
     return {
       source: "ISTAT",
       source_request: request,
-      year: state.job.year,
+      year: state.sectorBox.year,
       geography_code: "IT",
-      sex: state.job.sex,
+      sex: state.sectorBox.dimension === "sex" && String(state.sectorBox.value) !== "all" ? state.sectorBox.value : "T",
       age_class: selectedOrTotalDimensionValue("age_class", activeKeys),
       education: selectedOrTotalDimensionValue("education", activeKeys),
       sector: "0010",
@@ -1558,7 +1719,7 @@
 
   function sectorBoxReferenceRow(referenceRows) {
     var rows = toArray(referenceRows);
-    var statistic = state.job.statistic === "mean" ? "mean" : "median";
+    var statistic = state.sectorBox.statistic === "mean" ? "mean" : "median";
     return rows.filter(function (row) {
       return row.statistic === statistic;
     })[0] || null;
@@ -1619,7 +1780,7 @@
     if (!rows.length) return;
     var minRow = rows[0];
     var maxRow = rows[rows.length - 1];
-    var referenceLabel = state.job.statistic === "mean" ? "media nazionale " : "mediana nazionale ";
+    var referenceLabel = state.sectorBox.statistic === "mean" ? "media nazionale " : "mediana nazionale ";
     var items = [
       "Settori nel boxplot: " + rows.length + "/" + totalRows,
       "min " + optionLabel(minRow, "sector", "sector_label") + " " + euro(minRow.value, 2),
@@ -1637,6 +1798,7 @@
   }
 
   function renderSectorBox() {
+    syncSectorBoxFilters();
     var allRows = sectorBoxRows();
     var rows = syncSectorBoxSelection(allRows);
     var referenceRows = sectorBoxReferenceRows();
@@ -1647,7 +1809,7 @@
       return;
     }
     var referenceValue = referenceRow ? toNumber(referenceRow.value) : null;
-    var referenceLabel = state.job.statistic === "mean" ? "Media nazionale " : "Mediana nazionale ";
+    var referenceLabel = state.sectorBox.statistic === "mean" ? "Media nazionale " : "Mediana nazionale ";
     var shapes = referenceValue === null ? [] : [{
         type: "line",
         xref: "paper",
@@ -1755,8 +1917,14 @@
   }
 
   function renderLabourCost() {
-    var rows = state.records.filter(function (row) {
-      return row.pay_concept === "labour_cost" && row.geography_code === state.job.geography_code;
+    var baseRows = state.records.filter(function (row) {
+      return row.pay_concept === "labour_cost";
+    });
+    syncFilters("siLabourCostFilters", [
+      { key: "geography_code", field: "geography_code", label: "Paese", labelField: "geography_name", includeTotals: true, stableOptions: true }
+    ], baseRows, state.labourCost, renderLabourCost);
+    var rows = baseRows.filter(function (row) {
+      return matchesFilterValue(row, "geography_code", state.labourCost.geography_code);
     });
     var sectors = uniqueOptions(rows, "sector", "sector_label", false);
     var traces = sectors.map(function (sector, index) {

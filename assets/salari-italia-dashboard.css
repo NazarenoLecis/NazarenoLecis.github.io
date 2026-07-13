@@ -185,6 +185,13 @@ body.light .si-dashboard {
   margin: 0 0 16px;
 }
 
+.si-dashboard .si-card .chart-filter-panel {
+  padding: 0;
+  margin: 14px 0 18px;
+  border: 0;
+  background: transparent;
+}
+
 .si-dashboard .chart-filter-panel > summary {
   display: none;
 }

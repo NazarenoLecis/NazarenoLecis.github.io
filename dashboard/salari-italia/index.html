@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-16">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-17">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-16"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-17"></script>
 </head>
 <body>
   <header class="site-header">
@@ -101,10 +101,10 @@
         <span class="eyebrow">Lavoro e impresa</span>
         <div><h2>Settore, orario, professione, dimensione e costo del lavoro</h2><p>Il costo del lavoro è separato dalla retribuzione percepita dal lavoratore.</p></div>
       </div>
-      <details class="chart-filter-panel" open><summary>Filtri lavoro</summary><div id="siJobFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block si-section-gap">
         <div class="si-card-title"><h3>Boxplot dei settori</h3><span>ISTAT RACLI</span></div>
-        <p class="si-card-note">Il boxplot riassume i valori settoriali Ateco disponibili per la selezione corrente. La linea tratteggiata mostra la mediana nazionale ufficiale della stessa selezione, uguale a quella degli indicatori e della distribuzione.</p>
+        <p class="si-card-note">Il boxplot riassume i valori settoriali Ateco disponibili per la selezione corrente. I filtri sono propri del grafico e usano solo combinazioni pubblicate da ISTAT; la linea tratteggiata mostra la mediana nazionale ufficiale della stessa selezione.</p>
+        <details class="chart-filter-panel si-boxplot-filter-panel" open><summary>Filtri boxplot</summary><div id="siSectorBoxFilters" class="filter-grid"></div></details>
         <div id="siSectorControls" class="filter-grid si-sector-control" aria-label="Settori nel boxplot"></div>
         <div id="siSectorPicker" class="si-sector-picker" aria-label="Sintesi boxplot settoriale"></div>
         <div id="siSectorBoxChart" class="si-chart si-chart-wide"></div>
@@ -113,12 +113,14 @@
       <div class="si-grid-2">
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3 id="siJobTitle">Retribuzione per lavoro e impresa</h3><span id="siJobTag">lordo</span></div>
+          <details class="chart-filter-panel si-inner-filter-panel" open><summary>Filtri retribuzione per lavoro</summary><div id="siJobFilters" class="filter-grid"></div></details>
           <div id="siJobChart" class="si-chart si-chart-wide"></div>
           <p class="si-chart-credit">Fonte: ISTAT RACLI per settore, orario, qualifica e dimensione d'impresa; Eurostat SES per confronti europei.</p>
         </article>
         <article class="si-card si-chart-block">
           <div class="si-card-title"><h3>Costo orario del lavoro</h3><span>separato dal salario</span></div>
           <p class="si-card-note">Livelli del costo del lavoro per ora lavorata, non retribuzione lorda o netta ricevuta.</p>
+          <details class="chart-filter-panel si-inner-filter-panel" open><summary>Filtri costo del lavoro</summary><div id="siLabourCostFilters" class="filter-grid"></div></details>
           <div id="siLabourCostChart" class="si-chart si-chart-wide"></div>
           <p class="si-chart-credit">Fonte: Eurostat <code>lc_lci_lev</code>.</p>
         </article>
