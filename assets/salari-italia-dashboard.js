@@ -31,9 +31,9 @@
     "paid_days"
   ];
   var DISPLAY_OPTIONS = [
-    { value: "25", label: "25 categorie" },
-    { value: "50", label: "50 categorie" },
-    { value: "all", label: "Tutte" }
+    { value: "25", label: "Primi 25" },
+    { value: "50", label: "Primi 50" },
+    { value: "all", label: "Tutti" }
   ];
   var DIMENSIONS = {
     sex: { field: "sex", labelField: "sex_label", label: "Sesso" },
@@ -888,6 +888,11 @@
     return rows.slice(0, limit);
   }
 
+  function displayedCountText(shown, total, noun) {
+    if (shown === total) return "tutti: " + total + " " + noun;
+    return "mostrati " + shown + " di " + total + " " + noun;
+  }
+
   function grossRows() {
     return state.grossRecords;
   }
@@ -1270,7 +1275,7 @@
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
       { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, hideSingle: true, stableOptions: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true },
-      { key: "max_items", label: "Categorie", options: displayOptions, preferAll: false, preferTotal: false }
+      { key: "max_items", label: "Elementi mostrati", options: displayOptions, preferAll: false, preferTotal: false }
     ].concat(analysisFilterSpecs(targetState.dimension, includedFilters));
     if (!targetState.year) {
       targetState.year = latestYear(rows, { geography_code: "IT", pay_period: targetState.pay_period, statistic: targetState.statistic });
@@ -1282,7 +1287,7 @@
     var totalSelected = selected.length;
     selected = displayRows(selected, targetState.max_items).reverse();
     byId(titleId).textContent = dimension ? "Retribuzione per " + dimension.label.toLowerCase() : "Retribuzione";
-    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic, selected.length + "/" + totalSelected + " categorie"].join(" · ");
+    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic, displayedCountText(selected.length, totalSelected, "elementi")].join(" · ");
     if (!selected.length || !dimension) {
       showEmpty(chartId, "Nessun dato disponibile per questa combinazione.");
       return;
@@ -1661,7 +1666,7 @@
       { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true, stableOptions: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true },
-      { key: "max_items", label: "Territori", options: displayOptions, preferAll: false, preferTotal: false }
+      { key: "max_items", label: "Territori mostrati", options: displayOptions, preferAll: false, preferTotal: false }
     ].concat(analysisFilterSpecs("", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"]));
     if (!state.territory.year) {
       state.territory.year = latestYear(rows, { sex: "T", statistic: "median" });
@@ -1692,7 +1697,7 @@
     selected = displayRows(selected, state.territory.max_items).reverse();
     var regionName = state.territory.region_code && state.territory.region_code !== "all" ? lookupLabel("geography_code", state.territory.region_code) : "";
     byId("siTerritoryTitle").textContent = selectedLevel === "province" && regionName ? "Retribuzione per province: " + regionName : "Retribuzione per " + territoryLevelLabel(selectedLevel).toLowerCase();
-    byId("siTerritoryTag").textContent = [text(state.territory.year), STAT_LABELS[state.territory.statistic] || state.territory.statistic, selected.length + "/" + totalSelected].join(" · ");
+    byId("siTerritoryTag").textContent = [text(state.territory.year), STAT_LABELS[state.territory.statistic] || state.territory.statistic, displayedCountText(selected.length, totalSelected, "territori")].join(" · ");
     if (!selected.length) {
       showEmpty("siTerritoryChart", "Confronto territoriale non disponibile per questa combinazione.");
       return;
