@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-3";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-4";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -644,13 +644,32 @@
     return TOTAL_VALUES.indexOf(raw) >= 0 || raw === "B-S_X_O";
   }
 
+  function matchesFilterValue(row, field, value) {
+    if (value === null || value === undefined || value === "") return true;
+    if (String(value) === "all") return true;
+    if (isTotal(field, value)) return isTotal(field, row[field]);
+    if (optionIdentity(field, row[field]) === optionIdentity(field, value)) return true;
+    return String(row[field]) === String(value);
+  }
+
+  function optionIdentity(field, value) {
+    if (value === null || value === undefined || value === "") return "";
+    var raw = String(value);
+    if (field === "working_time") {
+      if (raw === "1" || raw === "FT") return "full_time";
+      if (raw === "2" || raw === "PT") return "part_time";
+      if (raw === "9" || raw === "TOTAL") return "total";
+    }
+    return raw;
+  }
+
   function uniqueOptions(rows, field, labelField, includeTotals) {
     var map = {};
     toArray(rows).forEach(function (row) {
       var value = row[field];
       if (value === null || value === undefined || value === "") return;
       if (!includeTotals && isTotal(field, value)) return;
-      map[String(value)] = { value: String(value), label: optionLabel(row, field, labelField) };
+      map[optionIdentity(field, value)] = { value: String(value), label: optionLabel(row, field, labelField) };
     });
     return Object.keys(map).map(function (key) { return map[key]; }).sort(function (a, b) {
       var an = toNumber(a.value);
@@ -670,10 +689,7 @@
     return toArray(rows).filter(function (row) {
       return Object.keys(filters).every(function (key) {
         if (key === skipKey) return true;
-        var value = filters[key];
-        if (value === null || value === undefined || value === "") return true;
-        if (String(value) === "all") return true;
-        return String(row[key]) === String(value);
+        return matchesFilterValue(row, key, filters[key]);
       });
     });
   }
@@ -804,9 +820,7 @@
 
   function rowMatches(row, filters) {
     return Object.keys(filters).every(function (key) {
-      var value = filters[key];
-      if (value === null || value === undefined || value === "") return true;
-      return String(row[key]) === String(value);
+      return matchesFilterValue(row, key, filters[key]);
     });
   }
 
@@ -979,9 +993,38 @@
     });
   }
 
+  function hasSeriesYears(rows, minimumYears) {
+    var years = {};
+    toArray(rows).forEach(function (row) {
+      if (row.year !== null && row.year !== undefined && row.year !== "") years[String(row.year)] = true;
+    });
+    return Object.keys(years).length >= (minimumYears || 2);
+  }
+
+  function seriesDimensionOptions(rows, field, labelField, includeTotals) {
+    var groups = {};
+    toArray(rows).forEach(function (row) {
+      var value = row[field];
+      if (value === null || value === undefined || value === "") return;
+      var key = String(value);
+      groups[key] = groups[key] || [];
+      groups[key].push(row);
+    });
+    var eligibleRows = toArray(rows).filter(function (row) {
+      var value = row[field];
+      if (value === null || value === undefined || value === "") return false;
+      return hasSeriesYears(groups[String(value)], 2);
+    });
+    return uniqueOptions(eligibleRows, field, labelField, includeTotals);
+  }
+
   function seriesStatisticOptions(rows) {
-    var base = statisticOptions(rows);
-    return [{ value: "all", label: "Tutto" }].concat(base);
+    var base = statisticOptions(rows).filter(function (option) {
+      return hasSeriesYears(toArray(rows).filter(function (row) {
+        return matchesFilterValue(row, "statistic", option.value);
+      }), 2);
+    });
+    return hasSeriesYears(rows, 2) ? [{ value: "all", label: "Tutto" }].concat(base) : base;
   }
 
   function dimensionOptions(keys, rows) {
@@ -1029,7 +1072,7 @@
         var item = DIMENSIONS[key];
         var value = targetState[key];
         if (!item || item.field === dimension.field || value === null || value === undefined || value === "" || String(value) === "all") continue;
-        if (String(row[item.field] || "") !== String(value)) return false;
+        if (!matchesFilterValue(row, item.field, value)) return false;
       }
       return true;
     });
@@ -1100,11 +1143,11 @@
     var rows = territoryBaseRows().filter(function (row) {
       if (String(row.year) !== String(state.job.year)) return false;
       if (String(row.statistic) !== String(state.job.statistic)) return false;
-      if (String(row.sex || "T") !== String(state.job.sex)) return false;
+      if (!matchesFilterValue(row, "sex", state.job.sex)) return false;
       for (var index = 0; index < activeKeys.length; index += 1) {
         var key = activeKeys[index];
         var item = DIMENSIONS[key];
-        if (!item || String(row[item.field] || "") !== String(state.job[key])) return false;
+        if (!item || !matchesFilterValue(row, item.field, state.job[key])) return false;
       }
       if (!activeKeys.length && !hasOnlyTotalAnalysisDimensions(row)) return false;
       return true;
@@ -1424,13 +1467,13 @@
       if (state.territory.province_code === "all" && state.territory.region_code && state.territory.region_code !== "all" && String(row.geography_code).indexOf(String(state.territory.region_code)) !== 0) return false;
       if (String(row.year) !== String(state.territory.year)) return false;
       if (String(row.statistic) !== String(state.territory.statistic)) return false;
-      if (state.territory.sex && String(row.sex || "T") !== String(state.territory.sex)) return false;
+      if (state.territory.sex && !matchesFilterValue(row, "sex", state.territory.sex)) return false;
       for (var index = 0; index < ANALYSIS_FILTER_KEYS.length; index += 1) {
         var key = ANALYSIS_FILTER_KEYS[index];
         var item = DIMENSIONS[key];
         var value = state.territory[key];
         if (!item || key === "sex" || value === null || value === undefined || value === "" || String(value) === "all") continue;
-        if (String(row[item.field] || "") !== String(value)) return false;
+        if (!matchesFilterValue(row, item.field, value)) return false;
       }
       if (!activeKeys.length && !hasOnlyTotalAnalysisDimensions(row)) return false;
       return true;
@@ -1701,22 +1744,46 @@
     });
   }
 
+  function seriesFilterSpec(key, field, label, labelField) {
+    return {
+      key: key,
+      field: field,
+      label: label,
+      labelField: labelField,
+      includeTotals: true,
+      hideSingle: true,
+      options: function (optionRows) {
+        return seriesDimensionOptions(optionRows, field, labelField, true);
+      }
+    };
+  }
+
   function renderSeries() {
     var rows = istatDistributionRows().concat(eurostatDistributionRows());
     var specs = [
-      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, stableOptions: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: seriesStatisticOptions, includeTotals: true, stableOptions: true },
-      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
-      { key: "age_class", field: "age_class", label: "Età", labelField: "age_label", includeTotals: true, stableOptions: true },
-      { key: "education", field: "education", label: "Titolo di studio", labelField: "education_label", includeTotals: true, stableOptions: true },
-      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true, stableOptions: true },
-      { key: "contract_type", field: "contract_type", label: "Contratto", labelField: "contract_type_label", includeTotals: true, stableOptions: true },
-      { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true, stableOptions: true },
-      { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true, stableOptions: true },
-      { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true, stableOptions: true },
-      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true, stableOptions: true },
-      { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true, stableOptions: true }
+      {
+        key: "pay_period",
+        field: "pay_period",
+        label: "Unità retributiva",
+        options: function (optionRows) {
+          return seriesDimensionOptions(optionRows, "pay_period", null, true).map(function (option) {
+            return { value: option.value, label: PERIOD_LABELS[option.value] || option.label };
+          });
+        },
+        includeTotals: true
+      },
+      { key: "statistic", field: "statistic", label: "Statistica", options: seriesStatisticOptions, includeTotals: true },
+      seriesFilterSpec("geography_code", "geography_code", "Territorio", "geography_name"),
+      seriesFilterSpec("sex", "sex", "Sesso", "sex_label"),
+      seriesFilterSpec("age_class", "age_class", "Età", "age_label"),
+      seriesFilterSpec("education", "education", "Titolo di studio", "education_label"),
+      seriesFilterSpec("sector", "sector", "Settore", "sector_label"),
+      seriesFilterSpec("contract_type", "contract_type", "Contratto", "contract_type_label"),
+      seriesFilterSpec("working_time", "working_time", "Orario", "working_time_label"),
+      seriesFilterSpec("contractual_occupation", "contractual_occupation", "Qualifica", "contractual_occupation_label"),
+      seriesFilterSpec("firm_size", "firm_size", "Dimensione", "firm_size_label"),
+      seriesFilterSpec("country_birth", "country_birth", "Paese nascita", "country_birth_label"),
+      seriesFilterSpec("paid_days", "paid_days", "Giornate retribuite", "paid_days_label")
     ];
     syncFilters("siSeriesFilters", specs, rows, state.series, renderSeries);
     var selected = filterRows(rows, {
