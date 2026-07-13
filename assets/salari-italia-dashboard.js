@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-2";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-3";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -735,7 +735,7 @@
       specs.forEach(function (item) {
         if (item.field && targetState[item.key] !== undefined) filters[item.field] = targetState[item.key];
       });
-      var optionRows = filterRows(rows, filters, spec.field);
+      var optionRows = spec.stableOptions ? rows : filterRows(rows, filters, spec.field);
       var options = spec.options ? spec.options(optionRows) : uniqueOptions(optionRows, spec.field, spec.labelField, spec.includeTotals);
       if (!options.length) {
         var node = container.querySelector('[data-filter="' + spec.key + '"]');
@@ -886,24 +886,24 @@
       return row.source_request === "ses_monthly_distribution" || row.source_request === "ses_annual_distribution";
     }));
     var specs = [
-      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
-      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
-      { key: "age_class", field: "age_class", label: "Età", labelField: "age_label", includeTotals: true },
-      { key: "education", field: "education", label: "Titolo di studio", labelField: "education_label", includeTotals: true },
-      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true },
-      { key: "contract_type", field: "contract_type", label: "Contratto", labelField: "contract_type_label", includeTotals: true },
-      { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true },
-      { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true },
-      { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true },
-      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true },
-      { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true },
-      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true }
+      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true, stableOptions: true },
+      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
+      { key: "age_class", field: "age_class", label: "Età", labelField: "age_label", includeTotals: true, stableOptions: true },
+      { key: "education", field: "education", label: "Titolo di studio", labelField: "education_label", includeTotals: true, stableOptions: true },
+      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true, stableOptions: true },
+      { key: "contract_type", field: "contract_type", label: "Contratto", labelField: "contract_type_label", includeTotals: true, stableOptions: true },
+      { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true, stableOptions: true },
+      { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true, stableOptions: true },
+      { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true, stableOptions: true },
+      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true, stableOptions: true },
+      { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true, stableOptions: true },
+      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, stableOptions: true }
     ];
     if (!state.distribution.year) {
       state.distribution.year = latestYear(rows, { geography_code: "IT", sex: "T", pay_period: "hourly" });
     }
-    syncFilters("siDistributionFilters", specs, rows, state.distribution, renderAll);
+    syncFilters("siDistributionFilters", specs, rows, state.distribution, renderDistribution);
     var selected = filterRows(rows, {
       year: state.distribution.year,
       geography_code: state.distribution.geography_code,
@@ -997,7 +997,7 @@
 
   function analysisFilterSpecs(activeDimensionKey, includeKeys) {
     return ANALYSIS_FILTER_KEYS.filter(function (key) {
-      return key !== "sex" && includeKeys.indexOf(key) >= 0 && key !== activeDimensionKey;
+      return key !== "sex" && includeKeys.indexOf(key) >= 0;
     }).map(function (key) {
       var dimension = DIMENSIONS[key];
       return {
@@ -1008,6 +1008,7 @@
         options: function (optionRows) {
           return optionalDimensionOptions(optionRows, dimension.field, dimension.labelField, "Tutto");
         },
+        stableOptions: true,
         preferAll: true,
         preferTotal: false
       };
@@ -1034,27 +1035,22 @@
     });
   }
 
-  function renderBarByDimension(chartId, titleId, tagId, targetState, dimensionKeys, containerId) {
+  function renderBarByDimension(chartId, titleId, tagId, targetState, dimensionKeys, containerId, onFilterChange) {
     var rows = grossRows();
-    var activeDimension = DIMENSIONS[targetState.dimension] || DIMENSIONS[dimensionKeys[0]];
-    var filterBaseRows = rows.filter(function (row) {
-      if (!activeDimension || row[activeDimension.field] === undefined || row[activeDimension.field] === null) return false;
-      return !isTotal(activeDimension.field, row[activeDimension.field]);
-    });
     var includedFilters = dimensionKeys.concat(["sector", "working_time", "firm_size", "contractual_occupation", "contract_type", "country_birth", "education", "age_class", "paid_days"]);
     var specs = [
       { key: "dimension", label: "Dimensione", options: function () { return dimensionOptions(dimensionKeys, rows); } },
-      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
-      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
-      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, hideSingle: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
+      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true, stableOptions: true },
+      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
+      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, hideSingle: true, stableOptions: true },
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true },
       { key: "max_items", label: "Categorie", options: displayOptions, preferAll: false, preferTotal: false }
     ].concat(analysisFilterSpecs(targetState.dimension, includedFilters));
     if (!targetState.year) {
       targetState.year = latestYear(rows, { geography_code: "IT", pay_period: targetState.pay_period, statistic: targetState.statistic });
     }
-    syncFilters(containerId, specs, filterBaseRows, targetState, renderAll);
+    syncFilters(containerId, specs, rows, targetState, onFilterChange || renderAll);
     var dimension = DIMENSIONS[targetState.dimension];
     var selected = analysisRows(targetState, targetState.dimension);
     selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
@@ -1082,12 +1078,12 @@
   }
 
   function renderWorker() {
-    renderBarByDimension("siWorkerChart", "siWorkerTitle", "siWorkerTag", state.worker, ["sex", "age_class", "education", "country_birth", "occupation", "seniority"], "siWorkerFilters");
+    renderBarByDimension("siWorkerChart", "siWorkerTitle", "siWorkerTag", state.worker, ["sex", "age_class", "education", "country_birth", "occupation", "seniority"], "siWorkerFilters", renderWorker);
     renderLowWage();
   }
 
   function renderJob() {
-    renderBarByDimension("siJobChart", "siJobTitle", "siJobTag", state.job, ["sector", "working_time", "firm_size", "contractual_occupation", "occupation", "contract_type"], "siJobFilters");
+    renderBarByDimension("siJobChart", "siJobTitle", "siJobTag", state.job, ["sector", "working_time", "firm_size", "contractual_occupation", "occupation", "contract_type"], "siJobFilters", renderJob);
     renderSectorBox();
     renderLabourCost();
   }
@@ -1231,7 +1227,7 @@
     if (!state.lowWage.year) {
       state.lowWage.year = latestYear(rows, {});
     }
-    syncFilters("siLowWageFilters", specs, rows, state.lowWage, renderAll);
+    syncFilters("siLowWageFilters", specs, rows, state.lowWage, renderLowWage);
     rows = lowWageRowsForDimension(state.lowWage.dimension).filter(function (row) {
       if (String(row.year) !== String(state.lowWage.year)) return false;
       if (state.lowWage.dimension !== "geography_code" && String(row.geography_code) !== String(state.lowWage.geography_code)) return false;
@@ -1409,17 +1405,17 @@
   function renderTerritory() {
     var rows = territoryBaseRows();
     var specs = [
-      { key: "region_code", label: "Regione", options: regionOptions, preferAll: false, preferTotal: false },
-      { key: "province_code", label: "Provincia", options: provinceOptions, preferAll: false, preferTotal: false },
-      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
+      { key: "region_code", label: "Regione", options: regionOptions, preferAll: false, preferTotal: false, stableOptions: true },
+      { key: "province_code", label: "Provincia", options: provinceOptions, preferAll: false, preferTotal: false, stableOptions: true },
+      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true, stableOptions: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true },
       { key: "max_items", label: "Territori", options: displayOptions, preferAll: false, preferTotal: false }
     ].concat(analysisFilterSpecs("", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"]));
     if (!state.territory.year) {
       state.territory.year = latestYear(rows, { sex: "T", statistic: "median" });
     }
-    syncFilters("siTerritoryFilters", specs, rows, state.territory, renderAll);
+    syncFilters("siTerritoryFilters", specs, rows, state.territory, renderTerritory);
     var activeKeys = activeTerritoryFilters();
     var selectedLevel = territorySelectionLevel();
     var selected = rows.filter(function (row) {
@@ -1508,16 +1504,16 @@
   function renderPaidDays() {
     var rows = paidDaysRows();
     var specs = [
-      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
-      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
-      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true }
+      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true, stableOptions: true },
+      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
+      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true, stableOptions: true },
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true }
     ].concat(analysisFilterSpecs("paid_days", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size"]));
     if (!state.paidDays.year) {
       state.paidDays.year = latestYear(rows, { geography_code: "IT", sex: "T", sector: "0010", statistic: "median" });
     }
-    syncFilters("siPaidDaysFilters", specs, rows, state.paidDays, renderAll);
+    syncFilters("siPaidDaysFilters", specs, rows, state.paidDays, renderPaidDays);
     var selected = filterRows(rows, {
       year: state.paidDays.year,
       geography_code: state.paidDays.geography_code,
@@ -1562,7 +1558,7 @@
       { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true }
     ];
-    syncFilters("siEuropeFilters", specs, rows, state.europe, renderAll);
+    syncFilters("siEuropeFilters", specs, rows, state.europe, renderEurope);
     var selected = rows.filter(function (row) {
       var sourceMatch = state.europe.pay_period === "hourly"
         ? row.source_request === "ses_by_working_time" && row.sector === "B-S_X_O" && row.working_time === "TOTAL"
@@ -1708,21 +1704,21 @@
   function renderSeries() {
     var rows = istatDistributionRows().concat(eurostatDistributionRows());
     var specs = [
-      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: seriesStatisticOptions, includeTotals: true },
-      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
-      { key: "age_class", field: "age_class", label: "Età", labelField: "age_label", includeTotals: true },
-      { key: "education", field: "education", label: "Titolo di studio", labelField: "education_label", includeTotals: true },
-      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true },
-      { key: "contract_type", field: "contract_type", label: "Contratto", labelField: "contract_type_label", includeTotals: true },
-      { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true },
-      { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true },
-      { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true },
-      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true },
-      { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true }
+      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, stableOptions: true },
+      { key: "statistic", field: "statistic", label: "Statistica", options: seriesStatisticOptions, includeTotals: true, stableOptions: true },
+      { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
+      { key: "age_class", field: "age_class", label: "Età", labelField: "age_label", includeTotals: true, stableOptions: true },
+      { key: "education", field: "education", label: "Titolo di studio", labelField: "education_label", includeTotals: true, stableOptions: true },
+      { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true, stableOptions: true },
+      { key: "contract_type", field: "contract_type", label: "Contratto", labelField: "contract_type_label", includeTotals: true, stableOptions: true },
+      { key: "working_time", field: "working_time", label: "Orario", labelField: "working_time_label", includeTotals: true, stableOptions: true },
+      { key: "contractual_occupation", field: "contractual_occupation", label: "Qualifica", labelField: "contractual_occupation_label", includeTotals: true, stableOptions: true },
+      { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true, stableOptions: true },
+      { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true, stableOptions: true },
+      { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true, stableOptions: true }
     ];
-    syncFilters("siSeriesFilters", specs, rows, state.series, renderAll);
+    syncFilters("siSeriesFilters", specs, rows, state.series, renderSeries);
     var selected = filterRows(rows, {
       geography_code: state.series.geography_code,
       sex: state.series.sex,
