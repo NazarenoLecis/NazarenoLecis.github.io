@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gender pay gap | Nazareno Lecis</title>
+  <meta name="description" content="Dashboard sul gender pay gap: divario unadjusted, adjusted, decomposizione e confronti europei da fonti ufficiali Eurostat.">
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/gender-pay-gap-dashboard.css?v=20260713-1">
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
+  <script defer src="../../assets/gender-pay-gap-dashboard.js?v=20260713-1"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html"><span class="logo"></span><span><span class="brand-name">Nazareno Lecis</span><span class="brand-tag">Data &amp; Risk Analysis</span></span></a>
+      <nav class="nav" aria-label="Navigazione principale">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap gpg-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Gender pay gap</span>
+        <h1>Divario retributivo di genere in Europa</h1>
+        <p class="lead">Una dashboard dedicata al gender pay gap: misura non corretta, confronto europeo e decomposizione adjusted quando esiste una fonte ufficiale riproducibile.</p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonti ufficiali</strong>
+          <span>Eurostat <code>earn_gr_gpgr2</code> per la serie unadjusted; Eurostat SES 2022 per adjusted e decomposizione.</span>
+          <span class="source-credit"><a href="https://github.com/NazarenoLecis/Salari_Italia" target="_blank" rel="noopener">Repository salari</a>. Elaborazione di Nazareno Lecis.</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard gender pay gap">
+      <a href="#indicatori">Indicatori</a><a href="#serie">Serie</a><a href="#confronto">Confronto</a><a href="#adjusted">Adjusted</a><a href="#metodo">Metodo</a>
+    </nav>
+
+    <p class="gpg-note"><strong>Perimetro:</strong> l'unadjusted gender pay gap misura la differenza percentuale tra retribuzione oraria lorda media di uomini e donne. L'adjusted non viene stimato nella dashboard: viene mostrato solo dalla decomposizione ufficiale disponibile.</p>
+    <p id="gpgStatus" class="gpg-status">Caricamento dati...</p>
+
+    <section id="indicatori" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Quadro rapido</span>
+        <div><h2>Indicatori principali</h2><p>Ultimi valori disponibili per il paese selezionato.</p></div>
+      </div>
+      <div id="gpgKpis" class="gpg-kpi-grid" aria-label="Indicatori gender pay gap"></div>
+    </section>
+
+    <section id="serie" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Serie storica</span>
+        <div><h2>Gender pay gap unadjusted</h2><p>Il menu paesi mostra solo economie con dati ufficiali nel payload pubblicato.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri serie</summary><div id="gpgSeriesFilters" class="gpg-filter-grid"></div></details>
+      <article class="gpg-card gpg-chart-block">
+        <div class="gpg-card-title"><h3>Andamento nel tempo</h3><span id="gpgSeriesTag">Eurostat</span></div>
+        <div id="gpgSeriesChart" class="gpg-chart"></div>
+        <p class="gpg-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. Unità: differenza percentuale sulla retribuzione oraria lorda media.</p>
+      </article>
+    </section>
+
+    <section id="confronto" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Confronto europeo</span>
+        <div><h2>Ultimo anno disponibile</h2><p>Confronto tra paesi con osservazioni ufficiali per l'anno selezionato.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri confronto</summary><div id="gpgComparisonFilters" class="gpg-filter-grid"></div></details>
+      <article class="gpg-card gpg-chart-block">
+        <div class="gpg-card-title"><h3>Paesi europei</h3><span id="gpgComparisonTag">Eurostat</span></div>
+        <div id="gpgComparisonChart" class="gpg-chart"></div>
+        <p class="gpg-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. Paesi ordinati dal divario più basso al più alto.</p>
+      </article>
+    </section>
+
+    <section id="adjusted" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Adjusted</span>
+        <div><h2>Decomposizione SES 2022</h2><p>La decomposizione separa il divario osservato in componente spiegata dalle caratteristiche osservabili e residuo non spiegato.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri adjusted</summary><div id="gpgAdjustedFilters" class="gpg-filter-grid"></div></details>
+      <article class="gpg-card gpg-chart-block">
+        <div class="gpg-card-title"><h3>Componenti del divario</h3><span id="gpgAdjustedTag">Eurostat SES 2022</span></div>
+        <div id="gpgAdjustedChart" class="gpg-chart"></div>
+        <p class="gpg-chart-credit">Fonte: Eurostat, working paper <code>KS-01-25-035</code>, tabella 2. Il residuo della decomposizione è l'adjusted gender pay gap.</p>
+      </article>
+      <div id="gpgComponentGuide" class="gpg-guide-grid" aria-label="Guida alle componenti"></div>
+    </section>
+
+    <section id="metodo" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Metodo</span>
+        <div><h2>Come leggere le misure</h2><p>La dashboard mantiene separate differenze osservate, adjusted e fattori di composizione.</p></div>
+      </div>
+      <div id="gpgMethod" class="gpg-method-grid"></div>
+    </section>
+  </main>
+</body>
+</html>

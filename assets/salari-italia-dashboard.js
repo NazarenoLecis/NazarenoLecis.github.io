@@ -12,41 +12,8 @@
     d9_d1: "D9 / D1",
     d9_median: "D9 / mediana",
     median_d1: "Mediana / D1",
-    share_below_two_thirds_median: "Bassa retribuzione",
-    mean_gap: "Gender pay gap"
+    share_below_two_thirds_median: "Bassa retribuzione"
   };
-  var GPG_COMPONENT_LABELS = {
-    unadjusted: "Unadjusted",
-    adjusted_unexplained: "Adjusted / unexplained",
-    explained_overall: "Parte spiegata complessiva",
-    economic_activity: "Settore economico",
-    working_time: "Tempo pieno / part-time",
-    occupation: "Professione",
-    education: "Titolo di studio",
-    enterprise_control: "Controllo pubblico / privato",
-    enterprise_size: "Dimensione impresa",
-    age: "Eta'",
-    job_experience: "Anzianita'",
-    employment_contract: "Contratto",
-    geographical_location: "Localizzazione",
-    residual: "Residuo"
-  };
-  var GPG_COMPONENT_ORDER = [
-    "unadjusted",
-    "adjusted_unexplained",
-    "explained_overall",
-    "economic_activity",
-    "working_time",
-    "occupation",
-    "education",
-    "enterprise_control",
-    "enterprise_size",
-    "age",
-    "job_experience",
-    "employment_contract",
-    "geographical_location",
-    "residual"
-  ];
   var PERIOD_LABELS = { hourly: "Oraria", monthly: "Mensile", annual: "Annuale" };
   var TOTAL_VALUES = ["T", "TOTAL", "9", "99", "0010", "WORLD", "GE10"];
   var ANALYSIS_FILTER_KEYS = [
@@ -220,7 +187,6 @@
     "total": "Totale",
     "Total": "Totale",
     "travel agency, tour operator and other reservation service and related activities": "Agenzie di viaggio, tour operator e servizi di prenotazione",
-    "Unadjusted gender pay gap": "Gender pay gap non corretto",
     "Unlimited duration": "Tempo indeterminato",
     "Unknown": "Non noto",
     "Upper secondary and post-secondary non-tertiary education (levels 3 and 4)": "Diploma e post-secondario non terziario",
@@ -474,6 +440,7 @@
       geography_code: "IT"
     },
     selectedSectors: [],
+    sectorSelectionTouched: false,
     territory: {
       region_code: "all",
       province_code: "all",
@@ -504,7 +471,6 @@
       statistic: "median"
     },
     europe: { pay_period: "hourly", statistic: "median", sex: "T", countries: [], start_year: null, end_year: null },
-    genderGapCountry: "IT",
     series: {
       pay_period: "hourly",
       statistic: "all",
@@ -1102,9 +1068,6 @@
     appendKpi(container, "Bassa retribuzione", latestRecord(records, {
       geography_code: "IT", pay_concept: "low_wage_earners", statistic: "share_below_two_thirds_median"
     }), percent, "Quota sotto due terzi della mediana");
-    appendKpi(container, "Gender pay gap", latestRecord(records, {
-      geography_code: "IT", pay_concept: "gender_pay_gap_unadjusted"
-    }), percent, "Non corretto per composizione");
     appendKpi(container, "Costo orario lavoro", latestRecord(records, {
       geography_code: "IT", pay_concept: "labour_cost", sector: "B-S_X_O"
     }), function (value) { return euro(value, 1); }, "Costo del lavoro, non salario netto");
@@ -1609,26 +1572,61 @@
     })[0] || null;
   }
 
-  function renderSectorBoxSummary(rows, referenceRow, referenceRows) {
+  function sectorBoxOptions(rows) {
+    return toArray(rows).map(function (row) {
+      return {
+        value: String(row.sector),
+        label: optionLabel(row, "sector", "sector_label")
+      };
+    }).sort(function (a, b) {
+      return a.label.localeCompare(b.label, "it");
+    });
+  }
+
+  function syncSectorBoxSelection(rows) {
+    var container = byId("siSectorControls");
+    if (!container) return rows;
+    var options = sectorBoxOptions(rows);
+    var available = {};
+    options.forEach(function (option) {
+      available[String(option.value)] = true;
+    });
+    var selected = toArray(state.selectedSectors).filter(function (value) {
+      return available[String(value)];
+    }).map(String);
+    if (!state.sectorSelectionTouched) {
+      selected = options.map(function (option) { return String(option.value); });
+    } else if (!selected.length && state.selectedSectors.length) {
+      selected = options.map(function (option) { return String(option.value); });
+      state.sectorSelectionTouched = false;
+    }
+    state.selectedSectors = selected;
+    ensureMultiSelect(container, { key: "box_sectors", label: "Settori nel boxplot" }, options, selected, function (values) {
+      state.selectedSectors = values.map(String);
+      state.sectorSelectionTouched = true;
+      renderSectorBox();
+    });
+    if (!selected.length) return [];
+    return rows.filter(function (row) {
+      return selected.indexOf(String(row.sector)) >= 0;
+    });
+  }
+
+  function renderSectorBoxSummary(rows, referenceRow, totalRows) {
     var picker = byId("siSectorPicker");
     if (!picker) return;
     clear(picker);
     if (!rows.length) return;
     var minRow = rows[0];
     var maxRow = rows[rows.length - 1];
-    var p10 = referenceDistributionPoint(referenceRows, "percentile", 10);
-    var p90 = referenceDistributionPoint(referenceRows, "percentile", 90);
     var referenceLabel = state.job.statistic === "mean" ? "media nazionale " : "mediana nazionale ";
     var items = [
-      "Settori: " + rows.length,
+      "Settori nel boxplot: " + rows.length + "/" + totalRows,
       "min " + optionLabel(minRow, "sector", "sector_label") + " " + euro(minRow.value, 2),
       "max " + optionLabel(maxRow, "sector", "sector_label") + " " + euro(maxRow.value, 2)
     ];
     if (referenceRow) {
       items.splice(1, 0, referenceLabel + euro(referenceRow.value, 2));
-    }
-    if (p10 && p90 && state.job.statistic !== "mean") {
-      items.splice(2, 0, "P10-P90 nazionale " + euro(p10.value, 2) + "-" + euro(p90.value, 2));
     }
     items.forEach(function (textValue) {
       var item = document.createElement("span");
@@ -1639,53 +1637,18 @@
   }
 
   function renderSectorBox() {
-    var rows = sectorBoxRows();
+    var allRows = sectorBoxRows();
+    var rows = syncSectorBoxSelection(allRows);
     var referenceRows = sectorBoxReferenceRows();
     var referenceRow = sectorBoxReferenceRow(referenceRows);
-    renderSectorBoxSummary(rows, referenceRow, referenceRows);
+    renderSectorBoxSummary(rows, referenceRow, allRows.length);
     if (!rows.length) {
       showEmpty("siSectorBoxChart", "Boxplot settoriale disponibile solo per combinazioni pubblicate da ISTAT RACLI. L'incrocio settore-territorio provinciale non è disponibile e non viene stimato.");
       return;
     }
     var referenceValue = referenceRow ? toNumber(referenceRow.value) : null;
-    var p10 = referenceDistributionPoint(referenceRows, "percentile", 10);
-    var median = referenceDistributionPoint(referenceRows, "median", null);
-    var p90 = referenceDistributionPoint(referenceRows, "percentile", 90);
-    var shapes = [];
-    var annotations = [];
-    if (p10 && median && p90 && state.job.statistic !== "mean") {
-      shapes.push({
-        type: "rect",
-        xref: "x",
-        x0: -0.22,
-        x1: 0.22,
-        yref: "y",
-        y0: toNumber(p10.value),
-        y1: toNumber(p90.value),
-        fillcolor: "rgba(255,107,42,.18)",
-        line: { color: COLORS[0], width: 2 }
-      });
-      shapes.push({
-        type: "line",
-        xref: "x",
-        x0: -0.28,
-        x1: 0.28,
-        yref: "y",
-        y0: toNumber(median.value),
-        y1: toNumber(median.value),
-        line: { color: COLORS[0], width: 3 }
-      });
-      annotations.push({
-        x: 0,
-        y: toNumber(median.value),
-        yanchor: "bottom",
-        text: "Mediana nazionale " + euro(median.value, 2),
-        showarrow: false,
-        font: { color: cssVar("--orange", "#ff6b2a"), size: 12 }
-      });
-    }
-    if (referenceValue !== null) {
-      shapes.push({
+    var referenceLabel = state.job.statistic === "mean" ? "Media nazionale " : "Mediana nazionale ";
+    var shapes = referenceValue === null ? [] : [{
         type: "line",
         xref: "paper",
         x0: 0,
@@ -1694,18 +1657,28 @@
         y0: referenceValue,
         y1: referenceValue,
         line: { color: COLORS[0], width: 2, dash: "dash" }
-      });
-    }
+    }];
+    var annotations = referenceValue === null ? [] : [{
+      xref: "paper",
+      x: 1,
+      xanchor: "right",
+      y: referenceValue,
+      yanchor: "bottom",
+      text: referenceLabel + euro(referenceValue, 2),
+      showarrow: false,
+      font: { color: cssVar("--orange", "#ff6b2a"), size: 12 }
+    }];
     plot("siSectorBoxChart", [{
-      type: "scatter",
-      mode: "markers",
+      type: "box",
       name: "Settori ATECO",
-      x: rows.map(function (row, index) {
-        return 1 + ((index % 9) - 4) * 0.035;
-      }),
       y: rows.map(function (row) { return row.value; }),
       text: rows.map(function (row) { return optionLabel(row, "sector", "sector_label"); }),
-      marker: { color: COLORS[1], opacity: 0.78, size: 8, line: { color: cssVar("--si-chart-bg", "#1c1c1c"), width: 1 } },
+      marker: { color: COLORS[1], opacity: 0.78, size: 7, line: { color: cssVar("--si-chart-bg", "#1c1c1c"), width: 1 } },
+      line: { color: COLORS[0], width: 1.8 },
+      fillcolor: "rgba(255,107,42,.18)",
+      boxpoints: "all",
+      jitter: 0.36,
+      pointpos: 0,
       hovertemplate: "<b>%{text}</b><br>Retribuzione: %{y:.2f} €<extra></extra>"
     }], {
       height: 560,
@@ -1713,7 +1686,7 @@
       shapes: shapes,
       annotations: annotations,
       showlegend: false,
-      xaxis: { title: "", range: [-0.55, 1.55], tickvals: [0, 1], ticktext: ["Totale Italia", "Settori ATECO"], automargin: true },
+      xaxis: { title: "", automargin: true },
       yaxis: { title: "Retribuzione oraria lorda (euro per ora)", rangemode: "tozero" }
     });
   }
@@ -2215,226 +2188,6 @@
     });
   }
 
-  function renderGenderGap() {
-    var rows = state.records.filter(function (row) {
-      return row.pay_concept === "gender_pay_gap_unadjusted";
-    });
-    var adjustedRows = state.records.filter(function (row) {
-      return row.pay_concept === "gender_pay_gap_adjusted";
-    });
-    var countries = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
-    var traces = countries.map(function (country, index) {
-      var countryRows = rows.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
-        return Number(a.year) - Number(b.year);
-      });
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
-        x: countryRows.map(function (row) { return row.year; }),
-        y: countryRows.map(function (row) { return row.value; }),
-        line: { color: COLORS[index % COLORS.length], width: country === "IT" ? 4 : 2 },
-        hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f}%<extra></extra>"
-      };
-    }).filter(function (trace) { return trace.x.length; });
-    var adjustedTraces = countries.map(function (country, index) {
-      var countryRows = adjustedRows.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
-        return Number(a.year) - Number(b.year);
-      });
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: countryRows[0] ? "Adjusted - " + optionLabel(countryRows[0], "geography_code", "geography_name") : "Adjusted - " + country,
-        x: countryRows.map(function (row) { return row.year; }),
-        y: countryRows.map(function (row) { return row.value; }),
-        line: { color: COLORS[index % COLORS.length], width: country === "IT" ? 4 : 2, dash: "dash" },
-        hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f}%<extra></extra>"
-      };
-    }).filter(function (trace) { return trace.x.length; });
-    traces = traces.concat(adjustedTraces);
-    var istat = {};
-    grossRows().forEach(function (row) {
-      if (row.source_request !== "istat_racli_sector_gender") return;
-      if (row.geography_code !== "IT" || row.sector !== "0010" || row.pay_period !== "hourly" || row.statistic !== "mean") return;
-      if (["M", "F"].indexOf(row.sex) < 0) return;
-      istat[row.year] = istat[row.year] || {};
-      istat[row.year][row.sex] = row.value;
-    });
-    var istatYears = Object.keys(istat).map(Number).filter(Number.isFinite).sort(function (a, b) { return a - b; });
-    var istatGap = istatYears.map(function (year) {
-      var item = istat[year];
-      if (!item || !toNumber(item.M) || !toNumber(item.F)) return null;
-      return { year: year, value: ((toNumber(item.M) - toNumber(item.F)) / toNumber(item.M)) * 100 };
-    }).filter(Boolean);
-    if (istatGap.length) {
-      traces.unshift({
-        type: "scatter",
-        mode: "lines+markers",
-        name: "Italia ISTAT privato, grezzo",
-        x: istatGap.map(function (row) { return row.year; }),
-        y: istatGap.map(function (row) { return row.value; }),
-        line: { color: COLORS[0], width: 4, dash: "dot" },
-        hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f}%<extra></extra>"
-      });
-    }
-    plot("siGenderGapChart", traces, {
-      yaxis: { title: "%", zeroline: true },
-      xaxis: { title: "" }
-    });
-    renderGenderGapMethod(adjustedRows, istatGap);
-    renderGenderGapDecomposition();
-  }
-
-  function renderGenderGapMethod(adjustedRows, istatGap) {
-    var container = byId("siGenderGapMethod");
-    if (!container) return;
-    var hasAdjusted = toArray(adjustedRows).length > 0;
-    var hasIstatGap = toArray(istatGap).length > 0;
-    clear(container);
-    [
-      {
-        label: "Unadjusted",
-        title: "Serie ufficiale comparabile",
-        text: "La serie Eurostat confronta la retribuzione oraria lorda media delle donne con quella degli uomini. E' utile per i confronti europei, ma non corregge per composizione di occupazione, settore, orario, contratto o qualifica."
-      },
-      {
-        label: "Adjusted",
-        title: hasAdjusted ? "Serie presente nel payload" : "Non stimato se manca una fonte ufficiale",
-        text: hasAdjusted
-          ? "Il grafico mostra anche le righe adjusted disponibili nel dataset pubblicato dalla pipeline."
-          : "L'adjusted richiede microdati o una decomposizione ufficiale documentata, ad esempio su Structure of Earnings Survey. La dashboard non costruisce una stima autonoma partendo da aggregati."
-      },
-      {
-        label: "Orario e contratto",
-        title: "Part-time e continuita'",
-        text: "Per interpretare il divario bisogna separare salario orario, mensile e annuale: una maggiore presenza femminile nel part-time o in carriere meno continue pesa soprattutto su redditi annuali e progressioni."
-      },
-      {
-        label: "Settori e carriera",
-        title: "Composizione professionale",
-        text: "Una parte del gap puo' dipendere dalla concentrazione in settori e professioni meno pagati, dalla minore presenza in qualifiche apicali e da progressioni di carriera piu' lente. La quota residua adjusted non va letta automaticamente come sola discriminazione."
-      }
-    ].forEach(function (item) {
-      var node = document.createElement("div");
-      var label = document.createElement("span");
-      var title = document.createElement("strong");
-      var text = document.createElement("p");
-      node.className = "si-gpg-method-item";
-      label.textContent = item.label;
-      title.textContent = item.title;
-      text.textContent = item.text;
-      node.appendChild(label);
-      node.appendChild(title);
-      node.appendChild(text);
-      container.appendChild(node);
-    });
-    if (hasIstatGap) {
-      container.setAttribute("data-istat-gap", "available");
-    } else {
-      container.removeAttribute("data-istat-gap");
-    }
-  }
-
-  function genderGapDecompositionRows() {
-    return state.records.filter(function (row) {
-      return row.pay_concept === "gender_pay_gap_decomposition";
-    });
-  }
-
-  function genderGapCountryOptions(rows) {
-    var selected = {};
-    rows.forEach(function (row) {
-      if (!row.geography_code || row.statistic !== "unadjusted") return;
-      selected[row.geography_code] = optionLabel(row, "geography_code", "geography_name");
-    });
-    return Object.keys(selected).sort(function (a, b) {
-      if (a === "IT") return -1;
-      if (b === "IT") return 1;
-      if (a === "EU27_2020") return -1;
-      if (b === "EU27_2020") return 1;
-      return selected[a].localeCompare(selected[b], "it");
-    }).map(function (code) {
-      return { value: code, label: selected[code] };
-    });
-  }
-
-  function syncGenderGapCountry(rows) {
-    var select = byId("siGenderGapCountry");
-    if (!select) return;
-    var options = genderGapCountryOptions(rows);
-    var values = options.map(function (option) { return option.value; });
-    if (values.indexOf(state.genderGapCountry) < 0) {
-      state.genderGapCountry = values.indexOf("IT") >= 0 ? "IT" : values[0];
-    }
-    clear(select);
-    options.forEach(function (option) {
-      var node = document.createElement("option");
-      node.value = option.value;
-      node.textContent = option.label;
-      select.appendChild(node);
-    });
-    select.value = state.genderGapCountry || "";
-    select.onchange = function () {
-      state.genderGapCountry = select.value;
-      renderGenderGapDecomposition();
-    };
-    select.disabled = options.length < 2;
-  }
-
-  function renderGenderGapDecomposition() {
-    var rows = genderGapDecompositionRows();
-    syncGenderGapCountry(rows);
-    var countryRows = rows.filter(function (row) {
-      return row.geography_code === state.genderGapCountry;
-    });
-    if (!countryRows.length) {
-      showEmpty("siGenderGapDecompositionChart", "Decomposizione adjusted non disponibile.");
-      return;
-    }
-    var byStatistic = {};
-    countryRows.forEach(function (row) {
-      byStatistic[row.statistic] = row;
-    });
-    var chartRows = GPG_COMPONENT_ORDER.map(function (statistic) {
-      var row = byStatistic[statistic];
-      if (!row) return null;
-      return {
-        statistic: statistic,
-        label: GPG_COMPONENT_LABELS[statistic] || statistic,
-        value: toNumber(row.value),
-        country: optionLabel(row, "geography_code", "geography_name")
-      };
-    }).filter(function (row) {
-      return row && row.value !== null;
-    }).reverse();
-    if (!chartRows.length) {
-      showEmpty("siGenderGapDecompositionChart", "Decomposizione adjusted non disponibile.");
-      return;
-    }
-    var colors = chartRows.map(function (row) {
-      if (row.statistic === "adjusted_unexplained") return "#ff6b2a";
-      if (row.statistic === "unadjusted") return "#f0b44d";
-      if (row.statistic === "explained_overall") return "#5fc3b2";
-      return row.value >= 0 ? "#5b8fd9" : "#e66b6b";
-    });
-    plot("siGenderGapDecompositionChart", [{
-      type: "bar",
-      orientation: "h",
-      x: chartRows.map(function (row) { return row.value; }),
-      y: chartRows.map(function (row) { return row.label; }),
-      marker: { color: colors },
-      text: chartRows.map(function (row) { return percent(row.value); }),
-      textposition: "auto",
-      customdata: chartRows.map(function (row) { return [row.country, row.statistic]; }),
-      hovertemplate: "%{customdata[0]}<br>%{y}: %{x:.1f} punti percentuali<extra></extra>"
-    }], {
-      yaxis: { title: "", automargin: true },
-      xaxis: { title: "Punti percentuali", zeroline: true },
-      showlegend: false,
-      margin: { l: 180, r: 28, t: 20, b: 50 }
-    });
-  }
-
   function seriesPriority(row) {
     if (row.source === "ISTAT") {
       if (String(row.source_request || "").indexOf("istat_racli_sector_") === 0) return 0;
@@ -2604,8 +2357,7 @@
         "Il costo del lavoro proviene da una tavola separata e non rappresenta il salario ricevuto dal lavoratore.",
         "Le giornate retribuite sono classi ufficiali RACLI: indicano continuita' o stagionalita' della posizione, ma non conteggi di lavoratori ricostruiti.",
         "Le tavole 2022 su istruzione, anzianità e dimensione impresa sono punti dell'edizione SES 2022.",
-        "Territorio di residenza, luogo di lavoro e sede dell'impresa non sono intercambiabili.",
-        "Il gender pay gap unadjusted e quello adjusted sono misure diverse: l'adjusted viene mostrato solo con microdati, modello ufficiale o tavola gia' corretta."
+        "Territorio di residenza, luogo di lavoro e sede dell'impresa non sono intercambiabili."
       ].forEach(function (note) {
         var item = document.createElement("li");
         item.textContent = note;
@@ -2614,7 +2366,9 @@
     }
     if (coverage) {
       clear(coverage);
-      toArray(state.payload && state.payload.coverage).forEach(function (item) {
+      toArray(state.payload && state.payload.coverage).filter(function (item) {
+        return String(item.dimension || "").toLowerCase().indexOf("gender pay gap") < 0;
+      }).forEach(function (item) {
         var node = document.createElement("div");
         var title = document.createElement("strong");
         var note = document.createElement("span");
@@ -2641,7 +2395,6 @@
     if (sectionId === "giornate") renderPaidDays();
     if (sectionId === "europa") renderEurope();
     if (sectionId === "ocse") renderOecd();
-    if (sectionId === "gender-gap") renderGenderGap();
     if (sectionId === "serie") renderSeries();
   }
 
@@ -2652,7 +2405,7 @@
   }
 
   function setupLazySections() {
-    var sectionIds = ["lavoratore", "lavoro", "territorio", "europa", "ocse", "gender-gap", "serie", "giornate"];
+    var sectionIds = ["lavoratore", "lavoro", "territorio", "europa", "ocse", "serie", "giornate"];
     if (!("IntersectionObserver" in window)) {
       sectionIds.forEach(function (sectionId) {
         renderLazySection(sectionId);
@@ -2732,7 +2485,7 @@
       .catch(function (error) {
         setStatus("Non riesco a caricare i dati salari: " + error.message, true);
         if (preserveInitial) return;
-        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siGenderGapChart", "siGenderGapDecompositionChart", "siSeriesChart"].forEach(function (id) {
+        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siSeriesChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
       });

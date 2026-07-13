@@ -25,11 +25,10 @@ html[data-theme="light"] {
 #giornate { order: 7; }
 #europa { order: 8; }
 #ocse { order: 9; }
-#gender-gap { order: 10; }
-#lavoratore { order: 11; }
-#lavoro { order: 12; }
-#territorio { order: 13; }
-#metodo { order: 14; }
+#lavoratore { order: 10; }
+#lavoro { order: 11; }
+#territorio { order: 12; }
+#metodo { order: 13; }
 
 html[data-theme="light"] .si-dashboard,
 body.light .si-dashboard {
@@ -315,10 +314,6 @@ body.light .si-dashboard {
   line-height: 1.45;
 }
 
-#gender-gap .si-card + .si-card {
-  margin-top: 16px;
-}
-
 .si-gpg-method-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -395,6 +390,15 @@ body.light .si-dashboard {
 
 .si-section-gap {
   margin-bottom: 16px;
+}
+
+.si-sector-control {
+  grid-template-columns: minmax(260px, 1fr);
+  margin: 0 0 14px;
+}
+
+.si-sector-control label {
+  max-width: 100%;
 }
 
 .si-sector-picker {

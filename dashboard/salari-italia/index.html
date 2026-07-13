@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-15">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-16">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-15"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-16"></script>
 </head>
 <body>
   <header class="site-header">
@@ -40,14 +40,14 @@
         <span class="logo"></span>
         <div>
           <strong>Fonti ufficiali e riproducibili</strong>
-          <span>ISTAT RACLI per il dettaglio italiano; Eurostat per confronti europei, low-wage earners, gender pay gap e labour cost.</span>
+          <span>ISTAT RACLI per il dettaglio italiano; Eurostat per confronti europei, low-wage earners e labour cost.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Salari_Italia" target="_blank" rel="noopener">Repository salari</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
       </div>
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard salari">
-      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#serie">Serie</a><a href="#giornate">Giornate</a><a href="#europa">UE27</a><a href="#ocse">OCSE</a><a href="#gender-gap">Gender pay gap</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo</a>
+      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#serie">Serie</a><a href="#giornate">Giornate</a><a href="#europa">UE27</a><a href="#ocse">OCSE</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo</a>
     </nav>
 
     <p class="si-note"><strong>Perimetro:</strong> ISTAT RACLI copre retribuzioni orarie lorde dei dipendenti del settore privato. Netti, imponibili contributivi, redditi fiscali, comuni di residenza e microdati individuali non sono stimati.</p>
@@ -102,11 +102,12 @@
       </div>
       <details class="chart-filter-panel" open><summary>Filtri lavoro</summary><div id="siJobFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block si-section-gap">
-        <div class="si-card-title"><h3>Settori rispetto alla distribuzione nazionale</h3><span>ISTAT RACLI</span></div>
-        <p class="si-card-note">Il box arancione usa P10, mediana e P90 nazionali ufficiali: la mediana è la stessa mostrata negli indicatori e nel grafico distribuzione. I punti blu sono i valori settoriali Ateco disponibili.</p>
+        <div class="si-card-title"><h3>Boxplot dei settori</h3><span>ISTAT RACLI</span></div>
+        <p class="si-card-note">Il boxplot riassume i valori settoriali Ateco disponibili per la selezione corrente. La linea tratteggiata mostra la mediana nazionale ufficiale della stessa selezione, uguale a quella degli indicatori e della distribuzione.</p>
+        <div id="siSectorControls" class="filter-grid si-sector-control" aria-label="Settori nel boxplot"></div>
         <div id="siSectorPicker" class="si-sector-picker" aria-label="Sintesi boxplot settoriale"></div>
         <div id="siSectorBoxChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: ISTAT RACLI. I punti sono settori Ateco; la mediana nazionale non è ricalcolata dai settori. L'incrocio provincia-settore Ateco non viene stimato.</p>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI. Il boxplot usa i settori Ateco; la mediana nazionale è un riferimento separato e non viene ricalcolata dai settori. L'incrocio provincia-settore Ateco non viene stimato.</p>
       </article>
       <div class="si-grid-2">
         <article class="si-card si-chart-block">
@@ -158,32 +159,6 @@
         <div class="si-card-title"><h3>Italia, media OCSE e principali paesi</h3><span>OECD</span></div>
         <div id="siOecdChart" class="si-chart si-chart-wide"></div>
         <p class="si-chart-credit">Fonte: OECD Data Explorer, <code>DSD_EARNINGS@AV_AN_WAGE</code>. Unità: dollari USA PPP, base 2025.</p>
-      </article>
-    </section>
-
-    <section class="dashboard-section" id="gender-gap">
-      <div class="section-head">
-        <span class="eyebrow">Gender pay gap</span>
-        <div><h2>Divario retributivo di genere</h2><p>La sezione distingue il gender pay gap unadjusted pubblicato da Eurostat dall'adjusted, che viene mostrato solo quando esiste una fonte ufficiale o una decomposizione documentata.</p></div>
-      </div>
-      <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Gender pay gap unadjusted</h3><span>Eurostat</span></div>
-        <div id="siGenderGapChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. L'adjusted non viene stimato nel browser: viene visualizzato solo se presente nel dataset pubblicato dalla pipeline.</p>
-      </article>
-      <article class="si-card si-gpg-method">
-        <div class="si-card-title"><h3>Adjusted e fattori di composizione</h3><span>Metodo</span></div>
-        <div id="siGenderGapMethod" class="si-gpg-method-grid"></div>
-        <p class="si-chart-credit">Riferimenti: <a href="https://ec.europa.eu/eurostat/databrowser/product/view/earn_gr_gpgr2" target="_blank" rel="noopener">Eurostat <code>earn_gr_gpgr2</code></a> e decomposizioni Eurostat basate sulla <a href="https://ec.europa.eu/eurostat/web/products-statistical-working-papers/-/ks-tc-18-003" target="_blank" rel="noopener">Structure of Earnings Survey</a>.</p>
-      </article>
-      <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Decomposizione adjusted SES 2022</h3><span>Eurostat 2025</span></div>
-        <div class="si-inline-control">
-          <label for="siGenderGapCountry">Paese</label>
-          <select id="siGenderGapCountry"></select>
-        </div>
-        <div id="siGenderGapDecompositionChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: Eurostat, <a href="https://ec.europa.eu/eurostat/web/products-statistical-working-papers/w/ks-01-25-035" target="_blank" rel="noopener"><code>KS-01-25-035</code></a>, tabella 2. L'adjusted è la componente unexplained della decomposizione Blinder-Oaxaca su microdati SES 2022.</p>
       </article>
     </section>
 
