@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-4">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-5">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-4"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-5"></script>
 </head>
 <body>
   <header class="site-header">
@@ -102,11 +102,11 @@
       </div>
       <details class="chart-filter-panel" open><summary>Filtri lavoro</summary><div id="siJobFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block si-section-gap">
-        <div class="si-card-title"><h3>Boxplot territoriale dei salari</h3><span>ISTAT RACLI</span></div>
-        <p class="si-card-note">Ogni box mostra la distribuzione dei valori ufficiali tra territori per il totale dei settori. L'incrocio provincia-settore Ateco non è pubblicato nei flussi RACLI integrati, quindi non viene stimato.</p>
-        <div id="siSectorPicker" class="si-sector-picker" aria-label="Sintesi boxplot territoriale"></div>
+        <div class="si-card-title"><h3>Boxplot dei settori</h3><span>ISTAT RACLI</span></div>
+        <p class="si-card-note">Ogni punto è un settore Ateco ufficiale per l'Italia. L'incrocio provincia-settore Ateco non è pubblicato nei flussi RACLI integrati, quindi non viene stimato.</p>
+        <div id="siSectorPicker" class="si-sector-picker" aria-label="Sintesi boxplot settoriale"></div>
         <div id="siSectorBoxChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: ISTAT RACLI. I punti sono territori ufficiali; i settori dettagliati restano nel grafico nazionale sotto.</p>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI. I punti sono settori Ateco; la distribuzione provinciale resta disponibile solo per il totale dei settori.</p>
       </article>
       <div class="si-grid-2">
         <article class="si-card si-chart-block">
