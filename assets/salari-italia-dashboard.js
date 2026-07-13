@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-1";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-2";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -14,7 +14,7 @@
     share_below_two_thirds_median: "Bassa retribuzione",
     mean_gap: "Gender pay gap"
   };
-  var PERIOD_LABELS = { hourly: "Orario", monthly: "Mensile", annual: "Annuale" };
+  var PERIOD_LABELS = { hourly: "Oraria", monthly: "Mensile", annual: "Annuale" };
   var TOTAL_VALUES = ["T", "TOTAL", "9", "99", "0010", "WORLD", "GE10"];
   var ANALYSIS_FILTER_KEYS = [
     "sex",
@@ -248,7 +248,17 @@
       "9": "Totale"
     },
     contractual_occupation: {
-      "7": "Apprendisti"
+      "1": "Dirigenti e impiegati",
+      "2": "Dirigenti",
+      "3": "Quadri",
+      "4": "Impiegati",
+      "5": "Operai e apprendisti",
+      "6": "Operai",
+      "7": "Apprendisti",
+      "10": "Dipendenti esclusi dirigenti",
+      "23": "Quadri e impiegati",
+      "35": "Dirigenti e quadri",
+      "99": "Totale"
     },
     paid_days: {
       D_UN90: "Fino a 90 giornate retribuite",
@@ -401,9 +411,15 @@
       statistic: "median",
       max_items: "50"
     },
+    lowWage: {
+      dimension: "geography_code",
+      year: null,
+      geography_code: "IT"
+    },
     selectedSectors: [],
     territory: {
-      level: "region",
+      region_code: "all",
+      province_code: "all",
       year: null,
       sex: "T",
       age_class: "all",
@@ -579,7 +595,8 @@
     var line = cssVar("--line", "#303030");
     var panel = cssVar("--panel", "#090909");
     var chartBg = cssVar("--si-chart-bg", panel);
-    return Object.assign({
+    var grid = cssVar("--si-grid", line);
+    var defaults = {
       autosize: true,
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: chartBg,
@@ -588,9 +605,13 @@
       hoverlabel: { bgcolor: panel, bordercolor: line, font: { color: textColor } },
       legend: { orientation: "h", x: 0, xanchor: "left", y: -0.22, font: { color: muted } },
       dragmode: false,
-      xaxis: { fixedrange: true, gridcolor: line, zerolinecolor: line, tickfont: { color: muted }, automargin: true },
-      yaxis: { fixedrange: true, gridcolor: line, zerolinecolor: line, tickfont: { color: muted }, automargin: true }
-    }, extra || {});
+      xaxis: { fixedrange: true, showgrid: true, gridcolor: grid, gridwidth: 1, zerolinecolor: line, tickfont: { color: muted }, automargin: true },
+      yaxis: { fixedrange: true, showgrid: true, gridcolor: grid, gridwidth: 1, zerolinecolor: line, tickfont: { color: muted }, automargin: true }
+    };
+    var merged = Object.assign({}, defaults, extra || {});
+    if (extra && extra.xaxis) merged.xaxis = Object.assign({}, defaults.xaxis, extra.xaxis);
+    if (extra && extra.yaxis) merged.yaxis = Object.assign({}, defaults.yaxis, extra.yaxis);
+    return merged;
   }
 
   function plot(id, traces, layout) {
@@ -727,6 +748,12 @@
         targetState[spec.key] = preferredOption(options, spec);
         current = targetState[spec.key];
       }
+      if (spec.hideSingle && options.length <= 1) {
+        targetState[spec.key] = options[0].value;
+        var singleNode = container.querySelector('[data-filter="' + spec.key + '"]');
+        if (singleNode) singleNode.remove();
+        return;
+      }
       ensureSelect(container, spec, options, current, function (key, value) {
         targetState[key] = value;
         onChange();
@@ -840,8 +867,9 @@
   }
 
   function statName(row) {
-    if (row.percentile === 10) return "D1";
-    if (row.percentile === 90) return "D9";
+    if (row.percentile === 10) return "P10 / D1";
+    if (row.percentile === 50) return "P50 / mediana";
+    if (row.percentile === 90) return "P90 / D9";
     return STAT_LABELS[row.statistic] || text(row.statistic);
   }
 
@@ -870,7 +898,7 @@
       { key: "firm_size", field: "firm_size", label: "Dimensione", labelField: "firm_size_label", includeTotals: true },
       { key: "country_birth", field: "country_birth", label: "Paese nascita", labelField: "country_birth_label", includeTotals: true },
       { key: "paid_days", field: "paid_days", label: "Giornate retribuite", labelField: "paid_days_label", includeTotals: true },
-      { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true }
+      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true }
     ];
     if (!state.distribution.year) {
       state.distribution.year = latestYear(rows, { geography_code: "IT", sex: "T", pay_period: "hourly" });
@@ -897,11 +925,11 @@
       if (!byStat[key] || row.source === "ISTAT") byStat[key] = row;
     });
     selected = Object.keys(byStat).map(function (key) { return byStat[key]; }).sort(function (a, b) { return statOrder(a) - statOrder(b); });
-    byId("siDistributionTitle").textContent = "Punti distributivi " + text(PERIOD_LABELS[state.distribution.pay_period], state.distribution.pay_period).toLowerCase();
+    byId("siDistributionTitle").textContent = "Punti ufficiali della " + payPeriodText(state.distribution.pay_period);
     byId("siDistributionTag").textContent = text(state.distribution.year) + " · " + text(lookupLabel("geography_code", state.distribution.geography_code), state.distribution.geography_code);
     var note = byId("siDistributionNote");
     if (note) {
-      note.textContent = "Le fonti aggregate pubblicano media, mediana e decili. La distribuzione piena viene mostrata solo se esiste una tavola ufficiale con classi o frequenze, non ricostruita.";
+      note.textContent = "Le fonti aggregate integrate pubblicano D1/P10, mediana/P50, D9/P90 e media. D2-D8 e distribuzione piena non vengono interpolati se non esiste una tavola ufficiale con classi o frequenze.";
     }
     if (!selected.length) {
       showEmpty("siDistributionChart", "Nessun punto distributivo disponibile per questa selezione.");
@@ -916,7 +944,7 @@
       textposition: "outside",
       hovertemplate: "%{x}<br>%{text}<extra></extra>"
     }], {
-      yaxis: { title: "Euro", rangemode: "tozero" },
+      yaxis: { title: payAxisTitle(state.distribution.pay_period), rangemode: "tozero" },
       xaxis: { title: "" }
     });
   }
@@ -925,6 +953,22 @@
     return uniqueOptions(rows, "pay_period", null, true).map(function (option) {
       return { value: option.value, label: PERIOD_LABELS[option.value] || option.value };
     });
+  }
+
+  function payPeriodText(value) {
+    return {
+      hourly: "retribuzione oraria",
+      monthly: "retribuzione mensile",
+      annual: "retribuzione annuale"
+    }[value] || text(PERIOD_LABELS[value], value);
+  }
+
+  function payAxisTitle(value) {
+    return {
+      hourly: "Retribuzione oraria lorda (euro per ora)",
+      monthly: "Retribuzione mensile lorda (euro)",
+      annual: "Retribuzione annuale lorda (euro)"
+    }[value] || "Euro";
   }
 
   function statisticOptions(rows) {
@@ -1003,7 +1047,7 @@
       { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
       { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
-      { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true },
+      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, hideSingle: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
       { key: "max_items", label: "Categorie", options: displayOptions, preferAll: false, preferTotal: false }
     ].concat(analysisFilterSpecs(targetState.dimension, includedFilters));
@@ -1032,7 +1076,7 @@
     }], {
       height: 540,
       margin: { t: 22, r: 18, b: 52, l: 180 },
-      xaxis: { title: "Euro", rangemode: "tozero" },
+      xaxis: { title: payAxisTitle(targetState.pay_period), rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
     });
   }
@@ -1048,137 +1092,157 @@
     renderLabourCost();
   }
 
-  function sectorDistributionGroups() {
-    var grouped = {};
-    grossRows().forEach(function (row) {
-      if (row.source_request !== "istat_racli_sector_qualification") return;
-      if (!row.sector || isTotal("sector", row.sector)) return;
-      if (!row.contractual_occupation || isTotal("contractual_occupation", row.contractual_occupation)) return;
-      if (String(row.year) !== String(state.job.year)) return;
-      if (String(row.geography_code) !== String(state.job.geography_code)) return;
-      if (String(row.sex || "T") !== String(state.job.sex)) return;
-      if (String(row.pay_period) !== String(state.job.pay_period)) return;
-      if (String(row.statistic) !== String(state.job.statistic)) return;
-      var key = String(row.sector);
-      grouped[key] = grouped[key] || {
-        sector: key,
-        label: optionLabel(row, "sector", "sector_label"),
-        values: [],
-        qualifications: []
-      };
-      grouped[key].values.push(row.value);
-      grouped[key].qualifications.push(optionLabel(row, "contractual_occupation", "contractual_occupation_label"));
+  function activeJobTerritoryFilters() {
+    return ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"].filter(function (key) {
+      var value = state.job[key];
+      return value !== null && value !== undefined && value !== "" && String(value) !== "all";
     });
-    return Object.keys(grouped).map(function (key) { return grouped[key]; }).filter(function (item) {
+  }
+
+  function territoryBoxGroups() {
+    var activeKeys = activeJobTerritoryFilters();
+    var rows = territoryBaseRows().filter(function (row) {
+      if (String(row.year) !== String(state.job.year)) return false;
+      if (String(row.statistic) !== String(state.job.statistic)) return false;
+      if (String(row.sex || "T") !== String(state.job.sex)) return false;
+      for (var index = 0; index < activeKeys.length; index += 1) {
+        var key = activeKeys[index];
+        var item = DIMENSIONS[key];
+        if (!item || String(row[item.field] || "") !== String(state.job[key])) return false;
+      }
+      if (!activeKeys.length && !hasOnlyTotalAnalysisDimensions(row)) return false;
+      return true;
+    });
+    rows = dedupeTerritoryRows(rows, activeKeys);
+    var grouped = { region: [], province: [] };
+    rows.forEach(function (row) {
+      var level = geographyLevel(row.geography_code);
+      if (!grouped[level]) return;
+      grouped[level].push(row);
+    });
+    return ["region", "province"].map(function (level) {
+      var values = grouped[level].map(function (row) { return row.value; }).filter(function (value) { return toNumber(value) !== null; });
+      var labels = grouped[level].map(function (row) { return optionLabel(row, "geography_code", "geography_name"); });
+      return {
+        level: level,
+        label: territoryLevelLabel(level),
+        values: values,
+        labels: labels,
+        rows: grouped[level]
+      };
+    }).filter(function (item) {
       return item.values.length >= 2;
-    }).sort(function (a, b) {
-      var aMedian = a.values.slice().sort(function (x, y) { return x - y; })[Math.floor(a.values.length / 2)];
-      var bMedian = b.values.slice().sort(function (x, y) { return x - y; })[Math.floor(b.values.length / 2)];
-      return (toNumber(bMedian) || 0) - (toNumber(aMedian) || 0);
     });
   }
 
   function latestSectorBoxYear() {
-    var years = {};
-    grossRows().forEach(function (row) {
-      if (row.source_request !== "istat_racli_sector_qualification") return;
-      if (!row.sector || isTotal("sector", row.sector)) return;
-      if (!row.contractual_occupation || isTotal("contractual_occupation", row.contractual_occupation)) return;
-      if (String(row.geography_code) !== String(state.job.geography_code)) return;
-      if (String(row.sex || "T") !== String(state.job.sex)) return;
-      if (String(row.pay_period) !== String(state.job.pay_period)) return;
-      if (String(row.statistic) !== String(state.job.statistic)) return;
-      years[row.year] = true;
-    });
-    var ordered = Object.keys(years).map(Number).filter(Number.isFinite).sort(function (a, b) { return b - a; });
-    return ordered.length ? ordered[0] : null;
+    return latestYear(territoryBaseRows(), { sex: "T", statistic: "median" });
   }
 
-  function renderSectorPicker(groups) {
+  function medianValue(values) {
+    var ordered = values.map(Number).filter(Number.isFinite).sort(function (a, b) { return a - b; });
+    if (!ordered.length) return null;
+    var middle = Math.floor(ordered.length / 2);
+    if (ordered.length % 2) return ordered[middle];
+    return (ordered[middle - 1] + ordered[middle]) / 2;
+  }
+
+  function renderTerritoryBoxSummary(groups) {
     var picker = byId("siSectorPicker");
     if (!picker) return;
-    var available = groups.map(function (item) { return item.sector; });
-    state.selectedSectors = state.selectedSectors.filter(function (sector) {
-      return available.indexOf(sector) >= 0;
-    });
-    if (!state.selectedSectors.length) {
-      state.selectedSectors = groups.slice(0, 8).map(function (item) { return item.sector; });
-    }
     clear(picker);
-    groups.forEach(function (item) {
-      var label = document.createElement("label");
-      var input = document.createElement("input");
-      var span = document.createElement("span");
-      input.type = "checkbox";
-      input.value = item.sector;
-      input.checked = state.selectedSectors.indexOf(item.sector) >= 0;
-      input.addEventListener("change", function () {
-        if (input.checked && state.selectedSectors.indexOf(item.sector) < 0) {
-          state.selectedSectors.push(item.sector);
-        } else if (!input.checked) {
-          state.selectedSectors = state.selectedSectors.filter(function (sector) { return sector !== item.sector; });
-        }
-        renderSectorBox();
-      });
-      span.textContent = item.label;
-      label.appendChild(input);
-      label.appendChild(span);
-      picker.appendChild(label);
+    groups.forEach(function (group) {
+      var ordered = group.rows.slice().sort(function (a, b) { return (toNumber(a.value) || 0) - (toNumber(b.value) || 0); });
+      if (!ordered.length) return;
+      var minRow = ordered[0];
+      var maxRow = ordered[ordered.length - 1];
+      var item = document.createElement("span");
+      item.className = "si-box-summary-item";
+      item.textContent = group.label + ": min " + optionLabel(minRow, "geography_code", "geography_name") + " " + euro(minRow.value, 2)
+        + " · mediana " + euro(medianValue(group.values), 2)
+        + " · max " + optionLabel(maxRow, "geography_code", "geography_name") + " " + euro(maxRow.value, 2);
+      picker.appendChild(item);
     });
   }
 
   function renderSectorBox() {
-    var groups = sectorDistributionGroups();
-    renderSectorPicker(groups);
-    var selected = groups.filter(function (item) {
-      return state.selectedSectors.indexOf(item.sector) >= 0;
-    });
-    if (!selected.length) {
-      showEmpty("siSectorBoxChart", "Boxplot settoriale non disponibile per questa selezione.");
+    var groups = territoryBoxGroups();
+    renderTerritoryBoxSummary(groups);
+    if (!groups.length) {
+      showEmpty("siSectorBoxChart", "Boxplot territoriale non disponibile per questa selezione.");
       return;
     }
-    var traces = selected.map(function (item, index) {
+    var traces = groups.map(function (item, index) {
       var color = COLORS[index % COLORS.length];
       return {
         type: "box",
-        name: item.label.length > 28 ? item.label.slice(0, 27) + "..." : item.label,
+        name: item.label,
         y: item.values,
-        text: item.qualifications,
-        customdata: item.values.map(function () { return item.label; }),
-        marker: { color: color, opacity: 0.74, size: 7 },
-        line: { color: color, width: 1.7 },
+        text: item.labels,
+        marker: { color: color, opacity: 0.78, size: 7 },
+        line: { color: color, width: 1.8 },
         fillcolor: "rgba(160,160,160,.18)",
         boxpoints: "all",
         jitter: 0.32,
         pointpos: 0,
-        hovertemplate: "<b>%{customdata}</b><br>Qualifica: %{text}<br>Retribuzione: %{y:.2f} €<extra></extra>"
+        hovertemplate: "<b>%{text}</b><br>Retribuzione: %{y:.2f} €<extra></extra>"
       };
     });
     plot("siSectorBoxChart", traces, {
       height: 560,
-      margin: { t: 22, r: 18, b: 140, l: 70 },
-      xaxis: { title: "", automargin: true, tickangle: -35 },
-      yaxis: { title: "Euro per ora", rangemode: "tozero" },
+      margin: { t: 22, r: 18, b: 72, l: 70 },
+      xaxis: { title: "", automargin: true },
+      yaxis: { title: "Retribuzione oraria lorda (euro per ora)", rangemode: "tozero" },
       boxmode: "group"
     });
   }
 
-  function renderLowWage() {
-    var wanted = ["sex", "age_class", "education"];
-    var dimensionKey = wanted.indexOf(state.worker.dimension) >= 0 ? state.worker.dimension : "sex";
-    var dimension = DIMENSIONS[dimensionKey];
-    var rows = state.records.filter(function (row) {
-      if (row.pay_concept !== "low_wage_earners") return false;
-      if (row.geography_code !== state.worker.geography_code) return false;
-      if (row[dimension.field] === undefined || row[dimension.field] === null) return false;
-      return !isTotal(dimension.field, row[dimension.field]) || dimension.field === "sex";
+  function lowWageRowsForDimension(dimensionKey) {
+    var requestByDimension = {
+      geography_code: "low_wage_share",
+      sex: "low_wage_share",
+      age_class: "low_wage_share_by_age",
+      education: "low_wage_share_by_education"
+    };
+    var request = requestByDimension[dimensionKey] || "low_wage_share";
+    return state.records.filter(function (row) {
+      return row.pay_concept === "low_wage_earners" && row.source_request === request;
     });
-    var year = latestYear(rows, {});
-    rows = rows.filter(function (row) { return String(row.year) === String(year); });
+  }
+
+  function lowWageDimensionOptions() {
+    return [
+      { value: "geography_code", label: "Paese" },
+      { value: "sex", label: "Sesso" },
+      { value: "age_class", label: "Età" },
+      { value: "education", label: "Titolo di studio" }
+    ];
+  }
+
+  function renderLowWage() {
+    var rows = lowWageRowsForDimension(state.lowWage.dimension);
+    var specs = [
+      { key: "dimension", label: "Dimensione", options: lowWageDimensionOptions, preferAll: false, preferTotal: false },
+      { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true }
+    ];
+    if (state.lowWage.dimension !== "geography_code") {
+      specs.push({ key: "geography_code", field: "geography_code", label: "Paese", labelField: "geography_name", includeTotals: true });
+    }
+    if (!state.lowWage.year) {
+      state.lowWage.year = latestYear(rows, {});
+    }
+    syncFilters("siLowWageFilters", specs, rows, state.lowWage, renderAll);
+    rows = lowWageRowsForDimension(state.lowWage.dimension).filter(function (row) {
+      if (String(row.year) !== String(state.lowWage.year)) return false;
+      if (state.lowWage.dimension !== "geography_code" && String(row.geography_code) !== String(state.lowWage.geography_code)) return false;
+      if (state.lowWage.dimension === "geography_code") return String(row.sex || "T") === "T";
+      return row[DIMENSIONS[state.lowWage.dimension].field] !== undefined && row[DIMENSIONS[state.lowWage.dimension].field] !== null;
+    });
+    var dimension = DIMENSIONS[state.lowWage.dimension] || DIMENSIONS.geography_code;
     rows.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
-    rows = displayRows(rows, "25").reverse();
+    rows = rows.reverse();
     if (!rows.length) {
-      showEmpty("siLowWageChart", "Quota low-wage non disponibile per questa dimensione.");
+      showEmpty("siLowWageChart", "Quota di bassa retribuzione non disponibile per questa selezione.");
       return;
     }
     plot("siLowWageChart", [{
@@ -1191,7 +1255,7 @@
     }], {
       height: 460,
       margin: { t: 22, r: 18, b: 52, l: 170 },
-      xaxis: { title: "% dipendenti", rangemode: "tozero" },
+      xaxis: { title: "% dei dipendenti", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
     });
   }
@@ -1234,7 +1298,7 @@
   function territoryLevelLabel(level) {
     return {
       region: "Regioni",
-      province: "Province e citta' metropolitane",
+      province: "Province",
       municipality: "Comuni"
     }[level] || level;
   }
@@ -1250,6 +1314,43 @@
     }).map(function (level) {
       return { value: level, label: territoryLevelLabel(level) };
     });
+  }
+
+  function territoryOptionsByLevel(rows, level, allLabel) {
+    var seen = {};
+    toArray(rows).forEach(function (row) {
+      if (geographyLevel(row.geography_code) !== level) return;
+      seen[String(row.geography_code)] = {
+        value: String(row.geography_code),
+        label: optionLabel(row, "geography_code", "geography_name")
+      };
+    });
+    return [{ value: "all", label: allLabel }].concat(Object.keys(seen).map(function (key) {
+      return seen[key];
+    }).sort(function (a, b) {
+      return a.label.localeCompare(b.label, "it");
+    }));
+  }
+
+  function regionOptions(rows) {
+    return territoryOptionsByLevel(rows, "region", "Tutte le regioni");
+  }
+
+  function provinceOptions(rows) {
+    var provinces = toArray(rows).filter(function (row) {
+      if (geographyLevel(row.geography_code) !== "province") return false;
+      if (state.territory.region_code && state.territory.region_code !== "all") {
+        return String(row.geography_code).indexOf(String(state.territory.region_code)) === 0;
+      }
+      return true;
+    });
+    return territoryOptionsByLevel(provinces, "province", "Tutte le province");
+  }
+
+  function territorySelectionLevel() {
+    if (state.territory.province_code && state.territory.province_code !== "all") return "province";
+    if (state.territory.region_code && state.territory.region_code !== "all") return "province";
+    return "region";
   }
 
   function activeTerritoryFilters() {
@@ -1308,7 +1409,8 @@
   function renderTerritory() {
     var rows = territoryBaseRows();
     var specs = [
-      { key: "level", label: "Regione o provincia", options: territoryLevelOptions, preferAll: false, preferTotal: false },
+      { key: "region_code", label: "Regione", options: regionOptions, preferAll: false, preferTotal: false },
+      { key: "province_code", label: "Provincia", options: provinceOptions, preferAll: false, preferTotal: false },
       { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
@@ -1319,8 +1421,11 @@
     }
     syncFilters("siTerritoryFilters", specs, rows, state.territory, renderAll);
     var activeKeys = activeTerritoryFilters();
+    var selectedLevel = territorySelectionLevel();
     var selected = rows.filter(function (row) {
-      if (geographyLevel(row.geography_code) !== state.territory.level) return false;
+      if (geographyLevel(row.geography_code) !== selectedLevel) return false;
+      if (state.territory.province_code && state.territory.province_code !== "all" && String(row.geography_code) !== String(state.territory.province_code)) return false;
+      if (state.territory.province_code === "all" && state.territory.region_code && state.territory.region_code !== "all" && String(row.geography_code).indexOf(String(state.territory.region_code)) !== 0) return false;
       if (String(row.year) !== String(state.territory.year)) return false;
       if (String(row.statistic) !== String(state.territory.statistic)) return false;
       if (state.territory.sex && String(row.sex || "T") !== String(state.territory.sex)) return false;
@@ -1338,7 +1443,8 @@
     selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
     var totalSelected = selected.length;
     selected = displayRows(selected, state.territory.max_items).reverse();
-    byId("siTerritoryTitle").textContent = "Retribuzione per " + territoryLevelLabel(state.territory.level).toLowerCase();
+    var regionName = state.territory.region_code && state.territory.region_code !== "all" ? lookupLabel("geography_code", state.territory.region_code) : "";
+    byId("siTerritoryTitle").textContent = selectedLevel === "province" && regionName ? "Retribuzione per province: " + regionName : "Retribuzione per " + territoryLevelLabel(selectedLevel).toLowerCase();
     byId("siTerritoryTag").textContent = [text(state.territory.year), STAT_LABELS[state.territory.statistic] || state.territory.statistic, selected.length + "/" + totalSelected].join(" · ");
     if (!selected.length) {
       showEmpty("siTerritoryChart", "Confronto territoriale non disponibile per questa combinazione.");
@@ -1452,7 +1558,7 @@
   function renderEurope() {
     var rows = eurostatDistributionRows();
     var specs = [
-      { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true },
+      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true }
     ];
@@ -1602,7 +1708,7 @@
   function renderSeries() {
     var rows = istatDistributionRows().concat(eurostatDistributionRows());
     var specs = [
-      { key: "pay_period", field: "pay_period", label: "Periodo", options: periodOptions, includeTotals: true },
+      { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true },
       { key: "statistic", field: "statistic", label: "Statistica", options: seriesStatisticOptions, includeTotals: true },
       { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
@@ -1634,7 +1740,7 @@
       return state.series.statistic === "all" || row.statistic === state.series.statistic;
     });
     selected = dedupeSeriesRows(selected).sort(function (a, b) { return Number(a.year) - Number(b.year); });
-    byId("siSeriesTitle").textContent = "Serie " + text(PERIOD_LABELS[state.series.pay_period], state.series.pay_period).toLowerCase();
+    byId("siSeriesTitle").textContent = "Serie della " + payPeriodText(state.series.pay_period);
     byId("siSeriesTag").textContent = state.series.statistic === "all" ? "tutte le misure" : STAT_LABELS[state.series.statistic] || state.series.statistic;
     if (!selected.length) {
       showEmpty("siSeriesChart", "Serie non disponibile per questa selezione.");

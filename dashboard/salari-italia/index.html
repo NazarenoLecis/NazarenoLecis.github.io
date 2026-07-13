@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-1">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-2">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-1"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -64,12 +64,12 @@
     <section class="dashboard-section" id="distribuzione">
       <div class="section-head">
         <span class="eyebrow">Distribuzione salariale</span>
-        <div><h2>Punti ufficiali della distribuzione</h2><p>Le fonti aggregate pubblicano media, mediana, primo e nono decile. Una distribuzione piena viene mostrata solo se esiste una tavola ufficiale con classi o frequenze.</p></div>
+        <div><h2>Punti ufficiali della distribuzione</h2><p>Le fonti aggregate integrate pubblicano media, mediana, primo decile e nono decile. I decili intermedi vengono mostrati solo se una fonte ufficiale li pubblica come dati riproducibili.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri distribuzione</summary><div id="siDistributionFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
         <div class="si-card-title"><h3 id="siDistributionTitle">Distribuzione lorda</h3><span id="siDistributionTag">Eurostat SES</span></div>
-        <p class="si-card-note" id="siDistributionNote">Scegli anno, territorio, sesso e periodo retributivo.</p>
+        <p class="si-card-note" id="siDistributionNote">Scegli anno, territorio, sesso e unità retributiva.</p>
         <div id="siDistributionChart" class="si-chart si-chart-wide"></div>
         <p class="si-chart-credit">Fonte: ISTAT RACLI ed Eurostat SES. Elaborazione di Nazareno Lecis.</p>
       </article>
@@ -77,23 +77,23 @@
 
     <section class="dashboard-section" id="lavoratore">
       <div class="section-head">
-        <span class="eyebrow">Caratteristiche del lavoratore</span>
-        <div><h2>Sesso, età, titolo di studio, professione e anzianità</h2><p>I filtri appaiono solo quando il payload contiene osservazioni per quella dimensione.</p></div>
+        <span class="eyebrow">Differenziali per lavoratore</span>
+        <div><h2>Sesso, età, titolo di studio, professione e anzianità</h2><p>Il grafico mostra differenze retributive per categoria. Non identifica il lavoratore modale del territorio, perché servirebbero conteggi ufficiali per combinazione.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri lavoratore</summary><div id="siWorkerFilters" class="filter-grid"></div></details>
-      <div class="si-grid-2">
-        <article class="si-card si-chart-block">
-          <div class="si-card-title"><h3 id="siWorkerTitle">Retribuzione per caratteristica</h3><span id="siWorkerTag">lordo</span></div>
-          <div id="siWorkerChart" class="si-chart si-chart-wide"></div>
-          <p class="si-chart-credit">Fonte: ISTAT RACLI per retribuzioni orarie private; Eurostat SES per tavole europee e 2022. Titolo di studio, paese di nascita, orario, contratto e dimensione d'impresa sono filtri quando la fonte li pubblica.</p>
-        </article>
-        <article class="si-card si-chart-block">
-          <div class="si-card-title"><h3>Quota di lavoratori a bassa retribuzione</h3><span>low wage</span></div>
-          <p class="si-card-note">Dipendenti con retribuzione oraria lorda inferiore a due terzi della mediana nazionale.</p>
-          <div id="siLowWageChart" class="si-chart si-chart-wide"></div>
-          <p class="si-chart-credit">Fonte: Eurostat <code>earn_ses_pub1s</code>, <code>earn_ses_pub1a</code>, <code>earn_ses_pub1i</code>.</p>
-        </article>
-      </div>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3 id="siWorkerTitle">Retribuzione per caratteristica</h3><span id="siWorkerTag">lordo</span></div>
+        <p class="si-card-note">Sono salari per categoria, non quote di lavoratori. Il profilo modale verrà mostrato solo quando saranno integrate frequenze ufficiali.</p>
+        <div id="siWorkerChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI per retribuzioni orarie private; Eurostat SES per tavole europee e 2022. Titolo di studio, paese di nascita, orario, contratto e dimensione d'impresa sono filtri quando la fonte li pubblica.</p>
+      </article>
+      <details class="chart-filter-panel si-section-gap" open><summary>Filtri bassa retribuzione</summary><div id="siLowWageFilters" class="filter-grid"></div></details>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Quota di lavoratori a bassa retribuzione</h3><span>Eurostat</span></div>
+        <p class="si-card-note">Dipendenti con retribuzione oraria lorda inferiore a due terzi della mediana nazionale. Sono disponibili paese, sesso, età e titolo di studio, non regioni o settori italiani.</p>
+        <div id="siLowWageChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: Eurostat <code>earn_ses_pub1s</code>, <code>earn_ses_pub1a</code>, <code>earn_ses_pub1i</code>.</p>
+      </article>
     </section>
 
     <section class="dashboard-section" id="lavoro">
@@ -103,11 +103,11 @@
       </div>
       <details class="chart-filter-panel" open><summary>Filtri lavoro</summary><div id="siJobFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block si-section-gap">
-        <div class="si-card-title"><h3>Boxplot salariale settoriale</h3><span>ISTAT RACLI</span></div>
-        <p class="si-card-note">Ogni box mostra la distribuzione dei valori ufficiali per qualifica contrattuale dentro il settore selezionato. Non è una distribuzione individuale: i microdati non sono pubblicati nel payload.</p>
-        <div id="siSectorPicker" class="si-sector-picker" aria-label="Settori da mostrare"></div>
+        <div class="si-card-title"><h3>Boxplot territoriale dei salari</h3><span>ISTAT RACLI</span></div>
+        <p class="si-card-note">Ogni box mostra la distribuzione dei valori ufficiali tra territori per il totale dei settori. L'incrocio provincia-settore Ateco non è pubblicato nei flussi RACLI integrati, quindi non viene stimato.</p>
+        <div id="siSectorPicker" class="si-sector-picker" aria-label="Sintesi boxplot territoriale"></div>
         <div id="siSectorBoxChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: ISTAT RACLI. I settori possono essere aggiunti o rimossi dal grafico.</p>
+        <p class="si-chart-credit">Fonte: ISTAT RACLI. I punti sono territori ufficiali; i settori dettagliati restano nel grafico nazionale sotto.</p>
       </article>
       <div class="si-grid-2">
         <article class="si-card si-chart-block">

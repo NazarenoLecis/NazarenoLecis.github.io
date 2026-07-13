@@ -1,9 +1,11 @@
 :root {
   --si-chart-bg: #1c1c1c;
+  --si-grid: #4a4a4a;
 }
 
 html[data-theme="light"] {
   --si-chart-bg: #fffaf4;
+  --si-grid: #d1c6ba;
 }
 
 .si-dashboard {
@@ -345,6 +347,19 @@ body.light .si-dashboard {
 .si-sector-picker label:has(input:checked) {
   border-color: var(--orange);
   color: var(--orange);
+}
+
+.si-box-summary-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.25;
 }
 
 .si-chart {
