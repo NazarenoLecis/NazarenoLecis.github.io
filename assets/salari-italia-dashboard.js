@@ -1072,15 +1072,33 @@
     if (!container) return;
     clear(container);
     var records = state.records;
-    appendKpi(container, "Mediana oraria lorda", latestRecord(records, {
-      geography_code: "IT", sex: "T", age_class: "TOTAL", education: "99", sector: "0010", contract_type: "9", working_time: "9", contractual_occupation: "99", firm_size: "TOTAL", country_birth: "WORLD", pay_concept: "gross_earnings", pay_period: "hourly", statistic: "median"
-    }), function (value) { return euro(value, 2); }, "ISTAT RACLI");
+    var nationalHourlyFilters = {
+      source_request: "istat_racli_province_paid_days",
+      geography_code: "IT",
+      sex: "T",
+      age_class: "TOTAL",
+      education: "99",
+      sector: "0010",
+      contract_type: "9",
+      working_time: "9",
+      contractual_occupation: "99",
+      firm_size: "TOTAL",
+      country_birth: "WORLD",
+      paid_days: "TOTAL",
+      pay_concept: "gross_earnings",
+      pay_period: "hourly"
+    };
+    var nationalMedian = latestRecord(records, Object.assign({}, nationalHourlyFilters, { statistic: "median" }));
+    var nationalD1 = latestRecord(records, Object.assign({}, nationalHourlyFilters, { statistic: "percentile", percentile: 10 }));
+    var nationalD9 = latestRecord(records, Object.assign({}, nationalHourlyFilters, { statistic: "percentile", percentile: 90 }));
+    var nationalRatio = nationalD1 && nationalD9 && toNumber(nationalD1.value)
+      ? Object.assign({}, nationalD9, { value: toNumber(nationalD9.value) / toNumber(nationalD1.value), statistic: "d9_d1" })
+      : null;
+    appendKpi(container, "Mediana oraria lorda", nationalMedian, function (value) { return euro(value, 2); }, "ISTAT RACLI");
     appendKpi(container, "Media mensile lorda", latestRecord(records, {
       geography_code: "IT", sex: "T", pay_concept: "gross_earnings", pay_period: "monthly", statistic: "mean"
     }), function (value) { return euro(value, 0); }, "Retribuzione mensile, non netto");
-    appendKpi(container, "D9 / D1 orario", latestRecord(records, {
-      geography_code: "IT", sex: "T", age_class: "TOTAL", education: "99", sector: "0010", contract_type: "9", working_time: "9", contractual_occupation: "99", firm_size: "TOTAL", country_birth: "WORLD", pay_concept: "gross_earnings_ratio", pay_period: "hourly", statistic: "d9_d1"
-    }), function (value) { return fmt(value, 2) + "x"; }, "Rapporto tra salari alti e bassi");
+    appendKpi(container, "D9 / D1 orario", nationalRatio, function (value) { return fmt(value, 2) + "x"; }, "Rapporto tra salari alti e bassi");
     appendKpi(container, "Bassa retribuzione", latestRecord(records, {
       geography_code: "IT", pay_concept: "low_wage_earners", statistic: "share_below_two_thirds_median"
     }), percent, "Quota sotto due terzi della mediana");
@@ -1512,28 +1530,107 @@
     return latestYear(sectorBoxBaseRows(), { sex: "T", statistic: "median" });
   }
 
-  function medianValue(values) {
-    var ordered = values.map(Number).filter(Number.isFinite).sort(function (a, b) { return a - b; });
-    if (!ordered.length) return null;
-    var middle = Math.floor(ordered.length / 2);
-    if (ordered.length % 2) return ordered[middle];
-    return (ordered[middle - 1] + ordered[middle]) / 2;
+  function sectorBoxReferenceRequest(activeKeys) {
+    if (activeKeys.indexOf("education") >= 0) return "istat_racli_province_education";
+    if (activeKeys.indexOf("country_birth") >= 0) return "istat_racli_province_country_birth";
+    if (activeKeys.indexOf("working_time") >= 0) return "istat_racli_province_working_time";
+    if (activeKeys.indexOf("contract_type") >= 0) return "istat_racli_province_contract";
+    if (activeKeys.indexOf("firm_size") >= 0) return "istat_racli_province_firm_size";
+    if (activeKeys.indexOf("contractual_occupation") >= 0) return "istat_racli_province_qualification";
+    if (activeKeys.indexOf("age_class") >= 0) return "istat_racli_province_age";
+    return "istat_racli_province_paid_days";
   }
 
-  function renderSectorBoxSummary(rows) {
+  function totalDimensionValue(key) {
+    return {
+      age_class: "TOTAL",
+      education: "99",
+      sector: "0010",
+      contract_type: "9",
+      working_time: "9",
+      contractual_occupation: "99",
+      firm_size: "TOTAL",
+      country_birth: "WORLD",
+      paid_days: "TOTAL"
+    }[key];
+  }
+
+  function selectedOrTotalDimensionValue(key, activeKeys) {
+    return activeKeys.indexOf(key) >= 0 ? state.job[key] : totalDimensionValue(key);
+  }
+
+  function sectorBoxReferenceFilters() {
+    if (String(state.job.geography_code) !== "IT") return null;
+    var activeKeys = activeJobBoxFilters();
+    var request = !activeKeys.length && !isTotal("sex", state.job.sex)
+      ? "istat_racli_province_gender"
+      : sectorBoxReferenceRequest(activeKeys);
+    return {
+      source: "ISTAT",
+      source_request: request,
+      year: state.job.year,
+      geography_code: "IT",
+      sex: state.job.sex,
+      age_class: selectedOrTotalDimensionValue("age_class", activeKeys),
+      education: selectedOrTotalDimensionValue("education", activeKeys),
+      sector: "0010",
+      contract_type: selectedOrTotalDimensionValue("contract_type", activeKeys),
+      working_time: selectedOrTotalDimensionValue("working_time", activeKeys),
+      contractual_occupation: selectedOrTotalDimensionValue("contractual_occupation", activeKeys),
+      firm_size: selectedOrTotalDimensionValue("firm_size", activeKeys),
+      country_birth: selectedOrTotalDimensionValue("country_birth", activeKeys),
+      paid_days: selectedOrTotalDimensionValue("paid_days", activeKeys),
+      pay_period: "hourly",
+      pay_concept: "gross_earnings"
+    };
+  }
+
+  function sectorBoxReferenceRows() {
+    var filters = sectorBoxReferenceFilters();
+    if (!filters) return [];
+    return filterRows(grossRows(), filters).filter(function (row) {
+      return ["mean", "median", "percentile"].indexOf(row.statistic) >= 0;
+    });
+  }
+
+  function sectorBoxReferenceRow(referenceRows) {
+    var rows = toArray(referenceRows);
+    var statistic = state.job.statistic === "mean" ? "mean" : "median";
+    return rows.filter(function (row) {
+      return row.statistic === statistic;
+    })[0] || null;
+  }
+
+  function referenceDistributionPoint(referenceRows, statistic, percentile) {
+    return toArray(referenceRows).filter(function (row) {
+      if (statistic && row.statistic !== statistic) return false;
+      if (percentile !== null && percentile !== undefined) return Number(row.percentile) === Number(percentile);
+      return true;
+    })[0] || null;
+  }
+
+  function renderSectorBoxSummary(rows, referenceRow, referenceRows) {
     var picker = byId("siSectorPicker");
     if (!picker) return;
     clear(picker);
     if (!rows.length) return;
     var minRow = rows[0];
     var maxRow = rows[rows.length - 1];
-    var values = rows.map(function (row) { return row.value; });
-    [
+    var p10 = referenceDistributionPoint(referenceRows, "percentile", 10);
+    var p90 = referenceDistributionPoint(referenceRows, "percentile", 90);
+    var referenceLabel = state.job.statistic === "mean" ? "media nazionale " : "mediana nazionale ";
+    var items = [
       "Settori: " + rows.length,
       "min " + optionLabel(minRow, "sector", "sector_label") + " " + euro(minRow.value, 2),
-      "mediana settori " + euro(medianValue(values), 2),
       "max " + optionLabel(maxRow, "sector", "sector_label") + " " + euro(maxRow.value, 2)
-    ].forEach(function (textValue) {
+    ];
+    if (referenceRow) {
+      items.splice(1, 0, referenceLabel + euro(referenceRow.value, 2));
+    }
+    if (p10 && p90 && state.job.statistic !== "mean") {
+      items.splice(2, 0, "P10-P90 nazionale " + euro(p10.value, 2) + "-" + euro(p90.value, 2));
+    }
+    items.forEach(function (textValue) {
       var item = document.createElement("span");
       item.className = "si-box-summary-item";
       item.textContent = textValue;
@@ -1543,27 +1640,80 @@
 
   function renderSectorBox() {
     var rows = sectorBoxRows();
-    renderSectorBoxSummary(rows);
+    var referenceRows = sectorBoxReferenceRows();
+    var referenceRow = sectorBoxReferenceRow(referenceRows);
+    renderSectorBoxSummary(rows, referenceRow, referenceRows);
     if (!rows.length) {
       showEmpty("siSectorBoxChart", "Boxplot settoriale disponibile solo per combinazioni pubblicate da ISTAT RACLI. L'incrocio settore-territorio provinciale non è disponibile e non viene stimato.");
       return;
     }
+    var referenceValue = referenceRow ? toNumber(referenceRow.value) : null;
+    var p10 = referenceDistributionPoint(referenceRows, "percentile", 10);
+    var median = referenceDistributionPoint(referenceRows, "median", null);
+    var p90 = referenceDistributionPoint(referenceRows, "percentile", 90);
+    var shapes = [];
+    var annotations = [];
+    if (p10 && median && p90 && state.job.statistic !== "mean") {
+      shapes.push({
+        type: "rect",
+        xref: "x",
+        x0: -0.22,
+        x1: 0.22,
+        yref: "y",
+        y0: toNumber(p10.value),
+        y1: toNumber(p90.value),
+        fillcolor: "rgba(255,107,42,.18)",
+        line: { color: COLORS[0], width: 2 }
+      });
+      shapes.push({
+        type: "line",
+        xref: "x",
+        x0: -0.28,
+        x1: 0.28,
+        yref: "y",
+        y0: toNumber(median.value),
+        y1: toNumber(median.value),
+        line: { color: COLORS[0], width: 3 }
+      });
+      annotations.push({
+        x: 0,
+        y: toNumber(median.value),
+        yanchor: "bottom",
+        text: "Mediana nazionale " + euro(median.value, 2),
+        showarrow: false,
+        font: { color: cssVar("--orange", "#ff6b2a"), size: 12 }
+      });
+    }
+    if (referenceValue !== null) {
+      shapes.push({
+        type: "line",
+        xref: "paper",
+        x0: 0,
+        x1: 1,
+        yref: "y",
+        y0: referenceValue,
+        y1: referenceValue,
+        line: { color: COLORS[0], width: 2, dash: "dash" }
+      });
+    }
     plot("siSectorBoxChart", [{
-      type: "box",
+      type: "scatter",
+      mode: "markers",
       name: "Settori ATECO",
+      x: rows.map(function (row, index) {
+        return 1 + ((index % 9) - 4) * 0.035;
+      }),
       y: rows.map(function (row) { return row.value; }),
       text: rows.map(function (row) { return optionLabel(row, "sector", "sector_label"); }),
-      marker: { color: COLORS[0], opacity: 0.78, size: 7 },
-      line: { color: COLORS[0], width: 1.8 },
-      fillcolor: "rgba(255,107,42,.18)",
-      boxpoints: "all",
-      jitter: 0.36,
-      pointpos: 0,
+      marker: { color: COLORS[1], opacity: 0.78, size: 8, line: { color: cssVar("--si-chart-bg", "#1c1c1c"), width: 1 } },
       hovertemplate: "<b>%{text}</b><br>Retribuzione: %{y:.2f} €<extra></extra>"
     }], {
       height: 560,
       margin: { t: 22, r: 18, b: 72, l: 70 },
-      xaxis: { title: "", automargin: true },
+      shapes: shapes,
+      annotations: annotations,
+      showlegend: false,
+      xaxis: { title: "", range: [-0.55, 1.55], tickvals: [0, 1], ticktext: ["Totale Italia", "Settori ATECO"], automargin: true },
       yaxis: { title: "Retribuzione oraria lorda (euro per ora)", rangemode: "tozero" }
     });
   }
