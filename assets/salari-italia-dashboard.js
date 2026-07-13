@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-5";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard.json?v=20260713-6";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -1124,10 +1124,67 @@
         var key = ANALYSIS_FILTER_KEYS[index];
         var item = DIMENSIONS[key];
         var value = targetState[key];
-        if (!item || item.field === dimension.field || value === null || value === undefined || value === "" || String(value) === "all") continue;
+        if (!item || item.field === dimension.field || value === null || value === undefined || value === "") continue;
+        if (String(value) === "all") {
+          if (row[item.field] !== null && row[item.field] !== undefined && row[item.field] !== "" && !isTotal(item.field, row[item.field])) return false;
+          continue;
+        }
         if (!matchesFilterValue(row, item.field, value)) return false;
       }
       return true;
+    });
+  }
+
+  function analysisRequestName(dimensionKey) {
+    return {
+      sex: "gender",
+      age_class: "age",
+      education: "education",
+      country_birth: "country_birth",
+      working_time: "working_time",
+      contract_type: "contract",
+      firm_size: "firm_size",
+      contractual_occupation: "qualification",
+      paid_days: "paid_days",
+      sector: "sector"
+    }[dimensionKey] || "";
+  }
+
+  function analysisRowPriority(row, dimensionKey) {
+    var request = String(row.source_request || "");
+    var priority = row.source === "ISTAT" ? 0 : 100;
+    var requestName = analysisRequestName(dimensionKey);
+    if (requestName && request.indexOf("istat_racli_sector_" + requestName) === 0) priority -= 20;
+    if (request === "istat_racli_sector_gender") priority -= 10;
+    if (hasOnlyTotalAnalysisDimensionsExcept(row, [dimensionKey])) priority -= 5;
+    return priority;
+  }
+
+  function dedupeAnalysisRows(rows, dimensionKey) {
+    var dimension = DIMENSIONS[dimensionKey];
+    var selected = {};
+    if (!dimension) return [];
+    toArray(rows).forEach(function (row) {
+      var key = optionIdentity(dimension.field, row[dimension.field]) || String(row[dimension.field]);
+      var existing = selected[key];
+      if (!existing || analysisRowPriority(row, dimensionKey) < analysisRowPriority(existing, dimensionKey)) {
+        selected[key] = row;
+      }
+    });
+    return Object.keys(selected).map(function (key) { return selected[key]; });
+  }
+
+  function categoryLabels(rows, dimension) {
+    var labels = toArray(rows).map(function (row) {
+      return optionLabel(row, dimension.field, dimension.labelField);
+    });
+    var counts = {};
+    labels.forEach(function (label) {
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return labels.map(function (label, index) {
+      if (counts[label] <= 1) return label;
+      return label + " (" + text(rows[index][dimension.field]) + ")";
     });
   }
 
@@ -1148,7 +1205,7 @@
     }
     syncFilters(containerId, specs, rows, targetState, onFilterChange || renderAll);
     var dimension = DIMENSIONS[targetState.dimension];
-    var selected = analysisRows(targetState, targetState.dimension);
+    var selected = dedupeAnalysisRows(analysisRows(targetState, targetState.dimension), targetState.dimension);
     selected.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
     var totalSelected = selected.length;
     selected = displayRows(selected, targetState.max_items).reverse();
@@ -1162,7 +1219,7 @@
       type: "bar",
       orientation: "h",
       x: selected.map(function (row) { return row.value; }),
-      y: selected.map(function (row) { return optionLabel(row, dimension.field, dimension.labelField); }),
+      y: categoryLabels(selected, dimension),
       marker: { color: COLORS[1] },
       hovertemplate: "%{y}<br>%{x:.2f} €<extra></extra>"
     }], {
