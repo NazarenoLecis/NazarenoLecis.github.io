@@ -2036,6 +2036,9 @@
     var rows = state.records.filter(function (row) {
       return row.pay_concept === "gender_pay_gap_unadjusted";
     });
+    var adjustedRows = state.records.filter(function (row) {
+      return row.pay_concept === "gender_pay_gap_adjusted";
+    });
     var countries = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
     var traces = countries.map(function (country, index) {
       var countryRows = rows.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
@@ -2051,6 +2054,21 @@
         hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f}%<extra></extra>"
       };
     }).filter(function (trace) { return trace.x.length; });
+    var adjustedTraces = countries.map(function (country, index) {
+      var countryRows = adjustedRows.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
+        return Number(a.year) - Number(b.year);
+      });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: countryRows[0] ? "Adjusted - " + optionLabel(countryRows[0], "geography_code", "geography_name") : "Adjusted - " + country,
+        x: countryRows.map(function (row) { return row.year; }),
+        y: countryRows.map(function (row) { return row.value; }),
+        line: { color: COLORS[index % COLORS.length], width: country === "IT" ? 4 : 2, dash: "dash" },
+        hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f}%<extra></extra>"
+      };
+    }).filter(function (trace) { return trace.x.length; });
+    traces = traces.concat(adjustedTraces);
     var istat = {};
     grossRows().forEach(function (row) {
       if (row.source_request !== "istat_racli_sector_gender") return;
@@ -2080,6 +2098,57 @@
       yaxis: { title: "%", zeroline: true },
       xaxis: { title: "" }
     });
+    renderGenderGapMethod(adjustedRows, istatGap);
+  }
+
+  function renderGenderGapMethod(adjustedRows, istatGap) {
+    var container = byId("siGenderGapMethod");
+    if (!container) return;
+    var hasAdjusted = toArray(adjustedRows).length > 0;
+    var hasIstatGap = toArray(istatGap).length > 0;
+    clear(container);
+    [
+      {
+        label: "Unadjusted",
+        title: "Serie ufficiale comparabile",
+        text: "La serie Eurostat confronta la retribuzione oraria lorda media delle donne con quella degli uomini. E' utile per i confronti europei, ma non corregge per composizione di occupazione, settore, orario, contratto o qualifica."
+      },
+      {
+        label: "Adjusted",
+        title: hasAdjusted ? "Serie presente nel payload" : "Non stimato se manca una fonte ufficiale",
+        text: hasAdjusted
+          ? "Il grafico mostra anche le righe adjusted disponibili nel dataset pubblicato dalla pipeline."
+          : "L'adjusted richiede microdati o una decomposizione ufficiale documentata, ad esempio su Structure of Earnings Survey. La dashboard non costruisce una stima autonoma partendo da aggregati."
+      },
+      {
+        label: "Orario e contratto",
+        title: "Part-time e continuita'",
+        text: "Per interpretare il divario bisogna separare salario orario, mensile e annuale: una maggiore presenza femminile nel part-time o in carriere meno continue pesa soprattutto su redditi annuali e progressioni."
+      },
+      {
+        label: "Settori e carriera",
+        title: "Composizione professionale",
+        text: "Una parte del gap puo' dipendere dalla concentrazione in settori e professioni meno pagati, dalla minore presenza in qualifiche apicali e da progressioni di carriera piu' lente. La quota residua adjusted non va letta automaticamente come sola discriminazione."
+      }
+    ].forEach(function (item) {
+      var node = document.createElement("div");
+      var label = document.createElement("span");
+      var title = document.createElement("strong");
+      var text = document.createElement("p");
+      node.className = "si-gpg-method-item";
+      label.textContent = item.label;
+      title.textContent = item.title;
+      text.textContent = item.text;
+      node.appendChild(label);
+      node.appendChild(title);
+      node.appendChild(text);
+      container.appendChild(node);
+    });
+    if (hasIstatGap) {
+      container.setAttribute("data-istat-gap", "available");
+    } else {
+      container.removeAttribute("data-istat-gap");
+    }
   }
 
   function seriesPriority(row) {
@@ -2252,7 +2321,7 @@
         "Le giornate retribuite sono classi ufficiali RACLI: indicano continuita' o stagionalita' della posizione, ma non conteggi di lavoratori ricostruiti.",
         "Le tavole 2022 su istruzione, anzianità e dimensione impresa sono punti dell'edizione SES 2022.",
         "Territorio di residenza, luogo di lavoro e sede dell'impresa non sono intercambiabili.",
-        "Il gender pay gap adjusted non viene stimato senza microdati o una tavola ufficiale gia' corretta."
+        "Il gender pay gap unadjusted e quello adjusted sono misure diverse: l'adjusted viene mostrato solo con microdati, modello ufficiale o tavola gia' corretta."
       ].forEach(function (note) {
         var item = document.createElement("li");
         item.textContent = note;

@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-12">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-13">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-12"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-13"></script>
 </head>
 <body>
   <header class="site-header">
@@ -164,12 +164,17 @@
     <section class="dashboard-section" id="gender-gap">
       <div class="section-head">
         <span class="eyebrow">Gender pay gap</span>
-        <div><h2>Divario retributivo di genere</h2><p>Il grafico usa la serie ufficiale non corretta. Le misure adjusted vengono mostrate solo se disponibili da fonte ufficiale o modello documentato.</p></div>
+        <div><h2>Divario retributivo di genere</h2><p>La sezione distingue il gender pay gap unadjusted pubblicato da Eurostat dall'adjusted, che viene mostrato solo quando esiste una fonte ufficiale o una decomposizione documentata.</p></div>
       </div>
       <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Gender pay gap non corretto</h3><span>Eurostat</span></div>
+        <div class="si-card-title"><h3>Gender pay gap unadjusted</h3><span>Eurostat</span></div>
         <div id="siGenderGapChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. Il dato adjusted non viene stimato senza microdati o modello ufficiale.</p>
+        <p class="si-chart-credit">Fonte: Eurostat <code>earn_gr_gpgr2</code>. L'adjusted non viene stimato nel browser: viene visualizzato solo se presente nel dataset pubblicato dalla pipeline.</p>
+      </article>
+      <article class="si-card si-gpg-method">
+        <div class="si-card-title"><h3>Adjusted e fattori di composizione</h3><span>Metodo</span></div>
+        <div id="siGenderGapMethod" class="si-gpg-method-grid"></div>
+        <p class="si-chart-credit">Riferimenti: <a href="https://ec.europa.eu/eurostat/databrowser/product/view/earn_gr_gpgr2" target="_blank" rel="noopener">Eurostat <code>earn_gr_gpgr2</code></a> e decomposizioni Eurostat basate sulla <a href="https://ec.europa.eu/eurostat/web/products-statistical-working-papers/-/ks-tc-18-003" target="_blank" rel="noopener">Structure of Earnings Survey</a>.</p>
       </article>
     </section>
 
