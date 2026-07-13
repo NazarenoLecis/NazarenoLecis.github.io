@@ -15,6 +15,38 @@
     share_below_two_thirds_median: "Bassa retribuzione",
     mean_gap: "Gender pay gap"
   };
+  var GPG_COMPONENT_LABELS = {
+    unadjusted: "Unadjusted",
+    adjusted_unexplained: "Adjusted / unexplained",
+    explained_overall: "Parte spiegata complessiva",
+    economic_activity: "Settore economico",
+    working_time: "Tempo pieno / part-time",
+    occupation: "Professione",
+    education: "Titolo di studio",
+    enterprise_control: "Controllo pubblico / privato",
+    enterprise_size: "Dimensione impresa",
+    age: "Eta'",
+    job_experience: "Anzianita'",
+    employment_contract: "Contratto",
+    geographical_location: "Localizzazione",
+    residual: "Residuo"
+  };
+  var GPG_COMPONENT_ORDER = [
+    "unadjusted",
+    "adjusted_unexplained",
+    "explained_overall",
+    "economic_activity",
+    "working_time",
+    "occupation",
+    "education",
+    "enterprise_control",
+    "enterprise_size",
+    "age",
+    "job_experience",
+    "employment_contract",
+    "geographical_location",
+    "residual"
+  ];
   var PERIOD_LABELS = { hourly: "Oraria", monthly: "Mensile", annual: "Annuale" };
   var TOTAL_VALUES = ["T", "TOTAL", "9", "99", "0010", "WORLD", "GE10"];
   var ANALYSIS_FILTER_KEYS = [
@@ -472,6 +504,7 @@
       statistic: "median"
     },
     europe: { pay_period: "hourly", statistic: "median", sex: "T", countries: [], start_year: null, end_year: null },
+    genderGapCountry: "IT",
     series: {
       pay_period: "hourly",
       statistic: "all",
@@ -2099,6 +2132,7 @@
       xaxis: { title: "" }
     });
     renderGenderGapMethod(adjustedRows, istatGap);
+    renderGenderGapDecomposition();
   }
 
   function renderGenderGapMethod(adjustedRows, istatGap) {
@@ -2149,6 +2183,106 @@
     } else {
       container.removeAttribute("data-istat-gap");
     }
+  }
+
+  function genderGapDecompositionRows() {
+    return state.records.filter(function (row) {
+      return row.pay_concept === "gender_pay_gap_decomposition";
+    });
+  }
+
+  function genderGapCountryOptions(rows) {
+    var selected = {};
+    rows.forEach(function (row) {
+      if (!row.geography_code || row.statistic !== "unadjusted") return;
+      selected[row.geography_code] = optionLabel(row, "geography_code", "geography_name");
+    });
+    return Object.keys(selected).sort(function (a, b) {
+      if (a === "IT") return -1;
+      if (b === "IT") return 1;
+      if (a === "EU27_2020") return -1;
+      if (b === "EU27_2020") return 1;
+      return selected[a].localeCompare(selected[b], "it");
+    }).map(function (code) {
+      return { value: code, label: selected[code] };
+    });
+  }
+
+  function syncGenderGapCountry(rows) {
+    var select = byId("siGenderGapCountry");
+    if (!select) return;
+    var options = genderGapCountryOptions(rows);
+    var values = options.map(function (option) { return option.value; });
+    if (values.indexOf(state.genderGapCountry) < 0) {
+      state.genderGapCountry = values.indexOf("IT") >= 0 ? "IT" : values[0];
+    }
+    clear(select);
+    options.forEach(function (option) {
+      var node = document.createElement("option");
+      node.value = option.value;
+      node.textContent = option.label;
+      select.appendChild(node);
+    });
+    select.value = state.genderGapCountry || "";
+    select.onchange = function () {
+      state.genderGapCountry = select.value;
+      renderGenderGapDecomposition();
+    };
+    select.disabled = options.length < 2;
+  }
+
+  function renderGenderGapDecomposition() {
+    var rows = genderGapDecompositionRows();
+    syncGenderGapCountry(rows);
+    var countryRows = rows.filter(function (row) {
+      return row.geography_code === state.genderGapCountry;
+    });
+    if (!countryRows.length) {
+      showEmpty("siGenderGapDecompositionChart", "Decomposizione adjusted non disponibile.");
+      return;
+    }
+    var byStatistic = {};
+    countryRows.forEach(function (row) {
+      byStatistic[row.statistic] = row;
+    });
+    var chartRows = GPG_COMPONENT_ORDER.map(function (statistic) {
+      var row = byStatistic[statistic];
+      if (!row) return null;
+      return {
+        statistic: statistic,
+        label: GPG_COMPONENT_LABELS[statistic] || statistic,
+        value: toNumber(row.value),
+        country: optionLabel(row, "geography_code", "geography_name")
+      };
+    }).filter(function (row) {
+      return row && row.value !== null;
+    }).reverse();
+    if (!chartRows.length) {
+      showEmpty("siGenderGapDecompositionChart", "Decomposizione adjusted non disponibile.");
+      return;
+    }
+    var colors = chartRows.map(function (row) {
+      if (row.statistic === "adjusted_unexplained") return "#ff6b2a";
+      if (row.statistic === "unadjusted") return "#f0b44d";
+      if (row.statistic === "explained_overall") return "#5fc3b2";
+      return row.value >= 0 ? "#5b8fd9" : "#e66b6b";
+    });
+    plot("siGenderGapDecompositionChart", [{
+      type: "bar",
+      orientation: "h",
+      x: chartRows.map(function (row) { return row.value; }),
+      y: chartRows.map(function (row) { return row.label; }),
+      marker: { color: colors },
+      text: chartRows.map(function (row) { return percent(row.value); }),
+      textposition: "auto",
+      customdata: chartRows.map(function (row) { return [row.country, row.statistic]; }),
+      hovertemplate: "%{customdata[0]}<br>%{y}: %{x:.1f} punti percentuali<extra></extra>"
+    }], {
+      yaxis: { title: "", automargin: true },
+      xaxis: { title: "Punti percentuali", zeroline: true },
+      showlegend: false,
+      margin: { l: 180, r: 28, t: 20, b: 50 }
+    });
   }
 
   function seriesPriority(row) {
@@ -2448,7 +2582,7 @@
       .catch(function (error) {
         setStatus("Non riesco a caricare i dati salari: " + error.message, true);
         if (preserveInitial) return;
-        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siGenderGapChart", "siSeriesChart"].forEach(function (id) {
+        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siGenderGapChart", "siGenderGapDecompositionChart", "siSeriesChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
       });

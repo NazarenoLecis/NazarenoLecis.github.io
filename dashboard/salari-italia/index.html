@@ -8,10 +8,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-13">
+  <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260713-14">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-13"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260713-14"></script>
 </head>
 <body>
   <header class="site-header">
@@ -175,6 +175,15 @@
         <div class="si-card-title"><h3>Adjusted e fattori di composizione</h3><span>Metodo</span></div>
         <div id="siGenderGapMethod" class="si-gpg-method-grid"></div>
         <p class="si-chart-credit">Riferimenti: <a href="https://ec.europa.eu/eurostat/databrowser/product/view/earn_gr_gpgr2" target="_blank" rel="noopener">Eurostat <code>earn_gr_gpgr2</code></a> e decomposizioni Eurostat basate sulla <a href="https://ec.europa.eu/eurostat/web/products-statistical-working-papers/-/ks-tc-18-003" target="_blank" rel="noopener">Structure of Earnings Survey</a>.</p>
+      </article>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Decomposizione adjusted SES 2022</h3><span>Eurostat 2025</span></div>
+        <div class="si-inline-control">
+          <label for="siGenderGapCountry">Paese</label>
+          <select id="siGenderGapCountry"></select>
+        </div>
+        <div id="siGenderGapDecompositionChart" class="si-chart si-chart-wide"></div>
+        <p class="si-chart-credit">Fonte: Eurostat, <a href="https://ec.europa.eu/eurostat/web/products-statistical-working-papers/w/ks-01-25-035" target="_blank" rel="noopener"><code>KS-01-25-035</code></a>, tabella 2. L'adjusted è la componente unexplained della decomposizione Blinder-Oaxaca su microdati SES 2022.</p>
       </article>
     </section>
 
