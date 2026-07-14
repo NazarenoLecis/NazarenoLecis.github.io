@@ -506,6 +506,7 @@
       sex: "T",
       age_class: "TOTAL",
       education: "99",
+      occupation: "TOTAL",
       sector: "0010",
       contract_type: "9",
       working_time: "9",
@@ -2361,7 +2362,15 @@
       if (String(row.source_request || "").indexOf("istat_racli_sector_") === 0) return 0;
       return 1;
     }
-    return 2;
+    if (row.source === "Eurostat") {
+      var request = String(row.source_request || "");
+      if (request === "ses_hourly_distribution" && row.pay_period === "hourly") return 2;
+      if (request === "ses_monthly_distribution" && row.pay_period === "monthly") return 2;
+      if (request === "ses_annual_distribution" && row.pay_period === "annual") return 2;
+      if (request.indexOf("ses2022_") === 0) return 3;
+      return 4;
+    }
+    return 5;
   }
 
   function dedupeSeriesRows(rows) {
@@ -2454,6 +2463,7 @@
       seriesFilterSpec("sex", "sex", "Sesso", "sex_label"),
       seriesFilterSpec("age_class", "age_class", "Età", "age_label"),
       seriesFilterSpec("education", "education", "Titolo di studio", "education_label"),
+      seriesFilterSpec("occupation", "occupation", "Professione", "occupation_label"),
       seriesFilterSpec("sector", "sector", "Settore", "sector_label"),
       seriesFilterSpec("contract_type", "contract_type", "Contratto", "contract_type_label"),
       seriesFilterSpec("working_time", "working_time", "Orario", "working_time_label"),
@@ -2468,6 +2478,7 @@
       sex: state.series.sex,
       age_class: state.series.age_class,
       education: state.series.education,
+      occupation: state.series.occupation,
       sector: state.series.sector,
       contract_type: state.series.contract_type,
       working_time: state.series.working_time,
