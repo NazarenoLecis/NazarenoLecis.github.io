@@ -121,6 +121,19 @@
     return Object.keys(seen).sort(function (a, b) { return Number(a) - Number(b); });
   }
 
+  function yearAxis(rows) {
+    var ticks = years(rows);
+    return {
+      title: "",
+      tickmode: "array",
+      tickvals: ticks.map(Number),
+      ticktext: ticks,
+      gridcolor: cssVar("--gpg-grid", "#4a4a4a"),
+      zerolinecolor: cssVar("--gpg-grid", "#4a4a4a"),
+      automargin: true
+    };
+  }
+
   function ensureSelect(container, key, labelText, options, current, onChange) {
     var wrapper = container.querySelector('[data-filter="' + key + '"]');
     if (!options.length) {
@@ -352,6 +365,7 @@
     byId("gpgSeriesTag").textContent = state.selectedCountries.length + " paesi · " + state.startYear + "-" + state.endYear;
     plot("gpgSeriesChart", traces, {
       height: 520,
+      xaxis: yearAxis(selectedRows),
       yaxis: { title: "Gender pay gap unadjusted (%)", gridcolor: cssVar("--gpg-grid", "#4a4a4a"), zerolinecolor: cssVar("--gpg-grid", "#4a4a4a"), rangemode: "normal" }
     });
   }

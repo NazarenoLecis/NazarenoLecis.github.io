@@ -465,6 +465,37 @@ body.light .si-dashboard {
   min-height: 410px;
 }
 
+.si-guidance-list {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.si-guidance {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--orange);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.4;
+}
+
+.si-guidance strong {
+  color: var(--text);
+}
+
+.si-guidance-warning {
+  border-left-color: #f0b44d;
+}
+
+.si-guidance-info {
+  border-left-color: var(--orange);
+}
+
 .si-chart-credit {
   margin: 10px 0 0;
   padding-top: 10px;

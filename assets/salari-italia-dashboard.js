@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260713-8";
-  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260713-8";
+  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260715-2";
+  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260715-2";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -15,6 +15,30 @@
     share_below_two_thirds_median: "Bassa retribuzione"
   };
   var PERIOD_LABELS = { hourly: "Oraria", monthly: "Mensile", annual: "Annuale" };
+  var DEFAULT_GUIDANCE = [
+    {
+      id: "annual_total_vs_fte",
+      severity: "warning",
+      title: "Attenzione al totale annuale",
+      message: "La retribuzione annuale SES con orario Totale non e' equivalente full-time: riflette anche part-time e durate retribuite diverse. Per confronti tra paesi usa Totale in equivalenti full-time, full-time e part-time.",
+      applies_to: { dataset: ["earn_ses_annual"], pay_period: ["annual"], working_time: ["TOTAL"] },
+      suggested_filters: [{ dimension: "working_time", values: ["TOT_FTE", "FT", "PT", "PT_FTE"] }]
+    },
+    {
+      id: "monthly_annual_are_distinct_measures",
+      severity: "info",
+      title: "Orario, mensile e annuale non sono conversioni",
+      message: "Eurostat pubblica misure SES distinte: oraria, mensile e annuale. Le differenze tra paesi possono cambiare quando entrano orario di lavoro, part-time e giornate retribuite.",
+      applies_to: { dataset: ["earn_ses_hourly", "earn_ses_monthly", "earn_ses_annual"], pay_period: ["hourly", "monthly", "annual"] }
+    },
+    {
+      id: "ses_four_year_survey",
+      severity: "info",
+      title: "SES e' una rilevazione quadriennale",
+      message: "La Structure of Earnings Survey e' pubblicata per anni di rilevazione specifici. Le linee collegano anni disponibili, non valori annuali stimati.",
+      applies_to: { dataset: ["earn_ses_hourly", "earn_ses_monthly", "earn_ses_annual"] }
+    }
+  ];
   var TOTAL_VALUES = ["T", "TOTAL", "9", "99", "0010", "WORLD", "GE10"];
   var ANALYSIS_FILTER_KEYS = [
     "sex",
@@ -244,6 +268,8 @@
     working_time: {
       FT: "Tempo pieno",
       PT: "Tempo parziale",
+      TOT_FTE: "Totale in equivalenti full-time",
+      PT_FTE: "Part-time in equivalenti full-time",
       "1": "Tempo pieno",
       "2": "Tempo parziale",
       TOTAL: "Totale",
@@ -456,7 +482,8 @@
     lowWage: {
       dimension: "geography_code",
       year: null,
-      geography_code: "IT"
+      geography_code: "IT",
+      countries: []
     },
     sectorBox: {
       year: null,
@@ -498,7 +525,7 @@
       firm_size: "all",
       statistic: "median"
     },
-    europe: { pay_period: "hourly", statistic: "median", sex: "T", countries: [], start_year: null, end_year: null },
+    europe: { pay_period: "annual", statistic: "median", sex: "T", working_time: "TOT_FTE", countries: [], start_year: null, end_year: null },
     series: {
       pay_period: "hourly",
       statistic: "all",
@@ -628,6 +655,37 @@
     node.style.color = isError ? "#e15759" : "";
   }
 
+  function guidanceMatches(item, context) {
+    var applies = item && item.applies_to;
+    if (!applies) return false;
+    return Object.keys(applies).every(function (key) {
+      var allowed = toArray(applies[key]).map(String);
+      return allowed.length && context[key] !== undefined && allowed.indexOf(String(context[key])) >= 0;
+    });
+  }
+
+  function renderGuidance(containerId, context, extraItems) {
+    var container = byId(containerId);
+    if (!container) return;
+    clear(container);
+    var guidance = toArray(state.payload && state.payload.dashboard_guidance);
+    if (!guidance.length) guidance = DEFAULT_GUIDANCE;
+    var matches = guidance.filter(function (item) {
+      return guidanceMatches(item, context);
+    }).concat(toArray(extraItems));
+    matches.forEach(function (item) {
+      var node = document.createElement("div");
+      var title = document.createElement("strong");
+      var message = document.createElement("span");
+      node.className = "si-guidance si-guidance-" + text(item.severity, "info");
+      title.textContent = item.title || "Nota metodologica";
+      message.textContent = item.message || "";
+      node.appendChild(title);
+      node.appendChild(message);
+      container.appendChild(node);
+    });
+  }
+
   function cssVar(name, fallback) {
     var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return value || fallback;
@@ -732,6 +790,8 @@
       if (raw === "1" || raw === "FT") return "full_time";
       if (raw === "2" || raw === "PT") return "part_time";
       if (raw === "9" || raw === "TOTAL") return "total";
+      if (raw === "TOT_FTE") return "total_fte";
+      if (raw === "PT_FTE") return "part_time_fte";
     }
     return raw;
   }
@@ -768,6 +828,50 @@
     return yearsFrom(rows).sort(function (a, b) {
       return Number(a.value) - Number(b.value);
     });
+  }
+
+  function yearTickValues(rows) {
+    var seen = {};
+    toArray(rows).forEach(function (row) {
+      var year = Number(row.year);
+      if (Number.isFinite(year)) seen[String(year)] = year;
+    });
+    return Object.keys(seen).map(function (key) { return seen[key]; }).sort(function (a, b) {
+      return a - b;
+    });
+  }
+
+  function yearAxis(rows) {
+    var ticks = yearTickValues(rows);
+    return { title: "", tickmode: "array", tickvals: ticks, ticktext: ticks.map(String) };
+  }
+
+  function consecutiveYearSegments(rows) {
+    var sorted = toArray(rows).slice().sort(function (a, b) {
+      return Number(a.year) - Number(b.year);
+    });
+    var segments = [];
+    var current = [];
+    sorted.forEach(function (row) {
+      var year = Number(row.year);
+      var previous = current.length ? Number(current[current.length - 1].year) : null;
+      if (!current.length || year === previous + 1) {
+        current.push(row);
+      } else {
+        segments.push(current);
+        current = [row];
+      }
+    });
+    if (current.length) segments.push(current);
+    return segments;
+  }
+
+  function hasYearGaps(rows) {
+    return consecutiveYearSegments(rows).length > 1;
+  }
+
+  function yearTraceMode(rows) {
+    return hasYearGaps(rows) || toArray(rows).length < 2 ? "markers" : "lines+markers";
   }
 
   function syncYearRange(containerId, rows, targetState, onChange) {
@@ -886,6 +990,10 @@
 
   function preferredOption(options, spec) {
     if (!options.length) return "";
+    if (spec && spec.preferredValue !== undefined) {
+      var preferredMatch = options.find(function (option) { return String(option.value) === String(spec.preferredValue); });
+      if (preferredMatch) return preferredMatch.value;
+    }
     var allMatch = options.find(function (option) { return String(option.value) === "all"; });
     if (allMatch && (!spec || spec.preferAll !== false)) return allMatch.value;
     if (!spec || spec.preferTotal !== false) {
@@ -1029,6 +1137,15 @@
 
   function eurostatDistributionRows() {
     return state.eurostatDistributionRecords;
+  }
+
+  function oecdAnnualWageRows() {
+    return state.records.filter(function (row) {
+      return row.source === "OECD"
+        && row.pay_concept === "average_annual_wage_oecd"
+        && row.statistic === "mean"
+        && row.pay_period === "annual";
+    });
   }
 
   function rowMatches(row, filters) {
@@ -1876,6 +1993,38 @@
     ];
   }
 
+  function syncLowWageCountries(rows) {
+    var container = byId("siLowWageFilters");
+    if (!container) return [];
+    var geographyNode = container.querySelector('[data-filter="geography_code"]');
+    if (geographyNode) geographyNode.remove();
+    var options = uniqueOptions(rows, "geography_code", "geography_name", true);
+    var available = {};
+    options.forEach(function (option) {
+      available[String(option.value)] = true;
+    });
+    state.lowWage.countries = toArray(state.lowWage.countries).filter(function (country) {
+      return available[String(country)];
+    });
+    if (!state.lowWage.countries.length) {
+      state.lowWage.countries = options.map(function (option) {
+        return option.value;
+      });
+    }
+    ensureMultiSelect(container, { key: "countries", label: "Paesi nel grafico" }, options, state.lowWage.countries, function (values) {
+      state.lowWage.countries = values;
+      renderLowWage();
+    });
+    return state.lowWage.countries;
+  }
+
+  function clearLowWageCountrySelect() {
+    var container = byId("siLowWageFilters");
+    if (!container) return;
+    var node = container.querySelector('[data-filter="countries"]');
+    if (node) node.remove();
+  }
+
   function renderLowWage() {
     var rows = lowWageRowsForDimension(state.lowWage.dimension);
     var specs = [
@@ -1895,6 +2044,14 @@
       if (state.lowWage.dimension === "geography_code") return String(row.sex || "T") === "T";
       return row[DIMENSIONS[state.lowWage.dimension].field] !== undefined && row[DIMENSIONS[state.lowWage.dimension].field] !== null;
     });
+    if (state.lowWage.dimension === "geography_code") {
+      var selectedCountries = syncLowWageCountries(rows);
+      rows = rows.filter(function (row) {
+        return selectedCountries.indexOf(String(row.geography_code)) >= 0;
+      });
+    } else {
+      clearLowWageCountrySelect();
+    }
     var dimension = DIMENSIONS[state.lowWage.dimension] || DIMENSIONS.geography_code;
     rows.sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
     rows = rows.reverse();
@@ -1910,8 +2067,8 @@
       marker: { color: COLORS[4] },
       hovertemplate: "%{y}<br>%{x:.1f}%<extra></extra>"
     }], {
-      height: 460,
-      margin: { t: 22, r: 18, b: 52, l: 170 },
+      height: barChartHeight(rows.length),
+      margin: { t: 22, r: 18, b: 52, l: 220 },
       xaxis: { title: "% dei dipendenti", rangemode: "tozero" },
       yaxis: { title: "", automargin: true }
     });
@@ -1928,23 +2085,29 @@
       return matchesFilterValue(row, "geography_code", state.labourCost.geography_code);
     });
     var sectors = uniqueOptions(rows, "sector", "sector_label", false);
-    var traces = sectors.map(function (sector, index) {
+    var traces = [];
+    sectors.forEach(function (sector, index) {
       var sectorRows = rows.filter(function (row) { return String(row.sector) === sector.value; }).sort(function (a, b) {
         return Number(a.year) - Number(b.year);
       });
-      return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: sector.label,
-        x: sectorRows.map(function (row) { return row.year; }),
-        y: sectorRows.map(function (row) { return row.value; }),
-        line: { color: COLORS[index % COLORS.length], width: 3 },
+      consecutiveYearSegments(sectorRows).forEach(function (segment, segmentIndex) {
+        traces.push({
+          type: "scatter",
+          mode: segment.length > 1 ? "lines+markers" : "markers",
+          name: sector.label,
+          legendgroup: sector.value,
+          showlegend: segmentIndex === 0,
+          x: segment.map(function (row) { return row.year; }),
+          y: segment.map(function (row) { return row.value; }),
+          marker: { color: COLORS[index % COLORS.length], size: segment.length > 1 ? 6 : 8 },
+          line: { color: COLORS[index % COLORS.length], width: 3 },
         hovertemplate: "%{fullData.name}<br>%{x}: %{y:.1f} €<extra></extra>"
-      };
-    }).filter(function (trace) { return trace.x.length; });
+        });
+      });
+    });
     plot("siLabourCostChart", traces, {
       yaxis: { title: "Euro per ora", rangemode: "tozero" },
-      xaxis: { title: "" }
+      xaxis: yearAxis(rows)
     });
   }
 
@@ -2224,7 +2387,7 @@
   }
 
   function countryOptionOrder(option) {
-    var preferred = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
+    var preferred = ["IT", "ITA", "EU27_2020", "OECD", "DE", "DEU", "FR", "FRA", "ES", "ESP", "NL", "NLD"];
     var index = preferred.indexOf(String(option.value));
     return index >= 0 ? index : 100;
   }
@@ -2252,7 +2415,7 @@
     options.forEach(function (option) {
       available[String(option.value)] = true;
     });
-    var preferred = ["IT", "EU27_2020", "DE", "FR", "ES", "NL"];
+    var preferred = ["IT", "ITA", "EU27_2020", "OECD", "DE", "DEU", "FR", "FRA", "ES", "ESP", "NL", "NLD"];
     var selected = preferred.filter(function (country) {
       return available[country];
     });
@@ -2284,25 +2447,46 @@
   }
 
   function renderEurope() {
+    var annualOecdMode = state.europe.pay_period === "annual";
     var rows = eurostatDistributionRows();
     var specs = [
       { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true }
     ];
+    if (!annualOecdMode) {
+      specs.push(
+        { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
+        { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true }
+      );
+    }
+    if (state.europe.pay_period === "monthly") {
+      specs.push({
+        key: "working_time",
+        field: "working_time",
+        label: "Orario",
+        labelField: "working_time_label",
+        includeTotals: true,
+        preferredValue: "TOT_FTE"
+      });
+    }
     syncFilters("siEuropeFilters", specs, rows, state.europe, renderEurope);
-    var selected = rows.filter(function (row) {
-      var sourceMatch = state.europe.pay_period === "hourly"
-        ? row.source_request === "ses_by_working_time" && row.sector === "B-S_X_O" && row.working_time === "TOTAL"
-        : row.source_request === (state.europe.pay_period === "monthly" ? "ses_monthly_distribution" : "ses_annual_distribution");
-      return sourceMatch
-        && row.pay_period === state.europe.pay_period
-        && row.statistic === state.europe.statistic
-        && row.sex === state.europe.sex;
-    });
+    annualOecdMode = state.europe.pay_period === "annual";
+    var effectiveWorkingTime = state.europe.pay_period === "hourly" ? "TOTAL" : state.europe.working_time;
+    var selected = annualOecdMode
+      ? oecdAnnualWageRows()
+      : rows.filter(function (row) {
+        var sourceMatch = state.europe.pay_period === "hourly"
+          ? row.source_request === "ses_by_working_time" && row.sector === "B-S_X_O" && row.working_time === "TOTAL"
+          : row.source_request === "ses_monthly_distribution";
+        return sourceMatch
+          && row.pay_period === state.europe.pay_period
+          && row.statistic === state.europe.statistic
+          && row.sex === state.europe.sex
+          && (state.europe.pay_period === "hourly" || row.working_time === effectiveWorkingTime);
+      });
     var countries = syncEuropeCountries(selected);
     syncYearRange("siEuropeFilters", selected, state.europe, renderEurope);
     selected = applyYearRange(selected, state.europe);
+    var ticks = yearTickValues(selected);
     var traces = countries.map(function (country, index) {
       var byYear = {};
       selected.filter(function (row) { return row.geography_code === country; }).forEach(function (row) {
@@ -2312,30 +2496,48 @@
         return Number(a.year) - Number(b.year);
       });
       return {
-        type: "scatter",
-        mode: "lines+markers",
-        name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
-        x: countryRows.map(function (row) { return row.year; }),
-        y: countryRows.map(function (row) { return row.value; }),
-        line: { color: COLORS[index % COLORS.length], width: country === "IT" ? 4 : 2 },
-        hovertemplate: "%{fullData.name}<br>%{x}: %{y:.2f} €<extra></extra>"
+          type: "scatter",
+          mode: annualOecdMode ? "lines+markers" : "markers",
+          name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
+          x: countryRows.map(function (row) { return row.year; }),
+          y: countryRows.map(function (row) { return row.value; }),
+          marker: { color: COLORS[index % COLORS.length], size: annualOecdMode ? 6 : 8 },
+          line: { color: COLORS[index % COLORS.length], width: country === "IT" || country === "ITA" ? 4 : 2 },
+          hovertemplate: annualOecdMode
+            ? "%{fullData.name}<br>%{x}: %{y:,.0f} $ PPP<extra></extra>"
+            : "%{fullData.name}<br>%{x}: %{y:.2f} EUR<extra></extra>"
       };
     }).filter(function (trace) { return trace.x.length; });
     var tag = byId("siEuropeTag");
-    if (tag) tag.textContent = countries.length + " paesi · " + text(state.europe.start_year) + "-" + text(state.europe.end_year);
+    if (tag) {
+      var tagParts = [countries.length + " paesi", PERIOD_LABELS[state.europe.pay_period] || text(state.europe.pay_period)];
+      if (annualOecdMode) tagParts.push("OCSE", "media FTE", "USD PPP");
+      if (!annualOecdMode && state.europe.pay_period !== "hourly") tagParts.push(labelFromCode("working_time", effectiveWorkingTime) || text(effectiveWorkingTime));
+      tagParts.push(text(state.europe.start_year) + "-" + text(state.europe.end_year));
+      tag.textContent = tagParts.join(" · ");
+    }
+    renderGuidance("siEuropeGuidance", annualOecdMode ? {
+      source: "OECD",
+      dataset: "DSD_EARNINGS@AV_AN_WAGE",
+      pay_period: "annual"
+    } : {
+      source: "Eurostat",
+      dataset: state.europe.pay_period === "monthly" ? "earn_ses_monthly" : "earn_ses_hourly",
+      pay_period: state.europe.pay_period,
+      working_time: effectiveWorkingTime
+    }, annualOecdMode ? [{
+      severity: "info",
+      title: "Serie storica annuale",
+      message: "La serie annuale usa OCSE Average annual wages: salario medio annuo per dipendente equivalente full-time, in dollari USA PPP. Non e' una mediana SES e non e' disaggregata per sesso."
+    }] : []);
     plot("siEuropeChart", traces, {
-      yaxis: { title: "Euro" },
-      xaxis: { title: "" }
+      yaxis: { title: annualOecdMode ? "Dollari USA PPP 2025" : "Euro" },
+      xaxis: { title: "", tickmode: "array", tickvals: ticks, ticktext: ticks.map(String) }
     });
   }
 
   function renderOecd() {
-    var rows = state.records.filter(function (row) {
-      return row.source === "OECD"
-        && row.pay_concept === "average_annual_wage_oecd"
-        && row.statistic === "mean"
-        && row.pay_period === "annual";
-    });
+    var rows = oecdAnnualWageRows();
     var countries = ["ITA", "OECD", "DEU", "FRA", "ESP", "NLD", "USA"];
     var traces = countries.map(function (country, index) {
       var countryRows = rows.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
@@ -2353,7 +2555,7 @@
     }).filter(function (trace) { return trace.x.length; });
     plot("siOecdChart", traces, {
       yaxis: { title: "Dollari USA PPP 2025", rangemode: "tozero" },
-      xaxis: { title: "" }
+      xaxis: yearAxis(rows)
     });
   }
 
@@ -2495,6 +2697,7 @@
     selected = applyYearRange(selected, state.series);
     selected = dedupeSeriesRows(selected).sort(function (a, b) { return Number(a.year) - Number(b.year); });
     if (!selected.length) {
+      renderGuidance("siSeriesGuidance", {}, []);
       showEmpty("siSeriesChart", "Serie non disponibile per questa selezione.");
       return;
     }
@@ -2506,21 +2709,29 @@
       seriesGroups[key] = seriesGroups[key] || [];
       seriesGroups[key].push(row);
     });
+    var hasGappedSeries = false;
     var traces = Object.keys(seriesGroups).sort().map(function (key, index) {
       var values = uniqueYearRows(seriesGroups[key]);
+      if (hasYearGaps(values)) hasGappedSeries = true;
       return {
         type: "scatter",
-        mode: "lines+markers",
+        mode: yearTraceMode(values),
         name: key,
         x: values.map(function (row) { return row.year; }),
         y: values.map(function (row) { return row.value; }),
+        marker: { color: COLORS[index % COLORS.length], size: yearTraceMode(values) === "markers" ? 8 : 6 },
         line: { color: COLORS[index % COLORS.length], width: key === "Mediana" ? 4 : 2 },
         hovertemplate: "%{fullData.name}<br>%{x}: %{y:.2f} €<extra></extra>"
-      };
+        };
     });
+    renderGuidance("siSeriesGuidance", {}, hasGappedSeries ? [{
+      severity: "info",
+      title: "Punti pubblicati, non serie annuale",
+      message: "La selezione contiene anni non consecutivi. La dashboard mostra solo i punti pubblicati dalla fonte e non collega i salti temporali come se fossero valori annuali stimati."
+    }] : []);
     plot("siSeriesChart", traces, {
       yaxis: { title: "Euro" },
-      xaxis: { title: "" }
+      xaxis: yearAxis(selected)
     });
   }
 
