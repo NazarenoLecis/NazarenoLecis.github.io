@@ -1,13 +1,15 @@
 (function () {
   "use strict";
 
-  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260715-5";
-  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260715-5";
+  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260715-6";
+  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260715-6";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
     mean: "Media",
     median: "Mediana",
+    "percentile:10": "P10 / D1",
+    "percentile:90": "P90 / D9",
     percentile: "Percentile",
     d9_d1: "D9 / D1",
     d9_median: "D9 / mediana",
@@ -20,7 +22,7 @@
       id: "annual_total_vs_fte",
       severity: "warning",
       title: "Attenzione al totale annuale",
-      message: "La retribuzione annuale SES con orario Totale non e' equivalente full-time: riflette anche part-time e durate retribuite diverse. Per confronti tra paesi usa Totale in equivalenti full-time, full-time e part-time.",
+      message: "Orario=Totale somma lavoratori con tempi di lavoro diversi: include part-time e durate retribuite non uguali. Orario=Totale FTE riporta il totale in equivalenti tempo pieno; non e' solo il sottoinsieme dei full-time. Per confronti di livello guarda Totale FTE e Tempo pieno.",
       applies_to: { dataset: ["earn_ses_annual"], pay_period: ["annual"], working_time: ["TOTAL"] },
       suggested_filters: [{ dimension: "working_time", values: ["TOT_FTE", "FT", "PT", "PT_FTE"] }]
     },
@@ -28,7 +30,7 @@
       id: "monthly_annual_are_distinct_measures",
       severity: "info",
       title: "Orario, mensile e annuale non sono conversioni",
-      message: "Eurostat pubblica misure SES distinte: oraria, mensile e annuale. Le differenze tra paesi possono cambiare quando entrano orario di lavoro, part-time e giornate retribuite.",
+      message: "Eurostat pubblica misure SES distinte: oraria, mensile e annuale. Le differenze tra paesi possono cambiare quando entrano ore pagate, part-time, bonus e periodo retribuito.",
       applies_to: { dataset: ["earn_ses_hourly", "earn_ses_monthly", "earn_ses_annual"], pay_period: ["hourly", "monthly", "annual"] }
     },
     {
@@ -806,6 +808,9 @@
       return row[field] === null || row[field] === undefined || row[field] === "";
     }
     if (String(value) === "all") return true;
+    if (field === "statistic") {
+      return statisticOptionValue(row) === String(value) || String(row.statistic) === String(value);
+    }
     if (isTotal(field, value)) return isTotal(field, row[field]);
     if (optionIdentity(field, row[field]) === optionIdentity(field, value)) return true;
     return String(row[field]) === String(value);
@@ -822,6 +827,19 @@
       if (raw === "PT_FTE") return "part_time_fte";
     }
     return raw;
+  }
+
+  function statisticOptionValue(row) {
+    if (!row) return "";
+    if (String(row.statistic) === "percentile") {
+      var percentile = toNumber(row.percentile);
+      if (percentile !== null) return "percentile:" + String(percentile);
+    }
+    return String(row.statistic || "");
+  }
+
+  function statisticText(value) {
+    return STAT_LABELS[String(value)] || text(value);
   }
 
   function uniqueOptions(rows, field, labelField, includeTotals) {
@@ -1258,7 +1276,7 @@
     if (row.percentile === 10) return "P10 / D1";
     if (row.percentile === 50) return "P50 / mediana";
     if (row.percentile === 90) return "P90 / D9";
-    return STAT_LABELS[row.statistic] || text(row.statistic);
+    return statisticText(statisticOptionValue(row));
   }
 
   function statOrder(row) {
@@ -1454,13 +1472,13 @@
         items.push({
           severity: "warning",
           title: "Totale grezzo: usare come diagnosi",
-          message: "Orario=Totale non e' la misura principale per confrontare salari annui. Serve a vedere l'effetto di part-time e rapporti non continui; per il livello salariale usa Totale FTE o Tempo pieno."
+          message: "Orario=Totale non standardizza i tempi di lavoro: include part-time e rapporti non continui. Orario=Totale FTE riporta il totale in equivalenti tempo pieno; Orario=Tempo pieno guarda solo i full-time."
         });
       } else if (optionIdentity("working_time", state.series.working_time) === "total_fte" || optionIdentity("working_time", state.series.working_time) === "full_time") {
         items.push({
           severity: "info",
           title: "Misura principale per il confronto",
-          message: "Il grafico usa " + workingTimeText(state.series.working_time) + ": e' piu' adatto del totale grezzo per confrontare livelli annuali tra paesi o nel tempo."
+          message: "Il grafico usa " + workingTimeText(state.series.working_time) + ": e' piu' adatto del totale grezzo per confrontare livelli annuali tra paesi o nel tempo perche' riduce l'effetto delle diverse intensita' di lavoro."
         });
       }
     }
@@ -1487,10 +1505,24 @@
   }
 
   function statisticOptions(rows) {
-    return uniqueOptions(rows, "statistic", null, true).filter(function (option) {
-      return ["mean", "median"].indexOf(option.value) >= 0;
-    }).map(function (option) {
-      return { value: option.value, label: STAT_LABELS[option.value] || option.value };
+    var map = {};
+    toArray(rows).forEach(function (row) {
+      var value = statisticOptionValue(row);
+      if (!value) return;
+      if (["mean", "median", "percentile:10", "percentile:90"].indexOf(value) < 0) return;
+      map[value] = { value: value, label: statisticText(value) };
+    });
+    var order = { mean: 1, median: 2, "percentile:10": 3, "percentile:90": 4 };
+    return Object.keys(map).map(function (key) {
+      return map[key];
+    }).sort(function (a, b) {
+      return (order[a.value] || 99) - (order[b.value] || 99);
+    });
+  }
+
+  function centralStatisticOptions(rows) {
+    return statisticOptions(rows).filter(function (option) {
+      return option.value === "mean" || option.value === "median";
     });
   }
 
@@ -1567,7 +1599,7 @@
       if (targetState.year && String(row.year) !== String(targetState.year)) return false;
       if (targetState.geography_code && String(row.geography_code) !== String(targetState.geography_code)) return false;
       if (targetState.pay_period && String(row.pay_period) !== String(targetState.pay_period)) return false;
-      if (targetState.statistic && String(row.statistic) !== String(targetState.statistic)) return false;
+      if (targetState.statistic && !matchesFilterValue(row, "statistic", targetState.statistic)) return false;
       for (var index = 0; index < ANALYSIS_FILTER_KEYS.length; index += 1) {
         var key = ANALYSIS_FILTER_KEYS[index];
         var item = DIMENSIONS[key];
@@ -1650,7 +1682,7 @@
       { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
       { key: "pay_period", field: "pay_period", label: "Unità retributiva", options: periodOptions, includeTotals: true, hideSingle: true, stableOptions: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true }
+      { key: "statistic", field: "statistic", label: "Statistica", options: centralStatisticOptions, includeTotals: true, stableOptions: true }
     ].concat(analysisFilterSpecs(targetState.dimension, includedFilters));
     if (!targetState.year) {
       targetState.year = latestYear(rows, { geography_code: "IT", pay_period: targetState.pay_period, statistic: targetState.statistic });
@@ -1662,7 +1694,7 @@
     var totalSelected = selected.length;
     selected = selected.reverse();
     byId(titleId).textContent = dimension ? "Retribuzione per " + dimension.label.toLowerCase() : "Retribuzione";
-    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, STAT_LABELS[targetState.statistic] || targetState.statistic, totalCountText(totalSelected, "elementi")].join(" · ");
+    byId(tagId).textContent = [text(targetState.year), PERIOD_LABELS[targetState.pay_period] || targetState.pay_period, statisticText(targetState.statistic), totalCountText(totalSelected, "elementi")].join(" · ");
     if (!selected.length || !dimension) {
       showEmpty(chartId, "Nessun dato disponibile per questa combinazione.");
       return;
@@ -1842,7 +1874,7 @@
     if (!optionAllowed(yearOptions, { field: "year" }, state.sectorBox.year)) {
       state.sectorBox.year = yearOptions[0] ? yearOptions[0].value : state.sectorBox.year;
     }
-    var statisticOptionsList = statisticOptions(baseRows);
+    var statisticOptionsList = centralStatisticOptions(baseRows);
     if (!optionAllowed(statisticOptionsList, { field: "statistic" }, state.sectorBox.statistic)) {
       state.sectorBox.statistic = statisticOptionsList.some(function (option) { return option.value === "median"; })
         ? "median"
@@ -2362,7 +2394,7 @@
       { key: "province_code", label: "Provincia", options: provinceOptions, preferAll: false, preferTotal: false, stableOptions: true },
       { key: "year", field: "year", label: "Anno", options: yearsFrom, includeTotals: true, stableOptions: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true }
+      { key: "statistic", field: "statistic", label: "Statistica", options: centralStatisticOptions, includeTotals: true, stableOptions: true }
     ].concat(analysisFilterSpecs("", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size", "paid_days"]));
     if (!state.territory.year) {
       state.territory.year = latestYear(rows, { sex: "T", statistic: "median" });
@@ -2375,7 +2407,7 @@
       if (state.territory.province_code && state.territory.province_code !== "all" && String(row.geography_code) !== String(state.territory.province_code)) return false;
       if (state.territory.province_code === "all" && state.territory.region_code && state.territory.region_code !== "all" && String(row.geography_code).indexOf(String(state.territory.region_code)) !== 0) return false;
       if (String(row.year) !== String(state.territory.year)) return false;
-      if (String(row.statistic) !== String(state.territory.statistic)) return false;
+      if (!matchesFilterValue(row, "statistic", state.territory.statistic)) return false;
       if (state.territory.sex && !matchesFilterValue(row, "sex", state.territory.sex)) return false;
       for (var index = 0; index < ANALYSIS_FILTER_KEYS.length; index += 1) {
         var key = ANALYSIS_FILTER_KEYS[index];
@@ -2393,7 +2425,7 @@
     selected = selected.reverse();
     var regionName = state.territory.region_code && state.territory.region_code !== "all" ? lookupLabel("geography_code", state.territory.region_code) : "";
     byId("siTerritoryTitle").textContent = selectedLevel === "province" && regionName ? "Retribuzione per province: " + regionName : "Retribuzione per " + territoryLevelLabel(selectedLevel).toLowerCase();
-    byId("siTerritoryTag").textContent = [text(state.territory.year), STAT_LABELS[state.territory.statistic] || state.territory.statistic, totalCountText(totalSelected, "territori")].join(" · ");
+    byId("siTerritoryTag").textContent = [text(state.territory.year), statisticText(state.territory.statistic), totalCountText(totalSelected, "territori")].join(" · ");
     if (!selected.length) {
       showEmpty("siTerritoryChart", "Confronto territoriale non disponibile per questa combinazione.");
       return;
@@ -2460,7 +2492,7 @@
       { key: "geography_code", field: "geography_code", label: "Territorio", labelField: "geography_name", includeTotals: true, stableOptions: true },
       { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true },
       { key: "sector", field: "sector", label: "Settore", labelField: "sector_label", includeTotals: true, stableOptions: true },
-      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true, stableOptions: true }
+      { key: "statistic", field: "statistic", label: "Statistica", options: centralStatisticOptions, includeTotals: true, stableOptions: true }
     ].concat(analysisFilterSpecs("paid_days", ["age_class", "education", "country_birth", "working_time", "contract_type", "contractual_occupation", "firm_size"]));
     if (!state.paidDays.year) {
       state.paidDays.year = latestYear(rows, { geography_code: "IT", sex: "T", sector: "0010", statistic: "median" });
@@ -2483,7 +2515,7 @@
     selected = dedupePaidDaysRows(selected).sort(function (a, b) {
       return paidDaysOrder(a.paid_days) - paidDaysOrder(b.paid_days);
     });
-    byId("siPaidDaysTag").textContent = [text(state.paidDays.year), STAT_LABELS[state.paidDays.statistic] || state.paidDays.statistic].join(" · ");
+    byId("siPaidDaysTag").textContent = [text(state.paidDays.year), statisticText(state.paidDays.statistic)].join(" · ");
     if (!selected.length) {
       showEmpty("siPaidDaysChart", "Classi di giornate retribuite non disponibili per questa selezione.");
       return;
@@ -2596,7 +2628,7 @@
           : row.source_request === "ses_monthly_distribution";
         return sourceMatch
           && row.pay_period === state.europe.pay_period
-          && row.statistic === state.europe.statistic
+          && matchesFilterValue(row, "statistic", state.europe.statistic)
           && row.sex === state.europe.sex
           && (state.europe.pay_period === "hourly" || row.working_time === effectiveWorkingTime);
       });
@@ -2723,7 +2755,7 @@
     var tag = byId("siEuropeTag");
     if (tag) {
       var tagParts = [countries.length + " paesi", PERIOD_LABELS[state.europe.pay_period] || text(state.europe.pay_period)];
-      tagParts.push(STAT_LABELS[state.europe.statistic] || text(state.europe.statistic));
+      tagParts.push(statisticText(state.europe.statistic));
       tagParts.push(workingTimeText(state.europe.working_time));
       tagParts.push(text(state.europe.start_year) + "-" + text(state.europe.end_year));
       tag.textContent = tagParts.join(" - ");
@@ -2737,7 +2769,7 @@
       extraGuidance.push({
         severity: "warning",
         title: "Totale grezzo: non misura il salario a parita' di tempo",
-        message: "Orario=Totale serve come indicatore diagnostico di composizione. Per confronti di livelli annuali usa Totale FTE o Tempo pieno."
+        message: "Orario=Totale include part-time e durate retribuite diverse. Orario=Totale FTE standardizza il totale in equivalenti tempo pieno; Orario=Tempo pieno mostra solo i lavoratori full-time. Per confrontare livelli annuali usa Totale FTE o Tempo pieno."
       });
     }
     renderGuidance("siEuropeGuidance", {
@@ -2868,7 +2900,7 @@
   }
 
   function seriesMeasureText() {
-    return state.series.statistic === "all" ? "tutte le misure" : STAT_LABELS[state.series.statistic] || state.series.statistic;
+    return state.series.statistic === "all" ? "tutte le misure" : statisticText(state.series.statistic);
   }
 
   function renderSeries() {
@@ -2916,7 +2948,7 @@
       paid_days: state.series.paid_days,
       pay_period: state.series.pay_period
     }).filter(function (row) {
-      return state.series.statistic === "all" || row.statistic === state.series.statistic;
+      return state.series.statistic === "all" || matchesFilterValue(row, "statistic", state.series.statistic);
     });
     selected = coherentSeriesRows(selected);
     syncYearRange("siSeriesFilters", selected, state.series, renderSeries);

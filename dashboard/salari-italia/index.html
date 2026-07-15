@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260715-2">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260715-5"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260715-6"></script>
 </head>
 <body>
   <header class="site-header">
@@ -143,21 +143,21 @@
     <section class="dashboard-section" id="europa">
       <div class="section-head">
         <span class="eyebrow">Confronto europeo</span>
-        <div><h2>Paesi europei disponibili</h2><p>Confronto armonizzato Eurostat SES. Usa il filtro Orario per distinguere Totale, Totale FTE, full-time e part-time quando la fonte li pubblica.</p></div>
+        <div><h2>Paesi europei disponibili</h2><p>Confronto armonizzato Eurostat SES. Totale FTE significa totale espresso in equivalenti tempo pieno; Tempo pieno indica solo i lavoratori full-time.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri confronto europeo</summary><div id="siEuropeFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
         <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span id="siEuropeTag">SES</span></div>
         <div id="siEuropeChart" class="si-chart si-chart-wide"></div>
         <div id="siEuropeGuidance" class="si-guidance-list" aria-live="polite"></div>
-        <p class="si-chart-credit">Fonte: Eurostat SES. Il totale annuale grezzo incorpora anche part-time e continuita' lavorativa; per confronti di livello usare anche Totale FTE e Tempo pieno. Elaborazione di Nazareno Lecis.</p>
+        <p class="si-chart-credit">Fonte: Eurostat SES. Totale grezzo include tempi di lavoro diversi; Totale FTE standardizza in equivalenti tempo pieno; Tempo pieno mostra solo full-time. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
     <section class="dashboard-section" id="ocse">
       <div class="section-head">
         <span class="eyebrow">Confronto OCSE</span>
-        <div><h2>Salario medio annuo in euro</h2><p>Serie OCSE separata dalle retribuzioni Eurostat: misura il salario medio annuo per dipendente equivalente full-time nell'economia totale, in euro a prezzi 2025 dove pubblicato.</p></div>
+        <div><h2>Salario medio annuo in euro</h2><p>Serie OCSE separata dalle retribuzioni Eurostat: misura il salario medio annuo per dipendente riportato a equivalente tempo pieno nell'economia totale, in euro a prezzi 2025 dove pubblicato.</p></div>
       </div>
       <article class="si-card si-chart-block">
         <div class="si-card-title"><h3>Italia e principali paesi area euro</h3><span>OECD</span></div>
