@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260715-2">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260715-4"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260715-5"></script>
 </head>
 <body>
   <header class="site-header">
@@ -48,7 +48,7 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard salari">
-      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#serie">Serie</a><a href="#giornate">Giornate</a><a href="#europa">UE27</a><a href="#contesto">Contesto</a><a href="#ocse">OCSE</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo</a>
+      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#serie">Serie</a><a href="#giornate">Giornate</a><a href="#europa">UE27</a><a href="#ocse">OCSE</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo</a>
     </nav>
 
     <p class="si-note"><strong>Perimetro:</strong> ISTAT RACLI copre retribuzioni orarie lorde dei dipendenti del settore privato. Netti, imponibili contributivi, redditi fiscali, comuni di residenza e microdati individuali non sono stimati.</p>
@@ -143,28 +143,14 @@
     <section class="dashboard-section" id="europa">
       <div class="section-head">
         <span class="eyebrow">Confronto europeo</span>
-        <div><h2>Paesi europei disponibili</h2><p>Confronto armonizzato sulle retribuzioni lorde. Il menu paesi mostra solo aree con dati ufficiali nella selezione corrente.</p></div>
+        <div><h2>Paesi europei disponibili</h2><p>Confronto armonizzato Eurostat SES. Usa il filtro Orario per distinguere Totale, Totale FTE, full-time e part-time quando la fonte li pubblica.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri confronto europeo</summary><div id="siEuropeFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
         <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span id="siEuropeTag">SES</span></div>
         <div id="siEuropeChart" class="si-chart si-chart-wide"></div>
         <div id="siEuropeGuidance" class="si-guidance-list" aria-live="polite"></div>
-        <p class="si-chart-credit">Fonte: Eurostat SES per oraria/mensile; OCSE Average annual wages per la serie annuale FTE in euro a prezzi 2025. Elaborazione di Nazareno Lecis.</p>
-      </article>
-    </section>
-
-    <section class="dashboard-section" id="contesto">
-      <div class="section-head">
-        <span class="eyebrow">Contesto mercato del lavoro</span>
-        <div><h2>Occupazione, disoccupazione e part-time</h2><p>Indicatori Eurostat LFS da affiancare alle serie salariali: non sono filtri della SES, ma controlli di contesto per paese, sesso e anno.</p></div>
-      </div>
-      <details class="chart-filter-panel" open><summary>Filtri contesto mercato del lavoro</summary><div id="siLabourMarketFilters" class="filter-grid"></div></details>
-      <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Indicatori occupazionali</h3><span id="siLabourMarketTag">Eurostat LFS</span></div>
-        <div id="siLabourMarketChart" class="si-chart si-chart-wide"></div>
-        <div id="siLabourMarketGuidance" class="si-guidance-list" aria-live="polite"></div>
-        <p class="si-chart-credit">Fonte: Eurostat Labour Force Survey, <code>lfsa_ergan</code>, <code>lfsa_argan</code>, <code>une_rt_a</code>, <code>lfsa_eppga</code>. Elaborazione di Nazareno Lecis.</p>
+        <p class="si-chart-credit">Fonte: Eurostat SES. Il totale annuale grezzo incorpora anche part-time e continuita' lavorativa; per confronti di livello usare anche Totale FTE e Tempo pieno. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -188,6 +174,7 @@
       <details class="chart-filter-panel" open><summary>Filtri serie</summary><div id="siSeriesFilters" class="filter-grid"></div></details>
       <article class="si-card si-chart-block">
         <div class="si-card-title"><h3 id="siSeriesTitle">Serie salariale italiana</h3><span id="siSeriesTag">Italia</span></div>
+        <p class="si-card-note" id="siSeriesNote">La serie mostra solo gli anni pubblicati dalla fonte per la cella selezionata.</p>
         <div id="siSeriesChart" class="si-chart si-chart-wide"></div>
         <div id="siSeriesGuidance" class="si-guidance-list" aria-live="polite"></div>
         <p class="si-chart-credit">Fonte: ISTAT RACLI ed Eurostat. Elaborazione di Nazareno Lecis.</p>

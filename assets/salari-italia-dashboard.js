@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260715-4";
-  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260715-4";
+  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260715-5";
+  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260715-5";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -15,18 +15,6 @@
     share_below_two_thirds_median: "Bassa retribuzione"
   };
   var PERIOD_LABELS = { hourly: "Oraria", monthly: "Mensile", annual: "Annuale" };
-  var LABOUR_MARKET_LABELS = {
-    employment_rate: "Tasso di occupazione",
-    activity_rate: "Tasso di attivita'",
-    unemployment_rate: "Tasso di disoccupazione",
-    part_time_share: "Quota part-time"
-  };
-  var LABOUR_MARKET_NOTES = {
-    employment_rate: "Percentuale di occupati sulla popolazione 20-64.",
-    activity_rate: "Percentuale di occupati e disoccupati sulla popolazione 20-64.",
-    unemployment_rate: "Disoccupati in percentuale della forza lavoro 15-74.",
-    part_time_share: "Occupati part-time in percentuale del totale occupati 15-64."
-  };
   var DEFAULT_GUIDANCE = [
     {
       id: "annual_total_vs_fte",
@@ -416,6 +404,16 @@
     }
   };
   var OPTION_ORDER = {
+    working_time: {
+      TOTAL: 0,
+      "9": 0,
+      TOT_FTE: 1,
+      FT: 2,
+      "1": 2,
+      PT: 3,
+      "2": 3,
+      PT_FTE: 4
+    },
     firm_size: {
       W0_9: 0,
       "1-9": 1,
@@ -537,8 +535,22 @@
       firm_size: "all",
       statistic: "median"
     },
-    europe: { pay_period: "annual", statistic: "median", sex: "T", working_time: "TOT_FTE", countries: [], start_year: null, end_year: null },
-    labourMarket: { metric: "employment_rate", sex: "F", countries: [], start_year: null, end_year: null },
+    europe: {
+      pay_period: "annual",
+      statistic: "median",
+      sex: "T",
+      age_class: "TOTAL",
+      education: "TOTAL",
+      occupation: "TOTAL",
+      sector: "B-S_X_O",
+      contract_type: "TOTAL",
+      working_time: "TOT_FTE",
+      firm_size: "GE10",
+      seniority: "TOTAL",
+      countries: [],
+      start_year: null,
+      end_year: null
+    },
     series: {
       pay_period: "hourly",
       statistic: "all",
@@ -790,6 +802,9 @@
 
   function matchesFilterValue(row, field, value) {
     if (value === null || value === undefined || value === "") return true;
+    if (String(value) === "__missing__") {
+      return row[field] === null || row[field] === undefined || row[field] === "";
+    }
     if (String(value) === "all") return true;
     if (isTotal(field, value)) return isTotal(field, row[field]);
     if (optionIdentity(field, row[field]) === optionIdentity(field, value)) return true;
@@ -1162,12 +1177,6 @@
     });
   }
 
-  function labourMarketRows() {
-    return state.records.filter(function (row) {
-      return row.pay_concept === "labour_market_context";
-    });
-  }
-
   function rowMatches(row, filters) {
     return Object.keys(filters).every(function (key) {
       return matchesFilterValue(row, key, filters[key]);
@@ -1387,6 +1396,94 @@
       monthly: "Retribuzione mensile lorda (euro)",
       annual: "Retribuzione annuale lorda (euro)"
     }[value] || "Euro";
+  }
+
+  function workingTimeText(value) {
+    if (String(value) === "__missing__") return "Tavola senza dettaglio orario";
+    return labelFromCode("working_time", value) || lookupLabel("working_time", value) || text(value);
+  }
+
+  function workingTimeOptions(rows) {
+    var options = uniqueOptions(rows, "working_time", "working_time_label", true);
+    var hasMissing = toArray(rows).some(function (row) {
+      return row.working_time === null || row.working_time === undefined || row.working_time === "";
+    });
+    if (hasMissing) {
+      options.push({ value: "__missing__", label: "Tavola senza dettaglio orario" });
+    }
+    return options;
+  }
+
+  function yearListText(rows) {
+    var ticks = yearTickValues(rows);
+    if (!ticks.length) return "nessun anno";
+    return ticks.map(String).join(", ");
+  }
+
+  function forceAnnualFteDefault(targetState) {
+    if (!targetState || targetState.pay_period !== "annual") return;
+    if (targetState.changedKey !== "pay_period") return;
+    if (String(targetState.working_time) === "9" || String(targetState.working_time) === "TOTAL" || !targetState.working_time) {
+      targetState.working_time = "TOT_FTE";
+    }
+  }
+
+  function selectedSourceRequests(rows) {
+    var sources = {};
+    toArray(rows).forEach(function (row) {
+      if (row.source_request) sources[row.source_request] = true;
+    });
+    return Object.keys(sources).sort();
+  }
+
+  function seriesContextItems(rows) {
+    var items = [];
+    var sourceRequests = selectedSourceRequests(rows);
+    var geography = lookupLabel("geography_code", state.series.geography_code) || state.series.geography_code;
+    var base = "Stai guardando " + payPeriodText(state.series.pay_period) + " lorda";
+    if (geography) base += " per " + geography;
+    base += ". Anni pubblicati nella selezione: " + yearListText(rows) + ".";
+    if (sourceRequests.length) base += " Tavole: " + sourceRequests.join(", ") + ".";
+    items.push({
+      severity: "info",
+      title: "Cosa mostra il grafico",
+      message: base
+    });
+    if (state.series.pay_period === "annual") {
+      if (optionIdentity("working_time", state.series.working_time) === "total") {
+        items.push({
+          severity: "warning",
+          title: "Totale grezzo: usare come diagnosi",
+          message: "Orario=Totale non e' la misura principale per confrontare salari annui. Serve a vedere l'effetto di part-time e rapporti non continui; per il livello salariale usa Totale FTE o Tempo pieno."
+        });
+      } else if (optionIdentity("working_time", state.series.working_time) === "total_fte" || optionIdentity("working_time", state.series.working_time) === "full_time") {
+        items.push({
+          severity: "info",
+          title: "Misura principale per il confronto",
+          message: "Il grafico usa " + workingTimeText(state.series.working_time) + ": e' piu' adatto del totale grezzo per confrontare livelli annuali tra paesi o nel tempo."
+        });
+      }
+    }
+    return items;
+  }
+
+  function d1ChangeWarning(rows) {
+    if (state.series.pay_period !== "annual") return null;
+    var d1Rows = uniqueYearRows(toArray(rows).filter(function (row) {
+      return row.percentile === 10 || row.measure_code === "D1_E_EUR";
+    }));
+    if (d1Rows.length < 2) return null;
+    var first = d1Rows[0];
+    var last = d1Rows[d1Rows.length - 1];
+    var firstValue = toNumber(first.value);
+    var lastValue = toNumber(last.value);
+    if (firstValue === null || lastValue === null || lastValue >= firstValue) return null;
+    var delta = (lastValue - firstValue) / firstValue * 100;
+    return {
+      severity: optionIdentity("working_time", state.series.working_time) === "total" ? "warning" : "info",
+      title: "P10 / D1 in discesa nella selezione",
+      message: "Il primo decile scende da " + euro(firstValue, 0) + " nel " + text(first.year) + " a " + euro(lastValue, 0) + " nel " + text(last.year) + " (" + fmt(delta, 1) + "%). Se Orario=Totale, la variazione include anche part-time e continuita' lavorativa, non solo il salario a parita' di tempo."
+    };
   }
 
   function statisticOptions(rows) {
@@ -2466,33 +2563,6 @@
     return state.europe.countries;
   }
 
-  function labourMarketMetricOptions(rows) {
-    return uniqueOptions(rows, "statistic", null, true).map(function (option) {
-      return { value: option.value, label: LABOUR_MARKET_LABELS[option.value] || option.label };
-    });
-  }
-
-  function syncLabourMarketCountries(rows) {
-    var container = byId("siLabourMarketFilters");
-    if (!container) return [];
-    var options = europeCountryOptions(rows);
-    var available = {};
-    options.forEach(function (option) {
-      available[String(option.value)] = true;
-    });
-    state.labourMarket.countries = toArray(state.labourMarket.countries).filter(function (country) {
-      return available[String(country)];
-    });
-    if (!state.labourMarket.countries.length) {
-      state.labourMarket.countries = defaultEuropeCountries(options);
-    }
-    ensureMultiSelect(container, { key: "countries", label: "Paesi nel grafico" }, options, state.labourMarket.countries, function (values) {
-      state.labourMarket.countries = values;
-      renderLabourMarket();
-    });
-    return state.labourMarket.countries;
-  }
-
   function renderEurope() {
     var annualOecdMode = state.europe.pay_period === "annual";
     var rows = eurostatDistributionRows();
@@ -2587,70 +2657,104 @@
     });
   }
 
-  function renderLabourMarket() {
-    var rows = labourMarketRows();
-    if (!rows.length) {
-      showEmpty("siLabourMarketChart", "Indicatori occupazionali non ancora presenti nel payload. Rigenera e pubblica i dati salari per attivare il controllo LFS.");
-      renderGuidance("siLabourMarketGuidance", { pay_concept: "labour_market_context" }, [{
-        severity: "info",
-        title: "Controllo di contesto da aggiungere al payload",
-        message: "Il frontend e' pronto per occupazione, attivita', disoccupazione e quota part-time Eurostat LFS."
-      }]);
-      return;
-    }
-    syncFilters("siLabourMarketFilters", [
-      { key: "metric", field: "statistic", label: "Indicatore", options: labourMarketMetricOptions, includeTotals: true, stableOptions: true },
-      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true }
-    ], rows, state.labourMarket, renderLabourMarket);
-    var baseRows = rows.filter(function (row) {
-      return matchesFilterValue(row, "statistic", state.labourMarket.metric)
-        && matchesFilterValue(row, "sex", state.labourMarket.sex);
+  renderEurope = function () {
+    var rows = eurostatDistributionRows();
+    var specs = [
+      { key: "pay_period", field: "pay_period", label: "Unita' retributiva", options: periodOptions, includeTotals: true },
+      { key: "statistic", field: "statistic", label: "Statistica", options: statisticOptions, includeTotals: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true },
+      {
+        key: "working_time",
+        field: "working_time",
+        label: "Orario",
+        labelField: "working_time_label",
+        options: workingTimeOptions,
+        includeTotals: true,
+        preferredValue: state.europe.pay_period === "hourly" ? "TOTAL" : "TOT_FTE",
+        preferAll: false,
+        hideSingle: false
+      },
+      seriesFilterSpec("age_class", "age_class", "Eta'", "age_label"),
+      seriesFilterSpec("education", "education", "Titolo di studio", "education_label"),
+      seriesFilterSpec("occupation", "occupation", "Professione", "occupation_label"),
+      seriesFilterSpec("sector", "sector", "Settore", "sector_label"),
+      seriesFilterSpec("contract_type", "contract_type", "Contratto", "contract_type_label"),
+      seriesFilterSpec("firm_size", "firm_size", "Dimensione", "firm_size_label"),
+      seriesFilterSpec("seniority", "seniority", "Anzianita'", "seniority_label")
+    ];
+    forceAnnualFteDefault(state.europe);
+    syncFilters("siEuropeFilters", specs, rows, state.europe, renderEurope);
+    var selected = filterRows(rows, {
+      pay_period: state.europe.pay_period,
+      statistic: state.europe.statistic,
+      sex: state.europe.sex,
+      age_class: state.europe.age_class,
+      education: state.europe.education,
+      occupation: state.europe.occupation,
+      sector: state.europe.sector,
+      contract_type: state.europe.contract_type,
+      working_time: state.europe.working_time,
+      firm_size: state.europe.firm_size,
+      seniority: state.europe.seniority
     });
-    syncYearRange("siLabourMarketFilters", baseRows, state.labourMarket, renderLabourMarket);
-    var countries = syncLabourMarketCountries(baseRows);
-    var selected = applyYearRange(baseRows, state.labourMarket).filter(function (row) {
-      return countries.indexOf(String(row.geography_code)) >= 0;
-    });
-    selected.sort(function (a, b) { return Number(a.year) - Number(b.year); });
-    var traces = [];
-    countries.forEach(function (country, index) {
-      var countryRows = selected.filter(function (row) {
-        return String(row.geography_code) === String(country);
+    var countries = syncEuropeCountries(selected);
+    syncYearRange("siEuropeFilters", selected, state.europe, renderEurope);
+    selected = applyYearRange(selected, state.europe);
+    var ticks = yearTickValues(selected);
+    var traces = countries.map(function (country, index) {
+      var byYear = {};
+      selected.filter(function (row) { return row.geography_code === country; }).forEach(function (row) {
+        byYear[String(row.year)] = row;
       });
-      if (!countryRows.length) return;
-      traces.push({
+      var countryRows = Object.keys(byYear).map(function (year) { return byYear[year]; }).sort(function (a, b) {
+        return Number(a.year) - Number(b.year);
+      });
+      return {
         type: "scatter",
-        mode: "lines+markers",
-        name: optionLabel(countryRows[0], "geography_code", "geography_name"),
+        mode: yearTraceMode(countryRows),
+        name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
         x: countryRows.map(function (row) { return row.year; }),
         y: countryRows.map(function (row) { return row.value; }),
+        marker: { color: COLORS[index % COLORS.length], size: yearTraceMode(countryRows) === "markers" ? 8 : 6 },
         line: { color: COLORS[index % COLORS.length], width: country === "IT" || country === "ITA" ? 4 : 2 },
-        marker: { color: COLORS[index % COLORS.length], size: 6 },
-        hovertemplate: "<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>"
-      });
-    });
-    var metricLabel = LABOUR_MARKET_LABELS[state.labourMarket.metric] || text(state.labourMarket.metric);
-    var sexLabel = labelFromCode("sex", state.labourMarket.sex) || lookupLabel("sex", state.labourMarket.sex) || text(state.labourMarket.sex);
-    byId("siLabourMarketTag").textContent = [
-      metricLabel,
-      sexLabel,
-      text(state.labourMarket.start_year) + "-" + text(state.labourMarket.end_year),
-      totalCountText(countries.length, "paesi")
-    ].join(" · ");
-    renderGuidance("siLabourMarketGuidance", { pay_concept: "labour_market_context" }, [{
+        hovertemplate: "%{fullData.name}<br>%{x}: %{y:.2f} EUR<extra></extra>"
+      };
+    }).filter(function (trace) { return trace.x.length; });
+    var tag = byId("siEuropeTag");
+    if (tag) {
+      var tagParts = [countries.length + " paesi", PERIOD_LABELS[state.europe.pay_period] || text(state.europe.pay_period)];
+      tagParts.push(STAT_LABELS[state.europe.statistic] || text(state.europe.statistic));
+      tagParts.push(workingTimeText(state.europe.working_time));
+      tagParts.push(text(state.europe.start_year) + "-" + text(state.europe.end_year));
+      tag.textContent = tagParts.join(" - ");
+    }
+    var extraGuidance = [{
       severity: "info",
-      title: "Perimetro LFS",
-      message: LABOUR_MARKET_NOTES[state.labourMarket.metric] || "Indicatore annuale Eurostat Labour Force Survey."
-    }]);
+      title: "Cosa mostra il grafico",
+      message: "Confronto Eurostat SES su celle ufficiali. I menu mostrano solo dimensioni disponibili nella selezione corrente; gli anni mancanti non sono interpolati."
+    }];
+    if (state.europe.pay_period === "annual" && optionIdentity("working_time", state.europe.working_time) === "total") {
+      extraGuidance.push({
+        severity: "warning",
+        title: "Totale grezzo: non misura il salario a parita' di tempo",
+        message: "Orario=Totale serve come indicatore diagnostico di composizione. Per confronti di livelli annuali usa Totale FTE o Tempo pieno."
+      });
+    }
+    renderGuidance("siEuropeGuidance", {
+      source: "Eurostat",
+      dataset: state.europe.pay_period === "annual" ? "earn_ses_annual" : (state.europe.pay_period === "monthly" ? "earn_ses_monthly" : "earn_ses_hourly"),
+      pay_period: state.europe.pay_period,
+      working_time: state.europe.working_time
+    }, extraGuidance);
     if (!traces.length) {
-      showEmpty("siLabourMarketChart", "Indicatore occupazionale non disponibile per questa selezione.");
+      showEmpty("siEuropeChart", "Confronto europeo non disponibile per questa selezione.");
       return;
     }
-    plot("siLabourMarketChart", traces, {
-      yaxis: { title: "%", rangemode: "tozero" },
-      xaxis: yearAxis(selected)
+    plot("siEuropeChart", traces, {
+      yaxis: { title: payAxisTitle(state.europe.pay_period) },
+      xaxis: { title: "", tickmode: "array", tickvals: ticks, ticktext: ticks.map(String) }
     });
-  }
+  };
 
   function renderOecd() {
     var rows = oecdAnnualWageRows();
@@ -2726,6 +2830,7 @@
       includeTotals: true,
       hideSingle: true,
       options: function (optionRows) {
+        if (field === "working_time") return workingTimeOptions(optionRows);
         return seriesDimensionOptions(optionRows, field, labelField, true);
       }
     };
@@ -2794,6 +2899,7 @@
       seriesFilterSpec("country_birth", "country_birth", "Paese nascita", "country_birth_label"),
       seriesFilterSpec("paid_days", "paid_days", "Giornate retribuite", "paid_days_label")
     ];
+    forceAnnualFteDefault(state.series);
     syncFilters("siSeriesFilters", specs, rows, state.series, renderSeries);
     var selected = filterRows(rows, {
       geography_code: state.series.geography_code,
@@ -2823,6 +2929,10 @@
     }
     byId("siSeriesTitle").textContent = "Serie della " + payPeriodText(state.series.pay_period);
     byId("siSeriesTag").textContent = [seriesMeasureText(), seriesSourceText(selected), text(state.series.start_year) + "-" + text(state.series.end_year)].filter(Boolean).join(" · ");
+    var note = byId("siSeriesNote");
+    if (note) {
+      note.textContent = "Cella selezionata: " + payPeriodText(state.series.pay_period) + ", " + seriesMeasureText() + ", orario " + workingTimeText(state.series.working_time) + ". Anni pubblicati: " + yearListText(selected) + ".";
+    }
     var seriesGroups = {};
     selected.forEach(function (row) {
       var key = statName(row);
@@ -2844,11 +2954,15 @@
         hovertemplate: "%{fullData.name}<br>%{x}: %{y:.2f} €<extra></extra>"
         };
     });
-    renderGuidance("siSeriesGuidance", {}, hasGappedSeries ? [{
+    var guidance = seriesContextItems(selected);
+    var d1Warning = d1ChangeWarning(selected);
+    if (d1Warning) guidance.push(d1Warning);
+    if (hasGappedSeries) guidance.push({
       severity: "info",
       title: "Punti pubblicati, non serie annuale",
       message: "La selezione contiene anni non consecutivi. La dashboard mostra solo i punti pubblicati dalla fonte e non collega i salti temporali come se fossero valori annuali stimati."
-    }] : []);
+    });
+    renderGuidance("siSeriesGuidance", {}, guidance);
     plot("siSeriesChart", traces, {
       yaxis: { title: "Euro" },
       xaxis: yearAxis(selected)
@@ -2865,8 +2979,9 @@
         "La distribuzione piena non viene ricostruita da pochi percentili: quando la fonte pubblica solo D1, mediana, D9 e media, il grafico mostra solo quei punti.",
         "Le retribuzioni pubblicate sono lorde; il netto non viene stimato nel browser.",
         "Il costo del lavoro proviene da una tavola separata e non rappresenta il salario ricevuto dal lavoratore.",
+        "Eurostat SES, OECD Average annual wages, net earnings e altre fonti non sono duplicati: cambiano universo statistico, media/mediana, correzione full-time equivalent, valuta e perimetro settoriale.",
         "Le giornate retribuite sono classi ufficiali RACLI: indicano continuita' o stagionalita' della posizione, ma non conteggi di lavoratori ricostruiti.",
-        "Le tavole 2022 su istruzione, anzianità e dimensione impresa sono punti dell'edizione SES 2022.",
+        "Le tavole SES su istruzione, anzianita' e dimensione impresa sono punti delle edizioni quadriennali pubblicate da Eurostat.",
         "Territorio di residenza, luogo di lavoro e sede dell'impresa non sono intercambiabili."
       ].forEach(function (note) {
         var item = document.createElement("li");
@@ -2904,7 +3019,6 @@
     if (sectionId === "territorio") renderTerritory();
     if (sectionId === "giornate") renderPaidDays();
     if (sectionId === "europa") renderEurope();
-    if (sectionId === "contesto") renderLabourMarket();
     if (sectionId === "ocse") renderOecd();
     if (sectionId === "serie") renderSeries();
   }
@@ -2916,7 +3030,7 @@
   }
 
   function setupLazySections() {
-    var sectionIds = ["lavoratore", "lavoro", "territorio", "europa", "contesto", "ocse", "serie", "giornate"];
+    var sectionIds = ["lavoratore", "lavoro", "territorio", "europa", "ocse", "serie", "giornate"];
     if (!("IntersectionObserver" in window)) {
       sectionIds.forEach(function (sectionId) {
         renderLazySection(sectionId);
@@ -2996,7 +3110,7 @@
       .catch(function (error) {
         setStatus("Non riesco a caricare i dati salari: " + error.message, true);
         if (preserveInitial) return;
-        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siLabourMarketChart", "siOecdChart", "siSeriesChart"].forEach(function (id) {
+        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siSeriesChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
       });
