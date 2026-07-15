@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260715-2";
-  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260715-2";
+  var DEFAULT_INITIAL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site-initial.json?v=20260715-4";
+  var DEFAULT_FULL_DATA_URL = "https://data.nazarenolecis.com/salari-italia/dashboard-site.json?v=20260715-4";
   var MISSING = "ND";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var STAT_LABELS = {
@@ -15,6 +15,18 @@
     share_below_two_thirds_median: "Bassa retribuzione"
   };
   var PERIOD_LABELS = { hourly: "Oraria", monthly: "Mensile", annual: "Annuale" };
+  var LABOUR_MARKET_LABELS = {
+    employment_rate: "Tasso di occupazione",
+    activity_rate: "Tasso di attivita'",
+    unemployment_rate: "Tasso di disoccupazione",
+    part_time_share: "Quota part-time"
+  };
+  var LABOUR_MARKET_NOTES = {
+    employment_rate: "Percentuale di occupati sulla popolazione 20-64.",
+    activity_rate: "Percentuale di occupati e disoccupati sulla popolazione 20-64.",
+    unemployment_rate: "Disoccupati in percentuale della forza lavoro 15-74.",
+    part_time_share: "Occupati part-time in percentuale del totale occupati 15-64."
+  };
   var DEFAULT_GUIDANCE = [
     {
       id: "annual_total_vs_fte",
@@ -526,6 +538,7 @@
       statistic: "median"
     },
     europe: { pay_period: "annual", statistic: "median", sex: "T", working_time: "TOT_FTE", countries: [], start_year: null, end_year: null },
+    labourMarket: { metric: "employment_rate", sex: "F", countries: [], start_year: null, end_year: null },
     series: {
       pay_period: "hourly",
       statistic: "all",
@@ -1144,7 +1157,14 @@
       return row.source === "OECD"
         && row.pay_concept === "average_annual_wage_oecd"
         && row.statistic === "mean"
-        && row.pay_period === "annual";
+        && row.pay_period === "annual"
+        && row.unit === "EUR";
+    });
+  }
+
+  function labourMarketRows() {
+    return state.records.filter(function (row) {
+      return row.pay_concept === "labour_market_context";
     });
   }
 
@@ -2446,6 +2466,33 @@
     return state.europe.countries;
   }
 
+  function labourMarketMetricOptions(rows) {
+    return uniqueOptions(rows, "statistic", null, true).map(function (option) {
+      return { value: option.value, label: LABOUR_MARKET_LABELS[option.value] || option.label };
+    });
+  }
+
+  function syncLabourMarketCountries(rows) {
+    var container = byId("siLabourMarketFilters");
+    if (!container) return [];
+    var options = europeCountryOptions(rows);
+    var available = {};
+    options.forEach(function (option) {
+      available[String(option.value)] = true;
+    });
+    state.labourMarket.countries = toArray(state.labourMarket.countries).filter(function (country) {
+      return available[String(country)];
+    });
+    if (!state.labourMarket.countries.length) {
+      state.labourMarket.countries = defaultEuropeCountries(options);
+    }
+    ensureMultiSelect(container, { key: "countries", label: "Paesi nel grafico" }, options, state.labourMarket.countries, function (values) {
+      state.labourMarket.countries = values;
+      renderLabourMarket();
+    });
+    return state.labourMarket.countries;
+  }
+
   function renderEurope() {
     var annualOecdMode = state.europe.pay_period === "annual";
     var rows = eurostatDistributionRows();
@@ -2504,14 +2551,14 @@
           marker: { color: COLORS[index % COLORS.length], size: annualOecdMode ? 6 : 8 },
           line: { color: COLORS[index % COLORS.length], width: country === "IT" || country === "ITA" ? 4 : 2 },
           hovertemplate: annualOecdMode
-            ? "%{fullData.name}<br>%{x}: %{y:,.0f} $ PPP<extra></extra>"
+            ? "%{fullData.name}<br>%{x}: %{y:,.0f} EUR<extra></extra>"
             : "%{fullData.name}<br>%{x}: %{y:.2f} EUR<extra></extra>"
       };
     }).filter(function (trace) { return trace.x.length; });
     var tag = byId("siEuropeTag");
     if (tag) {
       var tagParts = [countries.length + " paesi", PERIOD_LABELS[state.europe.pay_period] || text(state.europe.pay_period)];
-      if (annualOecdMode) tagParts.push("OCSE", "media FTE", "USD PPP");
+      if (annualOecdMode) tagParts.push("OCSE", "media FTE", "euro 2025");
       if (!annualOecdMode && state.europe.pay_period !== "hourly") tagParts.push(labelFromCode("working_time", effectiveWorkingTime) || text(effectiveWorkingTime));
       tagParts.push(text(state.europe.start_year) + "-" + text(state.europe.end_year));
       tag.textContent = tagParts.join(" · ");
@@ -2528,17 +2575,86 @@
     }, annualOecdMode ? [{
       severity: "info",
       title: "Serie storica annuale",
-      message: "La serie annuale usa OCSE Average annual wages: salario medio annuo per dipendente equivalente full-time, in dollari USA PPP. Non e' una mediana SES e non e' disaggregata per sesso."
+      message: "La serie annuale usa OCSE Average annual wages: salario medio annuo per dipendente equivalente full-time, in euro a prezzi 2025 dove pubblicato. Non e' una mediana SES e non e' disaggregata per sesso."
     }] : []);
+    if (!traces.length) {
+      showEmpty("siEuropeChart", annualOecdMode ? "Serie annuale OCSE in euro non ancora presente nel payload pubblicato." : "Confronto europeo non disponibile per questa selezione.");
+      return;
+    }
     plot("siEuropeChart", traces, {
-      yaxis: { title: annualOecdMode ? "Dollari USA PPP 2025" : "Euro" },
+      yaxis: { title: annualOecdMode ? "Euro a prezzi 2025" : "Euro" },
       xaxis: { title: "", tickmode: "array", tickvals: ticks, ticktext: ticks.map(String) }
+    });
+  }
+
+  function renderLabourMarket() {
+    var rows = labourMarketRows();
+    if (!rows.length) {
+      showEmpty("siLabourMarketChart", "Indicatori occupazionali non ancora presenti nel payload. Rigenera e pubblica i dati salari per attivare il controllo LFS.");
+      renderGuidance("siLabourMarketGuidance", { pay_concept: "labour_market_context" }, [{
+        severity: "info",
+        title: "Controllo di contesto da aggiungere al payload",
+        message: "Il frontend e' pronto per occupazione, attivita', disoccupazione e quota part-time Eurostat LFS."
+      }]);
+      return;
+    }
+    syncFilters("siLabourMarketFilters", [
+      { key: "metric", field: "statistic", label: "Indicatore", options: labourMarketMetricOptions, includeTotals: true, stableOptions: true },
+      { key: "sex", field: "sex", label: "Sesso", labelField: "sex_label", includeTotals: true, stableOptions: true }
+    ], rows, state.labourMarket, renderLabourMarket);
+    var baseRows = rows.filter(function (row) {
+      return matchesFilterValue(row, "statistic", state.labourMarket.metric)
+        && matchesFilterValue(row, "sex", state.labourMarket.sex);
+    });
+    syncYearRange("siLabourMarketFilters", baseRows, state.labourMarket, renderLabourMarket);
+    var countries = syncLabourMarketCountries(baseRows);
+    var selected = applyYearRange(baseRows, state.labourMarket).filter(function (row) {
+      return countries.indexOf(String(row.geography_code)) >= 0;
+    });
+    selected.sort(function (a, b) { return Number(a.year) - Number(b.year); });
+    var traces = [];
+    countries.forEach(function (country, index) {
+      var countryRows = selected.filter(function (row) {
+        return String(row.geography_code) === String(country);
+      });
+      if (!countryRows.length) return;
+      traces.push({
+        type: "scatter",
+        mode: "lines+markers",
+        name: optionLabel(countryRows[0], "geography_code", "geography_name"),
+        x: countryRows.map(function (row) { return row.year; }),
+        y: countryRows.map(function (row) { return row.value; }),
+        line: { color: COLORS[index % COLORS.length], width: country === "IT" || country === "ITA" ? 4 : 2 },
+        marker: { color: COLORS[index % COLORS.length], size: 6 },
+        hovertemplate: "<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>"
+      });
+    });
+    var metricLabel = LABOUR_MARKET_LABELS[state.labourMarket.metric] || text(state.labourMarket.metric);
+    var sexLabel = labelFromCode("sex", state.labourMarket.sex) || lookupLabel("sex", state.labourMarket.sex) || text(state.labourMarket.sex);
+    byId("siLabourMarketTag").textContent = [
+      metricLabel,
+      sexLabel,
+      text(state.labourMarket.start_year) + "-" + text(state.labourMarket.end_year),
+      totalCountText(countries.length, "paesi")
+    ].join(" · ");
+    renderGuidance("siLabourMarketGuidance", { pay_concept: "labour_market_context" }, [{
+      severity: "info",
+      title: "Perimetro LFS",
+      message: LABOUR_MARKET_NOTES[state.labourMarket.metric] || "Indicatore annuale Eurostat Labour Force Survey."
+    }]);
+    if (!traces.length) {
+      showEmpty("siLabourMarketChart", "Indicatore occupazionale non disponibile per questa selezione.");
+      return;
+    }
+    plot("siLabourMarketChart", traces, {
+      yaxis: { title: "%", rangemode: "tozero" },
+      xaxis: yearAxis(selected)
     });
   }
 
   function renderOecd() {
     var rows = oecdAnnualWageRows();
-    var countries = ["ITA", "OECD", "DEU", "FRA", "ESP", "NLD", "USA"];
+    var countries = ["ITA", "DEU", "FRA", "ESP", "NLD", "AUT", "BEL"];
     var traces = countries.map(function (country, index) {
       var countryRows = rows.filter(function (row) { return row.geography_code === country; }).sort(function (a, b) {
         return Number(a.year) - Number(b.year);
@@ -2549,12 +2665,16 @@
         name: countryRows[0] ? optionLabel(countryRows[0], "geography_code", "geography_name") : country,
         x: countryRows.map(function (row) { return row.year; }),
         y: countryRows.map(function (row) { return row.value; }),
-        line: { color: COLORS[index % COLORS.length], width: country === "ITA" ? 4 : 2, dash: country === "OECD" ? "dot" : "solid" },
-        hovertemplate: "%{fullData.name}<br>%{x}: %{y:,.0f} $ PPP<extra></extra>"
+        line: { color: COLORS[index % COLORS.length], width: country === "ITA" ? 4 : 2 },
+        hovertemplate: "%{fullData.name}<br>%{x}: %{y:,.0f} EUR<extra></extra>"
       };
     }).filter(function (trace) { return trace.x.length; });
+    if (!traces.length) {
+      showEmpty("siOecdChart", "Serie OCSE in euro non ancora presenti nel payload pubblicato.");
+      return;
+    }
     plot("siOecdChart", traces, {
-      yaxis: { title: "Dollari USA PPP 2025", rangemode: "tozero" },
+      yaxis: { title: "Euro a prezzi 2025", rangemode: "tozero" },
       xaxis: yearAxis(rows)
     });
   }
@@ -2784,6 +2904,7 @@
     if (sectionId === "territorio") renderTerritory();
     if (sectionId === "giornate") renderPaidDays();
     if (sectionId === "europa") renderEurope();
+    if (sectionId === "contesto") renderLabourMarket();
     if (sectionId === "ocse") renderOecd();
     if (sectionId === "serie") renderSeries();
   }
@@ -2795,7 +2916,7 @@
   }
 
   function setupLazySections() {
-    var sectionIds = ["lavoratore", "lavoro", "territorio", "europa", "ocse", "serie", "giornate"];
+    var sectionIds = ["lavoratore", "lavoro", "territorio", "europa", "contesto", "ocse", "serie", "giornate"];
     if (!("IntersectionObserver" in window)) {
       sectionIds.forEach(function (sectionId) {
         renderLazySection(sectionId);
@@ -2875,7 +2996,7 @@
       .catch(function (error) {
         setStatus("Non riesco a caricare i dati salari: " + error.message, true);
         if (preserveInitial) return;
-        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siOecdChart", "siSeriesChart"].forEach(function (id) {
+        ["siDistributionChart", "siWorkerChart", "siLowWageChart", "siSectorBoxChart", "siJobChart", "siLabourCostChart", "siTerritoryChart", "siPaidDaysChart", "siEuropeChart", "siLabourMarketChart", "siOecdChart", "siSeriesChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
       });

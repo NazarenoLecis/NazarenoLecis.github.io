@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/salari-italia-dashboard.css?v=20260715-2">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/salari-italia-dashboard.js?v=20260715-3"></script>
+  <script defer src="../../assets/salari-italia-dashboard.js?v=20260715-4"></script>
 </head>
 <body>
   <header class="site-header">
@@ -48,7 +48,7 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard salari">
-      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#serie">Serie</a><a href="#giornate">Giornate</a><a href="#europa">UE27</a><a href="#ocse">OCSE</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo</a>
+      <a href="#indicatori">Indicatori</a><a href="#distribuzione">Distribuzione</a><a href="#serie">Serie</a><a href="#giornate">Giornate</a><a href="#europa">UE27</a><a href="#contesto">Contesto</a><a href="#ocse">OCSE</a><a href="#lavoratore">Lavoratore</a><a href="#lavoro">Lavoro e impresa</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo</a>
     </nav>
 
     <p class="si-note"><strong>Perimetro:</strong> ISTAT RACLI copre retribuzioni orarie lorde dei dipendenti del settore privato. Netti, imponibili contributivi, redditi fiscali, comuni di residenza e microdati individuali non sono stimati.</p>
@@ -150,19 +150,33 @@
         <div class="si-card-title"><h3>Retribuzione nel tempo</h3><span id="siEuropeTag">SES</span></div>
         <div id="siEuropeChart" class="si-chart si-chart-wide"></div>
         <div id="siEuropeGuidance" class="si-guidance-list" aria-live="polite"></div>
-        <p class="si-chart-credit">Fonte: Eurostat SES per oraria/mensile; OCSE Average annual wages per la serie annuale FTE in dollari PPP. Elaborazione di Nazareno Lecis.</p>
+        <p class="si-chart-credit">Fonte: Eurostat SES per oraria/mensile; OCSE Average annual wages per la serie annuale FTE in euro a prezzi 2025. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="contesto">
+      <div class="section-head">
+        <span class="eyebrow">Contesto mercato del lavoro</span>
+        <div><h2>Occupazione, disoccupazione e part-time</h2><p>Indicatori Eurostat LFS da affiancare alle serie salariali: non sono filtri della SES, ma controlli di contesto per paese, sesso e anno.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri contesto mercato del lavoro</summary><div id="siLabourMarketFilters" class="filter-grid"></div></details>
+      <article class="si-card si-chart-block">
+        <div class="si-card-title"><h3>Indicatori occupazionali</h3><span id="siLabourMarketTag">Eurostat LFS</span></div>
+        <div id="siLabourMarketChart" class="si-chart si-chart-wide"></div>
+        <div id="siLabourMarketGuidance" class="si-guidance-list" aria-live="polite"></div>
+        <p class="si-chart-credit">Fonte: Eurostat Labour Force Survey, <code>lfsa_ergan</code>, <code>lfsa_argan</code>, <code>une_rt_a</code>, <code>lfsa_eppga</code>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
     <section class="dashboard-section" id="ocse">
       <div class="section-head">
         <span class="eyebrow">Confronto OCSE</span>
-        <div><h2>Salario medio annuo in dollari PPP</h2><p>Serie OCSE separata dalle retribuzioni Eurostat: misura il salario medio annuo per dipendente equivalente full-time nell'economia totale.</p></div>
+        <div><h2>Salario medio annuo in euro</h2><p>Serie OCSE separata dalle retribuzioni Eurostat: misura il salario medio annuo per dipendente equivalente full-time nell'economia totale, in euro a prezzi 2025 dove pubblicato.</p></div>
       </div>
       <article class="si-card si-chart-block">
-        <div class="si-card-title"><h3>Italia, media OCSE e principali paesi</h3><span>OECD</span></div>
+        <div class="si-card-title"><h3>Italia e principali paesi area euro</h3><span>OECD</span></div>
         <div id="siOecdChart" class="si-chart si-chart-wide"></div>
-        <p class="si-chart-credit">Fonte: OECD Data Explorer, <code>DSD_EARNINGS@AV_AN_WAGE</code>. Unità: dollari USA PPP, base 2025. Elaborazione di Nazareno Lecis.</p>
+        <p class="si-chart-credit">Fonte: OECD Data Explorer, <code>DSD_EARNINGS@AV_AN_WAGE</code>. Unità: euro a prezzi 2025. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
