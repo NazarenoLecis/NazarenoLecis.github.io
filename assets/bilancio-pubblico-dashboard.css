@@ -456,10 +456,6 @@
     min-height: 300px;
   }
 
-  #bpSpendingPie .legend {
-    display: none !important;
-  }
-
   #bpUnder500Chart.bp-chart {
     min-width: 100%;
     min-height: 420px;

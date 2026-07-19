@@ -1259,6 +1259,149 @@
     ]);
   }
 
+  function spendingComparableRows(payload) {
+    return toArray(payload.spending_category_series)
+      .concat(toArray(payload.spending_pie));
+  }
+
+  function renderSpendingCompositionComparison(payload) {
+    var rows = toArray(payload.spending_pie);
+    var candidates = spendingComparableRows(payload);
+    var referenceRows = rowsForSingleComparableYear(rows, candidates);
+    var currentYear = referenceRows.length ? itemYear(referenceRows[0]) : null;
+    var previousYear = previousComparableYear(referenceRows, currentYear);
+    if (currentYear === null || previousYear === null) {
+      renderPie("bpSpendingPie", rows, "Spese", "bpSpendingPieRows", candidates);
+      return;
+    }
+
+    var currentRows = compositionRowsForYear(rows, currentYear, candidates);
+    var previousRows = compositionRowsForYear(rows, previousYear, candidates);
+    if (!currentRows.length || !previousRows.length) {
+      renderPie("bpSpendingPie", rows, "Spese", "bpSpendingPieRows", candidates);
+      return;
+    }
+
+    var previousByKey = {};
+    previousRows.forEach(function (row) {
+      previousByKey[comparableLookupKey(row.code || row.label)] = row;
+    });
+    var comparedRows = currentRows.map(function (row) {
+      var previous = previousByKey[comparableLookupKey(row.code || row.label)];
+      var currentValue = rowValueMld(row);
+      var previousValue = rowValueMld(previous);
+      if (!previous || currentValue === null || previousValue === null) return null;
+      return {
+        code: row.code,
+        label: row.label || row.code,
+        current_value_mld: currentValue,
+        previous_value_mld: previousValue,
+        current_share_percent: toNumber(row.share_percent),
+        previous_share_percent: toNumber(previous.share_percent),
+        delta_value_mld: currentValue - previousValue,
+        delta_share_points: toNumber(row.share_percent) - toNumber(previous.share_percent)
+      };
+    }).filter(function (row) { return row; });
+
+    if (!comparedRows.length) {
+      renderPie("bpSpendingPie", rows, "Spese", "bpSpendingPieRows", candidates);
+      return;
+    }
+
+    var currentTotal = currentRows.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    var previousTotal = previousRows.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    var chartRows = comparedRows.slice().reverse();
+    var compact = isMobileViewport();
+    var labels = chartRows.map(function (row) {
+      var label = asText(row.label || row.code);
+      return compact ? compactLabel(label, 22) : label;
+    });
+    var maxShare = Math.max.apply(null, chartRows.reduce(function (values, row) {
+      values.push(toNumber(row.previous_share_percent) || 0);
+      values.push(toNumber(row.current_share_percent) || 0);
+      return values;
+    }, [0]));
+    var node = byId("bpSpendingPie");
+    var card = node && node.closest ? node.closest(".bp-card") : null;
+    var subtitle = card ? card.querySelector(".bp-card-title span") : null;
+    if (subtitle) subtitle.textContent = "Quote sul totale - " + previousYear + " vs " + currentYear;
+    var previousHeader = byId("bpSpendingPrevYearHeader");
+    var currentHeader = byId("bpSpendingCurrYearHeader");
+    var previousShareHeader = byId("bpSpendingPrevShareHeader");
+    var currentShareHeader = byId("bpSpendingCurrShareHeader");
+    if (previousHeader) previousHeader.textContent = String(previousYear);
+    if (currentHeader) currentHeader.textContent = String(currentYear);
+    if (previousShareHeader) previousShareHeader.textContent = "Quota " + previousYear;
+    if (currentShareHeader) currentShareHeader.textContent = "Quota " + currentYear;
+
+    plot("bpSpendingPie", [{
+      type: "bar",
+      orientation: "h",
+      name: String(previousYear),
+      x: chartRows.map(function (row) { return row.previous_share_percent; }),
+      y: labels,
+      marker: { color: cssVar("--muted", COLORS[1]) },
+      text: chartRows.map(function (row) { return compact ? "" : formatPercent(row.previous_share_percent, 1); }),
+      textposition: "auto",
+      cliponaxis: false,
+      customdata: chartRows.map(function (row) { return [asText(row.label || row.code), formatMld(row.previous_value_mld, 1)]; }),
+      hovertemplate: "%{customdata[0]}<br>" + previousYear + ": %{x:.1f}%<br>%{customdata[1]}<extra></extra>"
+    }, {
+      type: "bar",
+      orientation: "h",
+      name: String(currentYear),
+      x: chartRows.map(function (row) { return row.current_share_percent; }),
+      y: labels,
+      marker: { color: cssVar("--orange", COLORS[0]) },
+      text: chartRows.map(function (row) {
+        if (compact) return formatPercent(row.current_share_percent, 1);
+        return formatPercent(row.current_share_percent, 1) + " (" + formatSignedPoints(row.delta_share_points, 1) + ")";
+      }),
+      textposition: "auto",
+      cliponaxis: false,
+      customdata: chartRows.map(function (row) {
+        return [asText(row.label || row.code), formatMld(row.current_value_mld, 1), formatSignedMld(row.delta_value_mld, 1), formatSignedPoints(row.delta_share_points, 1)];
+      }),
+      hovertemplate: "%{customdata[0]}<br>" + currentYear + ": %{x:.1f}%<br>%{customdata[1]}<br>Var. vs " + previousYear + ": %{customdata[2]}, %{customdata[3]}<extra></extra>"
+    }], {
+      barmode: "group",
+      height: compact ? 520 : undefined,
+      margin: compact ? { t: 12, r: 12, b: 90, l: 128 } : { t: 18, r: 96, b: 56, l: 162 },
+      xaxis: {
+        title: compact ? "Quota" : "Quota sul totale",
+        ticksuffix: "%",
+        range: [0, Math.min(100, Math.max(10, maxShare * (compact ? 1.35 : 1.25)))],
+        tickangle: 0
+      },
+      yaxis: { title: "", tickfont: { size: compact ? 10 : 12 } },
+      showlegend: true,
+      legend: { orientation: "h", y: compact ? -0.25 : -0.18 }
+    });
+
+    createTableRows(byId("bpSpendingPieRows"), comparedRows.concat([{
+      code: "__TOTAL__",
+      label: "Totale",
+      previous_value_mld: previousTotal,
+      current_value_mld: currentTotal,
+      delta_value_mld: currentTotal - previousTotal,
+      previous_share_percent: 100,
+      current_share_percent: 100,
+      delta_share_points: 0
+    }]), [
+      { value: function (row) { return asText(row.label || row.code); } },
+      { value: function (row) { return formatMldShort(row.previous_value_mld, 1); } },
+      { value: function (row) { return formatMldShort(row.current_value_mld, 1); } },
+      { value: function (row) { return formatSignedMld(row.delta_value_mld, 1); } },
+      { value: function (row) { return formatPercent(row.previous_share_percent, 1); } },
+      { value: function (row) { return formatPercent(row.current_share_percent, 1); } },
+      { value: function (row) { return formatSignedPoints(row.delta_share_points, 1); } }
+    ]);
+  }
+
   function renderPie(id, rows, title, tableId, candidates, extraRows) {
     var total = null;
     var targetYear = null;
@@ -2117,7 +2260,7 @@
     renderTaxTrend(payload);
     renderTaxCompositionTrend(payload);
     renderRevenueCompositionComparison(payload);
-    renderPie("bpSpendingPie", toArray(payload.spending_pie), "Spese", "bpSpendingPieRows", toArray(payload.spending_pie));
+    renderSpendingCompositionComparison(payload);
     renderCategoryTrend("bpRevenueTrend", toArray(payload.revenue_category_series), "Nessuna serie entrate disponibile");
     renderIrpef(payload);
     renderTaxTypeTrend(payload);
