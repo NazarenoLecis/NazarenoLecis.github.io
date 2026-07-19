@@ -456,7 +456,6 @@
     min-height: 300px;
   }
 
-  #bpRevenuePie .legend,
   #bpSpendingPie .legend {
     display: none !important;
   }

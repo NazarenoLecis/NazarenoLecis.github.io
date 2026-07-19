@@ -8,12 +8,12 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260705-base100">
+  <link rel="stylesheet" href="../../assets/bilancio-pubblico-dashboard.css?v=20260719-revenue-compare">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260705-base100-all-series-pie-total"></script>
-  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260705-base100"></script>
+  <script defer src="../../assets/bilancio-pubblico-dashboard.js?v=20260719-revenue-compare"></script>
+  <script defer src="../../assets/bilancio-pubblico-pie-fix.js?v=20260719-revenue-compare"></script>
 </head>
 <body>
   <header class="site-header">
@@ -99,7 +99,7 @@
           <h2>Entrate principali disponibili</h2>
           <span id="bpTopTaxesTitle">Miliardi di euro</span>
         </div>
-        <p>Top voci dell&apos;aggregato entrate: imposte, contributi sociali e principali componenti disponibili.</p>
+        <p>Top voci dell&apos;aggregato entrate confrontate con l&apos;anno precedente, per leggere il valore assoluto insieme alla variazione.</p>
         <div class="bp-chart-wrap">
           <div id="bpTopTaxes" class="chart bp-chart" role="img" aria-labelledby="bpTopTaxesTitle"></div>
         </div>
@@ -134,12 +134,12 @@
     <section class="bp-grid-2" id="distribuzione">
       <article class="bp-card">
         <div class="bp-card-title">
-          <h2>Entrate in torta</h2>
-          <span>Ripartizione principale</span>
+          <h2>Composizione entrate</h2>
+          <span>Quote a confronto</span>
         </div>
-        <p>Composizione delle entrate per macro categoria, includendo i contributi sociali netti quando disponibili.</p>
+        <p>Quote delle principali componenti sul totale disponibile, confrontate sull&apos;ultimo biennio comune.</p>
         <div class="bp-chart-wrap">
-          <div id="bpRevenuePie" class="chart bp-chart" role="img" aria-label="Entrate in torta"></div>
+          <div id="bpRevenuePie" class="chart bp-chart" role="img" aria-label="Composizione entrate a confronto"></div>
         </div>
         <p class="bp-chart-credit">Fonte: MEF - Dipartimento delle Finanze ed Eurostat gov_10a_taxag. Elaborazione di Nazareno Lecis.</p>
         <div class="bp-table-wrap">
@@ -147,9 +147,12 @@
             <thead>
               <tr>
                 <th>Voce</th>
-                <th>Anno</th>
-                <th>Miliardi di euro</th>
-                <th>%</th>
+                <th id="bpRevenuePrevYearHeader">Anno precedente</th>
+                <th id="bpRevenueCurrYearHeader">Ultimo anno</th>
+                <th>Var.</th>
+                <th id="bpRevenuePrevShareHeader">Quota precedente</th>
+                <th id="bpRevenueCurrShareHeader">Quota ultimo anno</th>
+                <th>Var. quota</th>
               </tr>
             </thead>
             <tbody id="bpRevenuePieRows"></tbody>

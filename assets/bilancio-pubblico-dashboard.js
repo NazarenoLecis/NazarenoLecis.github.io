@@ -99,6 +99,38 @@
     }) + " miliardi di euro";
   }
 
+  function formatMldShort(value, digits) {
+    var n = toNumber(value);
+    if (n === null) return MISSING_VALUE;
+    digits = Number.isFinite(digits) ? digits : 1;
+    return n.toLocaleString("it-IT", {
+      maximumFractionDigits: digits,
+      minimumFractionDigits: digits
+    }) + " mld";
+  }
+
+  function formatSignedDecimal(value, digits) {
+    var n = toNumber(value);
+    if (n === null) return MISSING_VALUE;
+    var prefix = n > 0 ? "+" : "";
+    return prefix + n.toLocaleString("it-IT", {
+      maximumFractionDigits: Number.isFinite(digits) ? digits : 1,
+      minimumFractionDigits: Number.isFinite(digits) ? digits : 1
+    });
+  }
+
+  function formatSignedMld(value, digits) {
+    return formatSignedDecimal(value, digits) + " mld";
+  }
+
+  function formatSignedPercent(value, digits) {
+    return formatSignedDecimal(value, digits) + "%";
+  }
+
+  function formatSignedPoints(value, digits) {
+    return formatSignedDecimal(value, digits) + " p.p.";
+  }
+
   function niceLabel(value) {
     return asText(value)
       .replace(/_/g, " ")
@@ -398,6 +430,57 @@
       .concat(toArray(payload.all_revenue_lines))
       .concat(toArray(payload.top_taxes))
       .concat(toArray(payload.revenue_pie));
+  }
+
+  function rowYearsWithValue(row) {
+    var years = rowSeriesYears(row).filter(function (year) {
+      return valueForYear(row, year) !== null;
+    });
+    if (years.length) return years;
+    var year = itemYear(row);
+    return year !== null && rowValueMld(row) !== null ? [year] : [];
+  }
+
+  function previousComparableYear(rows, currentYear) {
+    var common = null;
+    toArray(rows).forEach(function (row) {
+      var years = rowYearsWithValue(row).filter(function (year) {
+        return year < currentYear;
+      });
+      if (!years.length) return;
+      common = common === null
+        ? years.slice()
+        : common.filter(function (year) { return years.indexOf(year) >= 0; });
+    });
+    if (common && common.length) return common[common.length - 1];
+    return currentYear !== null ? currentYear - 1 : null;
+  }
+
+  function comparisonRowsForLatestTwoYears(rows, candidates, limit) {
+    var currentRows = rowsForSingleComparableYear(rows, candidates);
+    var currentYear = currentRows.length ? itemYear(currentRows[0]) : null;
+    if (currentYear === null) return null;
+    currentRows = byValueDesc(currentRows, "value_mld").slice(0, limit || currentRows.length);
+    var previousYear = previousComparableYear(currentRows, currentYear);
+    var comparedRows = currentRows.map(function (row) {
+      var currentValue = rowValueMld(row);
+      var previousValue = valueForYear(row, previousYear);
+      if (currentValue === null || previousValue === null) return null;
+      var deltaValue = currentValue - previousValue;
+      return Object.assign({}, row, {
+        current_year: currentYear,
+        previous_year: previousYear,
+        current_value_mld: currentValue,
+        previous_value_mld: previousValue,
+        delta_value_mld: deltaValue,
+        delta_percent: previousValue !== 0 ? deltaValue / previousValue * 100 : null
+      });
+    }).filter(function (row) { return row; });
+    return {
+      rows: comparedRows,
+      currentYear: currentYear,
+      previousYear: previousYear
+    };
   }
 
   function setSelectOptions(select, values, current, labelFormatter) {
@@ -729,37 +812,62 @@
   }
 
   function renderTopTaxes(payload) {
-    var rows = rowsForSingleComparableYear(
+    var comparison = comparisonRowsForLatestTwoYears(
       firstRows(payload, ["top_taxes_2025", "top_taxes", "main_taxes_2025"]),
-      revenueComparableRows(payload)
+      revenueComparableRows(payload),
+      10
     );
-    rows = byValueDesc(rows, "value_mld")
-      .slice(0, 10)
-      .reverse();
+    var rows = comparison ? comparison.rows.slice().reverse() : [];
     if (!rows.length) {
       showEmptyChart("bpTopTaxes", "Nessuna entrata principale disponibile");
       return;
     }
+    var compact = isMobileViewport();
+    var labels = rows.map(function (row) {
+      var label = asText(row.label || row.code);
+      return compact ? compactLabel(label, 22) : label;
+    });
     var topTaxesTitle = byId("bpTopTaxesTitle");
-    if (topTaxesTitle) topTaxesTitle.textContent = "Miliardi di euro - " + yearSummary(rows).toLowerCase();
+    if (topTaxesTitle) {
+      topTaxesTitle.textContent = "Miliardi di euro - confronto " + comparison.previousYear + "/" + comparison.currentYear;
+    }
     plot("bpTopTaxes", [{
       type: "bar",
       orientation: "h",
-      x: rows.map(rowValueMld),
-      y: rows.map(function (row) { return asText(row.label || row.code); }),
-      marker: {
-        color: rows.map(function (row, index) {
-          return row.code === "IRPEF" ? cssVar("--orange", COLORS[0]) : COLORS[(index + 1) % COLORS.length];
-        })
-      },
-      text: rows.map(function (row) { return formatMld(rowValueMld(row), 1); }),
+      name: String(comparison.previousYear),
+      x: rows.map(function (row) { return row.previous_value_mld; }),
+      y: labels,
+      marker: { color: cssVar("--muted", COLORS[1]) },
+      text: rows.map(function (row) { return compact ? "" : formatMldShort(row.previous_value_mld, 1); }),
       textposition: "auto",
-      hovertemplate: "%{y}<br>%{x:.1f} miliardi di euro<extra></extra>"
+      cliponaxis: false,
+      customdata: rows.map(function (row) { return asText(row.label || row.code); }),
+      hovertemplate: "%{customdata}<br>" + comparison.previousYear + ": %{x:.1f} miliardi di euro<extra></extra>"
+    }, {
+      type: "bar",
+      orientation: "h",
+      name: String(comparison.currentYear),
+      x: rows.map(function (row) { return row.current_value_mld; }),
+      y: labels,
+      marker: { color: cssVar("--orange", COLORS[0]) },
+      text: rows.map(function (row) {
+        if (compact) return formatMldShort(row.current_value_mld, 1);
+        return formatMldShort(row.current_value_mld, 1) + " (" + formatSignedMld(row.delta_value_mld, 1) + ")";
+      }),
+      textposition: "auto",
+      cliponaxis: false,
+      customdata: rows.map(function (row) {
+        return [asText(row.label || row.code), formatSignedMld(row.delta_value_mld, 1), formatSignedPercent(row.delta_percent, 1)];
+      }),
+      hovertemplate: "%{customdata[0]}<br>" + comparison.currentYear + ": %{x:.1f} miliardi di euro<br>Var. vs " + comparison.previousYear + ": %{customdata[1]} (%{customdata[2]})<extra></extra>"
     }], {
-      margin: { t: 18, r: 24, b: 44, l: 132 },
-      xaxis: { title: "Miliardi di euro" },
-      yaxis: { title: "" },
-      showlegend: false
+      barmode: "group",
+      height: compact ? 560 : undefined,
+      margin: compact ? { t: 12, r: 14, b: 86, l: 116 } : { t: 18, r: 96, b: 52, l: 142 },
+      xaxis: { title: compact ? "Miliardi" : "Miliardi di euro" },
+      yaxis: { title: "", tickfont: { size: compact ? 10 : 12 } },
+      showlegend: true,
+      legend: { orientation: "h", y: compact ? -0.24 : -0.18 }
     });
   }
 
@@ -978,6 +1086,177 @@
       yaxis: { title: useBase100 ? "Indice base 100 (" + baseYear + "=100)" : "% PIL", ticksuffix: useBase100 ? "" : "%" },
       xaxis: { title: "" }
     });
+  }
+
+  function compositionRowsForYear(rows, targetYear, candidates, extraRows) {
+    var mapped = rowsForComparableYear(rows, targetYear, candidates);
+    var seenKeys = {};
+    mapped.forEach(function (row) {
+      seenKeys[comparableLookupKey(row.code || row.label)] = true;
+    });
+
+    var comparableExtras = rowsForComparableYear(extraRows, targetYear, candidates).filter(function (row) {
+      return !seenKeys[comparableLookupKey(row.code || row.label)];
+    });
+    var otherTotal = comparableExtras.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    if (otherTotal > 0) {
+      mapped = mapped.concat([{
+        code: "__OTHER__",
+        label: "Altro",
+        year: targetYear,
+        value_mld: otherTotal
+      }]);
+    }
+
+    var total = mapped.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    return byValueDesc(mapped, "value_mld").map(function (row) {
+      return Object.assign({}, row, {
+        share_percent: total ? (rowValueMld(row) || 0) / total * 100 : null
+      });
+    });
+  }
+
+  function renderRevenueCompositionComparison(payload) {
+    var rows = toArray(payload.revenue_pie);
+    var candidates = revenueComparableRows(payload);
+    var extraRows = toArray(payload.under_500m_revenue_summary && payload.under_500m_revenue_summary.entries);
+    var referenceRows = rowsForSingleComparableYear(rows, candidates);
+    var currentYear = referenceRows.length ? itemYear(referenceRows[0]) : null;
+    var previousYear = previousComparableYear(referenceRows, currentYear);
+    if (currentYear === null || previousYear === null) {
+      renderPie("bpRevenuePie", rows, "Entrate", "bpRevenuePieRows", candidates, extraRows);
+      return;
+    }
+
+    var currentRows = compositionRowsForYear(rows, currentYear, candidates, extraRows);
+    var previousRows = compositionRowsForYear(rows, previousYear, candidates, extraRows);
+    if (!currentRows.length || !previousRows.length) {
+      renderPie("bpRevenuePie", rows, "Entrate", "bpRevenuePieRows", candidates, extraRows);
+      return;
+    }
+
+    var previousByKey = {};
+    previousRows.forEach(function (row) {
+      previousByKey[comparableLookupKey(row.code || row.label)] = row;
+    });
+    var comparedRows = currentRows.map(function (row) {
+      var previous = previousByKey[comparableLookupKey(row.code || row.label)];
+      var currentValue = rowValueMld(row);
+      var previousValue = rowValueMld(previous);
+      if (!previous || currentValue === null || previousValue === null) return null;
+      return {
+        code: row.code,
+        label: row.label || row.code,
+        current_value_mld: currentValue,
+        previous_value_mld: previousValue,
+        current_share_percent: toNumber(row.share_percent),
+        previous_share_percent: toNumber(previous.share_percent),
+        delta_value_mld: currentValue - previousValue,
+        delta_share_points: toNumber(row.share_percent) - toNumber(previous.share_percent)
+      };
+    }).filter(function (row) { return row; });
+
+    if (!comparedRows.length) {
+      renderPie("bpRevenuePie", rows, "Entrate", "bpRevenuePieRows", candidates, extraRows);
+      return;
+    }
+
+    var currentTotal = currentRows.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    var previousTotal = previousRows.reduce(function (sum, row) {
+      return sum + (rowValueMld(row) || 0);
+    }, 0);
+    var chartRows = comparedRows.slice().reverse();
+    var compact = isMobileViewport();
+    var labels = chartRows.map(function (row) {
+      var label = asText(row.label || row.code);
+      return compact ? compactLabel(label, 22) : label;
+    });
+    var maxShare = Math.max.apply(null, chartRows.reduce(function (values, row) {
+      values.push(toNumber(row.previous_share_percent) || 0);
+      values.push(toNumber(row.current_share_percent) || 0);
+      return values;
+    }, [0]));
+    var node = byId("bpRevenuePie");
+    var card = node && node.closest ? node.closest(".bp-card") : null;
+    var subtitle = card ? card.querySelector(".bp-card-title span") : null;
+    if (subtitle) subtitle.textContent = "Quote sul totale - " + previousYear + " vs " + currentYear;
+    var previousHeader = byId("bpRevenuePrevYearHeader");
+    var currentHeader = byId("bpRevenueCurrYearHeader");
+    var previousShareHeader = byId("bpRevenuePrevShareHeader");
+    var currentShareHeader = byId("bpRevenueCurrShareHeader");
+    if (previousHeader) previousHeader.textContent = String(previousYear);
+    if (currentHeader) currentHeader.textContent = String(currentYear);
+    if (previousShareHeader) previousShareHeader.textContent = "Quota " + previousYear;
+    if (currentShareHeader) currentShareHeader.textContent = "Quota " + currentYear;
+
+    plot("bpRevenuePie", [{
+      type: "bar",
+      orientation: "h",
+      name: String(previousYear),
+      x: chartRows.map(function (row) { return row.previous_share_percent; }),
+      y: labels,
+      marker: { color: cssVar("--muted", COLORS[1]) },
+      text: chartRows.map(function (row) { return compact ? "" : formatPercent(row.previous_share_percent, 1); }),
+      textposition: "auto",
+      cliponaxis: false,
+      customdata: chartRows.map(function (row) { return [asText(row.label || row.code), formatMld(row.previous_value_mld, 1)]; }),
+      hovertemplate: "%{customdata[0]}<br>" + previousYear + ": %{x:.1f}%<br>%{customdata[1]}<extra></extra>"
+    }, {
+      type: "bar",
+      orientation: "h",
+      name: String(currentYear),
+      x: chartRows.map(function (row) { return row.current_share_percent; }),
+      y: labels,
+      marker: { color: cssVar("--orange", COLORS[0]) },
+      text: chartRows.map(function (row) {
+        if (compact) return formatPercent(row.current_share_percent, 1);
+        return formatPercent(row.current_share_percent, 1) + " (" + formatSignedPoints(row.delta_share_points, 1) + ")";
+      }),
+      textposition: "auto",
+      cliponaxis: false,
+      customdata: chartRows.map(function (row) {
+        return [asText(row.label || row.code), formatMld(row.current_value_mld, 1), formatSignedMld(row.delta_value_mld, 1), formatSignedPoints(row.delta_share_points, 1)];
+      }),
+      hovertemplate: "%{customdata[0]}<br>" + currentYear + ": %{x:.1f}%<br>%{customdata[1]}<br>Var. vs " + previousYear + ": %{customdata[2]}, %{customdata[3]}<extra></extra>"
+    }], {
+      barmode: "group",
+      height: compact ? 500 : undefined,
+      margin: compact ? { t: 12, r: 12, b: 90, l: 124 } : { t: 18, r: 96, b: 56, l: 162 },
+      xaxis: {
+        title: compact ? "Quota" : "Quota sul totale",
+        ticksuffix: "%",
+        range: [0, Math.min(100, Math.max(10, maxShare * (compact ? 1.35 : 1.25)))],
+        tickangle: 0
+      },
+      yaxis: { title: "", tickfont: { size: compact ? 10 : 12 } },
+      showlegend: true,
+      legend: { orientation: "h", y: compact ? -0.25 : -0.18 }
+    });
+
+    createTableRows(byId("bpRevenuePieRows"), comparedRows.concat([{
+      code: "__TOTAL__",
+      label: "Totale",
+      previous_value_mld: previousTotal,
+      current_value_mld: currentTotal,
+      delta_value_mld: currentTotal - previousTotal,
+      previous_share_percent: 100,
+      current_share_percent: 100,
+      delta_share_points: 0
+    }]), [
+      { value: function (row) { return asText(row.label || row.code); } },
+      { value: function (row) { return formatMldShort(row.previous_value_mld, 1); } },
+      { value: function (row) { return formatMldShort(row.current_value_mld, 1); } },
+      { value: function (row) { return formatSignedMld(row.delta_value_mld, 1); } },
+      { value: function (row) { return formatPercent(row.previous_share_percent, 1); } },
+      { value: function (row) { return formatPercent(row.current_share_percent, 1); } },
+      { value: function (row) { return formatSignedPoints(row.delta_share_points, 1); } }
+    ]);
   }
 
   function renderPie(id, rows, title, tableId, candidates, extraRows) {
@@ -1837,14 +2116,7 @@
     renderTopTaxes(payload);
     renderTaxTrend(payload);
     renderTaxCompositionTrend(payload);
-    renderPie(
-      "bpRevenuePie",
-      toArray(payload.revenue_pie),
-      "Entrate",
-      "bpRevenuePieRows",
-      revenueComparableRows(payload),
-      toArray(payload.under_500m_revenue_summary && payload.under_500m_revenue_summary.entries)
-    );
+    renderRevenueCompositionComparison(payload);
     renderPie("bpSpendingPie", toArray(payload.spending_pie), "Spese", "bpSpendingPieRows", toArray(payload.spending_pie));
     renderCategoryTrend("bpRevenueTrend", toArray(payload.revenue_category_series), "Nessuna serie entrate disponibile");
     renderIrpef(payload);
