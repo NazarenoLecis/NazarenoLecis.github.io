@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-2">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-3">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-2"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-3"></script>
 </head>
 <body>
   <header class="site-header">
@@ -41,12 +41,12 @@
       <div>
         <span class="eyebrow">Sanit&agrave; italiana</span>
         <h1>Accesso alle cure, qualit&agrave; degli ospedali, mobilit&agrave; sanitaria e risorse del SSN</h1>
-        <p class="lead">Dashboard con dati pubblici effettivi: dimissioni ospedaliere per disciplina e territorio, posti letto, costi regionali del SSN, serie storiche farmaceutiche, denominatori demografici e report ufficiali AGENAS sulla mobilit&agrave; sanitaria.</p>
+        <p class="lead">Dashboard con dati pubblici effettivi: dimissioni ospedaliere per disciplina e territorio, posti letto, costi regionali del SSN, serie storiche farmaceutiche, denominatori demografici, PIL regionale e saldi economici della mobilit&agrave; sanitaria.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Ministero della Salute, OpenBDAP, ISTAT, AGENAS</strong>
+          <strong>Ministero della Salute, OpenBDAP, ISTAT, Eurostat, AGENAS, Corte dei conti</strong>
           <span id="hiSourceMeta">Dati normalizzati dalla pipeline pubblica e aggiornati nel payload della dashboard.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Agenas" target="_blank" rel="noopener">Repository Agenas</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
@@ -62,7 +62,7 @@
       <div class="workflow-step">
         <span>2</span>
         <h2>Regioni</h2>
-        <p>Confronta volumi, dotazioni e costi con rapporti per popolazione totale, over 65, over 75 o denominatore clinico.</p>
+        <p>Confronta volumi, dotazioni, costi e mobilit&agrave; con rapporti per popolazione totale, over 65, over 75, denominatore clinico o PIL.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
@@ -97,15 +97,23 @@
         </label>
         <label>Indicatore regionale
           <select id="hiMetricFilter">
-            <option value="discharges_per_1000">Dimissioni per 1.000 residenti</option>
             <option value="discharges">Dimissioni</option>
             <option value="total_beds">Posti letto</option>
-            <option value="beds_per_1000">Posti letto per 1.000 residenti</option>
             <option value="ssn_cost_eur">Costo SSN</option>
-            <option value="ssn_cost_per_capita_eur">Costo SSN pro capite</option>
-            <option value="ssn_cost_per_over65_eur">Costo SSN per residente 65+</option>
+            <option value="mobility_balance_eur">Saldo mobilit&agrave;</option>
             <option value="bed_utilization_percent">Utilizzo posti letto</option>
             <option value="avg_los_days">Degenza media</option>
+          </select>
+        </label>
+        <label>Rapporta a
+          <select id="hiRatioFilter">
+            <option value="auto">Misura consigliata</option>
+            <option value="absolute">Valore assoluto</option>
+            <option value="population_total">Popolazione totale</option>
+            <option value="population_65_plus">Popolazione 65+</option>
+            <option value="population_75_plus">Popolazione 75+</option>
+            <option value="clinical">Denominatore clinico</option>
+            <option value="gdp">PIL regionale</option>
           </select>
         </label>
         <label>Denominatore disciplina
@@ -245,24 +253,33 @@
     <section id="mobilita" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Mobilit&agrave; sanitaria</span>
-        <div><h2>Turismo sanitario, flussi e saldi</h2><p>La mobilit&agrave; viene mostrata con i report ufficiali AGENAS incorporati: flussi tra territori e risultati economici della mobilit&agrave;.</p></div>
+        <div><h2>Turismo sanitario, flussi economici e saldi</h2><p>La mobilit&agrave; viene letta con grafici propri: saldo economico netto, serie storica regionale e Sankey delle compensazioni 2024.</p></div>
       </div>
-      <article class="hi-card hi-embed-card">
-        <div class="hi-card-title"><h3>Flussi di mobilit&agrave;</h3><span>AGENAS</span></div>
-        <iframe id="hiMobilityFrame" title="Mobilit&agrave; sanitaria AGENAS" src="" loading="lazy" allowfullscreen></iframe>
-        <p class="hi-chart-credit">Report ufficiale AGENAS. La dashboard non ricostruisce flussi non ancora disponibili nella pipeline come tabella origine-destinazione.</p>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3>Sankey del saldo economico netto</h3><span>Corte dei conti, 2024</span></div>
+        <div id="hiMobilitySankeyChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiMobilitySankeyNote" class="hi-chart-credit">Il Sankey mostra compensazioni economiche nette, non una matrice origine-destinazione dei singoli pazienti.</p>
       </article>
-      <article class="hi-card hi-embed-card">
-        <div class="hi-card-title"><h3>Risultati economici della mobilit&agrave;</h3><span>AGENAS</span></div>
-        <iframe id="hiEconomicMobilityFrame" title="Risultati economici della mobilit&agrave; AGENAS" src="" loading="lazy" allowfullscreen></iframe>
-        <p class="hi-chart-credit">Report ufficiale AGENAS sui saldi economici della mobilit&agrave; sanitaria.</p>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiMobilityBalanceTitle">Saldo mobilit&agrave; per regione</h3><span>milioni di euro</span></div>
+        <div id="hiMobilityBalanceChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: Corte dei conti su dati Intesa Stato-Regioni. Valori positivi: attrazione netta; valori negativi: fuga netta.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiMobilitySeriesTitle">Serie storica del saldo</h3><span>2014-2024</span></div>
+        <div id="hiMobilitySeriesChart" class="hi-chart"></div>
+        <p class="hi-chart-credit">La serie aiuta a distinguere oscillazioni annuali e persistenza del turismo sanitario economico.</p>
+      </article>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Dettaglio mobilit&agrave;</h3><span>saldi regionali</span></div>
+        <div id="hiMobilityTable" class="hi-table-wrap"></div>
       </article>
     </section>
 
     <section id="dati" class="dashboard-section">
       <div class="section-head">
-        <span class="eyebrow">Dati scaricabili</span>
-        <div><h2>Tabelle della dashboard</h2><p>Le tabelle sono parte dello stesso JSON pubblico e possono essere scaricate in CSV.</p></div>
+        <span class="eyebrow">Dati</span>
+        <div><h2>Tabelle della dashboard</h2><p>Le tabelle consentono di controllare valori, definizioni, denominatori e fonti usate dai grafici.</p></div>
       </div>
       <article class="hi-card">
         <div class="hi-card-title"><h3 id="hiTableTitle">Tabelle</h3><span id="hiTableCount">0 righe</span></div>
@@ -273,7 +290,6 @@
           <label>Cerca
             <input id="hiTableSearch" type="search" placeholder="regione, disciplina, fonte">
           </label>
-          <button id="hiDownloadCsv" type="button">Download CSV</button>
         </div>
         <div id="hiTableExplorer" class="hi-table-wrap hi-table-explorer"></div>
       </article>

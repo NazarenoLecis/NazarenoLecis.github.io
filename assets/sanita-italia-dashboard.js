@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260720-2",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-2",
+    "../../data/sanita-italia/dashboard.json?v=20260720-3",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-3",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -11,7 +11,8 @@
     payload: null,
     region: "Italia",
     discipline: "",
-    metric: "discharges_per_1000",
+    metric: "discharges",
+    ratioMode: "population_total",
     denominator: "auto",
     costType: "totali",
     table: "regional_summary",
@@ -22,17 +23,22 @@
   var MISSING = "ND";
 
   var METRICS = {
-    discharges: { label: "Dimissioni", field: "discharges", format: formatNumber },
-    discharges_per_1000: { label: "Dimissioni per 1.000 residenti", field: "discharges_per_1000", format: formatDecimal },
-    discharges_per_1000_over65: { label: "Dimissioni per 1.000 residenti 65+", field: "discharges_per_1000_over65", format: formatDecimal },
-    total_beds: { label: "Posti letto", field: "total_beds", format: formatNumber },
-    beds_per_1000: { label: "Posti letto per 1.000 residenti", field: "beds_per_1000", format: formatDecimal },
-    beds_per_1000_over75: { label: "Posti letto per 1.000 residenti 75+", field: "beds_per_1000_over75", format: formatDecimal },
-    ssn_cost_eur: { label: "Costo SSN", field: "ssn_cost_eur", format: formatEuroCompact },
-    ssn_cost_per_capita_eur: { label: "Costo SSN pro capite", field: "ssn_cost_per_capita_eur", format: formatEuro },
-    ssn_cost_per_over65_eur: { label: "Costo SSN per residente 65+", field: "ssn_cost_per_over65_eur", format: formatEuro },
+    discharges: { label: "Dimissioni", family: "volume" },
+    total_beds: { label: "Posti letto", family: "volume" },
+    ssn_cost_eur: { label: "Costo SSN", family: "money" },
+    mobility_balance_eur: { label: "Saldo mobilita", family: "money_signed" },
     bed_utilization_percent: { label: "Utilizzo posti letto", field: "bed_utilization_percent", format: formatPercent },
     avg_los_days: { label: "Degenza media", field: "avg_los_days", format: function (value) { return formatDecimal(value) + " giorni"; } }
+  };
+
+  var RATIO_MODES = {
+    auto: "misura consigliata",
+    absolute: "valore assoluto",
+    population_total: "popolazione totale",
+    population_65_plus: "popolazione 65+",
+    population_75_plus: "popolazione 75+",
+    clinical: "denominatore clinico",
+    gdp: "PIL regionale"
   };
 
   var DENOMINATORS = {
@@ -53,10 +59,14 @@
         ["region", "Regione"],
         ["discharges", "Dimissioni"],
         ["discharges_per_1000", "Dim./1.000"],
+        ["discharges_per_1000_over65", "Dim./1.000 65+"],
+        ["discharges_per_1000_over75", "Dim./1.000 75+"],
         ["total_beds", "Posti letto"],
         ["beds_per_1000", "PL/1.000"],
         ["ssn_cost_eur", "Costo SSN"],
         ["ssn_cost_per_capita_eur", "Euro pro capite"],
+        ["ssn_cost_percent_gdp", "Costo/PIL"],
+        ["mobility_balance_million_eur", "Saldo mobilita"],
         ["top_discipline", "Disciplina principale"]
       ]
     },
@@ -68,6 +78,8 @@
         ["discipline", "Disciplina"],
         ["discharges", "Dimissioni"],
         ["discharges_per_1000_total", "Dim./1.000 totale"],
+        ["discharges_per_1000_over65", "Dim./1.000 65+"],
+        ["discharges_per_1000_over75", "Dim./1.000 75+"],
         ["discharges_per_1000_relevant", "Dim./1.000 denom."],
         ["relevant_denominator", "Denominatore"],
         ["avg_los_days", "Degenza media"],
@@ -85,7 +97,10 @@
         ["total_beds", "Totale PL"],
         ["ordinary_beds", "PL ordinari"],
         ["day_hospital_beds", "PL DH"],
-        ["day_surgery_beds", "PL DS"]
+        ["day_surgery_beds", "PL DS"],
+        ["beds_per_1000_total", "PL/1.000"],
+        ["beds_per_1000_over65", "PL/1.000 65+"],
+        ["beds_per_1000_over75", "PL/1.000 75+"]
       ]
     },
     {
@@ -95,6 +110,10 @@
         ["region", "Regione"],
         ["cost_label", "Voce"],
         ["amount_eur", "Importo"],
+        ["amount_per_capita_eur", "Euro/ab."],
+        ["amount_per_over65_eur", "Euro/65+"],
+        ["amount_per_over75_eur", "Euro/75+"],
+        ["amount_percent_gdp", "% PIL"],
         ["share_percent", "Quota %"],
         ["change_percent", "Var. %"],
         ["year", "Anno"]
@@ -134,6 +153,42 @@
         ["population_65_plus", "65+"],
         ["population_75_plus", "75+"],
         ["women_15_49", "Donne 15-49"]
+      ]
+    },
+    {
+      id: "gdp_regional",
+      label: "PIL regionale",
+      columns: [
+        ["region", "Regione"],
+        ["year", "Anno"],
+        ["nuts2", "NUTS2"],
+        ["gdp_million_eur", "PIL"],
+        ["source", "Fonte"]
+      ]
+    },
+    {
+      id: "mobility_balance",
+      label: "Mobilita sanitaria",
+      columns: [
+        ["region", "Regione"],
+        ["year", "Anno"],
+        ["balance_million_eur", "Saldo"],
+        ["balance_per_capita_eur", "Euro/ab."],
+        ["balance_per_over65_eur", "Euro/65+"],
+        ["balance_per_over75_eur", "Euro/75+"],
+        ["balance_percent_gdp", "% PIL"],
+        ["direction", "Direzione"]
+      ]
+    },
+    {
+      id: "mobility_sankey",
+      label: "Sankey mobilita 2024",
+      columns: [
+        ["source", "Origine"],
+        ["target", "Destinazione"],
+        ["value_million_eur", "Valore"],
+        ["flow_type", "Tipo"],
+        ["year", "Anno"]
       ]
     },
     {
@@ -220,6 +275,12 @@
     return number.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
   }
 
+  function formatEuroDecimal(value) {
+    var number = toNumber(value);
+    if (number === null) return MISSING;
+    return number.toLocaleString("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   function formatEuroCompact(value) {
     var number = toNumber(value);
     if (number === null) return MISSING;
@@ -228,7 +289,15 @@
     return formatEuro(number);
   }
 
+  function formatMillionEuro(value) {
+    var number = toNumber(value);
+    if (number === null) return MISSING;
+    return number.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mln euro";
+  }
+
   function formatCell(column, value) {
+    if (/million_eur$/i.test(column)) return formatMillionEuro(value);
+    if (/per_capita_eur|per_over65_eur|per_over75_eur/i.test(column)) return formatEuroDecimal(value);
     if (/eur$/i.test(column) || column === "amount_eur" || column === "ssn_cost_eur") return formatEuroCompact(value);
     if (/percent$/i.test(column)) return formatPercent(value);
     if (/per_1000|avg_los|share|change|utilization/i.test(column)) return formatDecimal(value);
@@ -372,7 +441,11 @@
     rows = rows.slice(0, options.limit || 20).reverse();
     var labels = rows.map(function (row) { return compact(row[labelField], options.labelLength || 34); });
     var values = rows.map(function (row) { return toNumber(row[valueField]) || 0; });
+    var displayValues = rows.map(function (row) {
+      return options.format ? options.format(row[valueField]) : formatDecimal(row[valueField]);
+    });
     var colors = rows.map(function (row) {
+      if (options.colorFor) return options.colorFor(row);
       return options.highlight && row.region === options.highlight ? COLORS[0] : (options.color || COLORS[1]);
     });
     plot(id, [{
@@ -380,6 +453,7 @@
       orientation: "h",
       x: values,
       y: labels,
+      text: displayValues,
       marker: { color: colors },
       customdata: rows,
       hovertemplate: options.hovertemplate || "%{y}: %{x:,.2f}<extra></extra>"
@@ -437,6 +511,9 @@
       return { value: row.id, label: row.label };
     }), STATE.costType);
 
+    var ratioSelect = byId("hiRatioFilter");
+    if (ratioSelect) ratioSelect.value = STATE.ratioMode;
+
     var tableSelect = byId("hiTableSelect");
     if (tableSelect) {
       clear(tableSelect);
@@ -456,6 +533,7 @@
       ["hiRegionFilter", "region"],
       ["hiDisciplineFilter", "discipline"],
       ["hiMetricFilter", "metric"],
+      ["hiRatioFilter", "ratioMode"],
       ["hiDenominatorFilter", "denominator"],
       ["hiCostTypeFilter", "costType"],
       ["hiTableSelect", "table"]
@@ -477,8 +555,6 @@
       });
     }
 
-    var download = byId("hiDownloadCsv");
-    if (download) download.addEventListener("click", downloadCurrentCsv);
   }
 
   function renderKpis() {
@@ -489,15 +565,16 @@
     var beds = national.beds || {};
     var costs = national.costs || {};
     var pop = national.population || {};
+    var mobility = national.mobility || {};
     var items = [
       ["Dimissioni ospedaliere", activity.discharges, "anno " + asText(activity.year), formatDecimal(activity.discharges_per_1000) + " per 1.000 residenti"],
       ["Discipline", kpis.disciplines, "reparti ospedalieri", "classificate nella fonte Ministero"],
       ["Giornate di degenza", activity.stay_days, "anno " + asText(activity.year), "degenza media " + formatDecimal(activity.avg_los_days) + " giorni"],
       ["Posti letto", beds.total_beds, "anno " + asText(beds.year), formatDecimal(beds.beds_per_1000) + " per 1.000 residenti"],
-      ["Costo SSN", costs.amount_eur, "conto economico " + asText(costs.year), formatEuro(costs.cost_per_capita_eur) + " pro capite"],
+      ["Costo SSN", formatEuroCompact(costs.amount_eur), "conto economico " + asText(costs.year), formatEuroDecimal(costs.cost_per_capita_eur) + " pro capite; " + formatPercent(costs.cost_percent_gdp) + " del PIL"],
       ["Popolazione 65+", pop.population_65_plus, "ISTAT 2026", formatPercent(pop.elderly_65_share_percent) + " della popolazione"],
       ["Strutture", kpis.structures, "pubbliche ed equiparate", "nel dataset attivita reparti"],
-      ["Mobilita sanitaria", "AGENAS", "report ufficiale", "flussi e saldo economico incorporati"]
+      ["Saldo mobilita", formatEuroCompact(mobility.balance_eur), "Corte dei conti " + asText(mobility.year), formatEuroDecimal(mobility.balance_per_capita_eur) + " per abitante"]
     ];
     var container = byId("hiKpis");
     clear(container);
@@ -581,19 +658,75 @@
     }
   }
 
+  function ratioMode() {
+    return STATE.ratioMode || "auto";
+  }
+
+  function ratioModeLabel() {
+    return RATIO_MODES[ratioMode()] || RATIO_MODES.auto;
+  }
+
+  function regionalMetricConfig() {
+    var mode = ratioMode();
+    var metric = METRICS[STATE.metric] || METRICS.discharges;
+    if (STATE.metric === "discharges") {
+      if (mode === "absolute") return { label: "Dimissioni", value: function (row) { return toNumber(row.discharges); }, xTitle: "dimissioni", format: formatNumber };
+      if (mode === "population_65_plus") return { label: "Dimissioni per 1.000 residenti 65+", value: function (row) { return toNumber(row.discharges_per_1000_over65); }, xTitle: "per 1.000 residenti 65+", format: formatDecimal };
+      if (mode === "population_75_plus") return { label: "Dimissioni per 1.000 residenti 75+", value: function (row) { return toNumber(row.discharges_per_1000_over75); }, xTitle: "per 1.000 residenti 75+", format: formatDecimal };
+      if (mode === "gdp") return { label: "Dimissioni per miliardo di PIL", value: function (row) { return toNumber(row.discharges_per_billion_gdp); }, xTitle: "dimissioni per mld PIL", format: formatDecimal };
+      return { label: "Dimissioni per 1.000 residenti", value: function (row) { return toNumber(row.discharges_per_1000); }, xTitle: "per 1.000 residenti", format: formatDecimal };
+    }
+    if (STATE.metric === "total_beds") {
+      if (mode === "absolute") return { label: "Posti letto", value: function (row) { return toNumber(row.total_beds); }, xTitle: "posti letto", format: formatNumber };
+      if (mode === "population_65_plus") return { label: "Posti letto per 1.000 residenti 65+", value: function (row) { return toNumber(row.beds_per_1000_over65); }, xTitle: "per 1.000 residenti 65+", format: formatDecimal };
+      if (mode === "population_75_plus") return { label: "Posti letto per 1.000 residenti 75+", value: function (row) { return toNumber(row.beds_per_1000_over75); }, xTitle: "per 1.000 residenti 75+", format: formatDecimal };
+      if (mode === "gdp") return { label: "Posti letto per miliardo di PIL", value: function (row) { return toNumber(row.beds_per_billion_gdp); }, xTitle: "posti letto per mld PIL", format: formatDecimal };
+      return { label: "Posti letto per 1.000 residenti", value: function (row) { return toNumber(row.beds_per_1000); }, xTitle: "per 1.000 residenti", format: formatDecimal };
+    }
+    if (STATE.metric === "ssn_cost_eur") {
+      if (mode === "absolute") return { label: "Costo SSN", value: function (row) { return (toNumber(row.ssn_cost_eur) || 0) / 1000000000; }, xTitle: "miliardi di euro", format: function (value) { return formatDecimal(value) + " mld euro"; } };
+      if (mode === "population_65_plus") return { label: "Costo SSN per residente 65+", value: function (row) { return toNumber(row.ssn_cost_per_over65_eur); }, xTitle: "euro per residente 65+", format: formatEuroDecimal };
+      if (mode === "population_75_plus") return { label: "Costo SSN per residente 75+", value: function (row) { return toNumber(row.ssn_cost_per_over75_eur); }, xTitle: "euro per residente 75+", format: formatEuroDecimal };
+      if (mode === "gdp") return { label: "Costo SSN in rapporto al PIL", value: function (row) { return toNumber(row.ssn_cost_percent_gdp); }, xTitle: "% del PIL", format: formatPercent };
+      return { label: "Costo SSN pro capite", value: function (row) { return toNumber(row.ssn_cost_per_capita_eur); }, xTitle: "euro per abitante", format: formatEuroDecimal };
+    }
+    if (STATE.metric === "mobility_balance_eur") {
+      if (mode === "population_total" || mode === "clinical") return { label: "Saldo mobilita per abitante", value: function (row) { return toNumber(row.mobility_balance_per_capita_eur); }, xTitle: "euro per abitante", format: formatEuroDecimal, signed: true };
+      if (mode === "population_65_plus") return { label: "Saldo mobilita per residente 65+", value: function (row) { return toNumber(row.mobility_balance_per_over65_eur); }, xTitle: "euro per residente 65+", format: formatEuroDecimal, signed: true };
+      if (mode === "population_75_plus") return { label: "Saldo mobilita per residente 75+", value: function (row) { return toNumber(row.mobility_balance_per_over75_eur); }, xTitle: "euro per residente 75+", format: formatEuroDecimal, signed: true };
+      if (mode === "gdp") return { label: "Saldo mobilita in rapporto al PIL", value: function (row) { return toNumber(row.mobility_balance_percent_gdp); }, xTitle: "% del PIL", format: formatPercent, signed: true };
+      return { label: "Saldo mobilita", value: function (row) { return toNumber(row.mobility_balance_million_eur); }, xTitle: "milioni di euro", format: formatMillionEuro, signed: true };
+    }
+    return {
+      label: metric.label,
+      value: function (row) { return toNumber(row[metric.field]); },
+      xTitle: metric.label,
+      format: metric.format || formatDecimal
+    };
+  }
+
   function renderRegionalRank() {
-    var config = METRICS[STATE.metric] || METRICS.discharges_per_1000;
-    var rows = sortDescending(tableRows("regional_summary"), config.field);
+    var config = regionalMetricConfig();
+    var rows = tableRows("regional_summary").map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_metric = config.value(row);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_metric) !== null;
+    });
+    rows.sort(function (a, b) { return (toNumber(b.selected_metric) || 0) - (toNumber(a.selected_metric) || 0); });
     var title = byId("hiRegionalRankTitle");
     var tag = byId("hiRegionalRankTag");
     if (title) title.textContent = config.label;
-    if (tag) tag.textContent = STATE.region === "Italia" ? "tutte le regioni" : "focus " + STATE.region;
-    horizontalBar("hiRegionalRankChart", rows, "region", config.field, {
+    if (tag) tag.textContent = (STATE.region === "Italia" ? "tutte le regioni" : "focus " + STATE.region) + " - " + ratioModeLabel();
+    horizontalBar("hiRegionalRankChart", rows, "region", "selected_metric", {
       limit: 21,
       highlight: STATE.region,
       leftMargin: 150,
-      xTitle: config.label,
-      hovertemplate: "%{y}<br>" + config.label + ": %{x:,.2f}<extra></extra>"
+      xTitle: config.xTitle,
+      format: config.format,
+      colorFor: config.signed ? function (row) { return toNumber(row.selected_metric) < 0 ? COLORS[5] : COLORS[2]; } : null,
+      hovertemplate: "%{y}<br>" + config.label + ": %{text}<extra></extra>"
     });
   }
 
@@ -614,14 +747,18 @@
         ["Territorio", title, "somma nazionale dei territori disponibili"],
         ["Dimissioni", formatNumber((national.activity || {}).discharges), formatDecimal((national.activity || {}).discharges_per_1000) + " per 1.000 residenti"],
         ["Posti letto", formatNumber((national.beds || {}).total_beds), formatDecimal((national.beds || {}).beds_per_1000) + " per 1.000 residenti"],
-        ["Costo SSN", formatEuroCompact((national.costs || {}).amount_eur), formatEuro((national.costs || {}).cost_per_capita_eur) + " pro capite"]
+        ["Costo SSN", formatEuroCompact((national.costs || {}).amount_eur), formatEuroDecimal((national.costs || {}).cost_per_capita_eur) + " pro capite; " + formatPercent((national.costs || {}).cost_percent_gdp) + " del PIL"],
+        ["Popolazione 75+", formatNumber((national.population || {}).population_75_plus), formatPercent((national.population || {}).elderly_75_share_percent) + " dei residenti"],
+        ["Saldo mobilita", formatEuroCompact((national.mobility || {}).balance_eur), formatEuroDecimal((national.mobility || {}).balance_per_capita_eur) + " per abitante"]
       ];
     } else {
       items = [
         ["Territorio", row.region, formatNumber(row.population_total) + " residenti ISTAT 2026"],
         ["Dimissioni", formatNumber(row.discharges), formatDecimal(row.discharges_per_1000) + " per 1.000, rank " + asText(row.rank_discharges_per_1000)],
         ["Posti letto", formatNumber(row.total_beds), formatDecimal(row.beds_per_1000) + " per 1.000, rank " + asText(row.rank_beds_per_1000)],
-        ["Costo SSN", formatEuroCompact(row.ssn_cost_eur), formatEuro(row.ssn_cost_per_capita_eur) + " pro capite, rank " + asText(row.rank_cost_per_capita)]
+        ["Costo SSN", formatEuroCompact(row.ssn_cost_eur), formatEuroDecimal(row.ssn_cost_per_capita_eur) + " pro capite; " + formatPercent(row.ssn_cost_percent_gdp) + " del PIL"],
+        ["Popolazione 75+", formatNumber(row.population_75_plus), formatPercent(row.elderly_75_share_percent) + " dei residenti"],
+        ["Saldo mobilita", formatEuroCompact(row.mobility_balance_eur), formatEuroDecimal(row.mobility_balance_per_capita_eur) + " per abitante, rank " + asText(row.rank_mobility_balance)]
       ];
     }
     items.forEach(function (item) {
@@ -686,9 +823,19 @@
     ], 40);
   }
 
+  function costMetricConfig() {
+    var mode = ratioMode();
+    if (mode === "population_65_plus") return { label: "per residente 65+", field: "amount_per_over65_eur", xTitle: "euro per residente 65+", format: formatEuroDecimal };
+    if (mode === "population_75_plus") return { label: "per residente 75+", field: "amount_per_over75_eur", xTitle: "euro per residente 75+", format: formatEuroDecimal };
+    if (mode === "gdp") return { label: "in rapporto al PIL", field: "amount_percent_gdp", xTitle: "% del PIL", format: formatPercent };
+    if (mode === "absolute") return { label: "totale", field: "amount_billion", xTitle: "miliardi di euro", format: function (value) { return formatDecimal(value) + " mld euro"; } };
+    return { label: "pro capite", field: "amount_per_capita_eur", xTitle: "euro per abitante", format: formatEuroDecimal };
+  }
+
   function renderCosts() {
     var costType = STATE.costType;
     var label = costLabel(costType);
+    var config = costMetricConfig();
     var rows = tableRows("cost_by_region_category").filter(function (row) {
       return row.cost_type === costType;
     }).map(function (row) {
@@ -696,16 +843,17 @@
       copy.amount_billion = (toNumber(row.amount_eur) || 0) / 1000000000;
       return copy;
     });
-    rows.sort(function (a, b) { return (b.amount_billion || 0) - (a.amount_billion || 0); });
+    rows.sort(function (a, b) { return (toNumber(b[config.field]) || 0) - (toNumber(a[config.field]) || 0); });
     var title = byId("hiCostRegionTitle");
-    if (title) title.textContent = label + " per regione";
-    horizontalBar("hiCostRegionChart", rows, "region", "amount_billion", {
+    if (title) title.textContent = label + " per regione - " + config.label;
+    horizontalBar("hiCostRegionChart", rows, "region", config.field, {
       limit: 21,
       highlight: STATE.region,
       color: COLORS[3],
       leftMargin: 150,
-      xTitle: "miliardi di euro",
-      hovertemplate: "%{y}<br>Importo: %{x:,.2f} mld euro<extra></extra>"
+      xTitle: config.xTitle,
+      format: config.format,
+      hovertemplate: "%{y}<br>" + label + ": %{text}<extra></extra>"
     });
 
     var composition = tableRows("cost_national").filter(function (row) {
@@ -811,11 +959,124 @@
   }
 
   function renderMobility() {
-    var mobility = STATE.payload.mobility || {};
-    var frame = byId("hiMobilityFrame");
-    var economic = byId("hiEconomicMobilityFrame");
-    if (frame && mobility.embed_url && frame.src !== mobility.embed_url) frame.src = mobility.embed_url;
-    if (economic && mobility.economic_embed_url && economic.src !== mobility.economic_embed_url) economic.src = mobility.economic_embed_url;
+    renderMobilitySankey();
+    renderMobilityBalance();
+    renderMobilitySeries();
+    renderMobilityTable();
+  }
+
+  function renderMobilitySankey() {
+    var rows = tableRows("mobility_sankey").filter(function (row) {
+      return row.year === 2024 && toNumber(row.value_million_eur) > 0;
+    });
+    if (!rows.length) {
+      showEmptyChart("hiMobilitySankeyChart", "Matrice di mobilita non disponibile nel payload");
+      return;
+    }
+    var labels = [];
+    rows.forEach(function (row) {
+      if (labels.indexOf(row.source) === -1) labels.push(row.source);
+      if (labels.indexOf(row.target) === -1) labels.push(row.target);
+    });
+    var source = rows.map(function (row) { return labels.indexOf(row.source); });
+    var target = rows.map(function (row) { return labels.indexOf(row.target); });
+    var values = rows.map(function (row) { return toNumber(row.value_million_eur) || 0; });
+    var linkColors = rows.map(function (row) {
+      if (row.flow_type && row.flow_type.indexOf("passivo") !== -1) return "rgba(217, 102, 102, .46)";
+      if (row.flow_type && row.flow_type.indexOf("extraregionale") !== -1) return "rgba(217, 173, 72, .48)";
+      if (row.flow_type && row.flow_type.indexOf("arrotondamento") !== -1) return "rgba(143, 143, 143, .2)";
+      return "rgba(58, 166, 161, .5)";
+    });
+    plot("hiMobilitySankeyChart", [{
+      type: "sankey",
+      arrangement: "snap",
+      node: {
+        label: labels,
+        pad: 14,
+        thickness: 16,
+        color: labels.map(function (label) {
+          if (label.indexOf("Compensazione") === 0) return COLORS[1];
+          if (label === "Arrotondamento tabella") return COLORS[7];
+          return COLORS[0];
+        }),
+        line: { color: cssVar("--line", "#303030"), width: 1 }
+      },
+      link: {
+        source: source,
+        target: target,
+        value: values,
+        color: linkColors,
+        customdata: rows.map(function (row) { return formatMillionEuro(row.value_million_eur); }),
+        hovertemplate: "%{source.label} -> %{target.label}<br>%{customdata}<extra></extra>"
+      }
+    }], {
+      margin: { t: 12, r: 12, b: 16, l: 12 }
+    });
+    var note = byId("hiMobilitySankeyNote");
+    if (note) {
+      note.textContent = (STATE.payload.mobility && STATE.payload.mobility.warning) || "Il Sankey mostra compensazioni economiche nette, non una matrice origine-destinazione dei singoli pazienti.";
+    }
+  }
+
+  function renderMobilityBalance() {
+    var rows = tableRows("regional_summary").filter(function (row) {
+      return toNumber(row.mobility_balance_million_eur) !== null;
+    }).sort(function (a, b) {
+      return (toNumber(b.mobility_balance_million_eur) || 0) - (toNumber(a.mobility_balance_million_eur) || 0);
+    });
+    var title = byId("hiMobilityBalanceTitle");
+    if (title) title.textContent = "Saldo mobilita per regione - 2024";
+    horizontalBar("hiMobilityBalanceChart", rows, "region", "mobility_balance_million_eur", {
+      limit: 21,
+      highlight: STATE.region,
+      leftMargin: 150,
+      xTitle: "milioni di euro",
+      format: formatMillionEuro,
+      colorFor: function (row) { return toNumber(row.mobility_balance_million_eur) < 0 ? COLORS[5] : COLORS[2]; },
+      hovertemplate: "%{y}<br>Saldo: %{text}<extra></extra>"
+    });
+  }
+
+  function renderMobilitySeries() {
+    var source = tableRows("mobility_balance").filter(function (row) {
+      return typeof row.year === "number";
+    });
+    var rows;
+    var title = byId("hiMobilitySeriesTitle");
+    if (STATE.region === "Italia") {
+      var grouped = {};
+      source.forEach(function (row) {
+        grouped[row.year] = (grouped[row.year] || 0) + (toNumber(row.balance_million_eur) || 0);
+      });
+      rows = Object.keys(grouped).map(function (year) {
+        return { year: Number(year), balance_million_eur: grouped[year] };
+      });
+      if (title) title.textContent = "Serie storica del saldo - Italia";
+    } else {
+      rows = source.filter(function (row) { return row.region === STATE.region; });
+      if (title) title.textContent = "Serie storica del saldo - " + STATE.region;
+    }
+    rows.sort(function (a, b) { return a.year - b.year; });
+    lineChart("hiMobilitySeriesChart", [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: STATE.region,
+      x: rows.map(function (row) { return row.year; }),
+      y: rows.map(function (row) { return toNumber(row.balance_million_eur) || 0; }),
+      line: { color: STATE.region === "Italia" ? COLORS[1] : COLORS[0], width: 3 },
+      marker: { size: 8 },
+      hovertemplate: "%{x}<br>Saldo: %{y:,.1f} mln euro<extra></extra>"
+    }], { yTitle: "milioni di euro" });
+  }
+
+  function renderMobilityTable() {
+    var rows = tableRows("mobility_balance").filter(function (row) {
+      if (row.year !== 2024) return false;
+      return STATE.region === "Italia" || row.region === STATE.region;
+    }).sort(function (a, b) {
+      return (toNumber(b.balance_million_eur) || 0) - (toNumber(a.balance_million_eur) || 0);
+    });
+    createTable("hiMobilityTable", rows, tableOption("mobility_balance").columns, 40);
   }
 
   function renderMethod() {
@@ -953,32 +1214,6 @@
     createTable("hiTableExplorer", rows, option.columns, 250);
   }
 
-  function csvEscape(value) {
-    var text = asText(value, "");
-    if (/[",\n\r]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
-    return text;
-  }
-
-  function downloadCurrentCsv() {
-    var option = tableOption(STATE.table);
-    var rows = filteredTableRows(STATE.table);
-    var columns = option.columns && option.columns.length ? option.columns : inferColumns(rows);
-    var keys = columns.map(function (column) { return column[0]; });
-    var labels = columns.map(function (column) { return column[1] || column[0]; });
-    var lines = [labels.map(csvEscape).join(",")];
-    rows.forEach(function (row) {
-      lines.push(keys.map(function (key) { return csvEscape(row[key]); }).join(","));
-    });
-    var blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    var link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "sanita-italia-" + STATE.table + ".csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-  }
-
   function renderDynamic() {
     renderNationalCharts();
     renderRegionalRank();
@@ -988,6 +1223,7 @@
     renderCosts();
     renderSeries();
     renderHospitals();
+    renderMobility();
     renderExplorer();
   }
 
@@ -995,7 +1231,6 @@
     setupFilters();
     renderKpis();
     renderDynamic();
-    renderMobility();
     renderMethod();
   }
 
