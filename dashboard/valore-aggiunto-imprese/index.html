@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-5">
+  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-7">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-5"></script>
+  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-7"></script>
 </head>
 <body>
   <header class="site-header">
@@ -41,17 +41,17 @@
         <span class="logo"></span>
         <div>
           <strong>Fonti Eurostat e repository pubblico</strong>
-          <span>Conti nazionali, PIL, statistiche strutturali d'impresa e valore aggiunto regionale.</span>
+          <span>Conti nazionali, dipendenti per branca, PIL, statistiche strutturali d'impresa, Business Demography e valore aggiunto regionale.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Valore_aggiunto_imprese" target="_blank" rel="noopener">Repository valore aggiunto imprese</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
       </div>
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard valore aggiunto">
-      <a href="#quadro">Quadro</a><a href="#serie">Serie</a><a href="#settori">Settori</a><a href="#europa">Europa</a><a href="#dimensione">Dimensione</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo e fonti</a>
+      <a href="#quadro">Quadro</a><a href="#serie">Serie</a><a href="#settori">Settori</a><a href="#europa">Europa</a><a href="#dimensione">Dimensione</a><a href="#micro">Micro</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo e fonti</a>
     </nav>
 
-    <p class="vai-note"><strong>Come leggere la dashboard:</strong> i valori assoluti sono in milioni di euro correnti. Il valore aggiunto totale non coincide con il PIL: il PIL aggiunge al valore aggiunto le imposte sui prodotti al netto dei contributi. In alcune viste puoi passare a quote percentuali, rapporto al PIL, valore per impresa o valore per occupato.</p>
+    <p class="vai-note"><strong>Come leggere la dashboard:</strong> i valori assoluti sono in milioni di euro correnti. Il valore aggiunto totale non coincide con il PIL: il PIL aggiunge al valore aggiunto le imposte sui prodotti al netto dei contributi. Le viste indicano sempre il dataset usato: conti nazionali per settori e PIL, SBS per dimensione d'impresa e Business Demography per il focus micro 0, 1-4 e 5-9 dipendenti.</p>
 
     <section class="vai-reading-grid" aria-label="Percorso di lettura dashboard">
       <div class="vai-reading-card"><span>1</span><h2>Parti dai settori</h2><p>Usa la vista per vedere i settori con piu valore aggiunto o quelli con importi minori nel paese selezionato.</p></div>
@@ -90,7 +90,7 @@
     <section id="settori" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Settori</span>
-        <div><h2>Dimensione dei settori</h2><p>Confronta settori separati per valore aggiunto totale, quota percentuale, rapporto al PIL, numero di imprese, valore aggiunto per impresa e valore aggiunto per occupato.</p></div>
+        <div><h2>Dimensione dei settori</h2><p>Confronta settori separati per valore aggiunto totale, quota percentuale, rapporto al PIL, valore per dipendente, numero di imprese, valore per impresa e valore per occupato.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri settori</summary><div id="vaiSectorFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
@@ -98,7 +98,7 @@
         <p class="vai-card-note" id="vaiSectorNote">Le sezioni NACE sono mostrate separate per evitare aggregati troppo larghi. Cambiando parametro cambia anche la lettura del grafico.</p>
         <div id="vaiSectorChart" class="vai-chart vai-chart-wide"></div>
         <div id="vaiSectorGuidance" class="vai-guidance-list" aria-live="polite"></div>
-        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Structural Business Statistics <code>sbs_sc_ovw</code></a>. Elaborazione di Nazareno Lecis.</p>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64_e/default/table?lang=en" target="_blank" rel="noopener">National Accounts Employment <code>nama_10_a64_e</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Structural Business Statistics <code>sbs_sc_ovw</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -129,6 +129,21 @@
         <div id="vaiSizeChart" class="vai-chart"></div>
         <div id="vaiSizeGuidance" class="vai-guidance-list" aria-live="polite"></div>
         <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a>. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section id="micro" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Focus micro-imprese</span>
+        <div><h2>Sotto i 10 dipendenti: 0, 1-4 e 5-9</h2><p>Business Demography permette di aprire la classe sotto i 10 dipendenti. La vista descrive imprese attive, persone occupate e dipendenti: non contiene valore aggiunto e non sostituisce la classe SBS 0-9.</p></div>
+      </div>
+      <details class="chart-filter-panel" open><summary>Filtri micro-imprese</summary><div id="vaiMicroFilters" class="filter-grid"></div></details>
+      <article class="vai-card vai-chart-block">
+        <div class="vai-card-title"><h3 id="vaiMicroTitle">Micro-imprese</h3><span id="vaiMicroTag">Business Demography</span></div>
+        <p class="vai-card-note" id="vaiMicroNote">La vista usa un dataset diverso da quello del valore aggiunto: serve a capire la composizione delle micro-imprese sotto i 10 dipendenti.</p>
+        <div id="vaiMicroChart" class="vai-chart"></div>
+        <div id="vaiMicroGuidance" class="vai-guidance-list" aria-live="polite"></div>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/bd_9bd_sz_cl_r2/default/table?lang=en" target="_blank" rel="noopener">Eurostat Business Demography <code>bd_9bd_sz_cl_r2</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -182,8 +197,16 @@
           <p>Le classi dimensionali arrivano dalle Structural Business Statistics e indicano persone occupate nell'impresa. Il perimetro non coincide perfettamente con i conti nazionali e non copre allo stesso modo agricoltura, pesca e attivita pubbliche.</p>
         </article>
         <article>
+          <h3>Micro-imprese 0, 1-4 e 5-9</h3>
+          <p>Il focus micro usa Business Demography. Mostra imprese attive, persone occupate e dipendenti nelle classi sotto 10 dipendenti, ma non pubblica valore aggiunto: per questo non viene usato per stimare la classe SBS 0-9.</p>
+        </article>
+        <article>
           <h3>Valore per occupato</h3>
           <p>Il valore per occupato e calcolato solo dove SBS pubblica valore aggiunto e persone occupate nella stessa cella. Non e una stima di produttivita dell'intera economia nazionale.</p>
+        </article>
+        <article>
+          <h3>Valore per dipendente e mediana</h3>
+          <p>Il valore per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana mostrata nel grafico e la mediana dei settori visualizzati, non una mediana dei dipendenti o delle imprese dentro il settore.</p>
         </article>
         <article>
           <h3>Territorio e dati mancanti</h3>
@@ -211,8 +234,16 @@
               <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener"><code>nama_10_gdp</code></a>. Usato come denominatore per i rapporti al PIL nelle viste settoriali, europee e dimensionali.</p>
             </article>
             <article>
+              <h4>Dipendenti per branca</h4>
+              <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64_e/default/table?lang=en" target="_blank" rel="noopener"><code>nama_10_a64_e</code></a>. Usato per calcolare il valore aggiunto medio per dipendente nei settori dei conti nazionali.</p>
+            </article>
+            <article>
               <h4>Structural Business Statistics</h4>
               <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener"><code>sbs_sc_ovw</code></a>. Usato per numero di imprese, persone occupate, distribuzione e valore aggiunto per classi dimensionali d'impresa.</p>
+            </article>
+            <article>
+              <h4>Business Demography</h4>
+              <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/bd_9bd_sz_cl_r2/default/table?lang=en" target="_blank" rel="noopener"><code>bd_9bd_sz_cl_r2</code></a>. Usato solo per il focus descrittivo sulle micro-imprese 0, 1-4 e 5-9 dipendenti.</p>
             </article>
             <article>
               <h4>Valore aggiunto regionale</h4>

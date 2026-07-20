@@ -1,13 +1,52 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/valore-aggiunto-imprese/dashboard.json?v=20260720-5";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/valore-aggiunto-imprese/dashboard.json?v=20260720-7";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var EU27 = ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"];
   var SECTION_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U"];
   var AGGREGATE_CODES = ["B-E", "G-I", "M_N", "O-Q", "R-U"];
+  var THEMATIC_AGGREGATES = [
+    {
+      code: "THEME_TOURISM_NARROW",
+      label: "Turismo proxy stretto",
+      components: ["I", "N79"],
+      note: "Aggrega alloggio e ristorazione con agenzie di viaggio e tour operator. Non coincide con il conto satellite del turismo."
+    },
+    {
+      code: "THEME_TOURISM_EXTENDED",
+      label: "Turismo proxy esteso",
+      components: ["I", "N79", "H50", "H51", "R90-R92", "R93"],
+      note: "Aggiunge trasporto marittimo, trasporto aereo, cultura, intrattenimento e sport. Include anche attivita non turistiche."
+    },
+    {
+      code: "THEME_ICT",
+      label: "Digitale, media e telecomunicazioni",
+      components: ["J58-J60", "J61", "J62_J63"],
+      note: "Aggrega le sottovoci disponibili dell'informazione e comunicazione."
+    },
+    {
+      code: "THEME_PUBLIC_SOCIAL",
+      label: "Pubblico, istruzione, sanita e sociale",
+      components: ["O", "P", "Q"],
+      note: "Ricostruisce l'aggregato O-Q mantenendo esplicite le componenti usate."
+    },
+    {
+      code: "THEME_UTILITIES",
+      label: "Energia, acqua, rifiuti e reti",
+      components: ["D", "E"],
+      note: "Aggrega utility energetiche e ambientali."
+    },
+    {
+      code: "THEME_LOCAL_SERVICES",
+      label: "Cultura, sport e altri servizi",
+      components: ["R", "S"],
+      note: "Aggrega attivita ricreative, culturali, sportive e altri servizi alla persona."
+    }
+  ];
   var SBS_SECTOR_ORDER = ["C", "F", "G", "H", "I", "J", "M", "N"];
   var SIZE_ORDER = ["0-9", "10-19", "20-49", "50-249", "250+"];
+  var MICRO_SIZE_ORDER = ["0 dip.", "1-4 dip.", "5-9 dip."];
   var DEFAULT_SERIES_SECTORS = ["TOTAL", "C", "G", "H", "I", "J"];
   var DEFAULT_TREND_COUNTRIES = ["IT", "DE", "FR", "ES", "PL"];
   var CHART_SOURCE_NOTE = "Fonte: Eurostat. Elaborazione di Nazareno Lecis.";
@@ -169,6 +208,10 @@
     sizeYear: null,
     sizeSector: "C",
     sizeMeasure: "enterprises",
+    microCountry: "IT",
+    microYear: null,
+    microSector: "C",
+    microMeasure: "active_enterprises_share",
     sizeTrendCountry: "IT",
     sizeTrendSector: "C",
     sizeTrendMeasure: "value_added",
@@ -246,6 +289,14 @@
     if (parsed === null) return "ND";
     var digits = Math.abs(parsed) > 0 && Math.abs(parsed) < 0.1 ? 2 : 1;
     return parsed.toLocaleString("it-IT", { maximumFractionDigits: digits, useGrouping: true }) + "%";
+  }
+
+  function median(values) {
+    var sorted = values.map(number).filter(function (value) { return value !== null; })
+      .sort(function (a, b) { return a - b; });
+    if (!sorted.length) return null;
+    var middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
   }
 
   function colorVars() {
@@ -471,6 +522,25 @@
     });
   }
 
+  function thematicRows(rows) {
+    return THEMATIC_AGGREGATES.map(function (theme) {
+      var components = theme.components.map(function (code) { return sectorRow(rows, code); })
+        .filter(function (row) { return row && number(row.value_million_eur) !== null; });
+      if (!components.length) return null;
+      return {
+        country_code: components[0].country_code,
+        country_name: components[0].country_name,
+        year: components[0].year,
+        sector_code: theme.code,
+        sector_label: theme.label,
+        value_million_eur: components.reduce(function (sum, row) { return sum + number(row.value_million_eur); }, 0),
+        theme_note: theme.note,
+        theme_component_codes: components.map(function (row) { return row.sector_code; }),
+        theme_components: components.map(function (row) { return sectorLabel(row); }).join("; ")
+      };
+    }).filter(Boolean);
+  }
+
   function totalByYear(country) {
     var totals = {};
     records("sector_value_added").forEach(function (row) {
@@ -531,6 +601,7 @@
       state.seriesCountry = value;
       state.sizeCountry = value === "EU27_2020" ? "IT" : value;
       state.sizeTrendCountry = value === "EU27_2020" ? "IT" : value;
+      state.microCountry = value === "EU27_2020" ? "IT" : value;
       state.regionalCountry = value === "EU27_2020" ? "IT" : value;
       renderAll();
     });
@@ -697,6 +768,16 @@
 
   function gdpValue(country, year) {
     return gdpByCountryYear()[country + "-" + Number(year)] || null;
+  }
+
+  function sectorEmployeesByCode(country, year) {
+    var values = {};
+    records("sector_employees").forEach(function (row) {
+      if (row.country_code !== country || Number(row.year) !== Number(year)) return;
+      var value = number(row.employees_thousand);
+      if (value !== null) values[row.sector_code] = value;
+    });
+    return values;
   }
 
   function seriesRowsForRange() {
@@ -1066,9 +1147,9 @@
         key: "firm_size_value_added",
         valueField: "value_million_eur",
         unit: "value_added_share",
-        title: "Distribuzione del valore aggiunto per classe",
+        title: "Quota del valore aggiunto per classe",
         yTitle: "% valore aggiunto",
-        empty: "Distribuzione del valore aggiunto per dimensione non disponibile per questa selezione."
+        empty: "Quote del valore aggiunto per dimensione non disponibili per questa selezione."
       };
     }
     if (state.sizeMeasure === "value_per_enterprise") {
@@ -1106,9 +1187,9 @@
         key: "firm_size_enterprises",
         valueField: "enterprises",
         unit: "enterprise_share",
-        title: "Distribuzione percentuale delle imprese",
+        title: "Quota percentuale delle imprese",
         yTitle: "% imprese",
-        empty: "Distribuzione imprese non disponibile per questa selezione."
+        empty: "Quote imprese non disponibili per questa selezione."
       };
     }
     return {
@@ -1133,10 +1214,11 @@
   function sectorMeasureConfig() {
     var configs = {
       na_value: { source: "national", valueKey: "value_million_eur", title: "Valore aggiunto totale", axis: "Milioni di euro", empty: "Dati settoriali non disponibili per questa selezione." },
-      na_share: { source: "national", valueKey: "share", title: "Distribuzione del valore aggiunto", axis: "% del totale", empty: "Distribuzione settoriale non disponibile per questa selezione." },
+      na_share: { source: "national", valueKey: "share", title: "Quota sul valore aggiunto totale", axis: "% del totale", empty: "Quote settoriali non disponibili per questa selezione." },
       na_gdp_share: { source: "national", valueKey: "gdp_share", title: "Valore aggiunto in rapporto al PIL", axis: "% PIL", empty: "Rapporto al PIL non disponibile per questa selezione." },
+      na_value_per_employee: { source: "national", valueKey: "value_per_employee", title: "Valore aggiunto per dipendente", axis: "Migliaia di euro per dipendente", empty: "Valore aggiunto per dipendente non disponibile per questa selezione." },
       sbs_enterprises: { source: "sbs_enterprises", valueKey: "enterprises", title: "Numero di imprese per settore", axis: "Numero di imprese", empty: "Numero di imprese per settore non disponibile per questa selezione." },
-      sbs_enterprise_share: { source: "sbs_enterprises", valueKey: "enterprise_share", title: "Distribuzione delle imprese per settore", axis: "% imprese", empty: "Distribuzione delle imprese non disponibile per questa selezione." },
+      sbs_enterprise_share: { source: "sbs_enterprises", valueKey: "enterprise_share", title: "Quota sulle imprese per settore", axis: "% imprese", empty: "Quote sulle imprese non disponibili per questa selezione." },
       sbs_value: { source: "sbs_value", valueKey: "value_million_eur", title: "Valore aggiunto delle imprese per settore", axis: "Milioni di euro", empty: "Valore aggiunto delle imprese per settore non disponibile per questa selezione." },
       sbs_gdp_share: { source: "sbs_value", valueKey: "gdp_share", title: "Valore aggiunto delle imprese in rapporto al PIL", axis: "% PIL", empty: "Rapporto al PIL SBS non disponibile per questa selezione." },
       sbs_value_per_enterprise: { source: "sbs_value", valueKey: "value_per_enterprise", title: "Valore aggiunto per impresa", axis: "Migliaia di euro per impresa", empty: "Valore aggiunto per impresa non disponibile per questa selezione." },
@@ -1148,10 +1230,11 @@
   function sectorMeasureOptions() {
     return [
       { value: "na_value", label: "Valore aggiunto totale" },
-      { value: "na_share", label: "Distribuzione valore aggiunto (%)" },
+      { value: "na_share", label: "Quota sul valore aggiunto totale (%)" },
       { value: "na_gdp_share", label: "Valore aggiunto / PIL (%)" },
+      { value: "na_value_per_employee", label: "Valore aggiunto per dipendente" },
       { value: "sbs_enterprises", label: "Numero imprese per settore" },
-      { value: "sbs_enterprise_share", label: "Distribuzione imprese (%)" },
+      { value: "sbs_enterprise_share", label: "Quota sulle imprese (%)" },
       { value: "sbs_value", label: "Valore aggiunto imprese" },
       { value: "sbs_gdp_share", label: "Valore aggiunto imprese / PIL (%)" },
       { value: "sbs_value_per_enterprise", label: "Valore aggiunto per impresa" },
@@ -1207,18 +1290,28 @@
           && Number(row.year) === Number(state.sectorYear)
           && number(row.value_million_eur) !== null;
       });
-      var candidates = state.sectorMode === "sections" ? mainSectionRows(rows) : detailRows(rows);
+      var candidates = state.sectorMode === "themes"
+        ? thematicRows(rows)
+        : (state.sectorMode === "sections" ? mainSectionRows(rows) : detailRows(rows));
       var total = totalValue(rows) || candidates.reduce(function (sum, row) { return sum + number(row.value_million_eur); }, 0);
       var gdp = gdpValue(state.sectorCountry, state.sectorYear);
+      var employeesBySector = sectorEmployeesByCode(state.sectorCountry, state.sectorYear);
       return candidates.map(function (row) {
         var value = row.value_million_eur;
+        var employeeCodes = row.theme_component_codes || [row.sector_code];
+        var employees = employeeCodes.reduce(function (sum, code) {
+          return sum + (employeesBySector[code] || 0);
+        }, 0);
         if (config.valueKey === "share" && total) value = row.value_million_eur / total * 100;
         if (config.valueKey === "gdp_share") value = gdp ? row.value_million_eur / gdp * 100 : null;
+        if (config.valueKey === "value_per_employee") value = employees ? row.value_million_eur / employees : null;
         return Object.assign({}, row, {
           plot_value: value,
           raw_value: row.value_million_eur,
           share: total ? row.value_million_eur / total * 100 : null,
-          gdp_share: gdp ? row.value_million_eur / gdp * 100 : null
+          gdp_share: gdp ? row.value_million_eur / gdp * 100 : null,
+          employees_thousand: employees || null,
+          value_per_employee: employees ? row.value_million_eur / employees : null
         });
       });
     }
@@ -1263,13 +1356,16 @@
       state.sectorYear = Number(value);
       renderSectorChart();
     });
-    makeSelect(container, "Vista", state.sectorMode, [
-      { value: "sections", label: "Sezioni NACE separate" },
-      { value: "detail", label: "Dettaglio senza aggregati" }
-    ], function (value) {
-      state.sectorMode = value;
-      renderSectorChart();
-    });
+    if (!sectorMeasureUsesSbs()) {
+      makeSelect(container, "Vista", state.sectorMode, [
+        { value: "sections", label: "Sezioni NACE separate" },
+        { value: "detail", label: "Dettaglio A64 senza aggregati" },
+        { value: "themes", label: "Aggregazioni tematiche" }
+      ], function (value) {
+        state.sectorMode = value;
+        renderSectorChart();
+      });
+    }
     makeSelect(container, "Ordine", state.rankMode, [
       { value: "top", label: "Valori maggiori" },
       { value: "bottom", label: "Valori minori" }
@@ -1280,7 +1376,8 @@
     makeSelect(container, "Numero", state.rankCount, [
       { value: "8", label: "8 settori" },
       { value: "12", label: "12 settori" },
-      { value: "20", label: "20 settori" }
+      { value: "20", label: "20 settori" },
+      { value: "all", label: "Tutti i settori" }
     ], function (value) {
       state.rankCount = value;
       renderSectorChart();
@@ -1294,16 +1391,44 @@
     if (config.valueKey === "value_per_employed") {
       return "Il valore per occupato divide il valore aggiunto SBS del settore per le persone occupate nello stesso settore, paese e anno.";
     }
+    if (config.valueKey === "value_per_employee") {
+      return "Il valore per dipendente divide il valore aggiunto dei conti nazionali per i dipendenti della stessa branca NACE. La linea di mediana e calcolata tra i settori mostrati.";
+    }
     if (config.valueKey === "value_per_enterprise") {
       return "Il valore per impresa divide il valore aggiunto SBS del settore per il numero di imprese attive nello stesso settore, paese e anno.";
     }
     if (config.valueKey === "share" || config.valueKey === "enterprise_share") {
-      return "La distribuzione trasforma i livelli in quote percentuali per leggere la composizione interna della selezione.";
+      return "La quota trasforma i livelli in peso percentuale per leggere la composizione interna della selezione.";
     }
     if (config.valueKey === "enterprises") {
       return "Il grafico conta le imprese attive pubblicate nelle Structural Business Statistics per ogni settore disponibile.";
     }
     return "La vista in livelli mostra la dimensione assoluta della misura selezionata, in milioni di euro correnti.";
+  }
+
+  function sectorHoverTemplate(config) {
+    if (config.valueKey === "value_per_employed") {
+      return "%{y}<br>%{x:,.1f} mila EUR per occupato<br>%{customdata[3]:,.0f} occupati<extra></extra>";
+    }
+    if (config.valueKey === "value_per_employee") {
+      return "%{y}<br>%{x:,.1f} mila EUR per dipendente<br>%{customdata[7]:,.1f} mila dipendenti<extra></extra>";
+    }
+    if (config.valueKey === "value_per_enterprise") {
+      return "%{y}<br>%{x:,.1f} mila EUR per impresa<br>%{customdata[1]:,.0f} imprese<extra></extra>";
+    }
+    if (config.valueKey === "enterprises") {
+      return "%{y}<br>%{x:,.0f} imprese<br>%{customdata[2]:.1f}%<extra></extra>";
+    }
+    if (config.valueKey === "gdp_share") {
+      return "%{y}<br>%{x:.2f}% del PIL<br>%{customdata[0]:,.1f} mln EUR<extra></extra>";
+    }
+    if (config.valueKey === "share" || config.valueKey === "enterprise_share") {
+      return "%{y}<br>%{x:.1f}%<br>%{customdata[5]}<extra></extra>";
+    }
+    if (state.sectorMode === "themes") {
+      return "%{y}<br>%{x:,.1f} mln EUR<br>Componenti: %{customdata[5]}<extra></extra>";
+    }
+    return "%{y}<br>%{x:,.1f} mln EUR<br>%{customdata[2]:.1f}%<extra></extra>";
   }
 
   function renderSectorChart() {
@@ -1317,21 +1442,30 @@
         ? b.plot_value - a.plot_value
         : a.plot_value - b.plot_value;
     });
-    candidates = candidates.slice(0, Number(state.rankCount)).reverse();
+    if (state.rankCount !== "all") {
+      candidates = candidates.slice(0, Number(state.rankCount));
+    }
+    candidates = candidates.reverse();
     byId("vaiSectorTitle").textContent = (state.rankMode === "top" ? "Valori maggiori - " : "Valori minori - ") + config.title.toLowerCase();
     byId("vaiSectorTag").textContent = countryLabel(state.sectorCountry) + " - " + text(state.sectorYear);
     var sectorNote = byId("vaiSectorNote");
     if (sectorNote) {
       sectorNote.textContent = sectorMeasureUsesSbs()
         ? "Questa vista usa le statistiche strutturali d'impresa: copre i settori SBS con numero di imprese, occupati e valore aggiunto."
-        : "Questa vista usa i conti nazionali: le sezioni NACE sono separate per evitare aggregati troppo grandi e il dettaglio esclude le voci gia incluse.";
+        : (state.sectorMode === "themes"
+          ? "Questa vista somma voci NACE osservate per costruire aggregazioni tematiche leggibili, incluso un proxy del turismo. Le aggregazioni non sono settori ufficiali e non vanno sommate tra loro."
+          : "Questa vista usa i conti nazionali: le sezioni NACE sono separate per evitare aggregati troppo grandi e il dettaglio esclude le voci gia incluse.");
     }
     renderGuidance("vaiSectorGuidance", [
       {
-        title: state.sectorMode === "sections" ? "Sezioni separate" : "Dettaglio senza aggregati",
-        text: state.sectorMode === "sections"
-          ? "Commercio, trasporti e alloggio-ristorazione sono mostrati come settori distinti, non dentro l'aggregato G-I."
-          : "Il dettaglio entra nelle branche A64 ed esclude gli aggregati piu larghi per evitare letture gonfiate da sottovoci gia incluse."
+        title: state.sectorMode === "themes"
+          ? "Aggregazioni tematiche"
+          : (state.sectorMode === "sections" ? "Sezioni separate" : "Dettaglio senza aggregati"),
+        text: state.sectorMode === "themes"
+          ? "Il turismo compare come proxy stretto e proxy esteso: sono somme dichiarate di voci NACE, utili per orientarsi ma non equivalenti a una misura ufficiale del turismo."
+          : (state.sectorMode === "sections"
+            ? "Commercio, trasporti e alloggio-ristorazione sono mostrati come settori distinti, non dentro l'aggregato G-I."
+            : "Il dettaglio entra nelle branche A64 ed esclude gli aggregati piu larghi per evitare letture gonfiate da sottovoci gia incluse.")
       },
       {
         title: config.title,
@@ -1342,6 +1476,34 @@
       showEmpty("vaiSectorChart", config.empty);
       return;
     }
+    var chartHeight = Math.max(470, candidates.length * 28 + 140);
+    var chartNode = byId("vaiSectorChart");
+    if (chartNode) chartNode.style.minHeight = chartHeight + "px";
+    var medianValue = config.valueKey === "value_per_employee"
+      ? median(candidates.map(function (row) { return row.plot_value; }))
+      : null;
+    var medianLayout = medianValue === null ? {} : {
+      shapes: [{
+        type: "line",
+        x0: medianValue,
+        x1: medianValue,
+        y0: 0,
+        y1: 1,
+        xref: "x",
+        yref: "paper",
+        line: { color: "#f0b44d", width: 2, dash: "dot" }
+      }],
+      annotations: [{
+        text: "Mediana settori: " + medianValue.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mila EUR",
+        x: medianValue,
+        y: 1.04,
+        xref: "x",
+        yref: "paper",
+        showarrow: false,
+        xanchor: "left",
+        font: { color: "#f0b44d", size: 11 }
+      }]
+    };
     plot("vaiSectorChart", [{
       type: "bar",
       orientation: "h",
@@ -1354,26 +1516,21 @@
           row.enterprises || null,
           row.share || row.enterprise_share || row.value_share || row.gdp_share || null,
           row.persons_employed || null,
-          row.gdp_share || null
+          row.gdp_share || null,
+          row.theme_components || "",
+          row.theme_note || "",
+          row.employees_thousand || null,
+          row.value_per_employee || null
         ];
       }),
-      hovertemplate: config.valueKey === "value_per_employed"
-        ? "%{y}<br>%{x:,.1f} mila EUR per occupato<br>%{customdata[3]:,.0f} occupati<extra></extra>"
-        : (config.valueKey === "value_per_enterprise"
-          ? "%{y}<br>%{x:,.1f} mila EUR per impresa<br>%{customdata[1]:,.0f} imprese<extra></extra>"
-        : (config.valueKey === "enterprises"
-          ? "%{y}<br>%{x:,.0f} imprese<br>%{customdata[2]:.1f}%<extra></extra>"
-          : (config.valueKey === "gdp_share"
-            ? "%{y}<br>%{x:.2f}% del PIL<br>%{customdata[0]:,.1f} mln EUR<extra></extra>"
-            : ((config.valueKey === "share" || config.valueKey === "enterprise_share")
-              ? "%{y}<br>%{x:.1f}%<extra></extra>"
-              : "%{y}<br>%{x:,.1f} mln EUR<br>%{customdata[2]:.1f}%<extra></extra>"))))
-    }], {
+      hovertemplate: sectorHoverTemplate(config)
+    }], Object.assign({
+      height: chartHeight,
       margin: { t: 18, r: 24, b: 78, l: 240 },
       xaxis: { title: config.axis },
       yaxis: { automargin: true },
       sourceNote: CHART_SOURCE_NOTE
-    });
+    }, medianLayout));
   }
 
   function renderEuropeFilters() {
@@ -1474,9 +1631,9 @@
     state.sizeYear = effectiveYear(availableRows.length ? availableRows : records(config.key), state.sizeYear);
     makeSelect(container, "Parametro", state.sizeMeasure, [
       { value: "enterprises", label: "Numero imprese" },
-      { value: "enterprise_share", label: "Distribuzione imprese (%)" },
+      { value: "enterprise_share", label: "Quota imprese (%)" },
       { value: "value_added", label: "Valore aggiunto" },
-      { value: "value_added_share", label: "Distribuzione valore aggiunto (%)" },
+      { value: "value_added_share", label: "Quota valore aggiunto (%)" },
       { value: "value_gdp_share", label: "Valore aggiunto / PIL (%)" },
       { value: "value_per_enterprise", label: "Valore aggiunto per impresa" },
       { value: "value_per_employed", label: "Valore aggiunto per occupato" }
@@ -1536,7 +1693,7 @@
     byId("vaiSizeNote").textContent = config.unit === "enterprises"
         ? "Il grafico conta le imprese attive pubblicate nella fonte in ciascuna classe dimensionale. Non misura quanto valore producono."
         : (config.unit === "enterprise_share"
-          ? "La distribuzione mostra il peso percentuale di ogni classe sul numero totale di imprese del settore selezionato."
+          ? "La quota mostra il peso percentuale di ogni classe sul numero totale di imprese del settore selezionato."
           : (config.unit === "value_gdp_share"
             ? "Il rapporto al PIL divide il valore aggiunto della classe per il PIL nominale del paese nello stesso anno."
             : (config.unit === "value_per_employed"
@@ -1544,7 +1701,7 @@
               : (config.unit === "value_per_enterprise"
                 ? "Il valore aggiunto per impresa divide il valore aggiunto della classe per il numero di imprese della stessa classe."
                 : (config.unit === "value_added_share"
-                  ? "La distribuzione mostra quale quota del valore aggiunto del settore arriva da ogni classe dimensionale."
+                  ? "La quota mostra quale parte del valore aggiunto del settore arriva da ogni classe dimensionale."
                   : "Il grafico mostra il valore aggiunto generato dalle imprese di ciascuna classe dimensionale.")))));
     renderGuidance("vaiSizeGuidance", [
       {
@@ -1597,6 +1754,184 @@
       margin: { t: 18, r: 24, b: 82, l: 92 },
       yaxis: { title: config.yTitle, rangemode: "tozero" },
       xaxis: { title: "Classe di persone occupate" },
+      sourceNote: CHART_SOURCE_NOTE
+    });
+  }
+
+  function sortedMicroRows(rows) {
+    return rows.slice().sort(function (a, b) {
+      return MICRO_SIZE_ORDER.indexOf(a.size_class) - MICRO_SIZE_ORDER.indexOf(b.size_class);
+    });
+  }
+
+  function microChartConfig() {
+    if (state.microMeasure === "active_enterprises") {
+      return {
+        field: "active_enterprises",
+        unit: "count",
+        title: "Imprese attive sotto i 10 dipendenti",
+        yTitle: "Numero di imprese",
+        empty: "Imprese attive micro non disponibili per questa selezione."
+      };
+    }
+    if (state.microMeasure === "persons_employed") {
+      return {
+        field: "persons_employed",
+        unit: "count",
+        title: "Persone occupate nelle micro-imprese",
+        yTitle: "Persone occupate",
+        empty: "Persone occupate micro non disponibili per questa selezione."
+      };
+    }
+    if (state.microMeasure === "persons_employed_share") {
+      return {
+        field: "persons_employed",
+        unit: "share",
+        title: "Quota delle persone occupate nelle micro-imprese",
+        yTitle: "% persone occupate",
+        empty: "Quote degli occupati micro non disponibili per questa selezione."
+      };
+    }
+    if (state.microMeasure === "employees") {
+      return {
+        field: "employees",
+        unit: "count",
+        title: "Dipendenti nelle micro-imprese",
+        yTitle: "Dipendenti",
+        empty: "Dipendenti micro non disponibili per questa selezione."
+      };
+    }
+    if (state.microMeasure === "employees_share") {
+      return {
+        field: "employees",
+        unit: "share",
+        title: "Quota dei dipendenti nelle micro-imprese",
+        yTitle: "% dipendenti",
+        empty: "Quote dei dipendenti micro non disponibili per questa selezione."
+      };
+    }
+    if (state.microMeasure === "employees_per_enterprise") {
+      return {
+        field: "employees",
+        unit: "ratio",
+        title: "Dipendenti per impresa attiva",
+        yTitle: "Dipendenti per impresa",
+        empty: "Dipendenti per impresa non disponibili per questa selezione."
+      };
+    }
+    return {
+      field: "active_enterprises",
+      unit: "share",
+      title: "Quota delle imprese attive sotto i 10 dipendenti",
+      yTitle: "% imprese attive",
+      empty: "Quote delle micro-imprese non disponibili per questa selezione."
+    };
+  }
+
+  function microRowsForSelection() {
+    return sortedMicroRows(records("micro_business_demography").filter(function (row) {
+      return row.country_code === state.microCountry
+        && row.sector_code === state.microSector
+        && Number(row.year) === Number(state.microYear)
+        && MICRO_SIZE_ORDER.indexOf(row.size_class) >= 0;
+    }));
+  }
+
+  function renderMicroFilters() {
+    var container = byId("vaiMicroFilters");
+    if (!container) return;
+    clear(container);
+    var availableRows = records("micro_business_demography").filter(function (row) {
+      return row.country_code === state.microCountry && row.sector_code === state.microSector;
+    });
+    state.microYear = effectiveYear(availableRows.length ? availableRows : records("micro_business_demography"), state.microYear);
+    makeSelect(container, "Parametro", state.microMeasure, [
+      { value: "active_enterprises_share", label: "Quota imprese attive (%)" },
+      { value: "active_enterprises", label: "Imprese attive" },
+      { value: "persons_employed", label: "Persone occupate" },
+      { value: "persons_employed_share", label: "Quota persone occupate (%)" },
+      { value: "employees", label: "Dipendenti" },
+      { value: "employees_share", label: "Quota dipendenti (%)" },
+      { value: "employees_per_enterprise", label: "Dipendenti per impresa" }
+    ], function (value) {
+      state.microMeasure = value;
+      renderMicroChart();
+    });
+    makeSelect(container, "Paese", state.microCountry, countryOptions(false), function (value) {
+      state.microCountry = value;
+      renderMicroFilters();
+      renderMicroChart();
+    });
+    makeSelect(container, "Settore", state.microSector, sectorOptions("micro_sectors", false), function (value) {
+      state.microSector = value;
+      renderMicroFilters();
+      renderMicroChart();
+    });
+    makeSelect(container, "Anno", state.microYear, yearOptions(availableRows.length ? availableRows : records("micro_business_demography")), function (value) {
+      state.microYear = Number(value);
+      renderMicroChart();
+    });
+  }
+
+  function renderMicroChart() {
+    var config = microChartConfig();
+    var rows = microRowsForSelection();
+    var total = rows.reduce(function (sum, row) {
+      return sum + (number(row[config.field]) || 0);
+    }, 0);
+    var values = rows.map(function (row) {
+      var value = number(row[config.field]);
+      if (config.unit === "share") return total ? value / total * 100 : null;
+      if (config.unit === "ratio") {
+        var enterprises = number(row.active_enterprises);
+        return enterprises ? value / enterprises : null;
+      }
+      return value;
+    });
+    var title = byId("vaiMicroTitle");
+    var tag = byId("vaiMicroTag");
+    var note = byId("vaiMicroNote");
+    if (title) title.textContent = rows[0] ? config.title + " - " + sectorLabel(rows[0]) : config.title;
+    if (tag) tag.textContent = countryLabel(state.microCountry) + " - " + text(state.microYear);
+    if (note) {
+      note.textContent = "Questa vista usa Business Demography: descrive le classi 0, 1-4 e 5-9 dipendenti sotto la soglia 10. Non contiene valore aggiunto e non va confrontata come scomposizione della classe SBS 0-9.";
+    }
+    renderGuidance("vaiMicroGuidance", [
+      {
+        title: "Fonte diversa",
+        text: "Il focus micro usa Eurostat Business Demography, mentre il valore aggiunto per dimensione viene dalle Structural Business Statistics. Le due fonti servono domande diverse."
+      },
+      {
+        title: "Classe 0 dipendenti",
+        text: "La classe 0 dipendenti puo avere persone occupate perche include titolari, lavoratori indipendenti o altre forme non classificate come dipendenti."
+      }
+    ]);
+    if (!rows.length || !values.some(function (value) { return number(value) !== null; })) {
+      showEmpty("vaiMicroChart", config.empty);
+      return;
+    }
+    plot("vaiMicroChart", [{
+      type: "bar",
+      x: rows.map(function (row) { return row.size_class; }),
+      y: values,
+      marker: { color: ["#ff6b2a", "#5b8fd9", "#5fc3b2"] },
+      customdata: rows.map(function (row) {
+        return [
+          row.active_enterprises,
+          row.persons_employed,
+          row.employees,
+          total ? (number(row[config.field]) || 0) / total * 100 : null
+        ];
+      }),
+      hovertemplate: config.unit === "share"
+        ? "%{x}<br>%{y:.1f}%<br>Imprese: %{customdata[0]:,.0f}<br>Occupati: %{customdata[1]:,.0f}<br>Dipendenti: %{customdata[2]:,.0f}<extra></extra>"
+        : (config.unit === "ratio"
+          ? "%{x}<br>%{y:.2f} dipendenti per impresa<br>Imprese: %{customdata[0]:,.0f}<extra></extra>"
+          : "%{x}<br>%{y:,.0f}<br>Imprese: %{customdata[0]:,.0f}<br>Occupati: %{customdata[1]:,.0f}<br>Dipendenti: %{customdata[2]:,.0f}<extra></extra>")
+    }], {
+      margin: { t: 18, r: 24, b: 82, l: 92 },
+      yaxis: { title: config.yTitle, rangemode: "tozero" },
+      xaxis: { title: "Classe di dipendenti" },
       sourceNote: CHART_SOURCE_NOTE
     });
   }
@@ -1662,6 +1997,7 @@
   function statusLabel(value) {
     var labels = {
       available: "Disponibile",
+      available_descriptive: "Disponibile come descrizione",
       available_when_published: "Disponibile dove pubblicato",
       not_estimated: "Non stimato"
     };
@@ -1698,12 +2034,14 @@
       "Alcuni fenomeni economici non coincidono con una singola branca NACE: la dashboard mostra le voci ufficiali disponibili senza costruire stime settoriali aggiuntive.",
       "Le classi dimensionali arrivano dalle statistiche strutturali d'impresa: sono classi di persone occupate nell'impresa e hanno un perimetro diverso dai conti nazionali.",
       "Le classi dimensionali non sono una scomposizione dell'intera economia nazionale: descrivono il perimetro delle statistiche strutturali d'impresa e quindi vanno confrontate soprattutto dentro lo stesso settore e la stessa fonte.",
+      "Il focus sulle micro-imprese usa Business Demography e separa 0, 1-4 e 5-9 dipendenti. E una vista descrittiva su imprese e occupazione, non una stima del valore aggiunto dentro la classe SBS 0-9.",
+      "Quando una vista cambia dataset, cambia anche il perimetro: conti nazionali, SBS e Business Demography non vanno sommati o confrontati come se fossero una sola tabella.",
       "I rapporti al PIL usano il PIL nominale Eurostat dello stesso paese e anno. Sono utili nei confronti tra paesi, ma non trasformano i valori in serie reali.",
+      "Il valore aggiunto per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana e calcolata tra i settori visualizzati, non dentro ogni settore.",
       "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella.",
       "Il dettaglio regionale usa le regioni NUTS pubblicate da Eurostat e settori piu aggregati; non tutte le combinazioni paese-settore-anno sono disponibili.",
       "Nei confronti europei puoi passare dai valori assoluti a quote sul PIL o sul valore aggiunto nazionale per ridurre l'effetto della scala del paese.",
-      "L'indice base 100 confronta dinamiche relative, non livelli: due linee simili in base 100 possono corrispondere a valori assoluti molto distanti.",
-      "Eta e titolo di studio non sono stimati: le fonti integrate non pubblicano valore aggiunto ufficiale per queste dimensioni."
+      "L'indice base 100 confronta dinamiche relative, non livelli: due linee simili in base 100 possono corrispondere a valori assoluti molto distanti."
     ].forEach(function (note) {
       var item = document.createElement("li");
       item.textContent = note;
@@ -1723,6 +2061,8 @@
     renderEuropeChart();
     renderSizeFilters();
     renderSizeChart();
+    renderMicroFilters();
+    renderMicroChart();
     renderRegionalFilters();
     renderRegionalChart();
     renderCoverage();
@@ -1737,6 +2077,7 @@
     state.sectorCountry = state.country;
     state.sectorYear = state.year;
     state.sizeYear = payload.meta.latest_enterprise_year || payload.meta.latest_size_year || state.year;
+    state.microYear = payload.meta.latest_micro_year || state.sizeYear;
     state.regionalYear = payload.meta.latest_regional_year || state.year;
     var status = byId("vaiStatus");
     if (status) {
@@ -1757,7 +2098,7 @@
       .catch(function (error) {
         var status = byId("vaiStatus");
         if (status) status.textContent = "Non riesco a caricare i dati: " + error.message;
-        ["vaiSeriesChart", "vaiSectorChart", "vaiEuropeChart", "vaiSizeChart", "vaiRegionalChart"].forEach(function (id) {
+        ["vaiSeriesChart", "vaiSectorChart", "vaiEuropeChart", "vaiSizeChart", "vaiMicroChart", "vaiRegionalChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
       });
