@@ -428,6 +428,27 @@
     return meta && meta.province_name ? province + " - " + meta.province_name : province;
   }
 
+  function plainKey(value) {
+    var text = asText(value, "").toLowerCase();
+    if (text.normalize) text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return text.replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  function isBambinoGesu(value) {
+    var key = plainKey(value);
+    return key.indexOf("bambino") !== -1 && key.indexOf("gesu") !== -1;
+  }
+
+  function mobilityTargetLabel(value) {
+    if (isBambinoGesu(value)) return "Vaticano";
+    return asText(value);
+  }
+
+  function mobilityTargetDetail(value) {
+    if (isBambinoGesu(value)) return "Ospedale Pediatrico Bambino Gesu";
+    return asText(value);
+  }
+
   function territoryLabel(region, province) {
     if (province && province !== "all") return provinceLabel(region, province);
     return region || "Italia";
@@ -1346,9 +1367,11 @@
     var target = rows.map(function (row) { return labels.indexOf(row.target); });
     var values = rows.map(function (row) { return toNumber(row.value_million_eur) || 0; });
     var linkColors = rows.map(function (row) {
-      return row.flow_type === "saldo netto regionale" ? "rgba(58, 166, 161, .52)" : "rgba(217, 173, 72, .48)";
+      return row.target_type === "special" ? "rgba(93, 143, 215, .48)" : "rgba(58, 166, 161, .5)";
     });
-    var passiveRegions = rows.map(function (row) { return row.source; });
+    var passiveRegions = unique(rows.map(function (row) { return row.source; }));
+    var regionTargets = unique(rows.filter(function (row) { return row.target_type === "region"; }).map(function (row) { return row.target; }));
+    var specialTargets = unique(rows.filter(function (row) { return row.target_type === "special"; }).map(function (row) { return row.target; }));
     plot("hiMobilitySankeyChart", [{
       type: "sankey",
       arrangement: "snap",
@@ -1357,7 +1380,10 @@
         pad: 14,
         thickness: 16,
         color: labels.map(function (label) {
-          return passiveRegions.indexOf(label) !== -1 ? COLORS[5] : COLORS[2];
+          if (passiveRegions.indexOf(label) !== -1) return COLORS[5];
+          if (regionTargets.indexOf(label) !== -1) return COLORS[2];
+          if (specialTargets.indexOf(label) !== -1) return COLORS[1];
+          return COLORS[7];
         }),
         line: { color: cssVar("--line", "#303030"), width: 1 }
       },
@@ -1366,7 +1392,10 @@
         target: target,
         value: values,
         color: linkColors,
-        customdata: rows.map(function (row) { return formatMillionEuro(row.value_million_eur); }),
+        customdata: rows.map(function (row) {
+          var detail = row.target_detail ? "<br>" + row.target_detail : "";
+          return row.flow_label + detail + "<br>" + formatMillionEuro(row.value_million_eur);
+        }),
         hovertemplate: "%{source.label} -> %{target.label}<br>%{customdata}<extra></extra>"
       }
     }], {
@@ -1374,19 +1403,33 @@
     });
     var note = byId("hiMobilitySankeyNote");
     if (note) {
-      note.textContent = "Fonte: Corte dei conti, saldi economici della mobilita sanitaria. Elaborazione di Nazareno Lecis. Le compensazioni economiche derivano dai flussi di prestazioni/pazienti, ma il saldo netto non conserva la coppia origine-destinazione reale; il grafico abbina regioni con saldo passivo a regioni con saldo attivo per rappresentare i saldi netti 2024.";
+      note.textContent = "Fonte: Corte dei conti, saldi economici della mobilita sanitaria. Elaborazione di Nazareno Lecis. Le compensazioni economiche derivano dai flussi di prestazioni/pazienti, ma il saldo netto non conserva la coppia origine-destinazione reale; il grafico abbina regioni con saldo passivo a regioni con saldo attivo e soggetti extraregionali per rappresentare i saldi netti 2024. Vaticano indica l'Ospedale Pediatrico Bambino Gesu.";
     }
   }
 
   function mobilityRegionalNetLinks(minValue) {
     var passive = [];
     var active = [];
+    var regionNames = toArray(STATE.payload.filters && STATE.payload.filters.regions);
     tableRows("mobility_balance").forEach(function (row) {
       if (row.year !== 2024) return;
       var value = toNumber(row.balance_million_eur);
       if (value === null || value === 0) return;
-      if (value < 0) passive.push({ region: row.region, remaining: Math.abs(value) });
-      if (value > 0) active.push({ region: row.region, remaining: value });
+      if (value < 0) passive.push({ label: row.region, remaining: Math.abs(value), type: "region" });
+      if (value > 0) active.push({ label: row.region, remaining: value, type: "region" });
+    });
+    tableRows("mobility_sankey").forEach(function (row) {
+      if (row.year !== 2024) return;
+      if (regionNames.indexOf(row.target) !== -1) return;
+      if (!row.flow_type || row.flow_type.indexOf("extraregionale") === -1) return;
+      var value = toNumber(row.value_million_eur);
+      if (value === null || value <= 0) return;
+      active.push({
+        label: mobilityTargetLabel(row.target),
+        detail: mobilityTargetDetail(row.target),
+        remaining: value,
+        type: "special"
+      });
     });
     passive.sort(function (a, b) { return b.remaining - a.remaining; });
     active.sort(function (a, b) { return b.remaining - a.remaining; });
@@ -1397,11 +1440,15 @@
       var value = Math.min(passive[i].remaining, active[j].remaining);
       if (value >= minValue) {
         links.push({
-          source: passive[i].region,
-          target: active[j].region,
+          source: passive[i].label,
+          target: active[j].label,
           value_million_eur: roundDisplay(value),
           year: 2024,
-          flow_type: "saldo netto regionale"
+          flow_type: "saldo netto regionale",
+          source_type: passive[i].type,
+          target_type: active[j].type,
+          target_detail: active[j].detail,
+          flow_label: active[j].type === "special" ? "saldo verso soggetto extraregionale" : "saldo netto verso regione attiva"
         });
       }
       passive[i].remaining -= value;
@@ -1422,14 +1469,17 @@
     if (STATE.mobilityHospitalRegion !== "Italia") {
       rows = rows.filter(function (row) { return row.region === STATE.mobilityHospitalRegion; });
     }
-    rows = sortDescending(rows, "discharges").slice(0, limit);
+    var availableRows = rows;
+    rows = sortDescending(availableRows, "discharges").slice(0, limit);
+    rows = includeBambinoGesuHospital(rows, availableRows);
     if (!rows.length) {
       showEmptyChart("hiMobilityHospitalChart", "Strutture non disponibili nel payload");
       return;
     }
     var labels = [];
     rows.forEach(function (row) {
-      if (labels.indexOf(row.region) === -1) labels.push(row.region);
+      row._source_label = isBambinoGesu(row.structure) ? "Vaticano" : row.region;
+      if (labels.indexOf(row._source_label) === -1) labels.push(row._source_label);
       row._hospital_label = compact(row.structure, 44) + " (" + row.province + ")";
       if (labels.indexOf(row._hospital_label) === -1) labels.push(row._hospital_label);
     });
@@ -1443,21 +1493,37 @@
         pad: 14,
         thickness: 16,
         color: labels.map(function (label) {
-          return rows.some(function (row) { return row.region === label; }) ? COLORS[0] : COLORS[1];
+          if (label === "Vaticano") return COLORS[1];
+          return rows.some(function (row) { return row._source_label === label; }) ? COLORS[0] : COLORS[1];
         }),
         line: { color: cssVar("--line", "#303030"), width: 1 }
       },
       link: {
-        source: rows.map(function (row) { return labels.indexOf(row.region); }),
+        source: rows.map(function (row) { return labels.indexOf(row._source_label); }),
         target: rows.map(function (row) { return labels.indexOf(row._hospital_label); }),
         value: rows.map(function (row) { return toNumber(row.discharges) || 0; }),
         color: rows.map(function () { return "rgba(93, 143, 215, .45)"; }),
-        customdata: rows.map(function (row) { return row.structure + "<br>" + row.region + ", " + row.province + "<br>Dimissioni: " + formatNumber(row.discharges); }),
+        customdata: rows.map(function (row) {
+          var territory = isBambinoGesu(row.structure) ? "Vaticano / extraterritoriale; classificazione fonte: " + row.region + ", " + row.province : row.region + ", " + row.province;
+          return row.structure + "<br>" + territory + "<br>Dimissioni: " + formatNumber(row.discharges);
+        }),
         hovertemplate: "%{customdata}<extra></extra>"
       }
     }], {
       margin: { t: 12, r: 12, b: 16, l: 12 }
     });
+  }
+
+  function includeBambinoGesuHospital(rows, availableRows) {
+    if (STATE.mobilityHospitalRegion !== "Italia" && STATE.mobilityHospitalRegion !== "Lazio") return rows;
+    var bambino = toArray(availableRows).find(function (row) {
+      return isBambinoGesu(row.structure);
+    });
+    if (!bambino) return rows;
+    var alreadyIncluded = rows.some(function (row) {
+      return row.structure_code === bambino.structure_code;
+    });
+    return alreadyIncluded ? rows : rows.concat([bambino]);
   }
 
   function renderMobilityBalance() {
