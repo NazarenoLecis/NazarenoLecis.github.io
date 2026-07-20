@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sanit&agrave; italiana | Nazareno Lecis</title>
+  <meta name="description" content="Dashboard sulla sanit&agrave; italiana: accesso alle cure, qualit&agrave; degli ospedali, mobilit&agrave; sanitaria, risorse del SSN e fonti pubbliche.">
+  <link rel="icon" href="../../assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-1">
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-1"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html">
+        <span class="logo"></span>
+        <span>
+          <span class="brand-name">Nazareno Lecis</span>
+          <span class="brand-tag">Data &amp; Risk Analysis</span>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Navigazione principale">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap hi-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Sanit&agrave; italiana</span>
+        <h1>Accesso alle cure, qualit&agrave; degli ospedali, mobilit&agrave; sanitaria e risorse del SSN</h1>
+        <p class="lead">Dashboard operativa sulle fonti pubbliche disponibili per analizzare il Servizio sanitario nazionale. La prima versione pubblicabile concentra il lavoro su quadro regionale, mobilit&agrave;, ospedali ed esiti, spesa sanitaria e qualit&agrave; dei dati.</p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonti pubbliche e pipeline riproducibile</strong>
+          <span id="hiSourceMeta">AGENAS, Ministero della Salute, ISTAT, OpenBDAP, SIOPE, ISS e AIFA.</span>
+          <span class="source-credit"><a href="https://github.com/NazarenoLecis/Agenas" target="_blank" rel="noopener">Repository Agenas</a>. Elaborazione di Nazareno Lecis.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="workflow-grid hi-workflow" aria-label="Percorso di lettura">
+      <div class="workflow-step">
+        <span>1</span>
+        <h2>Scegli il territorio</h2>
+        <p>Regione, azienda sanitaria, struttura e anno sono il perimetro da normalizzare per ogni fonte.</p>
+      </div>
+      <div class="workflow-step">
+        <span>2</span>
+        <h2>Confronta accesso e qualit&agrave;</h2>
+        <p>Liste d'attesa, mobilit&agrave;, attivit&agrave; ospedaliera ed esiti restano separati.</p>
+      </div>
+      <div class="workflow-step">
+        <span>3</span>
+        <h2>Guarda risorse e andamento</h2>
+        <p>Spesa, personale, dotazioni e serie storiche vengono lette insieme alla copertura dei dati.</p>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard sanit&agrave;">
+      <a href="#quadro">Quadro generale</a>
+      <a href="#accesso">Accesso</a>
+      <a href="#ospedali">Ospedali</a>
+      <a href="#mobilita">Mobilit&agrave;</a>
+      <a href="#territorio">Territorio</a>
+      <a href="#risorse">Risorse</a>
+      <a href="#confronti">Confronti</a>
+      <a href="#tabelle">Dati</a>
+      <a href="#metodo">Metodo</a>
+    </nav>
+
+    <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
+
+    <section class="hi-filter-panel" aria-label="Filtri generali">
+      <label>Anno
+        <select id="hiYearFilter"></select>
+      </label>
+      <label>Regione
+        <select id="hiRegionFilter"></select>
+      </label>
+      <label>Fonte
+        <select id="hiProviderFilter"></select>
+      </label>
+      <label>Area
+        <select id="hiThemeFilter"></select>
+      </label>
+      <label>Confronto
+        <select id="hiCompareFilter">
+          <option value="italia">Italia</option>
+          <option value="macroarea">Macroarea</option>
+          <option value="regione-simile">Regione simile</option>
+        </select>
+      </label>
+    </section>
+
+    <section id="quadro" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Quadro generale</span>
+        <h2>Copertura, fonti e indicatori pronti</h2>
+        <p>La dashboard mostra gli indicatori sanitari solo quando la pipeline ha una base dati normalizzata e comparabile. In questa versione il quadro generale misura copertura delle fonti, link validati, risorse candidabili e controlli qualit&agrave;.</p>
+      </div>
+      <div id="hiKpis" class="hi-kpi-grid" aria-label="Indicatori principali"></div>
+      <div class="hi-grid-2">
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Fonti per ente</h3><span>catalogo</span></div>
+          <div id="hiProviderChart" class="hi-chart"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Aree sanitarie coperte</h3><span>catalogo</span></div>
+          <div id="hiThemeChart" class="hi-chart"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Link validati</h3><span>stato</span></div>
+          <div id="hiStatusChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Dataset e documenti</h3><span>discovery</span></div>
+          <div id="hiLinkRoleChart" class="hi-chart hi-chart-small"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="accesso" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Accesso alle prestazioni</span>
+        <h2>Liste d'attesa e prestazioni</h2>
+        <p>Il modulo prevede regione, prestazione, classe di priorit&agrave; e periodo. La vista attuale evidenzia fonti, link e risorse da portare nella pipeline prima di pubblicare tempi medi, quote entro standard e serie storiche.</p>
+      </div>
+      <div class="hi-grid-2">
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Fonti accesso e attese</h3><span>priorit&agrave;</span></div>
+          <div id="hiAccessChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Candidati dati</h3><span>download</span></div>
+          <div id="hiAccessTable" class="hi-table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="ospedali" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Ospedali, attivit&agrave; ed esiti</span>
+        <h2>PNE, strutture e profili ospedalieri</h2>
+        <p>Volumi, esiti, discipline e strutture saranno pubblicati separando valore osservato, eventuale aggiustamento del rischio, media nazionale, numerosit&agrave; dei casi e copertura temporale.</p>
+      </div>
+      <div class="hi-grid-2">
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Materiali ospedalieri trovati</h3><span>AGENAS/PNE</span></div>
+          <div id="hiHospitalChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Link PNE e ospedali</h3><span>evidenze</span></div>
+          <div id="hiHospitalTable" class="hi-table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="mobilita" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Mobilit&agrave; sanitaria</span>
+        <h2>Flussi, attrattivit&agrave; e saldo economico</h2>
+        <p>Il disegno dati distingue origine, destinazione, prestazione, disciplina, anno, valore economico e volume. La prima vista rende visibili le fonti e il lavoro necessario per arrivare alla matrice origine-destinazione.</p>
+      </div>
+      <div class="hi-grid-2">
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Fonti mobilit&agrave;</h3><span>catalogo</span></div>
+          <div id="hiMobilityChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Dataset mobilit&agrave;</h3><span>stato</span></div>
+          <div id="hiMobilityTable" class="hi-table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="territorio" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Territorio</span>
+        <h2>Copertura regionale dei moduli</h2>
+        <p>La matrice regione-modulo mostra dove serve ancora mappare fonti regionali per accesso, servizi, emergenza, strutture, personale, costi, spesa sanitaria e assistenza territoriale.</p>
+      </div>
+      <div class="hi-grid-2 hi-grid-territory">
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Matrice regione-modulo</h3><span>mapping</span></div>
+          <div id="hiRegionalMatrix" class="hi-chart hi-chart-large"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3 id="hiRegionProfileTitle">Profilo regionale</h3><span id="hiRegionProfileTag">mapping</span></div>
+          <div id="hiRegionProfile" class="hi-profile-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="risorse" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Risorse e spesa sanitaria</span>
+        <h2>OpenBDAP, SIOPE e denominatori demografici</h2>
+        <p>La pipeline mantiene distinta la contabilit&agrave; economica dai flussi di cassa e prepara spesa nominale, reale e corretta per popolazione totale e popolazione anziana.</p>
+      </div>
+      <div class="hi-grid-2">
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Risorse per formato</h3><span>spesa</span></div>
+          <div id="hiResourceFormatChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Base contabile</h3><span>competenza/cassa</span></div>
+          <div id="hiAccountingChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card hi-wide-card">
+          <div class="hi-card-title"><h3>Risorse sanitarie prioritarie</h3><span>OpenBDAP/SIOPE</span></div>
+          <div id="hiResourceTable" class="hi-table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="confronti" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Confronti</span>
+        <h2>Regioni, fonti e qualit&agrave; della pipeline</h2>
+        <p>Prima dei confronti sostantivi tra regioni, la dashboard espone i controlli che decidono se un indicatore pu&ograve; essere pubblicato senza perdere comparabilit&agrave;.</p>
+      </div>
+      <div class="hi-grid-2">
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Controlli dataset</h3><span>qualit&agrave;</span></div>
+          <div id="hiQualityChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card">
+          <div class="hi-card-title"><h3>Audit progetto</h3><span>pipeline</span></div>
+          <div id="hiAuditChart" class="hi-chart hi-chart-small"></div>
+        </article>
+        <article class="hi-card hi-wide-card">
+          <div class="hi-card-title"><h3>Problemi dati aperti</h3><span>azione</span></div>
+          <div id="hiIssuesTable" class="hi-table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="tabelle" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Dati scaricabili</span>
+        <h2>Esplora le tabelle della pipeline</h2>
+        <p>Catalogo, link validati, piano risorse, dizionari, audit e inventari sono disponibili nello stesso payload pubblico della dashboard.</p>
+      </div>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3 id="hiTableTitle">Tabelle</h3><span id="hiTableCount">0 righe</span></div>
+        <div class="hi-table-toolbar">
+          <label>Dataset
+            <select id="hiTableSelect"></select>
+          </label>
+          <label>Cerca
+            <input id="hiTableSearch" type="search" placeholder="testo, fonte, regione">
+          </label>
+          <button id="hiDownloadCsv" type="button">Download CSV</button>
+        </div>
+        <div id="hiTableExplorer" class="hi-table-wrap hi-table-explorer"></div>
+      </article>
+    </section>
+
+    <section id="metodo" class="hi-section">
+      <div class="hi-section-head">
+        <span class="eyebrow">Metodo</span>
+        <h2>Definizioni, limiti e prossimi indicatori</h2>
+        <p>Ogni indicatore sanitario richiede definizione, numeratore, denominatore, unit&agrave; di misura, copertura, fonte, aggiornamento, esclusioni e avvertenze sulla comparabilit&agrave;.</p>
+      </div>
+      <div class="hi-method-grid">
+        <article>
+          <span>Versione iniziale</span>
+          <strong>Quadro regionale, mobilit&agrave;, ospedali ed esiti, spesa sanitaria.</strong>
+          <p>Liste d'attesa, personale e assistenza territoriale entrano quando copertura e confrontabilit&agrave; sono sufficienti.</p>
+        </article>
+        <article>
+          <span>Nessun punteggio unico</span>
+          <strong>Accessibilit&agrave;, esiti e risorse restano separati.</strong>
+          <p>Un indice sintetico nasconderebbe differenze sostanziali tra territori e servizi.</p>
+        </article>
+        <article>
+          <span>Normalizzazioni</span>
+          <strong>Popolazione totale, over 65, over 75 e base contabile.</strong>
+          <p>La spesa sanitaria viene letta distinguendo competenza economica, cassa e denominatori demografici.</p>
+        </article>
+        <article>
+          <span>Qualit&agrave;</span>
+          <strong>Casi, copertura, codifiche e criteri di inclusione.</strong>
+          <p>Gli indicatori ospedalieri non sono confrontabili senza numerosit&agrave;, rischio e perimetro clinico.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner social-links">
+      <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+      <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+    </div>
+  </footer>
+</body>
+</html>
