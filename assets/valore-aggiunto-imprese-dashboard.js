@@ -7,6 +7,56 @@
   var SECTION_CODES = ["A", "B-E", "F", "G-I", "J", "K", "L", "M_N", "O-Q", "R-U"];
   var FOCUS_CODES = ["A", "A03", "I", "N79"];
   var SIZE_ORDER = ["0-9", "10-19", "20-49", "50-249", "250+"];
+  var CHART_SOURCE_NOTE = "Fonte: Eurostat. Elaborazione di Nazareno Lecis.";
+  var COUNTRY_LABELS_IT = {
+    AT: "Austria",
+    BE: "Belgio",
+    BG: "Bulgaria",
+    CY: "Cipro",
+    CZ: "Cechia",
+    DE: "Germania",
+    DK: "Danimarca",
+    EE: "Estonia",
+    EL: "Grecia",
+    ES: "Spagna",
+    EU27_2020: "Unione europea (27 paesi)",
+    FI: "Finlandia",
+    FR: "Francia",
+    HR: "Croazia",
+    HU: "Ungheria",
+    IE: "Irlanda",
+    IT: "Italia",
+    LT: "Lituania",
+    LU: "Lussemburgo",
+    LV: "Lettonia",
+    MT: "Malta",
+    NL: "Paesi Bassi",
+    PL: "Polonia",
+    PT: "Portogallo",
+    RO: "Romania",
+    SE: "Svezia",
+    SI: "Slovenia",
+    SK: "Slovacchia"
+  };
+  var SECTOR_LABELS_IT = {
+    TOTAL: "Totale economia",
+    A: "Agricoltura, silvicoltura e pesca",
+    A01: "Agricoltura e attivita connesse",
+    A02: "Silvicoltura",
+    A03: "Pesca e acquacoltura",
+    "B-E": "Industria esclusa costruzioni",
+    C: "Manifattura",
+    F: "Costruzioni",
+    "G-I": "Commercio, trasporti, alloggio e ristorazione",
+    I: "Alloggio e ristorazione",
+    J: "Informazione e comunicazione",
+    K: "Attivita finanziarie e assicurative",
+    L: "Attivita immobiliari",
+    M_N: "Servizi professionali, scientifici, tecnici e amministrativi",
+    N79: "Agenzie di viaggio e tour operator",
+    "O-Q": "Pubblica amministrazione, istruzione, sanita e sociale",
+    "R-U": "Arte, intrattenimento e altri servizi"
+  };
 
   var state = {
     payload: null,
@@ -73,17 +123,28 @@
     return row.label || row.name || row.code || "";
   }
 
+  function countryLabel(code, fallback) {
+    return COUNTRY_LABELS_IT[code] || fallback || code || "";
+  }
+
+  function sectorLabel(rowOrCode, fallback) {
+    var code = typeof rowOrCode === "string" ? rowOrCode : rowOrCode && rowOrCode.sector_code;
+    var sourceLabel = typeof rowOrCode === "string" ? fallback : rowOrCode && rowOrCode.sector_label;
+    return SECTOR_LABELS_IT[code] || sourceLabel || fallback || code || "";
+  }
+
   function formatMoney(value) {
     var parsed = number(value);
     if (parsed === null) return "ND";
-    if (Math.abs(parsed) >= 1000) return (parsed / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mld EUR";
-    return parsed.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mln EUR";
+    if (Math.abs(parsed) >= 1000) return (parsed / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1, useGrouping: true }) + " mld EUR";
+    return parsed.toLocaleString("it-IT", { maximumFractionDigits: 1, useGrouping: true }) + " mln EUR";
   }
 
   function formatShare(value) {
     var parsed = number(value);
     if (parsed === null) return "ND";
-    return parsed.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
+    var digits = Math.abs(parsed) > 0 && Math.abs(parsed) < 0.1 ? 2 : 1;
+    return parsed.toLocaleString("it-IT", { maximumFractionDigits: digits, useGrouping: true }) + "%";
   }
 
   function colorVars() {
@@ -99,6 +160,25 @@
   function plot(id, traces, layout) {
     var node = byId(id);
     var colors = colorVars();
+    var customLayout = Object.assign({}, layout || {});
+    var sourceNote = customLayout.sourceNote;
+    delete customLayout.sourceNote;
+    var annotations = toArray(customLayout.annotations).slice();
+    delete customLayout.annotations;
+    if (sourceNote) {
+      annotations.push({
+        text: sourceNote,
+        xref: "paper",
+        yref: "paper",
+        x: 0,
+        y: -0.22,
+        xanchor: "left",
+        yanchor: "top",
+        showarrow: false,
+        align: "left",
+        font: { color: colors.muted, size: 11 }
+      });
+    }
     if (!node) return;
     Plotly.newPlot(id, traces, Object.assign({
       paper_bgcolor: "rgba(0,0,0,0)",
@@ -108,8 +188,9 @@
       xaxis: { gridcolor: colors.line, zerolinecolor: colors.line },
       yaxis: { gridcolor: colors.line, zerolinecolor: colors.line },
       hoverlabel: { bgcolor: colors.panel, bordercolor: colors.line, font: { color: colors.text } },
-      legend: { orientation: "h", y: -0.18 }
-    }, layout || {}), { responsive: true, displayModeBar: false });
+      legend: { orientation: "h", y: -0.18 },
+      annotations: annotations
+    }, customLayout), { responsive: true, displayModeBar: false });
   }
 
   function showEmpty(id, message) {
@@ -124,6 +205,23 @@
 
   function clear(node) {
     while (node && node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function renderGuidance(id, items) {
+    var container = byId(id);
+    if (!container) return;
+    clear(container);
+    items.forEach(function (item) {
+      var node = document.createElement("div");
+      var title = document.createElement("strong");
+      var body = document.createElement("span");
+      node.className = "vai-guidance";
+      title.textContent = item.title;
+      body.textContent = item.text;
+      node.appendChild(title);
+      node.appendChild(body);
+      container.appendChild(node);
+    });
   }
 
   function makeSelect(container, label, value, options, onChange) {
@@ -156,13 +254,13 @@
   function countryOptions(includeEu27) {
     return lookup("countries")
       .filter(function (row) { return includeEu27 || row.code !== "EU27_2020"; })
-      .map(function (row) { return { value: row.code, label: optionLabel(row) }; });
+      .map(function (row) { return { value: row.code, label: countryLabel(row.code, optionLabel(row)) }; });
   }
 
   function sectorOptions(sourceKey, includeTotal) {
     return lookup(sourceKey)
       .filter(function (row) { return includeTotal || row.code !== "TOTAL"; })
-      .map(function (row) { return { value: row.code, label: row.code + " - " + optionLabel(row) }; });
+      .map(function (row) { return { value: row.code, label: row.code + " - " + sectorLabel(row.code, optionLabel(row)) }; });
   }
 
   function effectiveYear(recordsList, preferredYear) {
@@ -239,9 +337,9 @@
     var top = sections.slice().sort(function (a, b) { return b.value_million_eur - a.value_million_eur; })[0];
     var bottom = sections.slice().filter(function (row) { return row.value_million_eur > 0; }).sort(function (a, b) { return a.value_million_eur - b.value_million_eur; })[0];
     var kpis = [
-      { label: "Totale", value: formatMoney(total), note: text(state.year) + " - " + text(state.country) },
-      { label: "Primo settore", value: top ? top.sector_label : "ND", note: top ? formatMoney(top.value_million_eur) : "" },
-      { label: "Settore minore", value: bottom ? bottom.sector_label : "ND", note: bottom ? formatMoney(bottom.value_million_eur) : "" },
+      { label: "Totale", value: formatMoney(total), note: text(state.year) + " - " + countryLabel(state.country) },
+      { label: "Primo settore", value: top ? sectorLabel(top) : "ND", note: top ? formatMoney(top.value_million_eur) : "" },
+      { label: "Minore tra le sezioni", value: bottom ? sectorLabel(bottom) : "ND", note: bottom ? formatMoney(bottom.value_million_eur) : "" },
       { label: "Settori disponibili", value: rows.filter(function (row) { return row.value_million_eur !== null; }).length, note: "voci National Accounts" }
     ];
     clear(container);
@@ -271,7 +369,7 @@
       card.className = "vai-focus-card";
       card.innerHTML = "<span></span><strong></strong><em></em><small></small>";
       card.querySelector("span").textContent = code;
-      card.querySelector("strong").textContent = row ? row.sector_label : "Non disponibile";
+      card.querySelector("strong").textContent = row ? sectorLabel(row) : "Non disponibile";
       card.querySelector("em").textContent = row ? formatMoney(row.value_million_eur) : "ND";
       card.querySelector("small").textContent = row ? yearText + "Quota sul totale: " + formatShare(share) : "Dato non pubblicato per questa selezione.";
       container.appendChild(card);
@@ -319,7 +417,21 @@
     });
     candidates = candidates.slice(0, Number(state.rankCount)).reverse();
     byId("vaiSectorTitle").textContent = state.rankMode === "top" ? "Settori con maggiore valore aggiunto" : "Settori con minore valore aggiunto";
-    byId("vaiSectorTag").textContent = text(state.country) + " - " + text(state.year);
+    byId("vaiSectorTag").textContent = countryLabel(state.country) + " - " + text(state.year);
+    renderGuidance("vaiSectorGuidance", [
+      {
+        title: state.sectorMode === "sections" ? "Sezioni principali" : "Dettaglio Eurostat",
+        text: state.sectorMode === "sections"
+          ? "Le sezioni principali sono piu adatte a confrontare i pesi dei settori senza sommare sottovoci gia incluse negli aggregati."
+          : "Il dettaglio entra nelle branche A64: e utile per leggere settori specifici, ma alcune voci sono aggregati e non vanno sommate tra loro senza controllare la gerarchia NACE."
+      },
+      {
+        title: state.rankMode === "top" ? "Valori maggiori" : "Valori minori",
+        text: state.rankMode === "top"
+          ? "Le barre mostrano dove si concentra piu valore aggiunto nel paese selezionato."
+          : "La vista sui valori minori esclude importi nulli o mancanti: serve a leggere i settori pubblicati con contributo piu contenuto."
+      }
+    ]);
     if (!candidates.length) {
       showEmpty("vaiSectorChart", "Dati settoriali non disponibili per questa selezione.");
       return;
@@ -328,13 +440,14 @@
       type: "bar",
       orientation: "h",
       x: candidates.map(function (row) { return row.value_million_eur; }),
-      y: candidates.map(function (row) { return row.sector_label; }),
+      y: candidates.map(function (row) { return sectorLabel(row); }),
       marker: { color: candidates.map(function (_, index) { return COLORS[index % COLORS.length]; }) },
       hovertemplate: "%{y}<br>%{x:,.1f} mln EUR<extra></extra>"
     }], {
-      margin: { t: 18, r: 24, b: 54, l: 240 },
+      margin: { t: 18, r: 24, b: 78, l: 240 },
       xaxis: { title: "Milioni di euro" },
-      yaxis: { automargin: true }
+      yaxis: { automargin: true },
+      sourceNote: CHART_SOURCE_NOTE
     });
   }
 
@@ -361,23 +474,34 @@
     }).sort(function (a, b) {
       return b.value_million_eur - a.value_million_eur;
     });
-    var sector = rows[0] ? rows[0].sector_label : state.europeSector;
+    var sector = rows[0] ? sectorLabel(rows[0]) : sectorLabel(state.europeSector);
     byId("vaiEuropeTitle").textContent = sector;
     byId("vaiEuropeTag").textContent = text(state.europeYear);
+    renderGuidance("vaiEuropeGuidance", [
+      {
+        title: "Confronto assoluto",
+        text: "Gli importi non sono normalizzati per popolazione, occupati o PIL: il grafico mostra la dimensione economica del settore nei paesi disponibili."
+      },
+      {
+        title: "Stesso anno e stesso settore",
+        text: "Il confronto usa una sola combinazione anno-settore; se un paese manca, la cella non e pubblicata nella fonte integrata."
+      }
+    ]);
     if (!rows.length) {
       showEmpty("vaiEuropeChart", "Confronto europeo non disponibile per questa selezione.");
       return;
     }
     plot("vaiEuropeChart", [{
       type: "bar",
-      x: rows.map(function (row) { return row.country_name; }),
+      x: rows.map(function (row) { return countryLabel(row.country_code, row.country_name); }),
       y: rows.map(function (row) { return row.value_million_eur; }),
       marker: { color: rows.map(function (row) { return row.country_code === "IT" ? "#ff6b2a" : "#5b8fd9"; }) },
       hovertemplate: "%{x}<br>%{y:,.1f} mln EUR<extra></extra>"
     }], {
       margin: { t: 18, r: 24, b: 120, l: 86 },
       yaxis: { title: "Milioni di euro" },
-      xaxis: { tickangle: -38, automargin: true }
+      xaxis: { tickangle: -38, automargin: true },
+      sourceNote: CHART_SOURCE_NOTE
     });
   }
 
@@ -410,8 +534,18 @@
       return SIZE_ORDER.indexOf(a.size_class) - SIZE_ORDER.indexOf(b.size_class);
     });
     var total = rows.reduce(function (sum, row) { return sum + row.value_million_eur; }, 0);
-    byId("vaiSizeTitle").textContent = rows[0] ? rows[0].sector_label : "Classi dimensionali";
-    byId("vaiSizeTag").textContent = text(state.sizeCountry) + " - " + text(state.sizeYear);
+    byId("vaiSizeTitle").textContent = rows[0] ? sectorLabel(rows[0]) : "Classi dimensionali";
+    byId("vaiSizeTag").textContent = countryLabel(state.sizeCountry) + " - " + text(state.sizeYear);
+    renderGuidance("vaiSizeGuidance", [
+      {
+        title: "Classi sopra 10 persone",
+        text: "Le classi 10-19, 20-49, 50-249 e 250+ restano separate: qui non vengono accorpate in un generico 10+."
+      },
+      {
+        title: "Perimetro SBS",
+        text: "Questa tavola descrive la business economy coperta dalle Structural Business Statistics: non ha lo stesso perimetro dei conti nazionali, soprattutto per agricoltura, pesca e alcune attivita pubbliche."
+      }
+    ]);
     if (!rows.length) {
       showEmpty("vaiSizeChart", "Valore aggiunto per dimensione non disponibile per questa selezione.");
       return;
@@ -424,9 +558,10 @@
       customdata: rows.map(function (row) { return total ? row.value_million_eur / total * 100 : null; }),
       hovertemplate: "%{x}<br>%{y:,.1f} mln EUR<br>%{customdata:.1f}% del settore<extra></extra>"
     }], {
-      margin: { t: 18, r: 24, b: 58, l: 92 },
+      margin: { t: 18, r: 24, b: 82, l: 92 },
       yaxis: { title: "Milioni di euro" },
-      xaxis: { title: "Classe di persone occupate" }
+      xaxis: { title: "Classe di persone occupate" },
+      sourceNote: CHART_SOURCE_NOTE
     });
   }
 
@@ -457,8 +592,18 @@
     }).sort(function (a, b) {
       return b.value_million_eur - a.value_million_eur;
     }).slice(0, 30).reverse();
-    byId("vaiRegionalTitle").textContent = rows[0] ? rows[0].sector_label : "Valore aggiunto regionale";
-    byId("vaiRegionalTag").textContent = text(state.regionalCountry) + " - " + text(state.regionalYear);
+    byId("vaiRegionalTitle").textContent = rows[0] ? sectorLabel(rows[0]) : "Valore aggiunto regionale";
+    byId("vaiRegionalTag").textContent = countryLabel(state.regionalCountry) + " - " + text(state.regionalYear);
+    renderGuidance("vaiRegionalGuidance", [
+      {
+        title: "Dentro il paese",
+        text: "Il grafico mostra le regioni NUTS2 del paese selezionato. Se ci sono molte regioni, vengono visualizzate le prime 30 per valore aggiunto."
+      },
+      {
+        title: "Settori piu aggregati",
+        text: "Il dato regionale ha meno dettaglio settoriale dei conti nazionali A64: e utile per la geografia, non per analisi settoriali molto fini."
+      }
+    ]);
     if (!rows.length) {
       showEmpty("vaiRegionalChart", "Dato regionale NUTS2 non disponibile per questa selezione.");
       return;
@@ -471,10 +616,20 @@
       marker: { color: "#5fc3b2" },
       hovertemplate: "%{y}<br>%{x:,.1f} mln EUR<extra></extra>"
     }], {
-      margin: { t: 18, r: 24, b: 54, l: 250 },
+      margin: { t: 18, r: 24, b: 78, l: 250 },
       xaxis: { title: "Milioni di euro" },
-      yaxis: { automargin: true }
+      yaxis: { automargin: true },
+      sourceNote: CHART_SOURCE_NOTE
     });
+  }
+
+  function statusLabel(value) {
+    var labels = {
+      available: "Disponibile",
+      available_when_published: "Disponibile dove pubblicato",
+      not_estimated: "Non stimato"
+    };
+    return labels[value] || value || "";
   }
 
   function renderCoverage() {
@@ -485,11 +640,29 @@
       var card = document.createElement("div");
       card.className = "vai-coverage-item";
       card.innerHTML = "<span></span><strong></strong><em></em><small></small>";
-      card.querySelector("span").textContent = item.status || "";
+      card.querySelector("span").textContent = statusLabel(item.status);
       card.querySelector("strong").textContent = item.dimension || "";
       card.querySelector("em").textContent = item.source || "";
       card.querySelector("small").textContent = item.note || "";
       container.appendChild(card);
+    });
+  }
+
+  function renderMethod() {
+    var notes = byId("vaiMethodNotes");
+    if (!notes) return;
+    clear(notes);
+    [
+      "Il valore aggiunto lordo e misurato a prezzi correnti in milioni di euro: confronta la dimensione economica delle attivita, non la produttivita o i margini delle imprese.",
+      "I conti nazionali Eurostat sono usati per il confronto settoriale perche coprono l'intera economia e includono agricoltura, silvicoltura, pesca e servizi.",
+      "Il turismo non e una singola branca NACE nei conti nazionali: la dashboard mostra alloggio e ristorazione come proxy principale e agenzie di viaggio/tour operator quando il dettaglio e pubblicato.",
+      "Le classi dimensionali arrivano da Structural Business Statistics: sono classi di persone occupate nell'impresa e hanno un perimetro diverso dai conti nazionali.",
+      "Il dettaglio regionale usa le regioni NUTS pubblicate da Eurostat e settori piu aggregati; non tutte le combinazioni paese-settore-anno sono disponibili.",
+      "Eta e titolo di studio non sono stimati: le fonti integrate non pubblicano valore aggiunto ufficiale per queste dimensioni."
+    ].forEach(function (note) {
+      var item = document.createElement("li");
+      item.textContent = note;
+      notes.appendChild(item);
     });
   }
 
@@ -506,6 +679,7 @@
     renderRegionalFilters();
     renderRegionalChart();
     renderCoverage();
+    renderMethod();
   }
 
   function initialize(payload) {

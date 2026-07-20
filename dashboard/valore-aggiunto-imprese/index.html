@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-1">
+  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-2">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-1"></script>
+  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -35,28 +35,36 @@
       <div>
         <span class="eyebrow">Valore aggiunto imprese</span>
         <h1>Settori, paesi, dimensione d'impresa e territorio</h1>
-        <p class="lead">Valore aggiunto lordo a prezzi correnti dai conti nazionali Eurostat, con dettaglio SBS per classe dimensionale e regioni NUTS2 dove pubblicate.</p>
+        <p class="lead">Una lettura europea del valore aggiunto lordo: quali settori pesano di piu, quali generano importi contenuti, come cambia il quadro tra paesi, classi dimensionali d'impresa e territori.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonti Eurostat</strong>
-          <span>National Accounts, Structural Business Statistics e Regional Gross Value Added.</span>
-          <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
+          <strong>Fonti Eurostat e repository pubblico</strong>
+          <span>Conti nazionali, statistiche strutturali d'impresa e valore aggiunto regionale.</span>
+          <span class="source-credit"><a href="https://github.com/NazarenoLecis/Valore_aggiunto_imprese" target="_blank" rel="noopener">Repository valore aggiunto imprese</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
       </div>
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard valore aggiunto">
-      <a href="#quadro">Quadro</a><a href="#settori">Settori</a><a href="#europa">Europa</a><a href="#dimensione">Dimensione</a><a href="#territorio">Territorio</a><a href="#copertura">Copertura</a>
+      <a href="#quadro">Quadro</a><a href="#settori">Settori</a><a href="#europa">Europa</a><a href="#dimensione">Dimensione</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo e fonti</a>
     </nav>
+
+    <p class="vai-note"><strong>Come leggere la dashboard:</strong> i valori sono importi assoluti in milioni di euro correnti. Servono per capire dove si produce valore aggiunto, non per misurare produttivita, profitti o valore per lavoratore.</p>
+
+    <section class="vai-reading-grid" aria-label="Percorso di lettura dashboard">
+      <div class="vai-reading-card"><span>1</span><h2>Parti dai settori</h2><p>Usa la vista per vedere i settori con piu valore aggiunto o quelli con importi minori nel paese selezionato.</p></div>
+      <div class="vai-reading-card"><span>2</span><h2>Confronta i paesi</h2><p>Scegli un settore e confronta tutti i paesi UE disponibili nello stesso anno.</p></div>
+      <div class="vai-reading-card"><span>3</span><h2>Controlla perimetro e limiti</h2><p>Dimensione d'impresa e territorio arrivano da tavole diverse: le note finali spiegano cosa e confrontabile.</p></div>
+    </section>
 
     <p id="vaiStatus" class="vai-status">Caricamento dati...</p>
 
     <section id="quadro" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Quadro rapido</span>
-        <div><h2>Valore aggiunto e settori osservati</h2><p>Il paese e l'anno selezionati guidano indicatori, focus settoriale e grafici principali.</p></div>
+        <div><h2>Valore aggiunto e settori osservati</h2><p>Il paese e l'anno selezionati guidano indicatori, focus settoriale e grafici principali. Le schede evidenziano anche agricoltura, pesca e voci legate al turismo.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri principali</summary><div id="vaiGlobalFilters" class="filter-grid"></div></details>
       <div id="vaiKpis" class="vai-kpi-grid" aria-label="Indicatori principali valore aggiunto"></div>
@@ -71,8 +79,10 @@
       <details class="chart-filter-panel" open><summary>Filtri settori</summary><div id="vaiSectorFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiSectorTitle">Valore aggiunto per settore</h3><span id="vaiSectorTag">Eurostat</span></div>
+        <p class="vai-card-note" id="vaiSectorNote">La vista per sezioni evita doppi conteggi tra aggregati; il dettaglio Eurostat permette di entrare nelle singole branche quando disponibili.</p>
         <div id="vaiSectorChart" class="vai-chart vai-chart-wide"></div>
-        <p class="vai-chart-credit">Fonte: Eurostat National Accounts <code>nama_10_a64</code>. Elaborazione di Nazareno Lecis.</p>
+        <div id="vaiSectorGuidance" class="vai-guidance-list" aria-live="polite"></div>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -84,8 +94,10 @@
       <details class="chart-filter-panel" open><summary>Filtri confronto europeo</summary><div id="vaiEuropeFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiEuropeTitle">Confronto paesi</h3><span id="vaiEuropeTag">UE27</span></div>
+        <p class="vai-card-note">Il grafico ordina i paesi per valore aggiunto assoluto nel settore scelto. Paesi piu grandi tendono naturalmente ad avere importi maggiori.</p>
         <div id="vaiEuropeChart" class="vai-chart vai-chart-wide"></div>
-        <p class="vai-chart-credit">Fonte: Eurostat National Accounts <code>nama_10_a64</code>. Elaborazione di Nazareno Lecis.</p>
+        <div id="vaiEuropeGuidance" class="vai-guidance-list" aria-live="polite"></div>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -97,8 +109,10 @@
       <details class="chart-filter-panel" open><summary>Filtri dimensione</summary><div id="vaiSizeFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiSizeTitle">Classi dimensionali</h3><span id="vaiSizeTag">SBS</span></div>
+        <p class="vai-card-note">Qui le classi sono basate sulle persone occupate nell'impresa. Le classi sopra 10 persone sono mostrate separatamente quando pubblicate dalla fonte.</p>
         <div id="vaiSizeChart" class="vai-chart"></div>
-        <p class="vai-chart-credit">Fonte: Eurostat Structural Business Statistics <code>sbs_sc_ovw</code>. Elaborazione di Nazareno Lecis.</p>
+        <div id="vaiSizeGuidance" class="vai-guidance-list" aria-live="polite"></div>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -110,17 +124,36 @@
       <details class="chart-filter-panel" open><summary>Filtri territorio</summary><div id="vaiRegionalFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiRegionalTitle">Valore aggiunto regionale</h3><span id="vaiRegionalTag">NUTS2</span></div>
+        <p class="vai-card-note">Le regioni sono un dettaglio territoriale armonizzato Eurostat. Se un paese non mostra dati, significa che quella combinazione paese-settore-anno non e pubblicata nella tavola integrata.</p>
         <div id="vaiRegionalChart" class="vai-chart vai-chart-wide"></div>
-        <p class="vai-chart-credit">Fonte: Eurostat Regional Gross Value Added <code>nama_10r_3gva</code>. Elaborazione di Nazareno Lecis.</p>
+        <div id="vaiRegionalGuidance" class="vai-guidance-list" aria-live="polite"></div>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gva/default/table?lang=en" target="_blank" rel="noopener">Eurostat Regional Gross Value Added <code>nama_10r_3gva</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
-    <section id="copertura" class="dashboard-section">
+    <section id="metodo" class="dashboard-section">
       <div class="section-head">
-        <span class="eyebrow">Fonti e limiti</span>
+        <span class="eyebrow">Fonti e metodologia</span>
         <div><h2>Cosa e disponibile e cosa no</h2><p>La dashboard separa dati osservati e dimensioni non pubblicate, senza stimare valore aggiunto dove la fonte non lo consente.</p></div>
       </div>
       <div id="vaiCoverage" class="vai-coverage-grid"></div>
+      <div class="vai-notes-panel">
+        <div>
+          <h3>Note metodologiche</h3>
+          <ul id="vaiMethodNotes">
+            <li>Dati in caricamento dalle fonti elaborate nel repository Valore_aggiunto_imprese.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Repository e fonti</h3>
+          <p><a class="related-link" href="https://github.com/NazarenoLecis/Valore_aggiunto_imprese" target="_blank" rel="noopener">Repository Valore_aggiunto_imprese</a></p>
+          <ul class="vai-source-links">
+            <li><a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat - Gross value added and income by detailed industry, <code>nama_10_a64</code></a></li>
+            <li><a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat - Structural Business Statistics by size class, <code>sbs_sc_ovw</code></a></li>
+            <li><a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gva/default/table?lang=en" target="_blank" rel="noopener">Eurostat - Regional gross value added, <code>nama_10r_3gva</code></a></li>
+          </ul>
+        </div>
+      </div>
     </section>
   </main>
 
