@@ -43,6 +43,8 @@
     mobilityRatio: "absolute",
     mobilitySeriesRegion: "Italia",
     mobilitySeriesRatio: "absolute",
+    mobilityHospitalRegion: "Italia",
+    mobilityHospitalLimit: "15",
     mobilitySankeyMin: "0",
     tableRegion: "Italia",
     tableProvince: "all",
@@ -671,6 +673,7 @@
       ["hiPharmaSeriesRegionFilter", "pharmaRegion"],
       ["hiHospitalRegionFilter", "hospitalRegion"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
+      ["hiMobilityHospitalRegionFilter", "mobilityHospitalRegion"],
       ["hiTableRegionFilter", "tableRegion"]
     ].forEach(function (item) {
       fillSelect(item[0], regionOptions, STATE[item[1]]);
@@ -681,7 +684,10 @@
     fillSelect("hiHospitalDisciplineFilter", disciplineOptionsWithAll, STATE.hospitalDiscipline);
     fillSelect("hiTableDisciplineFilter", disciplineOptionsWithAll, STATE.tableDiscipline);
     fillSelect("hiCostTypeFilter", costOptions, STATE.costType);
-    fillSelect("hiNationalBedsYearFilter", [{ value: "latest", label: "Ultimo anno" }].concat(bedYears.map(function (year) {
+    var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
+    fillSelect("hiNationalBedsYearFilter", [{ value: "latest", label: latestBedsYear ? "Ultimo anno (" + latestBedsYear + ")" : "Ultimo anno" }].concat(bedYears.filter(function (year) {
+      return year !== latestBedsYear;
+    }).map(function (year) {
       return { value: String(year), label: String(year) };
     })), STATE.nationalBedsYear);
     fillSelect("hiPharmaSeriesLabelFilter", [{ value: "all", label: "Tutte" }].concat(pharmaLabels.map(function (label) {
@@ -705,6 +711,7 @@
       ["hiBedsSeriesMetricFilter", "bedsSeriesMetric"],
       ["hiBedsSeriesRatioFilter", "bedsSeriesRatio"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
+      ["hiMobilityHospitalLimitFilter", "mobilityHospitalLimit"],
       ["hiMobilitySankeyMinFilter", "mobilitySankeyMin"]
     ].forEach(function (item) {
       var node = byId(item[0]);
@@ -761,6 +768,8 @@
       ["hiMobilityRatioFilter", "mobilityRatio"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
+      ["hiMobilityHospitalRegionFilter", "mobilityHospitalRegion"],
+      ["hiMobilityHospitalLimitFilter", "mobilityHospitalLimit"],
       ["hiMobilitySankeyMinFilter", "mobilitySankeyMin"],
       ["hiTableRegionFilter", "tableRegion"],
       ["hiTableProvinceFilter", "tableProvince"],
@@ -972,7 +981,7 @@
     });
     var note = byId("hiDischargeTypeNote");
     if (note) {
-      note.textContent = "Fonte: Ministero della Salute, SDO. Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". Le celle oscurate non sono trattate come zero.";
+      note.textContent = "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". Le celle oscurate non sono trattate come zero.";
     }
   }
 
@@ -1142,7 +1151,8 @@
     });
     var note = byId("hiDisciplineNote");
     if (note) {
-      note.textContent = config.rate ? "Denominatore selezionato: " + denominatorLabel + ". La tabella riporta anche volumi assoluti, degenza media e utilizzo dei posti letto." : "Misura selezionata: " + config.label + ". I tassi per popolazione restano disponibili cambiando misura.";
+      var source = "Fonte: Ministero della Salute, dati di attivita dei reparti; ISTAT POSAS 2026 per denominatori. Elaborazione di Nazareno Lecis. ";
+      note.textContent = source + (config.rate ? "Denominatore selezionato: " + denominatorLabel + ". La tabella riporta anche volumi assoluti, degenza media e utilizzo dei posti letto." : "Misura selezionata: " + config.label + ". I tassi per popolazione restano disponibili cambiando misura.");
     }
     var tableColumns = [
       [provinceLevel ? "province" : "region", provinceLevel ? "Provincia" : "Regione"],
@@ -1314,6 +1324,7 @@
 
   function renderMobility() {
     renderMobilitySankey();
+    renderMobilityHospitalSankey();
     renderMobilityBalance();
     renderMobilitySeries();
     renderMobilityTable();
@@ -1321,11 +1332,9 @@
 
   function renderMobilitySankey() {
     var minValue = toNumber(STATE.mobilitySankeyMin) || 0;
-    var rows = tableRows("mobility_sankey").filter(function (row) {
-      return row.year === 2024 && toNumber(row.value_million_eur) > 0 && toNumber(row.value_million_eur) >= minValue;
-    });
+    var rows = mobilityRegionalNetLinks(minValue);
     if (!rows.length) {
-      showEmptyChart("hiMobilitySankeyChart", "Matrice di mobilita non disponibile nel payload");
+      showEmptyChart("hiMobilitySankeyChart", "Saldi regionali non disponibili nel payload");
       return;
     }
     var labels = [];
@@ -1337,11 +1346,9 @@
     var target = rows.map(function (row) { return labels.indexOf(row.target); });
     var values = rows.map(function (row) { return toNumber(row.value_million_eur) || 0; });
     var linkColors = rows.map(function (row) {
-      if (row.flow_type && row.flow_type.indexOf("passivo") !== -1) return "rgba(217, 102, 102, .46)";
-      if (row.flow_type && row.flow_type.indexOf("extraregionale") !== -1) return "rgba(217, 173, 72, .48)";
-      if (row.flow_type && row.flow_type.indexOf("arrotondamento") !== -1) return "rgba(143, 143, 143, .2)";
-      return "rgba(58, 166, 161, .5)";
+      return row.flow_type === "saldo netto regionale" ? "rgba(58, 166, 161, .52)" : "rgba(217, 173, 72, .48)";
     });
+    var passiveRegions = rows.map(function (row) { return row.source; });
     plot("hiMobilitySankeyChart", [{
       type: "sankey",
       arrangement: "snap",
@@ -1350,9 +1357,7 @@
         pad: 14,
         thickness: 16,
         color: labels.map(function (label) {
-          if (label.indexOf("Compensazione") === 0) return COLORS[1];
-          if (label === "Arrotondamento tabella") return COLORS[7];
-          return COLORS[0];
+          return passiveRegions.indexOf(label) !== -1 ? COLORS[5] : COLORS[2];
         }),
         line: { color: cssVar("--line", "#303030"), width: 1 }
       },
@@ -1369,8 +1374,90 @@
     });
     var note = byId("hiMobilitySankeyNote");
     if (note) {
-      note.textContent = (STATE.payload.mobility && STATE.payload.mobility.warning) || "Il Sankey mostra compensazioni economiche nette, non una matrice origine-destinazione dei singoli pazienti.";
+      note.textContent = "Fonte: Corte dei conti, saldi economici della mobilita sanitaria. Elaborazione di Nazareno Lecis. Le compensazioni economiche derivano dai flussi di prestazioni/pazienti, ma il saldo netto non conserva la coppia origine-destinazione reale; il grafico abbina regioni con saldo passivo a regioni con saldo attivo per rappresentare i saldi netti 2024.";
     }
+  }
+
+  function mobilityRegionalNetLinks(minValue) {
+    var passive = [];
+    var active = [];
+    tableRows("mobility_balance").forEach(function (row) {
+      if (row.year !== 2024) return;
+      var value = toNumber(row.balance_million_eur);
+      if (value === null || value === 0) return;
+      if (value < 0) passive.push({ region: row.region, remaining: Math.abs(value) });
+      if (value > 0) active.push({ region: row.region, remaining: value });
+    });
+    passive.sort(function (a, b) { return b.remaining - a.remaining; });
+    active.sort(function (a, b) { return b.remaining - a.remaining; });
+    var links = [];
+    var i = 0;
+    var j = 0;
+    while (i < passive.length && j < active.length) {
+      var value = Math.min(passive[i].remaining, active[j].remaining);
+      if (value >= minValue) {
+        links.push({
+          source: passive[i].region,
+          target: active[j].region,
+          value_million_eur: roundDisplay(value),
+          year: 2024,
+          flow_type: "saldo netto regionale"
+        });
+      }
+      passive[i].remaining -= value;
+      active[j].remaining -= value;
+      if (passive[i].remaining <= 0.001) i += 1;
+      if (active[j].remaining <= 0.001) j += 1;
+    }
+    return links;
+  }
+
+  function roundDisplay(value) {
+    return Math.round((toNumber(value) || 0) * 1000) / 1000;
+  }
+
+  function renderMobilityHospitalSankey() {
+    var limit = chartLimit(STATE.mobilityHospitalLimit, 15);
+    var rows = tableRows("hospital_activity_top");
+    if (STATE.mobilityHospitalRegion !== "Italia") {
+      rows = rows.filter(function (row) { return row.region === STATE.mobilityHospitalRegion; });
+    }
+    rows = sortDescending(rows, "discharges").slice(0, limit);
+    if (!rows.length) {
+      showEmptyChart("hiMobilityHospitalChart", "Strutture non disponibili nel payload");
+      return;
+    }
+    var labels = [];
+    rows.forEach(function (row) {
+      if (labels.indexOf(row.region) === -1) labels.push(row.region);
+      row._hospital_label = compact(row.structure, 44) + " (" + row.province + ")";
+      if (labels.indexOf(row._hospital_label) === -1) labels.push(row._hospital_label);
+    });
+    var title = byId("hiMobilityHospitalTitle");
+    if (title) title.textContent = "Da regione a ospedali piu frequentati - " + STATE.mobilityHospitalRegion;
+    plot("hiMobilityHospitalChart", [{
+      type: "sankey",
+      arrangement: "snap",
+      node: {
+        label: labels,
+        pad: 14,
+        thickness: 16,
+        color: labels.map(function (label) {
+          return rows.some(function (row) { return row.region === label; }) ? COLORS[0] : COLORS[1];
+        }),
+        line: { color: cssVar("--line", "#303030"), width: 1 }
+      },
+      link: {
+        source: rows.map(function (row) { return labels.indexOf(row.region); }),
+        target: rows.map(function (row) { return labels.indexOf(row._hospital_label); }),
+        value: rows.map(function (row) { return toNumber(row.discharges) || 0; }),
+        color: rows.map(function () { return "rgba(93, 143, 215, .45)"; }),
+        customdata: rows.map(function (row) { return row.structure + "<br>" + row.region + ", " + row.province + "<br>Dimissioni: " + formatNumber(row.discharges); }),
+        hovertemplate: "%{customdata}<extra></extra>"
+      }
+    }], {
+      margin: { t: 12, r: 12, b: 16, l: 12 }
+    });
   }
 
   function renderMobilityBalance() {
