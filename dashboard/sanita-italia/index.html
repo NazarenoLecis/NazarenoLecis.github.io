@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-4">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-5">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-4"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-5"></script>
 </head>
 <body>
   <header class="site-header">
@@ -101,14 +101,30 @@
         <div><h2>Quante prestazioni ospedaliere e quali</h2><p>Volumi nazionali di dimissioni per disciplina, posti letto per disciplina e tipologia amministrativa di dimissione.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3>Dimissioni per disciplina</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-card-title"><h3>Dimissioni per disciplina</h3><span id="hiNationalActivityTag">Ministero Salute, 2022</span></div>
         <div class="hi-chart-controls" aria-label="Filtri dimissioni nazionali">
+          <label>Regione
+            <select id="hiNationalActivityRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiNationalActivityProvinceFilter"></select>
+          </label>
           <label>Misura
             <select id="hiNationalActivityMetricFilter">
               <option value="discharges">Dimissioni</option>
               <option value="stay_days">Giornate di degenza</option>
+              <option value="ordinary_beds">Posti letto ordinari</option>
               <option value="avg_los_days">Degenza media</option>
               <option value="bed_utilization_percent">Utilizzo posti letto</option>
+            </select>
+          </label>
+          <label>Rapporta a
+            <select id="hiNationalActivityRatioFilter">
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_total">Popolazione totale</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+              <option value="auto">Denominatore clinico</option>
             </select>
           </label>
           <label>Numero discipline
@@ -124,8 +140,11 @@
         <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3>Posti letto per disciplina</h3><span>Ministero Salute, 2023</span></div>
+        <div class="hi-card-title"><h3>Posti letto per disciplina</h3><span id="hiNationalBedsTag">Ministero Salute, 2023</span></div>
         <div class="hi-chart-controls" aria-label="Filtri posti letto nazionali">
+          <label>Territorio
+            <select id="hiNationalBedsRegionFilter"></select>
+          </label>
           <label>Anno
             <select id="hiNationalBedsYearFilter"></select>
           </label>
@@ -143,6 +162,14 @@
               <option value="25" selected>Top 25</option>
               <option value="40">Top 40</option>
               <option value="all">Tutte</option>
+            </select>
+          </label>
+          <label>Rapporta a
+            <select id="hiNationalBedsRatioFilter">
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_total">Popolazione totale</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
             </select>
           </label>
         </div>
@@ -236,8 +263,11 @@
               <option value="women_15_49">Donne 15-49</option>
             </select>
           </label>
-          <label>Focus tabella
+          <label>Regione
             <select id="hiDisciplineRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiDisciplineProvinceFilter"></select>
           </label>
         </div>
         <div id="hiDisciplineRegionChart" class="hi-chart hi-chart-wide"></div>
@@ -269,6 +299,7 @@
               <option value="absolute">Valore assoluto</option>
               <option value="population_65_plus">Popolazione 65+</option>
               <option value="population_75_plus">Popolazione 75+</option>
+              <option value="discharges">Dimissioni ospedaliere</option>
               <option value="gdp">PIL regionale</option>
             </select>
           </label>
@@ -311,6 +342,14 @@
               <option value="day_surgery_beds">Day surgery</option>
             </select>
           </label>
+          <label>Rapporta a
+            <select id="hiBedsSeriesRatioFilter">
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_total">Popolazione totale</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+            </select>
+          </label>
         </div>
         <div id="hiBedsSeriesChart" class="hi-chart"></div>
         <p class="hi-chart-credit">Fonte: Ministero della Salute. Serie costruita sui file CSV 2021 e 2023 normalizzati nella pipeline.</p>
@@ -340,6 +379,9 @@
         <div class="hi-chart-controls" aria-label="Filtri strutture">
           <label>Territorio
             <select id="hiHospitalRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiHospitalProvinceFilter"></select>
           </label>
           <label>Disciplina principale
             <select id="hiHospitalDisciplineFilter"></select>
@@ -396,6 +438,15 @@
           <label>Territorio
             <select id="hiMobilitySeriesRegionFilter"></select>
           </label>
+          <label>Rapporta a
+            <select id="hiMobilitySeriesRatioFilter">
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_total">Popolazione totale</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+              <option value="gdp">PIL regionale</option>
+            </select>
+          </label>
         </div>
         <div id="hiMobilitySeriesChart" class="hi-chart"></div>
         <p class="hi-chart-credit">La serie aiuta a distinguere oscillazioni annuali e persistenza del turismo sanitario economico.</p>
@@ -419,6 +470,9 @@
           </label>
           <label>Territorio
             <select id="hiTableRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiTableProvinceFilter"></select>
           </label>
           <label>Disciplina
             <select id="hiTableDisciplineFilter"></select>

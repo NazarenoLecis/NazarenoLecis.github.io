@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260720-3",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-3",
+    "../../data/sanita-italia/dashboard.json?v=20260720-5",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-5",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -13,13 +13,19 @@
     discipline: "",
     metric: "discharges",
     ratioMode: "population_total",
+    nationalActivityRegion: "Italia",
+    nationalActivityProvince: "all",
     nationalActivityMetric: "discharges",
+    nationalActivityRatio: "absolute",
     nationalActivityLimit: "25",
+    nationalBedsRegion: "Italia",
     nationalBedsYear: "latest",
     nationalBedsMetric: "total_beds",
+    nationalBedsRatio: "absolute",
     nationalBedsLimit: "25",
     dischargeRegion: "Italia",
     disciplineRegion: "Italia",
+    disciplineProvince: "all",
     disciplineMetric: "rate",
     denominator: "auto",
     costRegion: "Italia",
@@ -28,14 +34,18 @@
     costCompositionRegion: "Italia",
     bedsSeriesRegion: "Italia",
     bedsSeriesMetric: "total_beds",
+    bedsSeriesRatio: "absolute",
     pharmaRegion: "Italia",
     pharmaLabel: "all",
     hospitalRegion: "Italia",
+    hospitalProvince: "all",
     hospitalDiscipline: "all",
     mobilityRatio: "absolute",
     mobilitySeriesRegion: "Italia",
+    mobilitySeriesRatio: "absolute",
     mobilitySankeyMin: "0",
     tableRegion: "Italia",
+    tableProvince: "all",
     tableDiscipline: "all",
     table: "regional_summary",
     search: ""
@@ -87,6 +97,7 @@
         ["beds_per_1000", "PL/1.000"],
         ["ssn_cost_eur", "Costo SSN"],
         ["ssn_cost_per_capita_eur", "Euro pro capite"],
+        ["ssn_cost_per_discharge_eur", "Euro/dimissione"],
         ["ssn_cost_percent_gdp", "Costo/PIL"],
         ["mobility_balance_million_eur", "Saldo mobilita"],
         ["top_discipline", "Disciplina principale"]
@@ -97,6 +108,24 @@
       label: "Attivita per regione e disciplina",
       columns: [
         ["region", "Regione"],
+        ["discipline", "Disciplina"],
+        ["discharges", "Dimissioni"],
+        ["discharges_per_1000_total", "Dim./1.000 totale"],
+        ["discharges_per_1000_over65", "Dim./1.000 65+"],
+        ["discharges_per_1000_over75", "Dim./1.000 75+"],
+        ["discharges_per_1000_relevant", "Dim./1.000 denom."],
+        ["relevant_denominator", "Denominatore"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo PL"]
+      ]
+    },
+    {
+      id: "activity_by_province_discipline",
+      label: "Attivita per provincia e disciplina",
+      columns: [
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["province_name", "Nome provincia"],
         ["discipline", "Disciplina"],
         ["discharges", "Dimissioni"],
         ["discharges_per_1000_total", "Dim./1.000 totale"],
@@ -135,6 +164,7 @@
         ["amount_per_capita_eur", "Euro/ab."],
         ["amount_per_over65_eur", "Euro/65+"],
         ["amount_per_over75_eur", "Euro/75+"],
+        ["amount_per_discharge_eur", "Euro/dimissione"],
         ["amount_percent_gdp", "% PIL"],
         ["share_percent", "Quota %"],
         ["change_percent", "Var. %"],
@@ -169,6 +199,21 @@
       label: "Denominatori demografici",
       columns: [
         ["region", "Regione"],
+        ["population_total", "Popolazione"],
+        ["population_0", "Eta 0"],
+        ["population_0_14", "0-14"],
+        ["population_65_plus", "65+"],
+        ["population_75_plus", "75+"],
+        ["women_15_49", "Donne 15-49"]
+      ]
+    },
+    {
+      id: "population_denominators_province",
+      label: "Denominatori provinciali",
+      columns: [
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["province_name", "Nome provincia"],
         ["population_total", "Popolazione"],
         ["population_0", "Eta 0"],
         ["population_0_14", "0-14"],
@@ -319,7 +364,7 @@
 
   function formatCell(column, value) {
     if (/million_eur$/i.test(column)) return formatMillionEuro(value);
-    if (/per_capita_eur|per_over65_eur|per_over75_eur/i.test(column)) return formatEuroDecimal(value);
+    if (/per_capita_eur|per_over65_eur|per_over75_eur|per_discharge_eur/i.test(column)) return formatEuroDecimal(value);
     if (/eur$/i.test(column) || column === "amount_eur" || column === "ssn_cost_eur") return formatEuroCompact(value);
     if (/percent$/i.test(column)) return formatPercent(value);
     if (column === "selected_value") return formatDecimal(value);
@@ -363,6 +408,85 @@
       map[row.region] = row;
     });
     return map;
+  }
+
+  function nationalPopulation() {
+    return (STATE.payload && STATE.payload.national && STATE.payload.national.population) || {};
+  }
+
+  function provinceMeta(region, province) {
+    return toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.provinces).find(function (row) {
+      return row.region === region && row.province === province;
+    }) || null;
+  }
+
+  function provinceLabel(region, province) {
+    var meta = provinceMeta(region, province);
+    if (!province || province === "all") return "Tutte";
+    return meta && meta.province_name ? province + " - " + meta.province_name : province;
+  }
+
+  function territoryLabel(region, province) {
+    if (province && province !== "all") return provinceLabel(region, province);
+    return region || "Italia";
+  }
+
+  function provinceOptions(region) {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.provinces).filter(function (row) {
+      return region !== "Italia" && row.region === region;
+    });
+    return [{ value: "all", label: region === "Italia" ? "Seleziona una regione" : "Tutte" }].concat(rows.map(function (row) {
+      return { value: row.province, label: provinceLabel(row.region, row.province) };
+    }));
+  }
+
+  function refreshProvinceFilter(id, stateKey, region) {
+    var options = provinceOptions(region);
+    if (region === "Italia" || !options.some(function (option) { return option.value === STATE[stateKey]; })) {
+      STATE[stateKey] = "all";
+    }
+    fillSelect(id, options, STATE[stateKey]);
+    var node = byId(id);
+    if (node) node.disabled = region === "Italia";
+  }
+
+  function refreshProvinceFilters() {
+    refreshProvinceFilter("hiNationalActivityProvinceFilter", "nationalActivityProvince", STATE.nationalActivityRegion);
+    refreshProvinceFilter("hiDisciplineProvinceFilter", "disciplineProvince", STATE.disciplineRegion);
+    refreshProvinceFilter("hiHospitalProvinceFilter", "hospitalProvince", STATE.hospitalRegion);
+    refreshProvinceFilter("hiTableProvinceFilter", "tableProvince", STATE.tableRegion);
+  }
+
+  function denominatorValueForRow(row, denominator) {
+    if (!row) return null;
+    if (row[denominator] !== undefined && row[denominator] !== null) return toNumber(row[denominator]);
+    if (row.region) return toNumber((populationMap()[row.region] || {})[denominator]);
+    return toNumber(nationalPopulation()[denominator]);
+  }
+
+  function ratioLabel(mode) {
+    if (mode === "auto") return "per 1.000, denominatore clinico";
+    if (mode === "population_65_plus") return "per 1.000 residenti 65+";
+    if (mode === "population_75_plus") return "per 1.000 residenti 75+";
+    if (mode === "population_total") return "per 1.000 residenti";
+    return "valore assoluto";
+  }
+
+  function normalizedValue(row, field, mode) {
+    if (!mode || mode === "absolute") return toNumber(row[field]);
+    var denominator = mode === "auto" ? toNumber(row.relevant_population) : denominatorValueForRow(row, mode);
+    if (!denominator) return null;
+    return ((toNumber(row[field]) || 0) / denominator) * 1000;
+  }
+
+  function withNormalizedMetric(rows, field, mode) {
+    return toArray(rows).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = normalizedValue(row, field, mode);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
   }
 
   function setStatus(text, state) {
@@ -469,7 +593,8 @@
     });
     var colors = rows.map(function (row) {
       if (options.colorFor) return options.colorFor(row);
-      return options.highlight && row.region === options.highlight ? COLORS[0] : (options.color || COLORS[1]);
+      var highlightField = options.highlightField || "region";
+      return options.highlight && row[highlightField] === options.highlight ? COLORS[0] : (options.color || COLORS[1]);
     });
     plot(id, [{
       type: "bar",
@@ -535,6 +660,8 @@
     var pharmaLabels = unique(tableRows("pharma_series").map(function (row) { return row.cost_label; })).sort();
 
     [
+      ["hiNationalActivityRegionFilter", "nationalActivityRegion"],
+      ["hiNationalBedsRegionFilter", "nationalBedsRegion"],
       ["hiRegionalRegionFilter", "region"],
       ["hiDischargeRegionFilter", "dischargeRegion"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
@@ -548,6 +675,7 @@
     ].forEach(function (item) {
       fillSelect(item[0], regionOptions, STATE[item[1]]);
     });
+    refreshProvinceFilters();
 
     fillSelect("hiDisciplineFilter", disciplineOptions, STATE.discipline);
     fillSelect("hiHospitalDisciplineFilter", disciplineOptionsWithAll, STATE.hospitalDiscipline);
@@ -568,11 +696,15 @@
     if (mobilityRatioSelect) mobilityRatioSelect.value = STATE.mobilityRatio;
     [
       ["hiNationalActivityMetricFilter", "nationalActivityMetric"],
+      ["hiNationalActivityRatioFilter", "nationalActivityRatio"],
       ["hiNationalActivityLimitFilter", "nationalActivityLimit"],
       ["hiNationalBedsMetricFilter", "nationalBedsMetric"],
+      ["hiNationalBedsRatioFilter", "nationalBedsRatio"],
       ["hiNationalBedsLimitFilter", "nationalBedsLimit"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
       ["hiBedsSeriesMetricFilter", "bedsSeriesMetric"],
+      ["hiBedsSeriesRatioFilter", "bedsSeriesRatio"],
+      ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
       ["hiMobilitySankeyMinFilter", "mobilitySankeyMin"]
     ].forEach(function (item) {
       var node = byId(item[0]);
@@ -599,13 +731,19 @@
       ["hiDisciplineFilter", "discipline"],
       ["hiMetricFilter", "metric"],
       ["hiRatioFilter", "ratioMode"],
+      ["hiNationalActivityRegionFilter", "nationalActivityRegion"],
+      ["hiNationalActivityProvinceFilter", "nationalActivityProvince"],
       ["hiNationalActivityMetricFilter", "nationalActivityMetric"],
+      ["hiNationalActivityRatioFilter", "nationalActivityRatio"],
       ["hiNationalActivityLimitFilter", "nationalActivityLimit"],
+      ["hiNationalBedsRegionFilter", "nationalBedsRegion"],
       ["hiNationalBedsYearFilter", "nationalBedsYear"],
       ["hiNationalBedsMetricFilter", "nationalBedsMetric"],
+      ["hiNationalBedsRatioFilter", "nationalBedsRatio"],
       ["hiNationalBedsLimitFilter", "nationalBedsLimit"],
       ["hiDischargeRegionFilter", "dischargeRegion"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
+      ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
       ["hiDenominatorFilter", "denominator"],
       ["hiCostRegionFilter", "costRegion"],
@@ -614,14 +752,18 @@
       ["hiCostCompositionRegionFilter", "costCompositionRegion"],
       ["hiBedsSeriesRegionFilter", "bedsSeriesRegion"],
       ["hiBedsSeriesMetricFilter", "bedsSeriesMetric"],
+      ["hiBedsSeriesRatioFilter", "bedsSeriesRatio"],
       ["hiPharmaSeriesRegionFilter", "pharmaRegion"],
       ["hiPharmaSeriesLabelFilter", "pharmaLabel"],
       ["hiHospitalRegionFilter", "hospitalRegion"],
+      ["hiHospitalProvinceFilter", "hospitalProvince"],
       ["hiHospitalDisciplineFilter", "hospitalDiscipline"],
       ["hiMobilityRatioFilter", "mobilityRatio"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
+      ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
       ["hiMobilitySankeyMinFilter", "mobilitySankeyMin"],
       ["hiTableRegionFilter", "tableRegion"],
+      ["hiTableProvinceFilter", "tableProvince"],
       ["hiTableDisciplineFilter", "tableDiscipline"],
       ["hiTableSelect", "table"]
     ];
@@ -677,11 +819,22 @@
 
   function renderNationalCharts() {
     var activityConfig = nationalActivityConfig();
+    var activityRows = nationalActivityRows().map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = activityConfig.value(row);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    var activityTag = byId("hiNationalActivityTag");
+    if (activityTag) {
+      activityTag.textContent = territoryLabel(STATE.nationalActivityRegion, STATE.nationalActivityProvince) + " - " + activityConfig.context;
+    }
     horizontalBar(
       "hiNationalActivityChart",
-      sortDescending(tableRows("activity_by_discipline"), activityConfig.field),
+      sortDescending(activityRows, "selected_value"),
       "discipline",
-      activityConfig.field,
+      "selected_value",
       {
         limit: chartLimit(STATE.nationalActivityLimit, 25),
         color: COLORS[0],
@@ -695,21 +848,34 @@
     var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
     var selectedYear = STATE.nationalBedsYear === "latest" ? latestBedsYear : Number(STATE.nationalBedsYear);
     var bedConfig = bedMetricConfig(STATE.nationalBedsMetric);
-    var bedRows = tableRows("beds_by_discipline").filter(function (row) {
+    var bedRows = (STATE.nationalBedsRegion === "Italia" ? tableRows("beds_by_discipline") : tableRows("beds_by_region_discipline").filter(function (row) {
+      return row.region === STATE.nationalBedsRegion;
+    })).filter(function (row) {
       return row.year === selectedYear && toNumber(row[bedConfig.field]) > 0;
+    });
+    bedRows = withNormalizedMetric(bedRows, bedConfig.field, STATE.nationalBedsRatio);
+    var bedTag = byId("hiNationalBedsTag");
+    if (bedTag) {
+      bedTag.textContent = territoryLabel(STATE.nationalBedsRegion, "all") + " - " + selectedYear + " - " + ratioLabel(STATE.nationalBedsRatio);
+    }
+    var bedLabel = STATE.nationalBedsRatio === "absolute" ? bedConfig.label : bedConfig.label + " " + ratioLabel(STATE.nationalBedsRatio);
+    var bedFormat = STATE.nationalBedsRatio === "absolute" ? formatNumber : formatDecimal;
+    var bedXTitle = STATE.nationalBedsRatio === "absolute" ? bedConfig.xTitle : ratioLabel(STATE.nationalBedsRatio);
+    bedRows = bedRows.filter(function (row) {
+      return toNumber(row.selected_value) !== null;
     });
     horizontalBar(
       "hiNationalBedsChart",
-      sortDescending(bedRows, bedConfig.field),
+      sortDescending(bedRows, "selected_value"),
       "discipline",
-      bedConfig.field,
+      "selected_value",
       {
         limit: chartLimit(STATE.nationalBedsLimit, 25),
         color: COLORS[2],
         leftMargin: 210,
-        xTitle: bedConfig.xTitle,
-        format: formatNumber,
-        hovertemplate: "%{y}<br>" + bedConfig.label + ": %{text}<extra></extra>"
+        xTitle: bedXTitle,
+        format: bedFormat,
+        hovertemplate: "%{y}<br>" + bedLabel + ": %{text}<extra></extra>"
       }
     );
 
@@ -723,10 +889,49 @@
 
   function nationalActivityConfig() {
     var metric = STATE.nationalActivityMetric;
-    if (metric === "stay_days") return { label: "Giornate di degenza", field: "stay_days", xTitle: "giornate", format: formatNumber };
-    if (metric === "avg_los_days") return { label: "Degenza media", field: "avg_los_days", xTitle: "giorni", format: function (value) { return formatDecimal(value) + " giorni"; } };
-    if (metric === "bed_utilization_percent") return { label: "Utilizzo posti letto", field: "bed_utilization_percent", xTitle: "% utilizzo", format: formatPercent };
-    return { label: "Dimissioni", field: "discharges", xTitle: "dimissioni", format: formatNumber };
+    var mode = STATE.nationalActivityRatio;
+    var normalizable = metric === "discharges" || metric === "stay_days" || metric === "ordinary_beds";
+    var labels = {
+      discharges: "Dimissioni",
+      stay_days: "Giornate di degenza",
+      ordinary_beds: "Posti letto ordinari",
+      avg_los_days: "Degenza media",
+      bed_utilization_percent: "Utilizzo posti letto"
+    };
+    var fields = {
+      discharges: "discharges",
+      stay_days: "stay_days",
+      ordinary_beds: "ordinary_beds",
+      avg_los_days: "avg_los_days",
+      bed_utilization_percent: "bed_utilization_percent"
+    };
+    if (metric === "avg_los_days") return { label: labels[metric], field: fields[metric], value: function (row) { return toNumber(row.avg_los_days); }, xTitle: "giorni", format: function (value) { return formatDecimal(value) + " giorni"; }, context: "valore medio" };
+    if (metric === "bed_utilization_percent") return { label: labels[metric], field: fields[metric], value: function (row) { return toNumber(row.bed_utilization_percent); }, xTitle: "% utilizzo", format: formatPercent, context: "rapporto giornate/giornate disponibili" };
+    if (normalizable && mode !== "absolute") {
+      return {
+        label: labels[metric] + " " + ratioLabel(mode),
+        field: fields[metric],
+        value: function (row) { return normalizedValue(row, fields[metric], mode); },
+        xTitle: ratioLabel(mode),
+        format: formatDecimal,
+        context: ratioLabel(mode)
+      };
+    }
+    return { label: labels[metric] || labels.discharges, field: fields[metric] || "discharges", value: function (row) { return toNumber(row[fields[metric] || "discharges"]); }, xTitle: metric === "ordinary_beds" ? "posti letto ordinari" : (metric === "stay_days" ? "giornate" : "dimissioni"), format: formatNumber, context: "valore assoluto" };
+  }
+
+  function nationalActivityRows() {
+    if (STATE.nationalActivityRegion !== "Italia" && STATE.nationalActivityProvince !== "all") {
+      return tableRows("activity_by_province_discipline").filter(function (row) {
+        return row.region === STATE.nationalActivityRegion && row.province === STATE.nationalActivityProvince;
+      });
+    }
+    if (STATE.nationalActivityRegion !== "Italia") {
+      return tableRows("activity_by_region_discipline").filter(function (row) {
+        return row.region === STATE.nationalActivityRegion;
+      });
+    }
+    return tableRows("activity_by_discipline");
   }
 
   function bedMetricConfig(metric) {
@@ -887,15 +1092,10 @@
     createTable("hiRegionalSummaryTable", filteredByRegion(tableRows("regional_summary")), tableOption("regional_summary").columns, 30);
   }
 
-  function denominatorValue(region, denominator) {
-    var pop = populationMap()[region] || {};
-    return toNumber(pop[denominator]);
-  }
-
   function disciplineRate(row) {
     var denominator = STATE.denominator;
     if (denominator === "auto") return toNumber(row.discharges_per_1000_relevant);
-    var value = denominatorValue(row.region, denominator);
+    var value = denominatorValueForRow(row, denominator);
     if (!value) return null;
     return ((toNumber(row.discharges) || 0) / value) * 1000;
   }
@@ -912,23 +1112,30 @@
 
   function renderDiscipline() {
     var config = disciplineMetricConfig();
-    var rows = tableRows("activity_by_region_discipline").filter(function (row) {
-      return row.discipline === STATE.discipline;
+    var provinceLevel = STATE.disciplineRegion !== "Italia";
+    var rows = (provinceLevel ? tableRows("activity_by_province_discipline") : tableRows("activity_by_region_discipline")).filter(function (row) {
+      if (row.discipline !== STATE.discipline) return false;
+      if (!provinceLevel) return true;
+      if (row.region !== STATE.disciplineRegion) return false;
+      return STATE.disciplineProvince === "all" || row.province === STATE.disciplineProvince;
     }).map(function (row) {
       var copy = Object.assign({}, row);
       copy.selected_value = config.rate ? disciplineRate(row) : toNumber(row[config.field]);
+      copy.territory_label = provinceLevel ? provinceLabel(row.region, row.province) : row.region;
       return copy;
     });
     rows.sort(function (a, b) { return (toNumber(b.selected_value) || 0) - (toNumber(a.selected_value) || 0); });
     var title = byId("hiDisciplineRegionTitle");
     var tag = byId("hiDisciplineRegionTag");
     var denominatorLabel = STATE.denominator === "auto" ? "automatico" : DENOMINATORS[STATE.denominator];
+    var territory = territoryLabel(STATE.disciplineRegion, STATE.disciplineProvince);
     if (title) title.textContent = STATE.discipline || "Disciplina";
-    if (tag) tag.textContent = config.rate ? "per 1.000, denominatore " + denominatorLabel : config.label;
-    horizontalBar("hiDisciplineRegionChart", rows, "region", "selected_value", {
-      limit: 21,
-      highlight: STATE.disciplineRegion,
-      leftMargin: 150,
+    if (tag) tag.textContent = territory + " - " + (config.rate ? "per 1.000, denominatore " + denominatorLabel : config.label);
+    horizontalBar("hiDisciplineRegionChart", rows, "territory_label", "selected_value", {
+      limit: provinceLevel ? 40 : 21,
+      highlight: provinceLevel ? STATE.disciplineProvince : STATE.disciplineRegion,
+      highlightField: provinceLevel ? "province" : "region",
+      leftMargin: provinceLevel ? 190 : 150,
       xTitle: config.xTitle,
       format: config.format,
       hovertemplate: "%{y}<br>" + config.label + ": %{text}<extra></extra>"
@@ -937,15 +1144,17 @@
     if (note) {
       note.textContent = config.rate ? "Denominatore selezionato: " + denominatorLabel + ". La tabella riporta anche volumi assoluti, degenza media e utilizzo dei posti letto." : "Misura selezionata: " + config.label + ". I tassi per popolazione restano disponibili cambiando misura.";
     }
-    createTable("hiDisciplineTable", STATE.disciplineRegion === "Italia" ? rows : rows.filter(function (row) { return row.region === STATE.disciplineRegion; }), [
-      ["region", "Regione"],
+    var tableColumns = [
+      [provinceLevel ? "province" : "region", provinceLevel ? "Provincia" : "Regione"],
       ["discipline", "Disciplina"],
       ["discharges", "Dimissioni"],
       ["selected_value", config.label],
       ["relevant_denominator", "Denom. auto"],
       ["avg_los_days", "Degenza media"],
       ["bed_utilization_percent", "Utilizzo PL"]
-    ], 40);
+    ];
+    if (provinceLevel) tableColumns.splice(1, 0, ["province_name", "Nome provincia"]);
+    createTable("hiDisciplineTable", rows, tableColumns, 80);
   }
 
   function costMetricConfig() {
@@ -953,6 +1162,7 @@
     if (mode === "population_65_plus") return { label: "per residente 65+", field: "amount_per_over65_eur", xTitle: "euro per residente 65+", format: formatEuroDecimal };
     if (mode === "population_75_plus") return { label: "per residente 75+", field: "amount_per_over75_eur", xTitle: "euro per residente 75+", format: formatEuroDecimal };
     if (mode === "gdp") return { label: "in rapporto al PIL", field: "amount_percent_gdp", xTitle: "% del PIL", format: formatPercent };
+    if (mode === "discharges") return { label: "per dimissione ospedaliera", field: "amount_per_discharge_eur", xTitle: "euro per dimissione", format: formatEuroDecimal };
     if (mode === "absolute") return { label: "totale", field: "amount_billion", xTitle: "miliardi di euro", format: function (value) { return formatDecimal(value) + " mld euro"; } };
     return { label: "pro capite", field: "amount_per_capita_eur", xTitle: "euro per abitante", format: formatEuroDecimal };
   }
@@ -1035,19 +1245,25 @@
     } else {
       rows = source.filter(function (row) { return row.region === region; });
     }
+    rows = rows.map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = normalizedValue(row, metric.field, STATE.bedsSeriesRatio);
+      return copy;
+    });
     rows.sort(function (a, b) { return a.year - b.year; });
     var title = byId("hiBedsSeriesTitle");
-    if (title) title.textContent = metric.label + " nel tempo - " + region;
+    if (title) title.textContent = metric.label + " nel tempo - " + region + " - " + ratioLabel(STATE.bedsSeriesRatio);
+    var valueFormat = STATE.bedsSeriesRatio === "absolute" ? "%{y:,.0f}" : "%{y:,.2f}";
     lineChart("hiBedsSeriesChart", [{
       type: "scatter",
       mode: "lines+markers",
       name: metric.label,
       x: rows.map(function (row) { return row.year; }),
-      y: rows.map(function (row) { return row[metric.field]; }),
+      y: rows.map(function (row) { return row.selected_value; }),
       line: { color: COLORS[2], width: 3 },
       marker: { size: 8 },
-      hovertemplate: "%{x}<br>" + metric.label + ": %{y:,.0f}<extra></extra>"
-    }], { yTitle: metric.xTitle });
+      hovertemplate: "%{x}<br>" + metric.label + ": " + valueFormat + "<extra></extra>"
+    }], { yTitle: STATE.bedsSeriesRatio === "absolute" ? metric.xTitle : ratioLabel(STATE.bedsSeriesRatio) });
   }
 
   function renderPharmaSeries() {
@@ -1080,10 +1296,11 @@
   function renderHospitals() {
     var rows = tableRows("hospital_activity_top");
     if (STATE.hospitalRegion !== "Italia") rows = rows.filter(function (row) { return row.region === STATE.hospitalRegion; });
+    if (STATE.hospitalProvince !== "all") rows = rows.filter(function (row) { return row.province === STATE.hospitalProvince; });
     if (STATE.hospitalDiscipline !== "all") rows = rows.filter(function (row) { return row.main_discipline === STATE.hospitalDiscipline; });
     rows = sortDescending(rows, "discharges");
     var title = byId("hiHospitalTitle");
-    if (title) title.textContent = "Top strutture per dimissioni - " + STATE.hospitalRegion;
+    if (title) title.textContent = "Top strutture per dimissioni - " + territoryLabel(STATE.hospitalRegion, STATE.hospitalProvince);
     horizontalBar("hiHospitalChart", rows, "structure", "discharges", {
       limit: 22,
       color: COLORS[6],
@@ -1202,10 +1419,10 @@
         item[config.sourceField] = grouped[year];
         return item;
       });
-      if (title) title.textContent = "Serie storica del saldo - Italia";
+      if (title) title.textContent = "Serie storica del saldo - Italia - " + config.xTitle;
     } else {
       rows = source.filter(function (row) { return row.region === STATE.mobilitySeriesRegion; });
-      if (title) title.textContent = "Serie storica del saldo - " + STATE.mobilitySeriesRegion;
+      if (title) title.textContent = "Serie storica del saldo - " + STATE.mobilitySeriesRegion + " - " + config.xTitle;
     }
     rows.sort(function (a, b) { return a.year - b.year; });
     lineChart("hiMobilitySeriesChart", [{
@@ -1221,7 +1438,7 @@
   }
 
   function mobilitySeriesMetricConfig() {
-    var mode = STATE.mobilityRatio;
+    var mode = STATE.mobilitySeriesRatio;
     if (mode === "population_total") return { sourceField: "balance_per_capita_eur", xTitle: "euro per abitante" };
     if (mode === "population_65_plus") return { sourceField: "balance_per_over65_eur", xTitle: "euro per residente 65+" };
     if (mode === "population_75_plus") return { sourceField: "balance_per_over75_eur", xTitle: "euro per residente 75+" };
@@ -1289,6 +1506,7 @@
 
   function rowMatchesExplorer(row) {
     if (row.region && STATE.tableRegion !== "Italia" && row.region !== STATE.tableRegion) return false;
+    if (row.province && STATE.tableProvince !== "all" && row.province !== STATE.tableProvince) return false;
     if (row.discipline && STATE.tableDiscipline !== "all" && row.discipline !== STATE.tableDiscipline) return false;
     if (row.cost_type && row.cost_type !== STATE.costType && STATE.table.indexOf("cost") !== -1) return false;
     var term = STATE.search.trim().toLowerCase();
@@ -1375,6 +1593,7 @@
   }
 
   function renderDynamic() {
+    refreshProvinceFilters();
     renderNationalCharts();
     renderRegionalRank();
     renderRegionProfile();
