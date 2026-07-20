@@ -1,22 +1,25 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/valore-aggiunto-imprese/dashboard.json?v=20260720-7";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/valore-aggiunto-imprese/dashboard.json?v=20260720-10";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var EU27 = ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"];
   var SECTION_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U"];
   var AGGREGATE_CODES = ["B-E", "G-I", "M_N", "O-Q", "R-U"];
+  var SBS_SECTION_CODES = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "P", "Q", "R"];
+  var SBS_TOTAL_COMPONENT_CODES = SBS_SECTION_CODES.concat(["S95", "S96"]);
+  var REGIONAL_SEPARATE_CODES = ["A", "B-E", "F", "G-I", "J", "K", "L", "M_N", "O-Q", "R-U"];
   var THEMATIC_AGGREGATES = [
     {
       code: "THEME_TOURISM_NARROW",
-      label: "Turismo proxy stretto",
+      label: "Turismo (proxy stretto)",
       components: ["I", "N79"],
       note: "Aggrega alloggio e ristorazione con agenzie di viaggio e tour operator. Non coincide con il conto satellite del turismo."
     },
     {
       code: "THEME_TOURISM_EXTENDED",
-      label: "Turismo proxy esteso",
-      components: ["I", "N79", "H50", "H51", "R90-R92", "R93"],
+      label: "Turismo (proxy esteso)",
+      components: ["I", "N79", "H50", "H51", "R90-R92", "R90", "R91", "R92", "R93"],
       note: "Aggiunge trasporto marittimo, trasporto aereo, cultura, intrattenimento e sport. Include anche attivita non turistiche."
     },
     {
@@ -39,14 +42,26 @@
     },
     {
       code: "THEME_LOCAL_SERVICES",
-      label: "Cultura, sport e altri servizi",
+      label: "Altro: cultura, sport e servizi personali",
       components: ["R", "S"],
       note: "Aggrega attivita ricreative, culturali, sportive e altri servizi alla persona."
+    },
+    {
+      code: "THEME_CULTURE_SPORT",
+      label: "Cultura, sport e ricreazione",
+      components: ["R"],
+      note: "Voce ufficiale NACE R, isolata per distinguere cultura, spettacolo, sport e ricreazione."
+    },
+    {
+      code: "THEME_OTHER_SERVICES",
+      label: "Altri servizi personali",
+      components: ["S"],
+      note: "Voce ufficiale NACE S, utile per non perdere il blocco degli altri servizi nel confronto."
     }
   ];
-  var SBS_SECTOR_ORDER = ["C", "F", "G", "H", "I", "J", "M", "N"];
   var SIZE_ORDER = ["0-9", "10-19", "20-49", "50-249", "250+"];
   var MICRO_SIZE_ORDER = ["0 dip.", "1-4 dip.", "5-9 dip."];
+  var SBS_TOTAL_CODE = "SBS_TOTAL";
   var DEFAULT_SERIES_SECTORS = ["TOTAL", "C", "G", "H", "I", "J"];
   var DEFAULT_TREND_COUNTRIES = ["IT", "DE", "FR", "ES", "PL"];
   var CHART_SOURCE_NOTE = "Fonte: Eurostat. Elaborazione di Nazareno Lecis.";
@@ -82,21 +97,36 @@
   };
   var SECTOR_LABELS_IT = {
     TOTAL: "Totale economia",
+    SBS_TOTAL: "Totale settori imprese SBS",
     A: "Agricoltura, silvicoltura e pesca",
     A01: "Agricoltura e attivita connesse",
     A02: "Silvicoltura",
     A03: "Pesca e acquacoltura",
     B: "Estrazione di minerali",
+    B05: "Estrazione di carbone",
+    B06: "Estrazione di petrolio e gas naturale",
+    B07: "Estrazione di minerali metalliferi",
+    B08: "Altre attivita estrattive",
+    B09: "Servizi di supporto all'estrazione",
     "B-E": "Industria esclusa costruzioni",
     C: "Manifattura",
+    C10: "Industrie alimentari",
     "C10-C12": "Alimentari, bevande e tabacco",
+    C11: "Bevande",
+    C12: "Tabacco",
+    C13: "Tessile",
     "C13-C15": "Tessile, abbigliamento, pelle e calzature",
+    C13_C14: "Tessile e abbigliamento",
+    C14: "Abbigliamento",
+    C15: "Pelle, calzature e articoli in pelle",
     C16: "Legno e prodotti in legno",
     "C16-C18": "Legno, carta e stampa",
     C17: "Carta e prodotti di carta",
+    C17_C18: "Carta e stampa",
     C18: "Stampa e riproduzione",
     C19: "Coke e prodotti petroliferi raffinati",
     C20: "Chimica",
+    C20_C21: "Chimica e farmaceutica",
     C21: "Farmaceutica",
     C22: "Gomma e plastica",
     C22_C23: "Gomma, plastica e minerali non metalliferi",
@@ -110,15 +140,23 @@
     C29: "Autoveicoli, rimorchi e semirimorchi",
     C29_C30: "Mezzi di trasporto",
     C30: "Altri mezzi di trasporto",
+    C31: "Mobili",
     "C31-C33": "Mobili, altre manifatture e riparazioni",
     C31_C32: "Mobili e altre manifatture",
+    C32: "Altre manifatture",
     C33: "Riparazione, manutenzione e installazione di macchine",
     D: "Energia elettrica, gas, vapore e aria condizionata",
     D35: "Energia elettrica, gas, vapore e aria condizionata",
     E: "Acqua, reti fognarie, rifiuti e risanamento",
     E36: "Raccolta, trattamento e fornitura di acqua",
+    E37: "Reti fognarie",
+    E38: "Raccolta, trattamento e smaltimento dei rifiuti",
     "E37-E39": "Reti fognarie, rifiuti e risanamento",
+    E39: "Risanamento e altri servizi di gestione dei rifiuti",
     F: "Costruzioni",
+    F41: "Costruzione di edifici",
+    F42: "Ingegneria civile",
+    F43: "Lavori di costruzione specializzati",
     G: "Commercio all'ingrosso e al dettaglio",
     G45: "Commercio e riparazione di autoveicoli",
     G46: "Commercio all'ingrosso",
@@ -132,12 +170,18 @@
     H52: "Magazzinaggio e attivita di supporto ai trasporti",
     H53: "Servizi postali e corriere",
     I: "Alloggio e ristorazione",
+    I55: "Alloggio",
+    I56: "Ristorazione",
     J: "Informazione e comunicazione",
     J58: "Editoria",
     "J58-J60": "Editoria, audiovisivo e trasmissioni",
+    J59: "Cinema, video e musica",
     J59_J60: "Audiovisivo e attivita di programmazione",
+    J60: "Programmazione e trasmissione",
     J61: "Telecomunicazioni",
+    J62: "Software e consulenza informatica",
     J62_J63: "Software, consulenza informatica e servizi informativi",
+    J63: "Servizi informativi",
     K: "Attivita finanziarie e assicurative",
     "K-N": "Servizi finanziari, immobiliari, professionali e amministrativi",
     K64: "Servizi finanziari",
@@ -147,19 +191,26 @@
     L68: "Attivita immobiliari",
     L68A: "Affitti imputati delle abitazioni occupate dai proprietari",
     M: "Attivita professionali, scientifiche e tecniche",
+    M69: "Attivita legali e contabilita",
     "M69-M71": "Legale, contabilita, consulenza e architettura",
     M69_M70: "Legale, contabilita e consulenza gestionale",
+    M70: "Direzione aziendale e consulenza gestionale",
     M71: "Architettura e ingegneria",
     M72: "Ricerca e sviluppo",
     M73: "Pubblicita e ricerche di mercato",
     "M73-M75": "Pubblicita, ricerche di mercato e altre attivita professionali",
+    M74: "Altre attivita professionali, scientifiche e tecniche",
     M74_M75: "Altre attivita professionali e veterinarie",
+    M75: "Servizi veterinari",
     M_N: "Servizi professionali, scientifici, tecnici e amministrativi",
     N: "Servizi amministrativi e di supporto",
     N77: "Noleggio e leasing",
     N78: "Ricerca, selezione e fornitura di personale",
     N79: "Agenzie di viaggio e tour operator",
+    N80: "Sicurezza e investigazione",
+    N81: "Servizi per edifici e paesaggio",
     "N80-N82": "Sicurezza, servizi agli edifici e supporto alle imprese",
+    N82: "Supporto amministrativo e servizi alle imprese",
     O: "Pubblica amministrazione e difesa",
     O84: "Pubblica amministrazione e difesa; assicurazione sociale obbligatoria",
     "O-Q": "Pubblica amministrazione, istruzione, sanita e sociale",
@@ -167,8 +218,13 @@
     P85: "Istruzione",
     Q: "Sanita e assistenza sociale",
     Q86: "Sanita",
+    Q87: "Assistenza residenziale",
     Q87_Q88: "Assistenza residenziale e sociale",
+    Q88: "Assistenza sociale non residenziale",
     R: "Arte, sport e intrattenimento",
+    R90: "Attivita creative, artistiche e di intrattenimento",
+    R91: "Biblioteche, archivi, musei e attivita culturali",
+    R92: "Gioco e scommesse",
     "R90-R92": "Attivita creative, artistiche, intrattenimento e gioco",
     R93: "Attivita sportive e ricreative",
     "R-U": "Arte, intrattenimento e altri servizi",
@@ -186,12 +242,12 @@
     recordCache: {},
     country: "IT",
     year: null,
-    sectorMode: "sections",
+    sectorMode: "detail",
     sectorMeasure: "na_value",
     sectorCountry: "IT",
     sectorYear: null,
     rankMode: "top",
-    rankCount: "12",
+    rankCount: "all",
     seriesView: "countries",
     seriesCountry: "IT",
     seriesSectors: DEFAULT_SERIES_SECTORS.slice(),
@@ -217,7 +273,10 @@
     sizeTrendMeasure: "value_added",
     regionalCountry: "IT",
     regionalYear: null,
-    regionalSector: "TOTAL"
+    regionalSector: "TOTAL",
+    regionalView: "regions",
+    regionalRegion: null,
+    regionalSectorMode: "separate"
   };
 
   function byId(id) {
@@ -274,7 +333,8 @@
   function sectorLabel(rowOrCode, fallback) {
     var code = typeof rowOrCode === "string" ? rowOrCode : rowOrCode && rowOrCode.sector_code;
     var sourceLabel = typeof rowOrCode === "string" ? fallback : rowOrCode && rowOrCode.sector_label;
-    return SECTOR_LABELS_IT[code] || sourceLabel || fallback || code || "";
+    var theme = THEMATIC_AGGREGATES.find(function (item) { return item.code === code; });
+    return SECTOR_LABELS_IT[code] || (theme && theme.label) || sourceLabel || fallback || code || "";
   }
 
   function formatMoney(value) {
@@ -480,6 +540,34 @@
       .map(function (row) { return { value: row.code, label: row.code + " - " + sectorLabel(row.code, optionLabel(row)) }; });
   }
 
+  function codeListOptions(codes) {
+    var available = {};
+    lookup("sbs_sectors").forEach(function (row) {
+      available[row.code] = optionLabel(row);
+    });
+    return codes.filter(function (code) { return available[code]; })
+      .map(function (code) { return { value: code, label: code + " - " + sectorLabel(code, available[code]) }; });
+  }
+
+  function isNaceDivision(code) {
+    return /^[A-Z][0-9]{2}$/.test(code || "");
+  }
+
+  function themeSectorOptions() {
+    return THEMATIC_AGGREGATES.map(function (theme) {
+      return { value: theme.code, label: "Tema - " + theme.label };
+    });
+  }
+
+  function nationalSectorOptionsWithThemes(includeTotal) {
+    return sectorOptions("sectors", includeTotal).concat(themeSectorOptions());
+  }
+
+  function sbsSectorOptionsWithTotal() {
+    return [{ value: SBS_TOTAL_CODE, label: "Totale settori imprese SBS" }]
+      .concat(sectorOptions("sbs_sectors", false));
+  }
+
   function effectiveYear(recordsList, preferredYear) {
     var preferred = Number(preferredYear);
     var years = yearOptions(recordsList).map(function (row) { return Number(row.value); });
@@ -539,6 +627,24 @@
         theme_components: components.map(function (row) { return sectorLabel(row); }).join("; ")
       };
     }).filter(Boolean);
+  }
+
+  function nationalRowsWithThemes() {
+    if (!state.recordCache.sector_value_added_with_themes) {
+      var baseRows = records("sector_value_added");
+      var groups = {};
+      baseRows.forEach(function (row) {
+        var key = row.country_code + "-" + Number(row.year);
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(row);
+      });
+      var themedRows = [];
+      Object.keys(groups).forEach(function (key) {
+        themedRows = themedRows.concat(thematicRows(groups[key]));
+      });
+      state.recordCache.sector_value_added_with_themes = baseRows.concat(themedRows);
+    }
+    return state.recordCache.sector_value_added_with_themes;
   }
 
   function totalByYear(country) {
@@ -734,7 +840,7 @@
   }
 
   function syncSeriesSectors() {
-    var options = sectorOptions("sectors", true);
+    var options = nationalSectorOptionsWithThemes(true);
     var codes = options.map(function (option) { return option.value; });
     state.seriesSectors = toArray(state.seriesSectors).filter(function (code) {
       return codes.indexOf(code) >= 0;
@@ -782,7 +888,7 @@
 
   function seriesRowsForRange() {
     if (state.seriesView === "countries") {
-      return records("sector_value_added").filter(function (row) {
+      return nationalRowsWithThemes().filter(function (row) {
         return state.countryTrendCountries.indexOf(row.country_code) >= 0
           && row.sector_code === state.countryTrendSector
           && number(row.value_million_eur) !== null;
@@ -792,15 +898,22 @@
       var config = sizeTrendConfig();
       if (config.unit === "value_per_employed") {
         var employment = {};
-        records("firm_size_employment").forEach(function (row) {
-          if (row.country_code !== state.sizeTrendCountry || row.sector_code !== state.sizeTrendSector) return;
+        sizeSourceRows(
+          "firm_size_employment",
+          "persons_employed",
+          state.sizeTrendCountry,
+          state.sizeTrendSector,
+          null
+        ).forEach(function (row) {
           employment[Number(row.year) + "-" + row.size_class] = number(row.persons_employed);
         });
-        return records("firm_size_value_added").filter(function (row) {
-          return row.country_code === state.sizeTrendCountry
-            && row.sector_code === state.sizeTrendSector
-            && number(row.value_million_eur) !== null;
-        }).map(function (row) {
+        return sizeSourceRows(
+          "firm_size_value_added",
+          "value_million_eur",
+          state.sizeTrendCountry,
+          state.sizeTrendSector,
+          null
+        ).map(function (row) {
           var employed = employment[Number(row.year) + "-" + row.size_class];
           return Object.assign({}, row, {
             persons_employed: employed,
@@ -810,13 +923,15 @@
           return number(row.value_per_employed) !== null;
         });
       }
-      return records(config.key).filter(function (row) {
-        return row.country_code === state.sizeTrendCountry
-          && row.sector_code === state.sizeTrendSector
-          && number(row[config.valueField]) !== null;
-      });
+      return sizeSourceRows(
+        config.key,
+        config.valueField,
+        state.sizeTrendCountry,
+        state.sizeTrendSector,
+        null
+      );
     }
-    return records("sector_value_added").filter(function (row) {
+    return nationalRowsWithThemes().filter(function (row) {
       return row.country_code === state.seriesCountry
         && state.seriesSectors.indexOf(row.sector_code) >= 0
         && number(row.value_million_eur) !== null;
@@ -867,7 +982,7 @@
 
     if (state.seriesView === "countries") {
       var countryOpts = syncSeriesCountries();
-      makeSelect(container, "Settore", state.countryTrendSector, sectorOptions("sectors", true), function (value) {
+      makeSelect(container, "Settore", state.countryTrendSector, nationalSectorOptionsWithThemes(true), function (value) {
         state.countryTrendSector = value;
         renderSeriesFilters();
         renderSeriesChart();
@@ -892,7 +1007,7 @@
         renderSeriesFilters();
         renderSeriesChart();
       });
-      makeSelect(container, "Settore imprese", state.sizeTrendSector, sectorOptions("sbs_sectors", false), function (value) {
+      makeSelect(container, "Settore imprese", state.sizeTrendSector, sbsSectorOptionsWithTotal(), function (value) {
         state.sizeTrendSector = value;
         renderSeriesFilters();
         renderSeriesChart();
@@ -1057,7 +1172,9 @@
       : (config.unit === "value_per_employed" ? "valore aggiunto per occupato" : "valore aggiunto");
     byId("vaiSeriesTitle").textContent = sectorLabel(state.sizeTrendSector) + " per classe dimensionale";
     byId("vaiSeriesTag").textContent = countryLabel(state.sizeTrendCountry) + " - " + text(state.seriesStartYear) + "-" + text(state.seriesEndYear);
-    byId("vaiSeriesNote").textContent = "Ogni linea e una classe dimensionale nel settore selezionato. La misura corrente lavora su " + measureText + " nel perimetro delle statistiche strutturali d'impresa.";
+    byId("vaiSeriesNote").textContent = state.sizeTrendSector === SBS_TOTAL_CODE
+      ? "Ogni linea e una classe dimensionale aggregata sui settori SBS disponibili. La misura corrente lavora su " + measureText + " nel perimetro delle statistiche strutturali d'impresa."
+      : "Ogni linea e una classe dimensionale nel settore selezionato. La misura corrente lavora su " + measureText + " nel perimetro delle statistiche strutturali d'impresa.";
     renderGuidance("vaiSeriesGuidance", [
       {
         title: "Classi dimensionali",
@@ -1129,6 +1246,38 @@
     return rows.slice().sort(function (a, b) {
       return SIZE_ORDER.indexOf(a.size_class) - SIZE_ORDER.indexOf(b.size_class);
     });
+  }
+
+  function sizeSourceRows(key, valueField, country, sector, year) {
+    var rows = records(key).filter(function (row) {
+      if (row.country_code !== country) return false;
+      if (year !== null && year !== undefined && Number(row.year) !== Number(year)) return false;
+      if (sector === SBS_TOTAL_CODE && SBS_TOTAL_COMPONENT_CODES.indexOf(row.sector_code) < 0) return false;
+      if (sector !== SBS_TOTAL_CODE && row.sector_code !== sector) return false;
+      return number(row[valueField]) !== null;
+    });
+    if (sector !== SBS_TOTAL_CODE) return sortedSizeRows(rows);
+    var grouped = {};
+    rows.forEach(function (row) {
+      var groupKey = Number(row.year) + "-" + row.size_class;
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = {
+          year: Number(row.year),
+          country_code: row.country_code,
+          country_name: row.country_name,
+          sector_code: SBS_TOTAL_CODE,
+          sector_label: sectorLabel(SBS_TOTAL_CODE),
+          size_class: row.size_class,
+          source: row.source,
+          dataset: row.dataset
+        };
+        grouped[groupKey][valueField] = 0;
+      }
+      grouped[groupKey][valueField] += number(row[valueField]) || 0;
+    });
+    return sortedSizeRows(Object.keys(grouped).map(function (groupKey) {
+      return grouped[groupKey];
+    }));
   }
 
   function sizeChartConfig() {
@@ -1203,12 +1352,7 @@
   }
 
   function sizeRows(key, valueField) {
-    return sortedSizeRows(records(key).filter(function (row) {
-      return row.country_code === state.sizeCountry
-        && row.sector_code === state.sizeSector
-        && Number(row.year) === Number(state.sizeYear)
-        && number(row[valueField]) !== null;
-    }));
+    return sizeSourceRows(key, valueField, state.sizeCountry, state.sizeSector, state.sizeYear);
   }
 
   function sectorMeasureConfig() {
@@ -1252,25 +1396,34 @@
     return records("sector_value_added");
   }
 
+  function sbsSectorCodesForMode() {
+    if (state.sectorMode === "detail") {
+      return lookup("sbs_sectors").map(function (row) { return row.code; })
+        .filter(function (code) { return isNaceDivision(code); });
+    }
+    return SBS_TOTAL_COMPONENT_CODES.slice();
+  }
+
   function sbsSectorAggregates(country, year) {
+    var sectorCodes = sbsSectorCodesForMode();
     var bySector = {};
     records("firm_size_enterprises").forEach(function (row) {
       if (row.country_code !== country || Number(row.year) !== Number(year)) return;
-      if (SBS_SECTOR_ORDER.indexOf(row.sector_code) < 0) return;
+      if (sectorCodes.indexOf(row.sector_code) < 0) return;
       var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0 };
       item.enterprises += number(row.enterprises) || 0;
       bySector[row.sector_code] = item;
     });
     records("firm_size_value_added").forEach(function (row) {
       if (row.country_code !== country || Number(row.year) !== Number(year)) return;
-      if (SBS_SECTOR_ORDER.indexOf(row.sector_code) < 0) return;
+      if (sectorCodes.indexOf(row.sector_code) < 0) return;
       var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0 };
       item.value_million_eur += number(row.value_million_eur) || 0;
       bySector[row.sector_code] = item;
     });
     records("firm_size_employment").forEach(function (row) {
       if (row.country_code !== country || Number(row.year) !== Number(year)) return;
-      if (SBS_SECTOR_ORDER.indexOf(row.sector_code) < 0) return;
+      if (sectorCodes.indexOf(row.sector_code) < 0) return;
       var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0 };
       item.persons_employed += number(row.persons_employed) || 0;
       bySector[row.sector_code] = item;
@@ -1338,6 +1491,7 @@
     clear(container);
     var config = sectorMeasureConfig();
     if (sectorMeasureUsesSbs() && state.sectorCountry === "EU27_2020") state.sectorCountry = "IT";
+    if (sectorMeasureUsesSbs() && state.sectorMode === "themes") state.sectorMode = "sections";
     var countryOpts = countryOptions(!sectorMeasureUsesSbs());
     var allYearRows = sectorYearBaseRows(config);
     var baseRows = allYearRows.filter(function (row) { return row.country_code === state.sectorCountry; });
@@ -1356,8 +1510,10 @@
       state.sectorYear = Number(value);
       renderSectorChart();
     });
-    if (!sectorMeasureUsesSbs()) {
-      makeSelect(container, "Vista", state.sectorMode, [
+    makeSelect(container, "Vista", state.sectorMode, sectorMeasureUsesSbs() ? [
+        { value: "sections", label: "Sezioni SBS separate" },
+        { value: "detail", label: "Divisioni SBS disponibili" }
+      ] : [
         { value: "sections", label: "Sezioni NACE separate" },
         { value: "detail", label: "Dettaglio A64 senza aggregati" },
         { value: "themes", label: "Aggregazioni tematiche" }
@@ -1365,7 +1521,6 @@
         state.sectorMode = value;
         renderSectorChart();
       });
-    }
     makeSelect(container, "Ordine", state.rankMode, [
       { value: "top", label: "Valori maggiori" },
       { value: "bottom", label: "Valori minori" }
@@ -1451,21 +1606,27 @@
     var sectorNote = byId("vaiSectorNote");
     if (sectorNote) {
       sectorNote.textContent = sectorMeasureUsesSbs()
-        ? "Questa vista usa le statistiche strutturali d'impresa: copre i settori SBS con numero di imprese, occupati e valore aggiunto."
+        ? "Questa vista usa le statistiche strutturali d'impresa: copre il perimetro SBS disponibile per imprese, occupati e valore aggiunto. Le sezioni e le divisioni non vanno sommate tra loro."
         : (state.sectorMode === "themes"
           ? "Questa vista somma voci NACE osservate per costruire aggregazioni tematiche leggibili, incluso un proxy del turismo. Le aggregazioni non sono settori ufficiali e non vanno sommate tra loro."
           : "Questa vista usa i conti nazionali: le sezioni NACE sono separate per evitare aggregati troppo grandi e il dettaglio esclude le voci gia incluse.");
     }
     renderGuidance("vaiSectorGuidance", [
       {
-        title: state.sectorMode === "themes"
+        title: sectorMeasureUsesSbs()
+          ? (state.sectorMode === "detail" ? "Divisioni SBS" : "Sezioni SBS")
+          : (state.sectorMode === "themes"
           ? "Aggregazioni tematiche"
-          : (state.sectorMode === "sections" ? "Sezioni separate" : "Dettaglio senza aggregati"),
-        text: state.sectorMode === "themes"
+          : (state.sectorMode === "sections" ? "Sezioni separate" : "Dettaglio senza aggregati")),
+        text: sectorMeasureUsesSbs()
+          ? (state.sectorMode === "detail"
+            ? "Il grafico mostra divisioni SBS dove pubblicate: qui compaiono voci come farmaceutica, alloggio, ristorazione, agenzie viaggio, sport e altri servizi."
+            : "Il grafico usa componenti SBS non sovrapposte per una lettura sintetica. Per scendere di livello passa a divisioni SBS disponibili.")
+          : (state.sectorMode === "themes"
           ? "Il turismo compare come proxy stretto e proxy esteso: sono somme dichiarate di voci NACE, utili per orientarsi ma non equivalenti a una misura ufficiale del turismo."
           : (state.sectorMode === "sections"
             ? "Commercio, trasporti e alloggio-ristorazione sono mostrati come settori distinti, non dentro l'aggregato G-I."
-            : "Il dettaglio entra nelle branche A64 ed esclude gli aggregati piu larghi per evitare letture gonfiate da sottovoci gia incluse.")
+            : "Il dettaglio entra nelle branche A64 ed esclude gli aggregati piu larghi per evitare letture gonfiate da sottovoci gia incluse."))
       },
       {
         title: config.title,
@@ -1545,7 +1706,7 @@
       state.europeMeasure = value;
       renderEuropeChart();
     });
-    makeSelect(container, "Settore", state.europeSector, sectorOptions("sectors", true), function (value) {
+    makeSelect(container, "Settore", state.europeSector, nationalSectorOptionsWithThemes(true), function (value) {
       state.europeSector = value;
       renderEuropeChart();
     });
@@ -1558,7 +1719,7 @@
   function renderEuropeChart() {
     var totals = totalByCountryYear();
     var gdps = gdpByCountryYear();
-    var rows = records("sector_value_added").filter(function (row) {
+    var rows = nationalRowsWithThemes().filter(function (row) {
       return EU27.indexOf(row.country_code) >= 0
         && row.sector_code === state.europeSector
         && Number(row.year) === Number(state.europeYear)
@@ -1625,9 +1786,13 @@
     if (!container) return;
     clear(container);
     var config = sizeChartConfig();
-    var availableRows = records(config.key).filter(function (row) {
-      return row.country_code === state.sizeCountry && row.sector_code === state.sizeSector;
-    });
+    var availableRows = sizeSourceRows(
+      config.key,
+      config.valueField,
+      state.sizeCountry,
+      state.sizeSector,
+      null
+    );
     state.sizeYear = effectiveYear(availableRows.length ? availableRows : records(config.key), state.sizeYear);
     makeSelect(container, "Parametro", state.sizeMeasure, [
       { value: "enterprises", label: "Numero imprese" },
@@ -1647,7 +1812,7 @@
       renderSizeFilters();
       renderSizeChart();
     });
-    makeSelect(container, "Settore imprese", state.sizeSector, sectorOptions("sbs_sectors", false), function (value) {
+    makeSelect(container, "Settore imprese", state.sizeSector, sbsSectorOptionsWithTotal(), function (value) {
       state.sizeSector = value;
       renderSizeFilters();
       renderSizeChart();
@@ -1673,6 +1838,9 @@
     });
     var gdp = gdpValue(state.sizeCountry, state.sizeYear);
     var total = rows.reduce(function (sum, row) { return sum + number(row[config.valueField]); }, 0);
+    var sizeScope = state.sizeSector === SBS_TOTAL_CODE
+      ? "del totale dei settori SBS disponibili"
+      : "del settore selezionato";
     var values = rows.map(function (row) {
       var value = number(row[config.valueField]);
       if (config.unit === "enterprise_share" && total) return value / total * 100;
@@ -1693,21 +1861,21 @@
     byId("vaiSizeNote").textContent = config.unit === "enterprises"
         ? "Il grafico conta le imprese attive pubblicate nella fonte in ciascuna classe dimensionale. Non misura quanto valore producono."
         : (config.unit === "enterprise_share"
-          ? "La quota mostra il peso percentuale di ogni classe sul numero totale di imprese del settore selezionato."
+          ? "La quota mostra il peso percentuale di ogni classe sul numero totale di imprese " + sizeScope + "."
           : (config.unit === "value_gdp_share"
-            ? "Il rapporto al PIL divide il valore aggiunto della classe per il PIL nominale del paese nello stesso anno."
+            ? "Il rapporto al PIL divide il valore aggiunto della classe per il PIL nominale del paese nello stesso anno. Nel tooltip la seconda percentuale e la quota della classe dentro il valore aggiunto " + sizeScope + "."
             : (config.unit === "value_per_employed"
               ? "Il valore per occupato divide il valore aggiunto della classe per le persone occupate nella stessa classe."
               : (config.unit === "value_per_enterprise"
                 ? "Il valore aggiunto per impresa divide il valore aggiunto della classe per il numero di imprese della stessa classe."
                 : (config.unit === "value_added_share"
-                  ? "La quota mostra quale parte del valore aggiunto del settore arriva da ogni classe dimensionale."
+                  ? "La quota mostra quale parte del valore aggiunto " + sizeScope + " arriva da ogni classe dimensionale."
                   : "Il grafico mostra il valore aggiunto generato dalle imprese di ciascuna classe dimensionale.")))));
     renderGuidance("vaiSizeGuidance", [
       {
         title: config.unit.indexOf("value") === 0 ? "Valore prodotto" : "Imprese osservate",
         text: config.unit === "value_gdp_share"
-          ? "La misura normalizza il valore aggiunto rispetto alla dimensione complessiva dell'economia nazionale."
+          ? "La misura normalizza il valore aggiunto rispetto alla dimensione complessiva dell'economia nazionale. La quota mostrata nel tooltip usa invece come base il valore aggiunto " + sizeScope + "."
           : (config.unit === "value_per_employed"
             ? "La misura confronta il valore aggiunto generato per persona occupata nella classe dimensionale."
             : (config.unit.indexOf("value") === 0
@@ -1717,6 +1885,12 @@
       {
         title: "Classi sopra 10 persone",
         text: "Le classi 10-19, 20-49, 50-249 e 250+ restano separate: non vengono accorpate in un generico 10+."
+      },
+      {
+        title: "Perimetro SBS",
+        text: state.sizeSector === SBS_TOTAL_CODE
+          ? "Il totale aggrega i settori presenti nelle statistiche strutturali d'impresa della dashboard, non i conti nazionali dell'intera economia."
+          : "La selezione mostra un singolo settore SBS. Usa il totale settori imprese SBS per leggere il profilo aggregato delle classi dimensionali."
       }
     ]);
     if (!rows.length) {
@@ -1738,18 +1912,18 @@
         ];
       }),
       hovertemplate: config.unit === "value_added"
-        ? "%{x}<br>%{y:,.1f} mln EUR<br>%{customdata[1]:.1f}% del settore<extra></extra>"
+        ? "%{x}<br>%{y:,.1f} mln EUR<br>%{customdata[1]:.1f}% della selezione SBS<extra></extra>"
         : (config.unit === "enterprise_share"
           ? "%{x}<br>%{y:.1f}%<br>%{customdata[0]:,.0f} imprese<extra></extra>"
           : (config.unit === "value_gdp_share"
-            ? "%{x}<br>%{y:.2f}% del PIL<br>%{customdata[1]:.1f}% del valore aggiunto SBS<extra></extra>"
+            ? "%{x}<br>%{y:.2f}% del PIL<br>%{customdata[1]:.1f}% del valore aggiunto della selezione SBS<extra></extra>"
             : (config.unit === "value_per_employed"
               ? "%{x}<br>%{y:,.1f} mila EUR per occupato<br>%{customdata[2]:,.0f} occupati<extra></extra>"
               : (config.unit === "value_added_share"
                 ? "%{x}<br>%{y:.1f}% del valore aggiunto<extra></extra>"
                 : (config.unit === "value_per_enterprise"
                   ? "%{x}<br>%{y:,.1f} mila EUR per impresa<br>%{customdata[0]:,.0f} imprese<extra></extra>"
-                  : "%{x}<br>%{y:,.0f} imprese<br>%{customdata[1]:.1f}% del settore<extra></extra>")))))
+                  : "%{x}<br>%{y:,.0f} imprese<br>%{customdata[1]:.1f}% della selezione SBS<extra></extra>")))))
     }], {
       margin: { t: 18, r: 24, b: 82, l: 92 },
       yaxis: { title: config.yTitle, rangemode: "tozero" },
@@ -1936,43 +2110,107 @@
     });
   }
 
+  function regionalRegionOptions(country, year) {
+    var seen = {};
+    records("regional_value_added").forEach(function (row) {
+      if (row.country_code !== country || Number(row.year) !== Number(year)) return;
+      if (!row.region_code || !row.region_name) return;
+      seen[row.region_code] = row.region_name;
+    });
+    return Object.keys(seen).sort(function (a, b) {
+      return seen[a].localeCompare(seen[b], "it");
+    }).map(function (code) {
+      return { value: code, label: seen[code] };
+    });
+  }
+
+  function syncRegionalRegion() {
+    var options = regionalRegionOptions(state.regionalCountry, state.regionalYear);
+    var codes = options.map(function (option) { return option.value; });
+    if (codes.indexOf(state.regionalRegion) < 0) {
+      state.regionalRegion = codes[0] || null;
+    }
+    return options;
+  }
+
   function renderRegionalFilters() {
     var container = byId("vaiRegionalFilters");
     if (!container) return;
     clear(container);
+    makeSelect(container, "Vista", state.regionalView, [
+      { value: "regions", label: "Regioni per settore" },
+      { value: "sectors", label: "Settori nella regione" }
+    ], function (value) {
+      state.regionalView = value;
+      renderRegionalFilters();
+      renderRegionalChart();
+    });
     makeSelect(container, "Paese", state.regionalCountry, countryOptions(false), function (value) {
       state.regionalCountry = value;
+      state.regionalRegion = null;
+      renderRegionalFilters();
       renderRegionalChart();
     });
     makeSelect(container, "Anno", state.regionalYear, yearOptions(records("regional_value_added")), function (value) {
       state.regionalYear = Number(value);
+      state.regionalRegion = null;
+      renderRegionalFilters();
       renderRegionalChart();
     });
-    makeSelect(container, "Settore", state.regionalSector, sectorOptions("regional_sectors", true), function (value) {
-      state.regionalSector = value;
-      renderRegionalChart();
-    });
+    if (state.regionalView === "regions") {
+      makeSelect(container, "Settore", state.regionalSector, sectorOptions("regional_sectors", true), function (value) {
+        state.regionalSector = value;
+        renderRegionalChart();
+      });
+    } else {
+      makeSelect(container, "Regione", state.regionalRegion, syncRegionalRegion(), function (value) {
+        state.regionalRegion = value;
+        renderRegionalChart();
+      });
+      makeSelect(container, "Dettaglio", state.regionalSectorMode, [
+        { value: "separate", label: "Settori regionali separati" },
+        { value: "all", label: "Tutte le voci pubblicate" }
+      ], function (value) {
+        state.regionalSectorMode = value;
+        renderRegionalChart();
+      });
+    }
   }
 
   function renderRegionalChart() {
     var rows = records("regional_value_added").filter(function (row) {
-      return row.country_code === state.regionalCountry
-        && row.sector_code === state.regionalSector
-        && Number(row.year) === Number(state.regionalYear)
-        && number(row.value_million_eur) !== null;
+      if (row.country_code !== state.regionalCountry) return false;
+      if (Number(row.year) !== Number(state.regionalYear)) return false;
+      if (number(row.value_million_eur) === null) return false;
+      if (state.regionalView === "regions") return row.sector_code === state.regionalSector;
+      if (row.region_code !== state.regionalRegion || row.sector_code === "TOTAL") return false;
+      return state.regionalSectorMode === "all" || REGIONAL_SEPARATE_CODES.indexOf(row.sector_code) >= 0;
     }).sort(function (a, b) {
       return b.value_million_eur - a.value_million_eur;
-    }).slice(0, 30).reverse();
-    byId("vaiRegionalTitle").textContent = rows[0] ? sectorLabel(rows[0]) : "Valore aggiunto regionale";
+    });
+    if (state.regionalView === "regions") {
+      rows = rows.slice(0, 30);
+    }
+    rows = rows.reverse();
+    var regionName = rows[0] && state.regionalView === "sectors"
+      ? rows[0].region_name
+      : (syncRegionalRegion().find(function (option) { return option.value === state.regionalRegion; }) || {}).label;
+    byId("vaiRegionalTitle").textContent = state.regionalView === "regions"
+      ? (rows[0] ? sectorLabel(rows[0]) : "Valore aggiunto regionale")
+      : ("Settori nella regione - " + text(regionName, "regione"));
     byId("vaiRegionalTag").textContent = countryLabel(state.regionalCountry) + " - " + text(state.regionalYear);
     renderGuidance("vaiRegionalGuidance", [
       {
-        title: "Dentro il paese",
-        text: "Il grafico mostra le regioni NUTS2 del paese selezionato. Se ci sono molte regioni, vengono visualizzate le prime 30 per valore aggiunto."
+        title: state.regionalView === "regions" ? "Regioni per settore" : "Barchart regionale per settore",
+        text: state.regionalView === "regions"
+          ? "Il grafico mostra le regioni NUTS2 del paese selezionato per una voce settoriale. Se ci sono molte regioni, vengono visualizzate le prime 30."
+          : "Il grafico mostra quali settori generano piu valore aggiunto nella regione selezionata."
       },
       {
-        title: "Settori piu aggregati",
-        text: "Il dato regionale ha meno dettaglio settoriale dei conti nazionali A64: e utile per la geografia, non per analisi settoriali molto fini."
+        title: "Settori regionali",
+        text: state.regionalView === "sectors" && state.regionalSectorMode === "all"
+          ? "La vista tutte le voci pubblicate include anche aggregati sovrapposti: serve per esplorare la fonte, non per sommare le barre."
+          : "Il dato regionale ha meno dettaglio dei conti nazionali A64 e delle divisioni SBS: e utile per la geografia, con settori piu aggregati."
       }
     ]);
     if (!rows.length) {
@@ -1983,11 +2221,13 @@
       type: "bar",
       orientation: "h",
       x: rows.map(function (row) { return row.value_million_eur; }),
-      y: rows.map(function (row) { return row.region_name; }),
-      marker: { color: "#5fc3b2" },
+      y: rows.map(function (row) {
+        return state.regionalView === "regions" ? row.region_name : sectorLabel(row);
+      }),
+      marker: { color: state.regionalView === "regions" ? "#5fc3b2" : "#f0b44d" },
       hovertemplate: "%{y}<br>%{x:,.1f} mln EUR<extra></extra>"
     }], {
-      margin: { t: 18, r: 24, b: 78, l: 250 },
+      margin: { t: 18, r: 24, b: 78, l: state.regionalView === "regions" ? 250 : 230 },
       xaxis: { title: "Milioni di euro" },
       yaxis: { automargin: true },
       sourceNote: CHART_SOURCE_NOTE

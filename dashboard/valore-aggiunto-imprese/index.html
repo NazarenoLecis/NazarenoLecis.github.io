@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-7">
+  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-10">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-7"></script>
+  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-10"></script>
 </head>
 <body>
   <header class="site-header">
@@ -120,7 +120,7 @@
     <section id="dimensione" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Dimensione d'impresa</span>
-        <div><h2>Imprese e valore aggiunto per classe</h2><p>Una visualizzazione alla volta: imprese, quote, valore aggiunto, rapporto al PIL, valore per impresa o valore per occupato per 0-9, 10-19, 20-49, 50-249 e 250+ persone occupate.</p></div>
+        <div><h2>Imprese e valore aggiunto per classe</h2><p>Una visualizzazione alla volta: imprese, quote, valore aggiunto, rapporto al PIL, valore per impresa o valore per occupato per 0-9, 10-19, 20-49, 50-249 e 250+ persone occupate. Puoi leggere un singolo settore o il totale dei settori SBS disponibili.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri dimensione</summary><div id="vaiSizeFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
@@ -150,12 +150,12 @@
     <section id="territorio" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Territorio</span>
-        <div><h2>Regioni dentro i paesi</h2><p>Quando Eurostat pubblica il dato NUTS2, la dashboard mostra la distribuzione territoriale del valore aggiunto.</p></div>
+        <div><h2>Regioni e settori dentro i paesi</h2><p>Quando Eurostat pubblica il dato NUTS2, la dashboard mostra sia le regioni che pesano di piu in un settore sia i settori che generano valore aggiunto dentro una regione.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri territorio</summary><div id="vaiRegionalFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiRegionalTitle">Valore aggiunto regionale</h3><span id="vaiRegionalTag">NUTS2</span></div>
-        <p class="vai-card-note">Le regioni sono un dettaglio territoriale armonizzato Eurostat. Se un paese non mostra dati, significa che quella combinazione paese-settore-anno non e pubblicata nella tavola integrata.</p>
+        <p class="vai-card-note">Le regioni sono un dettaglio territoriale armonizzato Eurostat. Il dato regionale usa una classificazione settoriale piu aggregata: non va letto come dettaglio A64 o SBS.</p>
         <div id="vaiRegionalChart" class="vai-chart vai-chart-wide"></div>
         <div id="vaiRegionalGuidance" class="vai-guidance-list" aria-live="polite"></div>
         <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gva/default/table?lang=en" target="_blank" rel="noopener">Eurostat Regional Gross Value Added <code>nama_10r_3gva</code></a>. Elaborazione di Nazareno Lecis.</p>
