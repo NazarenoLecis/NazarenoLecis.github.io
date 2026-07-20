@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260720-5",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-5",
+    "../../data/sanita-italia/dashboard.json?v=20260720-6",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-6",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -641,9 +641,10 @@
       showEmptyChart(id);
       return;
     }
+    var xaxis = Object.assign({ title: "" }, options.xAxis || {});
     plot(id, traces, {
       margin: { t: 20, r: 26, b: 52, l: 78 },
-      xaxis: { title: "" },
+      xaxis: xaxis,
       yaxis: { title: options.yTitle || "" },
       legend: { orientation: "h", y: -0.18 },
       hovermode: "x unified"
@@ -1285,16 +1286,20 @@
     var title = byId("hiBedsSeriesTitle");
     if (title) title.textContent = metric.label + " nel tempo - " + region + " - " + ratioLabel(STATE.bedsSeriesRatio);
     var valueFormat = STATE.bedsSeriesRatio === "absolute" ? "%{y:,.0f}" : "%{y:,.2f}";
+    var years = rows.map(function (row) { return String(row.year); });
     lineChart("hiBedsSeriesChart", [{
       type: "scatter",
       mode: "lines+markers",
       name: metric.label,
-      x: rows.map(function (row) { return row.year; }),
+      x: years,
       y: rows.map(function (row) { return row.selected_value; }),
       line: { color: COLORS[2], width: 3 },
       marker: { size: 8 },
       hovertemplate: "%{x}<br>" + metric.label + ": " + valueFormat + "<extra></extra>"
-    }], { yTitle: STATE.bedsSeriesRatio === "absolute" ? metric.xTitle : ratioLabel(STATE.bedsSeriesRatio) });
+    }], {
+      yTitle: STATE.bedsSeriesRatio === "absolute" ? metric.xTitle : ratioLabel(STATE.bedsSeriesRatio),
+      xAxis: { type: "category", categoryorder: "array", categoryarray: years }
+    });
   }
 
   function renderPharmaSeries() {
