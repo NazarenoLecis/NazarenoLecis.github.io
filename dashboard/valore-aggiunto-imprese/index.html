@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-2">
+  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-3">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-2"></script>
+  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-3"></script>
 </head>
 <body>
   <header class="site-header">
@@ -48,15 +48,16 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard valore aggiunto">
-      <a href="#quadro">Quadro</a><a href="#settori">Settori</a><a href="#europa">Europa</a><a href="#dimensione">Dimensione</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo e fonti</a>
+      <a href="#quadro">Quadro</a><a href="#serie">Serie</a><a href="#settori">Settori</a><a href="#europa">Europa</a><a href="#dimensione">Dimensione</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo e fonti</a>
     </nav>
 
     <p class="vai-note"><strong>Come leggere la dashboard:</strong> i valori sono importi assoluti in milioni di euro correnti. Servono per capire dove si produce valore aggiunto, non per misurare produttivita, profitti o valore per lavoratore.</p>
 
     <section class="vai-reading-grid" aria-label="Percorso di lettura dashboard">
       <div class="vai-reading-card"><span>1</span><h2>Parti dai settori</h2><p>Usa la vista per vedere i settori con piu valore aggiunto o quelli con importi minori nel paese selezionato.</p></div>
-      <div class="vai-reading-card"><span>2</span><h2>Confronta i paesi</h2><p>Scegli un settore e confronta tutti i paesi UE disponibili nello stesso anno.</p></div>
-      <div class="vai-reading-card"><span>3</span><h2>Controlla perimetro e limiti</h2><p>Dimensione d'impresa e territorio arrivano da tavole diverse: le note finali spiegano cosa e confrontabile.</p></div>
+      <div class="vai-reading-card"><span>2</span><h2>Guarda la serie</h2><p>Seleziona piu anni, settori o paesi per leggere livelli e dinamiche nel tempo.</p></div>
+      <div class="vai-reading-card"><span>3</span><h2>Confronta i paesi</h2><p>Scegli un settore e confronta tutti i paesi UE disponibili nello stesso anno.</p></div>
+      <div class="vai-reading-card"><span>4</span><h2>Controlla i limiti</h2><p>Dimensione d'impresa e territorio arrivano da tavole diverse: le note finali spiegano cosa e confrontabile.</p></div>
     </section>
 
     <p id="vaiStatus" class="vai-status">Caricamento dati...</p>
@@ -69,6 +70,39 @@
       <details class="chart-filter-panel" open><summary>Filtri principali</summary><div id="vaiGlobalFilters" class="filter-grid"></div></details>
       <div id="vaiKpis" class="vai-kpi-grid" aria-label="Indicatori principali valore aggiunto"></div>
       <div id="vaiFocusCards" class="vai-focus-grid" aria-label="Settori a basso valore aggiunto o di interesse"></div>
+    </section>
+
+    <section id="serie" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Serie storiche</span>
+        <div><h2>Come cambiano settori, paesi e dimensioni</h2><p>Le serie permettono di selezionare piu anni e piu voci. La scala base 100 aiuta a confrontare dinamiche tra grandezze molto diverse.</p></div>
+      </div>
+      <div class="vai-grid-2">
+        <article class="vai-card vai-chart-block">
+          <div class="vai-card-title"><h3 id="vaiSeriesTitle">Settori nel tempo</h3><span id="vaiSeriesTag">serie</span></div>
+          <p class="vai-card-note">Scegli uno o piu settori per vedere se il valore aggiunto cresce, cala o cambia peso sul totale del paese selezionato.</p>
+          <details class="chart-filter-panel vai-inner-filter-panel" open><summary>Filtri serie settori</summary><div id="vaiSeriesFilters" class="filter-grid"></div></details>
+          <div id="vaiSeriesChart" class="vai-chart vai-chart-wide"></div>
+          <div id="vaiSeriesGuidance" class="vai-guidance-list" aria-live="polite"></div>
+          <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="vai-card vai-chart-block">
+          <div class="vai-card-title"><h3 id="vaiCountryTrendTitle">Paesi nel tempo</h3><span id="vaiCountryTrendTag">UE27</span></div>
+          <p class="vai-card-note">Seleziona un settore e piu paesi: i valori assoluti mostrano la scala economica, l'indice base 100 mostra la dinamica relativa.</p>
+          <details class="chart-filter-panel vai-inner-filter-panel" open><summary>Filtri serie paesi</summary><div id="vaiCountryTrendFilters" class="filter-grid"></div></details>
+          <div id="vaiCountryTrendChart" class="vai-chart vai-chart-wide"></div>
+          <div id="vaiCountryTrendGuidance" class="vai-guidance-list" aria-live="polite"></div>
+          <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>. Elaborazione di Nazareno Lecis.</p>
+        </article>
+      </div>
+      <article class="vai-card vai-chart-block vai-section-gap">
+        <div class="vai-card-title"><h3 id="vaiSizeTrendTitle">Dimensione d'impresa nel tempo</h3><span id="vaiSizeTrendTag">SBS</span></div>
+        <p class="vai-card-note">La serie SBS mostra come il valore aggiunto del settore selezionato si distribuisce tra classi dimensionali, comprese le classi sopra 10 persone occupate.</p>
+        <details class="chart-filter-panel vai-inner-filter-panel" open><summary>Filtri serie dimensione</summary><div id="vaiSizeTrendFilters" class="filter-grid"></div></details>
+        <div id="vaiSizeTrendChart" class="vai-chart vai-chart-wide"></div>
+        <div id="vaiSizeTrendGuidance" class="vai-guidance-list" aria-live="polite"></div>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a>. Elaborazione di Nazareno Lecis.</p>
+      </article>
     </section>
 
     <section id="settori" class="dashboard-section">

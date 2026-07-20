@@ -123,7 +123,7 @@
 
 .vai-reading-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 10px;
 }
@@ -200,6 +200,10 @@
   display: none;
 }
 
+.vai-dashboard .vai-inner-filter-panel {
+  margin-top: 12px;
+}
+
 .vai-dashboard .filter-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(170px, 1fr));
@@ -233,6 +237,29 @@
 .vai-dashboard .filter-grid select:focus {
   outline: 2px solid color-mix(in srgb, var(--orange) 60%, transparent);
   outline-offset: 2px;
+}
+
+.vai-dashboard .filter-grid select[multiple] {
+  min-height: 132px;
+  padding: 8px 12px;
+}
+
+.vai-grid-2 .filter-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vai-dashboard .filter-grid .vai-multi-filter {
+  grid-column: 1 / -1;
+}
+
+.vai-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.vai-section-gap {
+  margin-top: 16px;
 }
 
 .vai-kpi-grid,
@@ -439,7 +466,8 @@
   .vai-kpi-grid,
   .vai-focus-grid,
   .vai-coverage-grid,
-  .vai-reading-grid {
+  .vai-reading-grid,
+  .vai-grid-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -464,7 +492,8 @@
   .vai-focus-grid,
   .vai-coverage-grid,
   .vai-reading-grid,
-  .vai-notes-panel {
+  .vai-notes-panel,
+  .vai-grid-2 {
     grid-template-columns: 1fr;
   }
 
