@@ -206,14 +206,24 @@
   margin: 18px 0 18px;
 }
 
-.hi-dashboard .filter-grid {
+.hi-dashboard .filter-grid,
+.hi-chart-controls {
   display: grid;
-  grid-template-columns: repeat(6, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
   gap: 12px;
   align-items: end;
 }
 
+.hi-chart-controls {
+  margin: 4px 0 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+}
+
 .hi-dashboard .filter-grid label,
+.hi-chart-controls label,
 .hi-dashboard .hi-table-toolbar label {
   display: grid;
   min-width: 0;
@@ -225,6 +235,7 @@
 }
 
 .hi-dashboard .filter-grid select,
+.hi-chart-controls select,
 .hi-table-toolbar select,
 .hi-table-toolbar input {
   width: 100%;
@@ -239,6 +250,7 @@
 }
 
 .hi-dashboard .filter-grid select:focus,
+.hi-chart-controls select:focus,
 .hi-table-toolbar select:focus,
 .hi-table-toolbar input:focus {
   outline: 2px solid color-mix(in srgb, var(--orange) 60%, transparent);
@@ -447,7 +459,7 @@
 
 .hi-table-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, .8fr) minmax(240px, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 12px;
   align-items: end;
   margin: 0 0 14px;

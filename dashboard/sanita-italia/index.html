@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-3">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-4">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-3"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-4"></script>
 </head>
 <body>
   <header class="site-header">
@@ -87,52 +87,6 @@
     <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
     <p class="hi-note"><strong>Perimetro:</strong> le prestazioni ora misurate sono dimissioni/ricoveri ospedalieri per disciplina. La specialistica ambulatoriale e le liste d'attesa entrano quando i flussi AGENAS saranno disponibili in forma tabellare estraibile.</p>
 
-    <section class="chart-filter-panel" aria-label="Filtri generali">
-      <div class="filter-grid">
-        <label>Regione
-          <select id="hiRegionFilter"></select>
-        </label>
-        <label>Disciplina
-          <select id="hiDisciplineFilter"></select>
-        </label>
-        <label>Indicatore regionale
-          <select id="hiMetricFilter">
-            <option value="discharges">Dimissioni</option>
-            <option value="total_beds">Posti letto</option>
-            <option value="ssn_cost_eur">Costo SSN</option>
-            <option value="mobility_balance_eur">Saldo mobilit&agrave;</option>
-            <option value="bed_utilization_percent">Utilizzo posti letto</option>
-            <option value="avg_los_days">Degenza media</option>
-          </select>
-        </label>
-        <label>Rapporta a
-          <select id="hiRatioFilter">
-            <option value="auto">Misura consigliata</option>
-            <option value="absolute">Valore assoluto</option>
-            <option value="population_total">Popolazione totale</option>
-            <option value="population_65_plus">Popolazione 65+</option>
-            <option value="population_75_plus">Popolazione 75+</option>
-            <option value="clinical">Denominatore clinico</option>
-            <option value="gdp">PIL regionale</option>
-          </select>
-        </label>
-        <label>Denominatore disciplina
-          <select id="hiDenominatorFilter">
-            <option value="auto">Automatico per disciplina</option>
-            <option value="population_total">Popolazione totale</option>
-            <option value="population_65_plus">Popolazione 65+</option>
-            <option value="population_75_plus">Popolazione 75+</option>
-            <option value="population_0">Et&agrave; 0 / neonati</option>
-            <option value="population_0_14">Popolazione 0-14</option>
-            <option value="women_15_49">Donne 15-49</option>
-          </select>
-        </label>
-        <label>Tipo costo
-          <select id="hiCostTypeFilter"></select>
-        </label>
-      </div>
-    </section>
-
     <section id="indicatori" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Quadro rapido</span>
@@ -148,16 +102,60 @@
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3>Dimissioni per disciplina</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri dimissioni nazionali">
+          <label>Misura
+            <select id="hiNationalActivityMetricFilter">
+              <option value="discharges">Dimissioni</option>
+              <option value="stay_days">Giornate di degenza</option>
+              <option value="avg_los_days">Degenza media</option>
+              <option value="bed_utilization_percent">Utilizzo posti letto</option>
+            </select>
+          </label>
+          <label>Numero discipline
+            <select id="hiNationalActivityLimitFilter">
+              <option value="15">Top 15</option>
+              <option value="25" selected>Top 25</option>
+              <option value="40">Top 40</option>
+              <option value="all">Tutte</option>
+            </select>
+          </label>
+        </div>
         <div id="hiNationalActivityChart" class="hi-chart hi-chart-wide"></div>
         <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3>Posti letto per disciplina</h3><span>Ministero Salute, 2023</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri posti letto nazionali">
+          <label>Anno
+            <select id="hiNationalBedsYearFilter"></select>
+          </label>
+          <label>Tipo posto letto
+            <select id="hiNationalBedsMetricFilter">
+              <option value="total_beds">Totale</option>
+              <option value="ordinary_beds">Degenza ordinaria</option>
+              <option value="day_hospital_beds">Day hospital</option>
+              <option value="day_surgery_beds">Day surgery</option>
+            </select>
+          </label>
+          <label>Numero discipline
+            <select id="hiNationalBedsLimitFilter">
+              <option value="15">Top 15</option>
+              <option value="25" selected>Top 25</option>
+              <option value="40">Top 40</option>
+              <option value="all">Tutte</option>
+            </select>
+          </label>
+        </div>
         <div id="hiNationalBedsChart" class="hi-chart hi-chart-wide"></div>
         <p class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3>Tipologia di dimissione</h3><span>SDO, ultimo anno disponibile</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri tipologia dimissione">
+          <label>Territorio
+            <select id="hiDischargeRegionFilter"></select>
+          </label>
+        </div>
         <div id="hiDischargeTypeChart" class="hi-chart"></div>
         <p id="hiDischargeTypeNote" class="hi-chart-credit">Le celle oscurate dalla fonte non sono trattate come zero.</p>
       </article>
@@ -170,6 +168,32 @@
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiRegionalRankTitle">Classifica regionale</h3><span id="hiRegionalRankTag">indicatore</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri classifica regionale">
+          <label>Focus
+            <select id="hiRegionalRegionFilter"></select>
+          </label>
+          <label>Indicatore
+            <select id="hiMetricFilter">
+              <option value="discharges">Dimissioni</option>
+              <option value="total_beds">Posti letto</option>
+              <option value="ssn_cost_eur">Costo SSN</option>
+              <option value="mobility_balance_eur">Saldo mobilit&agrave;</option>
+              <option value="bed_utilization_percent">Utilizzo posti letto</option>
+              <option value="avg_los_days">Degenza media</option>
+            </select>
+          </label>
+          <label>Rapporta a
+            <select id="hiRatioFilter">
+              <option value="auto">Misura consigliata</option>
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_total">Popolazione totale</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+              <option value="clinical">Denominatore clinico</option>
+              <option value="gdp">PIL regionale</option>
+            </select>
+          </label>
+        </div>
         <div id="hiRegionalRankChart" class="hi-chart hi-chart-wide"></div>
         <p class="hi-chart-credit">Fonti: Ministero della Salute, OpenBDAP, ISTAT. I rapporti usano popolazione residente ISTAT 2026.</p>
       </article>
@@ -187,6 +211,35 @@
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiDisciplineRegionTitle">Disciplina per regione</h3><span id="hiDisciplineRegionTag">tasso</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri disciplina per territorio">
+          <label>Disciplina
+            <select id="hiDisciplineFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiDisciplineMetricFilter">
+              <option value="rate">Tasso per 1.000</option>
+              <option value="discharges">Dimissioni</option>
+              <option value="stay_days">Giornate di degenza</option>
+              <option value="avg_los_days">Degenza media</option>
+              <option value="bed_utilization_percent">Utilizzo posti letto</option>
+              <option value="ordinary_beds">Posti letto ordinari</option>
+            </select>
+          </label>
+          <label>Denominatore
+            <select id="hiDenominatorFilter">
+              <option value="auto">Automatico per disciplina</option>
+              <option value="population_total">Popolazione totale</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+              <option value="population_0">Et&agrave; 0 / neonati</option>
+              <option value="population_0_14">Popolazione 0-14</option>
+              <option value="women_15_49">Donne 15-49</option>
+            </select>
+          </label>
+          <label>Focus tabella
+            <select id="hiDisciplineRegionFilter"></select>
+          </label>
+        </div>
         <div id="hiDisciplineRegionChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiDisciplineNote" class="hi-chart-credit">La normalizzazione automatica usa regole dichiarate nel metodo.</p>
       </article>
@@ -203,11 +256,33 @@
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiCostRegionTitle">Costi regionali</h3><span>OpenBDAP, 2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri costi regionali">
+          <label>Voce di costo
+            <select id="hiCostTypeFilter"></select>
+          </label>
+          <label>Focus
+            <select id="hiCostRegionFilter"></select>
+          </label>
+          <label>Rapporta a
+            <select id="hiCostRatioFilter">
+              <option value="population_total">Popolazione totale</option>
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+              <option value="gdp">PIL regionale</option>
+            </select>
+          </label>
+        </div>
         <div id="hiCostRegionChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo 2024. Importi in euro; non sono flussi di cassa.</p>
+        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo 2024. Le voci sono contabili: non misurano il costo della singola prestazione clinica.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3>Composizione dei costi nazionali</h3><span>miliardi di euro</span></div>
+        <div class="hi-card-title"><h3 id="hiCostCompositionTitle">Composizione dei costi</h3><span>miliardi di euro</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri composizione costi">
+          <label>Territorio
+            <select id="hiCostCompositionRegionFilter"></select>
+          </label>
+        </div>
         <div id="hiCostCompositionChart" class="hi-chart"></div>
         <p class="hi-chart-credit">Le voci sono quelle esposte dall'API tematica OpenBDAP sulla finanza degli Enti del SSN.</p>
       </article>
@@ -224,11 +299,32 @@
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiBedsSeriesTitle">Posti letto nel tempo</h3><span>2021-2023</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri serie posti letto">
+          <label>Territorio
+            <select id="hiBedsSeriesRegionFilter"></select>
+          </label>
+          <label>Tipo posto letto
+            <select id="hiBedsSeriesMetricFilter">
+              <option value="total_beds">Totale</option>
+              <option value="ordinary_beds">Degenza ordinaria</option>
+              <option value="day_hospital_beds">Day hospital</option>
+              <option value="day_surgery_beds">Day surgery</option>
+            </select>
+          </label>
+        </div>
         <div id="hiBedsSeriesChart" class="hi-chart"></div>
         <p class="hi-chart-credit">Fonte: Ministero della Salute. Serie costruita sui file CSV 2021 e 2023 normalizzati nella pipeline.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiPharmaSeriesTitle">Spesa farmaceutica</h3><span>2012-2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri serie farmaceutica">
+          <label>Territorio
+            <select id="hiPharmaSeriesRegionFilter"></select>
+          </label>
+          <label>Voce
+            <select id="hiPharmaSeriesLabelFilter"></select>
+          </label>
+        </div>
         <div id="hiPharmaSeriesChart" class="hi-chart hi-chart-wide"></div>
         <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo. Elaborazione di Nazareno Lecis.</p>
       </article>
@@ -241,6 +337,14 @@
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiHospitalTitle">Top strutture per dimissioni</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri strutture">
+          <label>Territorio
+            <select id="hiHospitalRegionFilter"></select>
+          </label>
+          <label>Disciplina principale
+            <select id="hiHospitalDisciplineFilter"></select>
+          </label>
+        </div>
         <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
         <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
       </article>
@@ -257,16 +361,42 @@
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3>Sankey del saldo economico netto</h3><span>Corte dei conti, 2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri Sankey mobilita">
+          <label>Mostra flussi sopra
+            <select id="hiMobilitySankeyMinFilter">
+              <option value="0">Tutti</option>
+              <option value="10">10 mln euro</option>
+              <option value="50">50 mln euro</option>
+              <option value="100">100 mln euro</option>
+            </select>
+          </label>
+        </div>
         <div id="hiMobilitySankeyChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiMobilitySankeyNote" class="hi-chart-credit">Il Sankey mostra compensazioni economiche nette, non una matrice origine-destinazione dei singoli pazienti.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiMobilityBalanceTitle">Saldo mobilit&agrave; per regione</h3><span>milioni di euro</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri saldo mobilita">
+          <label>Rapporta a
+            <select id="hiMobilityRatioFilter">
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_total">Popolazione totale</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+              <option value="gdp">PIL regionale</option>
+            </select>
+          </label>
+        </div>
         <div id="hiMobilityBalanceChart" class="hi-chart hi-chart-wide"></div>
         <p class="hi-chart-credit">Fonte: Corte dei conti su dati Intesa Stato-Regioni. Valori positivi: attrazione netta; valori negativi: fuga netta.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiMobilitySeriesTitle">Serie storica del saldo</h3><span>2014-2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri serie mobilita">
+          <label>Territorio
+            <select id="hiMobilitySeriesRegionFilter"></select>
+          </label>
+        </div>
         <div id="hiMobilitySeriesChart" class="hi-chart"></div>
         <p class="hi-chart-credit">La serie aiuta a distinguere oscillazioni annuali e persistenza del turismo sanitario economico.</p>
       </article>
@@ -286,6 +416,12 @@
         <div class="hi-table-toolbar">
           <label>Dataset
             <select id="hiTableSelect"></select>
+          </label>
+          <label>Territorio
+            <select id="hiTableRegionFilter"></select>
+          </label>
+          <label>Disciplina
+            <select id="hiTableDisciplineFilter"></select>
           </label>
           <label>Cerca
             <input id="hiTableSearch" type="search" placeholder="regione, disciplina, fonte">
