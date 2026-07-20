@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Debito pubblico italiano | Nazareno Lecis</title>
+  <meta name="description" content="Dashboard su debito pubblico italiano: serie storiche, strumenti, detentori, vita residua, scadenze, valuta e tassi.">
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/debito-pubblico-dashboard.css?v=20260721-1">
+  <link rel="preload" href="https://data.nazarenolecis.com/debito-pubblico/data.json" as="fetch" crossorigin>
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="../../assets/debito-pubblico-dashboard.js?v=20260721-1"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html"><span class="logo"></span><span><span class="brand-name">Nazareno Lecis</span><span class="brand-tag">Data &amp; Risk Analysis</span></span></a>
+      <nav class="nav" aria-label="Navigazione principale">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap dp-dashboard">
+    <section class="dash-head">
+      <div>
+        <span class="eyebrow">Finanza pubblica</span>
+        <h1>Debito pubblico italiano</h1>
+        <p class="lead">Serie storiche e composizione del debito pubblico: stock, costo, strumenti, detentori, vita residua, scadenza originaria, valuta, residenza dei creditori e tassi benchmark.</p>
+      </div>
+      <div class="source-panel">
+        <span class="logo"></span>
+        <div>
+          <strong>Fonti: Banca d'Italia, MEF, Eurostat</strong>
+          <span id="dpSourceMeta">Dati ufficiali elaborati in JSON e pubblicati su R2. Refresh automatico il primo giorno di ogni mese.</span>
+          <a class="related-link" href="https://github.com/NazarenoLecis/Debito_pubblico_italiano" target="_blank" rel="noopener">Apri repository dati</a>
+        </div>
+      </div>
+    </section>
+
+    <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard debito pubblico">
+      <a href="#quadro">Quadro</a>
+      <a href="#composizione">Composizione</a>
+      <a href="#durata">Durata</a>
+      <a href="#detentori">Detentori</a>
+      <a href="#costo">Costo</a>
+      <a href="#tassi">Tassi</a>
+      <a href="#metodo">Metodo</a>
+    </nav>
+
+    <p id="dpStatus" class="dp-status">Caricamento dati debito pubblico ...</p>
+    <section id="dpKpis" class="dp-kpi-grid" aria-label="KPI debito pubblico italiano"></section>
+
+    <section class="workflow-grid" aria-label="Come leggere la dashboard">
+      <div class="workflow-step"><span>1</span><h2>Stock</h2><p>Parti da livello del debito e rapporto debito/PIL, tenendo separati dati mensili e annuali.</p></div>
+      <div class="workflow-step"><span>2</span><h2>Struttura</h2><p>Passa a strumenti, detentori e sottosettori per vedere chi finanzia il debito e con quali forme.</p></div>
+      <div class="workflow-step"><span>3</span><h2>Rischio</h2><p>Usa costo, vita residua, valuta, residenza e tassi per leggere duration e sensibilita' finanziaria.</p></div>
+    </section>
+
+    <section class="dashboard-section" id="quadro">
+      <div class="section-head"><span class="eyebrow">Quadro generale</span><div><h2>Serie storiche principali</h2><p>Il debito monetario e' mensile; il rapporto debito/PIL e' annuale.</p></div></div>
+      <div class="dp-grid-2">
+        <article class="dp-card">
+          <div class="dp-card-title"><h3>Debito pubblico</h3><span>Miliardi di euro</span></div>
+          <div class="dp-chart dp-chart-wide" id="dpDebtChart"></div>
+          <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="dp-card">
+          <div class="dp-card-title"><h3>Debito sul PIL</h3><span>Percentuale del PIL</span></div>
+          <div class="dp-chart dp-chart-wide" id="dpDebtGdpChart"></div>
+          <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="composizione">
+      <div class="section-head"><span class="eyebrow">Composizione</span><div><h2>Come e' fatto il debito</h2><p>Cambia sezione per confrontare strumenti, sottosettori e detentori sull'ultima data disponibile.</p></div></div>
+      <article class="dp-card">
+        <div class="dp-card-title"><h3 id="dpCompositionTitle">Composizione</h3><label><span>Sezione</span><select id="dpCompositionSelect"></select></label></div>
+        <div class="dp-chart dp-chart-wide" id="dpCompositionChart"></div>
+        <div class="dp-table-wrap"><table class="dp-table"><thead><tr><th>Voce</th><th>Data</th><th>Mld euro</th><th>Quota</th></tr></thead><tbody id="dpCompositionRows"></tbody></table></div>
+        <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="durata">
+      <div class="section-head"><span class="eyebrow">Duration e profilo</span><div><h2>Vita residua, scadenza e valuta</h2><p>La vita residua e' una composizione per fasce. Le altre misure sono indicatori/aggregati selezionati e possono sovrapporsi.</p></div></div>
+      <div class="dp-grid-2">
+        <article class="dp-card">
+          <div class="dp-card-title"><h3>Vita residua</h3><span>Ultima osservazione</span></div>
+          <div class="dp-chart dp-chart-wide" id="dpMaturityChart"></div>
+          <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI.</p>
+        </article>
+        <article class="dp-card">
+          <div class="dp-card-title"><h3>Scadenza, valuta e residenza</h3><span>Aggregati selezionati</span></div>
+          <div class="dp-chart dp-chart-wide" id="dpProfileChart"></div>
+          <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="detentori">
+      <div class="section-head"><span class="eyebrow">Possessori</span><div><h2>Chi detiene il debito</h2><p>Residenti, non residenti, Banca d'Italia e intermediari finanziari.</p></div></div>
+      <article class="dp-card">
+        <div class="dp-card-title"><h3>Detentori del debito lordo</h3><span>Quote sull'ultimo stock</span></div>
+        <div class="dp-chart dp-chart-wide" id="dpHoldersChart"></div>
+        <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="costo">
+      <div class="section-head"><span class="eyebrow">Costo del debito</span><div><h2>Interessi passivi nel tempo</h2><p>Serie annuale Eurostat sugli interessi passivi delle Amministrazioni pubbliche.</p></div></div>
+      <article class="dp-card">
+        <div class="dp-card-title">
+          <h3>Costo del debito pubblico</h3>
+          <div class="dp-title-controls">
+            <span id="dpDebtCostUnit">Miliardi di euro</span>
+            <div class="dp-segmented" aria-label="Misura costo del debito">
+              <button type="button" data-cost-mode="nominal" class="is-active">Nominale</button>
+              <button type="button" data-cost-mode="percent_gdp">% PIL</button>
+            </div>
+          </div>
+        </div>
+        <div class="dp-chart dp-chart-wide" id="dpDebtCostChart"></div>
+        <p class="dp-chart-credit">Fonte: Eurostat, dataset <code>gov_10a_main</code>, voce <code>D41PAY</code>. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="tassi">
+      <div class="section-head"><span class="eyebrow">Tassi</span><div><h2>Rendimento benchmark a lungo termine</h2><p>Serie Eurostat mensile sui rendimenti dei titoli di Stato italiani usati per il criterio di convergenza EMU.</p></div></div>
+      <article class="dp-card">
+        <div class="dp-card-title"><h3>Rendimento lungo termine</h3><span>Eurostat</span></div>
+        <div class="dp-chart dp-chart-wide" id="dpRatesChart"></div>
+        <p class="dp-chart-credit">Fonte: Eurostat, dataset <code>irt_lt_mcby_m</code>. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section class="dashboard-section" id="metodo">
+      <div class="section-head"><span class="eyebrow">Metodo</span><div><h2>Fonti e perimetri</h2><p>Il payload pubblico e' generato dal repository dati e pubblicato su Cloudflare R2.</p></div></div>
+      <div class="dp-notes-panel">
+        <div><h3>Note metodologiche</h3><ul id="dpNotes"></ul></div>
+        <div><h3>Fonti</h3><ul id="dpSources"></ul></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><div class="wrap footer-inner social-links"><a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a><a class="social-link" href="https://www.instagram.com/nazareno-lecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a><a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a><a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a></div></footer>
+</body>
+</html>
