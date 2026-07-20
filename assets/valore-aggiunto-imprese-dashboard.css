@@ -252,6 +252,38 @@
   grid-column: 1 / -1;
 }
 
+#serie .chart-filter-panel {
+  padding: 0;
+  margin: 12px 0 16px;
+  border: 0;
+  background: transparent;
+}
+
+#serie .filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+
+#serie .filter-grid label {
+  min-width: 180px;
+  flex: 1 1 180px;
+}
+
+#serie .filter-grid .vai-multi-filter {
+  min-width: min(100%, 320px);
+  flex: 2 1 320px;
+}
+
+#serie .vai-card-title h3 {
+  font-size: 1.18rem;
+}
+
+#serie .vai-chart {
+  min-height: 360px;
+}
+
 .vai-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -274,6 +306,43 @@
 .vai-focus-grid,
 .vai-coverage-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vai-method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 20px;
+}
+
+.vai-method-grid article,
+.vai-source-detail-list article {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+.vai-method-grid h3,
+.vai-source-detail-list h4 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.vai-method-grid p,
+.vai-source-detail-list p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.vai-source-detail-list {
+  display: grid;
+  gap: 10px;
 }
 
 .vai-kpi,
@@ -466,6 +535,7 @@
   .vai-kpi-grid,
   .vai-focus-grid,
   .vai-coverage-grid,
+  .vai-method-grid,
   .vai-reading-grid,
   .vai-grid-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -491,6 +561,7 @@
   .vai-kpi-grid,
   .vai-focus-grid,
   .vai-coverage-grid,
+  .vai-method-grid,
   .vai-reading-grid,
   .vai-notes-panel,
   .vai-grid-2 {
