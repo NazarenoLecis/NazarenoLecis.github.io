@@ -260,20 +260,19 @@
 }
 
 #serie .filter-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(150px, 1fr));
   gap: 12px;
   align-items: end;
 }
 
 #serie .filter-grid label {
-  min-width: 180px;
-  flex: 1 1 180px;
+  min-width: 0;
 }
 
 #serie .filter-grid .vai-multi-filter {
-  min-width: min(100%, 320px);
-  flex: 2 1 320px;
+  grid-column: span 2;
+  min-width: 0;
 }
 
 #serie .vai-card-title h3 {
@@ -282,6 +281,24 @@
 
 #serie .vai-chart {
   min-height: 360px;
+}
+
+#serie .vai-guidance-list {
+  gap: 7px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+#serie .vai-guidance {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+#serie .vai-guidance strong {
+  font-size: .9rem;
 }
 
 .vai-grid-2 {
@@ -540,6 +557,14 @@
   .vai-grid-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  #serie .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #serie .filter-grid .vai-multi-filter {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 900px) {
@@ -576,5 +601,13 @@
   .vai-chart,
   .vai-chart-wide {
     min-height: 390px;
+  }
+
+  #serie .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  #serie .filter-grid .vai-multi-filter {
+    grid-column: auto;
   }
 }

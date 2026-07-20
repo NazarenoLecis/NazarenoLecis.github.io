@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-4">
+  <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-5">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-4"></script>
+  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260720-5"></script>
 </head>
 <body>
   <header class="site-header">
@@ -41,7 +41,7 @@
         <span class="logo"></span>
         <div>
           <strong>Fonti Eurostat e repository pubblico</strong>
-          <span>Conti nazionali, statistiche strutturali d'impresa e valore aggiunto regionale.</span>
+          <span>Conti nazionali, PIL, statistiche strutturali d'impresa e valore aggiunto regionale.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Valore_aggiunto_imprese" target="_blank" rel="noopener">Repository valore aggiunto imprese</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
       </div>
@@ -51,7 +51,7 @@
       <a href="#quadro">Quadro</a><a href="#serie">Serie</a><a href="#settori">Settori</a><a href="#europa">Europa</a><a href="#dimensione">Dimensione</a><a href="#territorio">Territorio</a><a href="#metodo">Metodo e fonti</a>
     </nav>
 
-    <p class="vai-note"><strong>Come leggere la dashboard:</strong> i valori sono importi assoluti in milioni di euro correnti. Servono per capire dove si produce valore aggiunto, non per misurare produttivita, profitti o valore per lavoratore.</p>
+    <p class="vai-note"><strong>Come leggere la dashboard:</strong> i valori assoluti sono in milioni di euro correnti. Il valore aggiunto totale non coincide con il PIL: il PIL aggiunge al valore aggiunto le imposte sui prodotti al netto dei contributi. In alcune viste puoi passare a quote percentuali, rapporto al PIL, valore per impresa o valore per occupato.</p>
 
     <section class="vai-reading-grid" aria-label="Percorso di lettura dashboard">
       <div class="vai-reading-card"><span>1</span><h2>Parti dai settori</h2><p>Usa la vista per vedere i settori con piu valore aggiunto o quelli con importi minori nel paese selezionato.</p></div>
@@ -75,7 +75,7 @@
     <section id="serie" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Serie storiche</span>
-        <div><h2>Una serie storica alla volta</h2><p>Seleziona vista, parametro, paesi o voci, periodo sull'asse X e comportamento dell'asse Y. Le spiegazioni si aggiornano in base alla misura scelta.</p></div>
+        <div><h2>Una serie storica alla volta</h2><p>Seleziona vista, parametro, paesi o voci e periodo osservato. Le spiegazioni si aggiornano in base alla misura scelta: livelli, quote, rapporto al PIL o indice base 100.</p></div>
       </div>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiSeriesTitle">Serie storica</h3><span id="vaiSeriesTag">serie</span></div>
@@ -83,14 +83,14 @@
         <details class="chart-filter-panel vai-inner-filter-panel" open><summary>Filtri serie</summary><div id="vaiSeriesFilters" class="filter-grid"></div></details>
         <div id="vaiSeriesChart" class="vai-chart vai-chart-wide"></div>
         <div id="vaiSeriesGuidance" class="vai-guidance-list" aria-live="polite"></div>
-        <p class="vai-chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</p>
+        <p class="vai-chart-credit">Fonte: Eurostat <code>nama_10_a64</code>, <code>nama_10_gdp</code> e <code>sbs_sc_ovw</code>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
     <section id="settori" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Settori</span>
-        <div><h2>Dimensione dei settori</h2><p>Confronta settori separati per valore aggiunto totale, quota percentuale, numero di imprese e valore aggiunto per impresa.</p></div>
+        <div><h2>Dimensione dei settori</h2><p>Confronta settori separati per valore aggiunto totale, quota percentuale, rapporto al PIL, numero di imprese, valore aggiunto per impresa e valore aggiunto per occupato.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri settori</summary><div id="vaiSectorFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
@@ -98,29 +98,29 @@
         <p class="vai-card-note" id="vaiSectorNote">Le sezioni NACE sono mostrate separate per evitare aggregati troppo larghi. Cambiando parametro cambia anche la lettura del grafico.</p>
         <div id="vaiSectorChart" class="vai-chart vai-chart-wide"></div>
         <div id="vaiSectorGuidance" class="vai-guidance-list" aria-live="polite"></div>
-        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Structural Business Statistics <code>sbs_sc_ovw</code></a>. Elaborazione di Nazareno Lecis.</p>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Structural Business Statistics <code>sbs_sc_ovw</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
     <section id="europa" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Confronto europeo</span>
-        <div><h2>Paesi europei per settore selezionato</h2><p>Il confronto usa lo stesso settore e lo stesso anno per tutti i paesi con dato pubblicato.</p></div>
+        <div><h2>Paesi europei per settore selezionato</h2><p>Il confronto usa lo stesso settore e anno per tutti i paesi con dato pubblicato. Puoi leggere livelli assoluti, peso sul PIL o quota del settore nell'economia nazionale.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri confronto europeo</summary><div id="vaiEuropeFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiEuropeTitle">Confronto paesi</h3><span id="vaiEuropeTag">UE27</span></div>
-        <p class="vai-card-note">Il grafico ordina i paesi per valore aggiunto assoluto nel settore scelto. Paesi piu grandi tendono naturalmente ad avere importi maggiori.</p>
+        <p class="vai-card-note">Il grafico ordina i paesi in base al parametro scelto. Il valore assoluto misura la dimensione economica; le quote aiutano a confrontare paesi di scala diversa.</p>
         <div id="vaiEuropeChart" class="vai-chart vai-chart-wide"></div>
         <div id="vaiEuropeGuidance" class="vai-guidance-list" aria-live="polite"></div>
-        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a>. Elaborazione di Nazareno Lecis.</p>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener">Eurostat National Accounts <code>nama_10_a64</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
     <section id="dimensione" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Dimensione d'impresa</span>
-        <div><h2>Imprese e valore aggiunto per classe</h2><p>Una visualizzazione alla volta: numero di imprese, distribuzione percentuale o valore aggiunto per 0-9, 10-19, 20-49, 50-249 e 250+ persone occupate.</p></div>
+        <div><h2>Imprese e valore aggiunto per classe</h2><p>Una visualizzazione alla volta: imprese, quote, valore aggiunto, rapporto al PIL, valore per impresa o valore per occupato per 0-9, 10-19, 20-49, 50-249 e 250+ persone occupate.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri dimensione</summary><div id="vaiSizeFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
@@ -128,7 +128,7 @@
         <p class="vai-card-note" id="vaiSizeNote">Qui le classi sono basate sulle persone occupate nell'impresa. Cambiando parametro cambia anche la lettura del grafico.</p>
         <div id="vaiSizeChart" class="vai-chart"></div>
         <div id="vaiSizeGuidance" class="vai-guidance-list" aria-live="polite"></div>
-        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a>. Elaborazione di Nazareno Lecis.</p>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a>. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -162,6 +162,14 @@
           <p>I valori sono in milioni di euro a prezzi correnti. Le serie storiche mostrano livelli nominali: una crescita puo dipendere da volumi, prezzi o cambiamenti nella struttura economica.</p>
         </article>
         <article>
+          <h3>Rapporti al PIL</h3>
+          <p>Quando selezioni il rapporto al PIL, il denominatore e il PIL nominale Eurostat dello stesso paese e anno. La misura aiuta il confronto tra economie di dimensione diversa, ma resta una quota nominale.</p>
+        </article>
+        <article>
+          <h3>PIL e valore aggiunto</h3>
+          <p>Il totale dei settori misura il valore aggiunto lordo. Il PIL ai prezzi di mercato e piu alto perche aggiunge le imposte sui prodotti e sottrae i contributi ai prodotti.</p>
+        </article>
+        <article>
           <h3>Settori e doppi conteggi</h3>
           <p>La vista per sezioni usa aggregati principali per evitare di sommare sottovoci gia incluse. Il dettaglio Eurostat e utile per leggere singole branche, ma non tutte le voci possono essere sommate tra loro.</p>
         </article>
@@ -172,6 +180,10 @@
         <article>
           <h3>Dimensione d'impresa</h3>
           <p>Le classi dimensionali arrivano dalle Structural Business Statistics e indicano persone occupate nell'impresa. Il perimetro non coincide perfettamente con i conti nazionali e non copre allo stesso modo agricoltura, pesca e attivita pubbliche.</p>
+        </article>
+        <article>
+          <h3>Valore per occupato</h3>
+          <p>Il valore per occupato e calcolato solo dove SBS pubblica valore aggiunto e persone occupate nella stessa cella. Non e una stima di produttivita dell'intera economia nazionale.</p>
         </article>
         <article>
           <h3>Territorio e dati mancanti</h3>
@@ -195,8 +207,12 @@
               <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table?lang=en" target="_blank" rel="noopener"><code>nama_10_a64</code></a>. Usato per settori, paesi, distribuzioni del valore aggiunto e serie storiche settoriali.</p>
             </article>
             <article>
+              <h4>PIL Eurostat</h4>
+              <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener"><code>nama_10_gdp</code></a>. Usato come denominatore per i rapporti al PIL nelle viste settoriali, europee e dimensionali.</p>
+            </article>
+            <article>
               <h4>Structural Business Statistics</h4>
-              <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener"><code>sbs_sc_ovw</code></a>. Usato per numero di imprese, distribuzione e valore aggiunto per classi dimensionali d'impresa.</p>
+              <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener"><code>sbs_sc_ovw</code></a>. Usato per numero di imprese, persone occupate, distribuzione e valore aggiunto per classi dimensionali d'impresa.</p>
             </article>
             <article>
               <h4>Valore aggiunto regionale</h4>
