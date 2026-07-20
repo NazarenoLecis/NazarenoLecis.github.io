@@ -2,46 +2,179 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-1",
-    "../../data/sanita-italia/dashboard.json",
+    "../../data/sanita-italia/dashboard.json?v=20260720-2",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-2",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
   var STATE = {
     payload: null,
-    year: "Tutti",
-    region: "Tutte",
-    provider: "Tutte",
-    theme: "Tutte",
-    compare: "italia",
-    table: "catalog",
+    region: "Italia",
+    discipline: "",
+    metric: "discharges_per_1000",
+    denominator: "auto",
+    costType: "totali",
+    table: "regional_summary",
     search: ""
   };
 
   var COLORS = ["#ff5a1f", "#5d8fd7", "#3aa6a1", "#65a96b", "#d9ad48", "#d96666", "#9c7ad9", "#8f8f8f"];
   var MISSING = "ND";
 
+  var METRICS = {
+    discharges: { label: "Dimissioni", field: "discharges", format: formatNumber },
+    discharges_per_1000: { label: "Dimissioni per 1.000 residenti", field: "discharges_per_1000", format: formatDecimal },
+    discharges_per_1000_over65: { label: "Dimissioni per 1.000 residenti 65+", field: "discharges_per_1000_over65", format: formatDecimal },
+    total_beds: { label: "Posti letto", field: "total_beds", format: formatNumber },
+    beds_per_1000: { label: "Posti letto per 1.000 residenti", field: "beds_per_1000", format: formatDecimal },
+    beds_per_1000_over75: { label: "Posti letto per 1.000 residenti 75+", field: "beds_per_1000_over75", format: formatDecimal },
+    ssn_cost_eur: { label: "Costo SSN", field: "ssn_cost_eur", format: formatEuroCompact },
+    ssn_cost_per_capita_eur: { label: "Costo SSN pro capite", field: "ssn_cost_per_capita_eur", format: formatEuro },
+    ssn_cost_per_over65_eur: { label: "Costo SSN per residente 65+", field: "ssn_cost_per_over65_eur", format: formatEuro },
+    bed_utilization_percent: { label: "Utilizzo posti letto", field: "bed_utilization_percent", format: formatPercent },
+    avg_los_days: { label: "Degenza media", field: "avg_los_days", format: function (value) { return formatDecimal(value) + " giorni"; } }
+  };
+
+  var DENOMINATORS = {
+    auto: "automatico",
+    population_total: "popolazione totale",
+    population_65_plus: "popolazione 65+",
+    population_75_plus: "popolazione 75+",
+    population_0: "eta 0 / neonati",
+    population_0_14: "popolazione 0-14",
+    women_15_49: "donne 15-49"
+  };
+
   var TABLE_OPTIONS = [
-    { id: "catalog", label: "Catalogo fonti", columns: ["provider", "dataset_name", "theme", "access_type", "license", "redistribution_allowed", "download_status", "source_page_url"] },
-    { id: "source_ranking", label: "Ranking fonti", columns: ["provider", "dataset_name", "theme", "access_type", "license", "score", "source_page_url"] },
-    { id: "validated_links", label: "Link validati", columns: ["provider", "source_id", "file_extension", "link_text", "validation_status_code", "validation_content_length", "is_data_file", "final_url"] },
-    { id: "dataset_registry", label: "Registro dataset", columns: ["provider", "dataset_name", "theme", "file_extension", "validation_status_code", "is_data_file", "is_report_file", "candidate_url"] },
-    { id: "health_expenditure_resource_plan", label: "Piano risorse spesa", columns: ["provider", "dataset_name", "format", "accounting_basis", "relevance_score", "resource_status", "candidate_url"] },
-    { id: "health_expenditure_registry", label: "Registro spesa sanitaria", columns: ["provider", "dataset_name", "format", "accounting_basis", "relevance_score", "candidate_url"] },
-    { id: "openbdap_health_expenditure_resources", label: "Risorse OpenBDAP", columns: ["package_title", "resource_name", "resource_format", "license_title", "relevance_score", "resource_url"] },
-    { id: "regional_sources_seed", label: "Mapping regionale", columns: ["region", "module_id", "status", "license", "source_page_url", "download_url"] },
-    { id: "analysis_modules", label: "Moduli analisi", columns: ["module_id", "module_name", "coverage", "expected_granularity"] },
-    { id: "project_audit", label: "Audit progetto", columns: ["check_group", "check_name", "passed", "value", "message"] },
-    { id: "quality_overview", label: "Qualita dataset", columns: ["check_name", "passed", "value", "message", "dataset_path"] },
-    { id: "processed_dataset_inventory", label: "Dataset processati", columns: ["dataset_path", "file_format", "rows", "columns", "error"] },
-    { id: "outputs_summary", label: "Output prodotti", columns: ["output_file", "path", "format"] },
-    { id: "recursive_public_discovery", label: "Discovery ricorsiva", columns: ["provider", "source_id", "link_type", "depth", "link_text", "found_url"] },
-    { id: "agenas_links", label: "Link AGENAS", columns: ["provider", "source_id", "link_text", "url", "error"] },
-    { id: "iss_links", label: "Link ISS", columns: ["provider", "source_id", "link_text", "url", "error"] },
-    { id: "istat_demography_links", label: "Link ISTAT demografia", columns: ["provider", "source_role", "link_type", "link_text", "url"] },
-    { id: "siope_links", label: "Link SIOPE", columns: ["provider", "source_id", "link_type", "link_text", "url"] },
-    { id: "data_requirements", label: "Requisiti dati", columns: ["module_id", "required_dataset", "granularity", "source_priority", "notes"] },
-    { id: "publication_rules", label: "Regole pubblicazione", columns: ["rule_id", "scope", "rule", "severity", "notes"] }
+    {
+      id: "regional_summary",
+      label: "Sintesi regionale",
+      columns: [
+        ["region", "Regione"],
+        ["discharges", "Dimissioni"],
+        ["discharges_per_1000", "Dim./1.000"],
+        ["total_beds", "Posti letto"],
+        ["beds_per_1000", "PL/1.000"],
+        ["ssn_cost_eur", "Costo SSN"],
+        ["ssn_cost_per_capita_eur", "Euro pro capite"],
+        ["top_discipline", "Disciplina principale"]
+      ]
+    },
+    {
+      id: "activity_by_region_discipline",
+      label: "Attivita per regione e disciplina",
+      columns: [
+        ["region", "Regione"],
+        ["discipline", "Disciplina"],
+        ["discharges", "Dimissioni"],
+        ["discharges_per_1000_total", "Dim./1.000 totale"],
+        ["discharges_per_1000_relevant", "Dim./1.000 denom."],
+        ["relevant_denominator", "Denominatore"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo PL"]
+      ]
+    },
+    {
+      id: "beds_by_region_discipline",
+      label: "Posti letto per regione e disciplina",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["discipline", "Disciplina"],
+        ["discipline_type", "Tipo"],
+        ["total_beds", "Totale PL"],
+        ["ordinary_beds", "PL ordinari"],
+        ["day_hospital_beds", "PL DH"],
+        ["day_surgery_beds", "PL DS"]
+      ]
+    },
+    {
+      id: "cost_by_region_category",
+      label: "Costi regionali",
+      columns: [
+        ["region", "Regione"],
+        ["cost_label", "Voce"],
+        ["amount_eur", "Importo"],
+        ["share_percent", "Quota %"],
+        ["change_percent", "Var. %"],
+        ["year", "Anno"]
+      ]
+    },
+    {
+      id: "pharma_series",
+      label: "Serie farmaceutica",
+      columns: [
+        ["region", "Territorio"],
+        ["year", "Anno"],
+        ["cost_label", "Voce"],
+        ["amount_eur", "Importo"]
+      ]
+    },
+    {
+      id: "hospital_activity_top",
+      label: "Top strutture",
+      columns: [
+        ["region", "Regione"],
+        ["structure", "Struttura"],
+        ["municipality", "Comune"],
+        ["province", "Provincia"],
+        ["discharges", "Dimissioni"],
+        ["ordinary_beds", "PL ordinari"],
+        ["main_discipline", "Disciplina principale"]
+      ]
+    },
+    {
+      id: "population_denominators",
+      label: "Denominatori demografici",
+      columns: [
+        ["region", "Regione"],
+        ["population_total", "Popolazione"],
+        ["population_0", "Eta 0"],
+        ["population_0_14", "0-14"],
+        ["population_65_plus", "65+"],
+        ["population_75_plus", "75+"],
+        ["women_15_49", "Donne 15-49"]
+      ]
+    },
+    {
+      id: "discharge_type_by_region",
+      label: "Tipologia dimissioni",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["deaths", "Decessi"],
+        ["home_discharges", "Domicilio"],
+        ["transfers", "Trasferimenti"],
+        ["known_total", "Totale noto"],
+        ["masked_cells", "Celle oscurate"]
+      ]
+    },
+    {
+      id: "definitions",
+      label: "Definizioni",
+      columns: [
+        ["indicator", "Indicatore"],
+        ["definition", "Definizione"],
+        ["numerator", "Numeratore"],
+        ["denominator", "Denominatore"],
+        ["unit", "Unita"],
+        ["source", "Fonte"],
+        ["warning", "Avvertenza"]
+      ]
+    },
+    {
+      id: "sources",
+      label: "Fonti",
+      columns: [
+        ["provider", "Ente"],
+        ["name", "Fonte"],
+        ["used_for", "Uso"],
+        ["coverage", "Copertura"],
+        ["latest_year", "Anno"],
+        ["license", "Licenza"],
+        ["url", "Pagina"]
+      ]
+    }
   ];
 
   function byId(id) {
@@ -69,15 +202,43 @@
     return number.toLocaleString("it-IT", { maximumFractionDigits: 0 });
   }
 
-  function formatDisplay(value) {
+  function formatDecimal(value) {
     var number = toNumber(value);
-    if (number === null) return asText(value);
-    return formatNumber(number);
+    if (number === null) return MISSING;
+    return number.toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+
+  function formatPercent(value) {
+    var number = toNumber(value);
+    if (number === null) return MISSING;
+    return number.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "%";
+  }
+
+  function formatEuro(value) {
+    var number = toNumber(value);
+    if (number === null) return MISSING;
+    return number.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  }
+
+  function formatEuroCompact(value) {
+    var number = toNumber(value);
+    if (number === null) return MISSING;
+    if (Math.abs(number) >= 1000000000) return (number / 1000000000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mld euro";
+    if (Math.abs(number) >= 1000000) return (number / 1000000).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mln euro";
+    return formatEuro(number);
+  }
+
+  function formatCell(column, value) {
+    if (/eur$/i.test(column) || column === "amount_eur" || column === "ssn_cost_eur") return formatEuroCompact(value);
+    if (/percent$/i.test(column)) return formatPercent(value);
+    if (/per_1000|avg_los|share|change|utilization/i.test(column)) return formatDecimal(value);
+    if (/population|beds|discharges|days|total|structures|deaths|transfers|masked|year/i.test(column)) return formatNumber(value);
+    return asText(value);
   }
 
   function compact(value, maxLength) {
     var text = asText(value);
-    maxLength = maxLength || 74;
+    maxLength = maxLength || 72;
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength - 3).trim() + "...";
   }
@@ -99,19 +260,17 @@
     return node;
   }
 
-  function rows(tableName) {
+  function tableRows(name) {
     var tables = STATE.payload && STATE.payload.tables ? STATE.payload.tables : {};
-    return toArray(tables[tableName]);
+    return toArray(tables[name]);
   }
 
-  function summary(name) {
-    var summaries = STATE.payload && STATE.payload.summaries ? STATE.payload.summaries : {};
-    return toArray(summaries[name]);
-  }
-
-  function worklist(name) {
-    var worklists = STATE.payload && STATE.payload.worklists ? STATE.payload.worklists : {};
-    return toArray(worklists[name]);
+  function populationMap() {
+    var map = {};
+    tableRows("population_denominators").forEach(function (row) {
+      map[row.region] = row;
+    });
+    return map;
   }
 
   function setStatus(text, state) {
@@ -131,9 +290,20 @@
     };
   }
 
+  function defaultAxis() {
+    var muted = cssVar("--muted", "#b9b2aa");
+    var line = cssVar("--line", "#303030");
+    return {
+      fixedrange: true,
+      gridcolor: line,
+      zerolinecolor: line,
+      tickfont: { color: muted },
+      automargin: true
+    };
+  }
+
   function baseLayout(extra) {
     var text = cssVar("--text", "#f5f2ed");
-    var muted = cssVar("--muted", "#b9b2aa");
     var line = cssVar("--line", "#303030");
     var panel = cssVar("--panel", "#090909");
     var layout = Object.assign({
@@ -145,35 +315,18 @@
         family: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         size: 12
       },
-      margin: { t: 18, r: 18, b: 48, l: 68 },
+      margin: { t: 18, r: 18, b: 52, l: 72 },
       hoverlabel: {
         bgcolor: panel,
         bordercolor: line,
         font: { color: text }
       },
       dragmode: false,
-      xaxis: {
-        fixedrange: true,
-        gridcolor: line,
-        zerolinecolor: line,
-        tickfont: { color: muted },
-        automargin: true
-      },
-      yaxis: {
-        fixedrange: true,
-        gridcolor: line,
-        zerolinecolor: line,
-        tickfont: { color: muted },
-        automargin: true
-      }
+      xaxis: defaultAxis(),
+      yaxis: defaultAxis()
     }, extra || {});
-
-    if (extra && extra.xaxis) {
-      layout.xaxis = Object.assign({}, baseLayout().xaxis, extra.xaxis);
-    }
-    if (extra && extra.yaxis) {
-      layout.yaxis = Object.assign({}, baseLayout().yaxis, extra.yaxis);
-    }
+    if (extra && extra.xaxis) layout.xaxis = Object.assign(defaultAxis(), extra.xaxis);
+    if (extra && extra.yaxis) layout.yaxis = Object.assign(defaultAxis(), extra.yaxis);
     return layout;
   }
 
@@ -203,171 +356,52 @@
     });
   }
 
-  function plotSummaryBar(id, data, limit, horizontal) {
-    data = toArray(data).slice(0, limit || 12);
-    if (!data.length) {
+  function sortDescending(rows, field) {
+    return toArray(rows).slice().sort(function (a, b) {
+      return (toNumber(b[field]) || 0) - (toNumber(a[field]) || 0);
+    });
+  }
+
+  function horizontalBar(id, rows, labelField, valueField, options) {
+    options = options || {};
+    rows = toArray(rows).filter(function (row) { return toNumber(row[valueField]) !== null; });
+    if (!rows.length) {
       showEmptyChart(id);
       return;
     }
-    var labels = data.map(function (item) { return compact(item.value, horizontal ? 34 : 22); });
-    var values = data.map(function (item) { return toNumber(item.count) || 0; });
-    if (horizontal) {
-      labels.reverse();
-      values.reverse();
-    }
+    rows = rows.slice(0, options.limit || 20).reverse();
+    var labels = rows.map(function (row) { return compact(row[labelField], options.labelLength || 34); });
+    var values = rows.map(function (row) { return toNumber(row[valueField]) || 0; });
+    var colors = rows.map(function (row) {
+      return options.highlight && row.region === options.highlight ? COLORS[0] : (options.color || COLORS[1]);
+    });
     plot(id, [{
       type: "bar",
-      orientation: horizontal ? "h" : "v",
-      x: horizontal ? values : labels,
-      y: horizontal ? labels : values,
-      marker: { color: COLORS[0] },
-      hovertemplate: "%{y}: %{x}<extra></extra>"
+      orientation: "h",
+      x: values,
+      y: labels,
+      marker: { color: colors },
+      customdata: rows,
+      hovertemplate: options.hovertemplate || "%{y}: %{x:,.2f}<extra></extra>"
     }], {
-      margin: horizontal ? { t: 18, r: 18, b: 42, l: 158 } : { t: 18, r: 18, b: 86, l: 56 },
-      xaxis: horizontal ? { title: "" } : { tickangle: -28 },
-      yaxis: horizontal ? { title: "" } : { title: "" }
+      margin: { t: 16, r: 26, b: 46, l: options.leftMargin || 190 },
+      xaxis: { title: options.xTitle || "" },
+      yaxis: { title: "" }
     });
   }
 
-  function plotDonut(id, data) {
-    data = toArray(data).filter(function (item) { return (toNumber(item.count) || 0) > 0; });
-    if (!data.length) {
+  function lineChart(id, traces, options) {
+    options = options || {};
+    if (!traces.length) {
       showEmptyChart(id);
       return;
     }
-    plot(id, [{
-      type: "pie",
-      hole: .55,
-      labels: data.map(function (item) { return asText(item.value); }),
-      values: data.map(function (item) { return toNumber(item.count) || 0; }),
-      marker: { colors: COLORS },
-      textinfo: "label+percent",
-      hovertemplate: "%{label}: %{value}<extra></extra>"
-    }], {
-      margin: { t: 18, r: 18, b: 18, l: 18 },
-      showlegend: false
-    });
-  }
-
-  function linkCell(value) {
-    var text = asText(value, "");
-    if (!/^https?:\/\//i.test(text)) return document.createTextNode(compact(text));
-    var link = document.createElement("a");
-    link.href = text;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.textContent = "apri";
-    return link;
-  }
-
-  function createTable(containerId, tableRows, columns, limit) {
-    var container = byId(containerId);
-    if (!container) return;
-    clear(container);
-    tableRows = toArray(tableRows).slice(0, limit || 80);
-    columns = columns && columns.length ? columns : inferColumns(tableRows);
-
-    var table = create("table", "hi-table");
-    var thead = document.createElement("thead");
-    var headerRow = document.createElement("tr");
-    columns.forEach(function (column) {
-      headerRow.appendChild(create("th", "", column.replace(/_/g, " ")));
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    var tbody = document.createElement("tbody");
-    if (!tableRows.length) {
-      var emptyRow = document.createElement("tr");
-      var emptyCell = create("td", "", "Nessun dato disponibile");
-      emptyCell.colSpan = Math.max(1, columns.length);
-      emptyRow.appendChild(emptyCell);
-      tbody.appendChild(emptyRow);
-    } else {
-      tableRows.forEach(function (row) {
-        var tr = document.createElement("tr");
-        columns.forEach(function (column) {
-          var td = document.createElement("td");
-          var value = row[column];
-          if (/url$/i.test(column) || column === "candidate_url" || column === "final_url") {
-            td.className = "hi-url-cell";
-            td.appendChild(linkCell(value));
-          } else if (column === "dataset_name" || column === "package_title" || column === "resource_name") {
-            var strong = document.createElement("strong");
-            strong.textContent = compact(value, 88);
-            td.appendChild(strong);
-          } else {
-            td.textContent = compact(value, 96);
-          }
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-    }
-    table.appendChild(tbody);
-    container.appendChild(table);
-  }
-
-  function inferColumns(tableRows) {
-    var first = tableRows && tableRows.length ? tableRows[0] : {};
-    return Object.keys(first).slice(0, 8);
-  }
-
-  function valueMatches(value, selected) {
-    return selected === "Tutti" || selected === "Tutte" || asText(value) === selected;
-  }
-
-  function dimensionMatches(values, selected) {
-    if (selected === "Tutti" || selected === "Tutte") return true;
-    values = toArray(values).filter(function (value) {
-      return value !== null && value !== undefined && value !== "";
-    });
-    if (!values.length) return true;
-    return values.some(function (value) {
-      return asText(value) === selected;
-    });
-  }
-
-  function rowText(row) {
-    return Object.keys(row || {}).map(function (key) { return asText(row[key], ""); }).join(" ").toLowerCase();
-  }
-
-  function rowMatchesGlobalFilters(row) {
-    var providerOk = dimensionMatches([row.provider], STATE.provider);
-    var themeOk = dimensionMatches([row.theme, row.module_id], STATE.theme);
-    var regionOk = dimensionMatches([row.region, row.region_name], STATE.region);
-    var year = row.year || yearFromText(row.dataset_name) || yearFromText(row.checked_at) || yearFromText(row.last_checked) || yearFromText(row.resource_created);
-    var yearOk = dimensionMatches([year], STATE.year);
-    return providerOk && themeOk && regionOk && yearOk;
-  }
-
-  function yearFromText(value) {
-    var match = asText(value, "").match(/\b(20\d{2}|19\d{2})\b/);
-    return match ? match[1] : null;
-  }
-
-  function filteredRows(tableName) {
-    var term = STATE.search.trim().toLowerCase();
-    return rows(tableName).filter(function (row) {
-      if (!rowMatchesGlobalFilters(row)) return false;
-      if (!term) return true;
-      return rowText(row).indexOf(term) !== -1;
-    });
-  }
-
-  function uniqueSorted(values, firstLabel) {
-    var seen = {};
-    var result = [firstLabel];
-    values.forEach(function (value) {
-      var text = asText(value, "");
-      if (!text || text === MISSING || seen[text]) return;
-      seen[text] = true;
-      result.push(text);
-    });
-    return result.sort(function (a, b) {
-      if (a === firstLabel) return -1;
-      if (b === firstLabel) return 1;
-      return a.localeCompare(b, "it");
+    plot(id, traces, {
+      margin: { t: 20, r: 26, b: 52, l: 78 },
+      xaxis: { title: "" },
+      yaxis: { title: options.yTitle || "" },
+      legend: { orientation: "h", y: -0.18 },
+      hovermode: "x unified"
     });
   }
 
@@ -377,30 +411,31 @@
     clear(node);
     options.forEach(function (option) {
       var opt = document.createElement("option");
-      opt.value = option;
-      opt.textContent = option;
+      opt.value = option.value;
+      opt.textContent = option.label;
       node.appendChild(opt);
     });
-    if (options.indexOf(selected) !== -1) node.value = selected;
+    if (options.some(function (option) { return option.value === selected; })) {
+      node.value = selected;
+    }
   }
 
   function setupFilters() {
-    var catalog = rows("catalog");
-    var regional = rows("regional_sources_seed");
-    var years = [];
-    ["catalog", "validated_links", "health_expenditure_resource_plan", "openbdap_health_expenditure_resources"].forEach(function (tableName) {
-      rows(tableName).forEach(function (row) {
-        ["year", "last_checked", "checked_at", "dataset_name", "resource_created", "resource_last_modified"].forEach(function (field) {
-          var year = row[field] && field === "year" ? row[field] : yearFromText(row[field]);
-          if (year) years.push(year);
-        });
-      });
-    });
+    var filters = STATE.payload.filters || {};
+    var disciplineRows = sortDescending(tableRows("activity_by_discipline"), "discharges");
+    if (!STATE.discipline && disciplineRows.length) STATE.discipline = disciplineRows[0].discipline;
 
-    fillSelect("hiYearFilter", uniqueSorted(years, "Tutti"), STATE.year);
-    fillSelect("hiRegionFilter", uniqueSorted(regional.map(function (row) { return row.region; }), "Tutte"), STATE.region);
-    fillSelect("hiProviderFilter", uniqueSorted(catalog.map(function (row) { return row.provider; }), "Tutte"), STATE.provider);
-    fillSelect("hiThemeFilter", uniqueSorted(catalog.map(function (row) { return row.theme; }).concat(regional.map(function (row) { return row.module_id; })), "Tutte"), STATE.theme);
+    fillSelect("hiRegionFilter", [{ value: "Italia", label: "Italia" }].concat(toArray(filters.regions).map(function (region) {
+      return { value: region, label: region };
+    })), STATE.region);
+
+    fillSelect("hiDisciplineFilter", disciplineRows.map(function (row) {
+      return { value: row.discipline, label: row.discipline };
+    }), STATE.discipline);
+
+    fillSelect("hiCostTypeFilter", toArray(filters.cost_types).map(function (row) {
+      return { value: row.id, label: row.label };
+    }), STATE.costType);
 
     var tableSelect = byId("hiTableSelect");
     if (tableSelect) {
@@ -418,11 +453,11 @@
 
   function bindControls() {
     var bindings = [
-      ["hiYearFilter", "year"],
       ["hiRegionFilter", "region"],
-      ["hiProviderFilter", "provider"],
-      ["hiThemeFilter", "theme"],
-      ["hiCompareFilter", "compare"],
+      ["hiDisciplineFilter", "discipline"],
+      ["hiMetricFilter", "metric"],
+      ["hiDenominatorFilter", "denominator"],
+      ["hiCostTypeFilter", "costType"],
       ["hiTableSelect", "table"]
     ];
     bindings.forEach(function (binding) {
@@ -443,33 +478,404 @@
     }
 
     var download = byId("hiDownloadCsv");
-    if (download) {
-      download.addEventListener("click", downloadCurrentCsv);
-    }
+    if (download) download.addEventListener("click", downloadCurrentCsv);
   }
 
   function renderKpis() {
-    var counts = STATE.payload.counts || {};
+    var payload = STATE.payload;
+    var national = payload.national || {};
+    var kpis = payload.kpis || {};
+    var activity = national.activity || {};
+    var beds = national.beds || {};
+    var costs = national.costs || {};
+    var pop = national.population || {};
     var items = [
-      ["Fonti catalogate", counts.catalog_sources, "enti e portali pubblici", "Base per accesso, ospedali, mobilita, territorio e spesa"],
-      ["Link validati", counts.validated_links, counts.data_file_candidates + " candidati dati", counts.report_file_candidates + " documenti di supporto"],
-      ["Risorse spesa", counts.health_expenditure_plan, "OpenBDAP/SIOPE", "competenza economica, cassa e piani di download"],
-      ["Mapping regionale", counts.regional_mapping_rows, "regione-modulo", "copertura da completare per i profili regionali"],
-      ["Moduli analisi", counts.analysis_modules, "aree sanitarie", "granularita nazionale, regionale, aziendale e struttura"],
-      ["Output prodotti", counts.output_files, "file pipeline", counts.processed_dataset_files + " dataset processati"],
-      ["Qualita dataset", counts.quality_checks - counts.quality_checks_failed + "/" + counts.quality_checks, "check superati", counts.quality_checks_failed + " controlli con dati mancanti"],
-      ["Audit progetto", counts.project_checks - counts.project_checks_failed + "/" + counts.project_checks, "check superati", "nessun errore bloccante nel run"]
+      ["Dimissioni ospedaliere", activity.discharges, "anno " + asText(activity.year), formatDecimal(activity.discharges_per_1000) + " per 1.000 residenti"],
+      ["Discipline", kpis.disciplines, "reparti ospedalieri", "classificate nella fonte Ministero"],
+      ["Giornate di degenza", activity.stay_days, "anno " + asText(activity.year), "degenza media " + formatDecimal(activity.avg_los_days) + " giorni"],
+      ["Posti letto", beds.total_beds, "anno " + asText(beds.year), formatDecimal(beds.beds_per_1000) + " per 1.000 residenti"],
+      ["Costo SSN", costs.amount_eur, "conto economico " + asText(costs.year), formatEuro(costs.cost_per_capita_eur) + " pro capite"],
+      ["Popolazione 65+", pop.population_65_plus, "ISTAT 2026", formatPercent(pop.elderly_65_share_percent) + " della popolazione"],
+      ["Strutture", kpis.structures, "pubbliche ed equiparate", "nel dataset attivita reparti"],
+      ["Mobilita sanitaria", "AGENAS", "report ufficiale", "flussi e saldo economico incorporati"]
     ];
     var container = byId("hiKpis");
     clear(container);
     items.forEach(function (item) {
       var card = create("article", "hi-kpi");
       card.appendChild(create("span", "", item[0]));
-      card.appendChild(create("strong", "", formatDisplay(item[1])));
+      card.appendChild(create("strong", "", typeof item[1] === "number" ? formatNumber(item[1]) : asText(item[1])));
       card.appendChild(create("em", "", item[2]));
       card.appendChild(create("small", "", item[3]));
       container.appendChild(card);
     });
+  }
+
+  function renderNationalCharts() {
+    horizontalBar(
+      "hiNationalActivityChart",
+      sortDescending(tableRows("activity_by_discipline"), "discharges"),
+      "discipline",
+      "discharges",
+      {
+        limit: 22,
+        color: COLORS[0],
+        leftMargin: 210,
+        xTitle: "dimissioni",
+        hovertemplate: "%{y}<br>Dimissioni: %{x:,.0f}<extra></extra>"
+      }
+    );
+
+    var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
+    var bedRows = tableRows("beds_by_discipline").filter(function (row) {
+      return row.year === latestBedsYear && toNumber(row.total_beds) > 0;
+    });
+    horizontalBar(
+      "hiNationalBedsChart",
+      sortDescending(bedRows, "total_beds"),
+      "discipline",
+      "total_beds",
+      {
+        limit: 22,
+        color: COLORS[2],
+        leftMargin: 210,
+        xTitle: "posti letto",
+        hovertemplate: "%{y}<br>Posti letto: %{x:,.0f}<extra></extra>"
+      }
+    );
+
+    renderDischargeTypeChart();
+  }
+
+  function latestRow(rows) {
+    rows = toArray(rows);
+    if (!rows.length) return null;
+    rows.sort(function (a, b) { return (toNumber(b.year) || 0) - (toNumber(a.year) || 0); });
+    return rows[0];
+  }
+
+  function renderDischargeTypeChart() {
+    var rows = STATE.region === "Italia" ? tableRows("discharge_type_national") : tableRows("discharge_type_by_region").filter(function (row) {
+      return row.region === STATE.region;
+    });
+    var row = latestRow(rows);
+    if (!row) {
+      showEmptyChart("hiDischargeTypeChart");
+      return;
+    }
+    var labels = ["A domicilio", "Trasferimenti", "Decessi"];
+    var values = [row.home_discharges, row.transfers, row.deaths].map(function (value) { return toNumber(value) || 0; });
+    plot("hiDischargeTypeChart", [{
+      type: "bar",
+      x: labels,
+      y: values,
+      marker: { color: [COLORS[2], COLORS[4], COLORS[5]] },
+      hovertemplate: "%{x}: %{y:,.0f}<extra></extra>"
+    }], {
+      margin: { t: 18, r: 18, b: 54, l: 78 },
+      yaxis: { title: "dimissioni note" }
+    });
+    var note = byId("hiDischargeTypeNote");
+    if (note) {
+      note.textContent = "Fonte: Ministero della Salute, SDO. Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". Le celle oscurate non sono trattate come zero.";
+    }
+  }
+
+  function renderRegionalRank() {
+    var config = METRICS[STATE.metric] || METRICS.discharges_per_1000;
+    var rows = sortDescending(tableRows("regional_summary"), config.field);
+    var title = byId("hiRegionalRankTitle");
+    var tag = byId("hiRegionalRankTag");
+    if (title) title.textContent = config.label;
+    if (tag) tag.textContent = STATE.region === "Italia" ? "tutte le regioni" : "focus " + STATE.region;
+    horizontalBar("hiRegionalRankChart", rows, "region", config.field, {
+      limit: 21,
+      highlight: STATE.region,
+      leftMargin: 150,
+      xTitle: config.label,
+      hovertemplate: "%{y}<br>" + config.label + ": %{x:,.2f}<extra></extra>"
+    });
+  }
+
+  function selectedRegionalRow() {
+    if (STATE.region === "Italia") return null;
+    return tableRows("regional_summary").find(function (row) { return row.region === STATE.region; }) || null;
+  }
+
+  function renderRegionProfile() {
+    var container = byId("hiRegionProfile");
+    clear(container);
+    var national = STATE.payload.national || {};
+    var row = selectedRegionalRow();
+    var title = STATE.region === "Italia" ? "Italia" : STATE.region;
+    var items;
+    if (!row) {
+      items = [
+        ["Territorio", title, "somma nazionale dei territori disponibili"],
+        ["Dimissioni", formatNumber((national.activity || {}).discharges), formatDecimal((national.activity || {}).discharges_per_1000) + " per 1.000 residenti"],
+        ["Posti letto", formatNumber((national.beds || {}).total_beds), formatDecimal((national.beds || {}).beds_per_1000) + " per 1.000 residenti"],
+        ["Costo SSN", formatEuroCompact((national.costs || {}).amount_eur), formatEuro((national.costs || {}).cost_per_capita_eur) + " pro capite"]
+      ];
+    } else {
+      items = [
+        ["Territorio", row.region, formatNumber(row.population_total) + " residenti ISTAT 2026"],
+        ["Dimissioni", formatNumber(row.discharges), formatDecimal(row.discharges_per_1000) + " per 1.000, rank " + asText(row.rank_discharges_per_1000)],
+        ["Posti letto", formatNumber(row.total_beds), formatDecimal(row.beds_per_1000) + " per 1.000, rank " + asText(row.rank_beds_per_1000)],
+        ["Costo SSN", formatEuroCompact(row.ssn_cost_eur), formatEuro(row.ssn_cost_per_capita_eur) + " pro capite, rank " + asText(row.rank_cost_per_capita)]
+      ];
+    }
+    items.forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function renderRegionalSummaryTable() {
+    createTable("hiRegionalSummaryTable", filteredByRegion(tableRows("regional_summary")), tableOption("regional_summary").columns, 30);
+  }
+
+  function denominatorValue(region, denominator) {
+    var pop = populationMap()[region] || {};
+    return toNumber(pop[denominator]);
+  }
+
+  function disciplineRate(row) {
+    var denominator = STATE.denominator;
+    if (denominator === "auto") return toNumber(row.discharges_per_1000_relevant);
+    var value = denominatorValue(row.region, denominator);
+    if (!value) return null;
+    return ((toNumber(row.discharges) || 0) / value) * 1000;
+  }
+
+  function renderDiscipline() {
+    var rows = tableRows("activity_by_region_discipline").filter(function (row) {
+      return row.discipline === STATE.discipline;
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_rate = disciplineRate(row);
+      return copy;
+    });
+    rows.sort(function (a, b) { return (toNumber(b.selected_rate) || 0) - (toNumber(a.selected_rate) || 0); });
+    var title = byId("hiDisciplineRegionTitle");
+    var tag = byId("hiDisciplineRegionTag");
+    var denominatorLabel = STATE.denominator === "auto" ? "automatico" : DENOMINATORS[STATE.denominator];
+    if (title) title.textContent = STATE.discipline || "Disciplina";
+    if (tag) tag.textContent = "per 1.000, denominatore " + denominatorLabel;
+    horizontalBar("hiDisciplineRegionChart", rows, "region", "selected_rate", {
+      limit: 21,
+      highlight: STATE.region,
+      leftMargin: 150,
+      xTitle: "dimissioni per 1.000",
+      hovertemplate: "%{y}<br>Tasso: %{x:,.2f}<extra></extra>"
+    });
+    var note = byId("hiDisciplineNote");
+    if (note) {
+      note.textContent = "Denominatore selezionato: " + denominatorLabel + ". La tabella riporta anche volumi assoluti, degenza media e utilizzo dei posti letto.";
+    }
+    createTable("hiDisciplineTable", STATE.region === "Italia" ? rows : rows.filter(function (row) { return row.region === STATE.region; }), [
+      ["region", "Regione"],
+      ["discipline", "Disciplina"],
+      ["discharges", "Dimissioni"],
+      ["selected_rate", "Tasso selezionato"],
+      ["relevant_denominator", "Denom. auto"],
+      ["avg_los_days", "Degenza media"],
+      ["bed_utilization_percent", "Utilizzo PL"]
+    ], 40);
+  }
+
+  function renderCosts() {
+    var costType = STATE.costType;
+    var label = costLabel(costType);
+    var rows = tableRows("cost_by_region_category").filter(function (row) {
+      return row.cost_type === costType;
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.amount_billion = (toNumber(row.amount_eur) || 0) / 1000000000;
+      return copy;
+    });
+    rows.sort(function (a, b) { return (b.amount_billion || 0) - (a.amount_billion || 0); });
+    var title = byId("hiCostRegionTitle");
+    if (title) title.textContent = label + " per regione";
+    horizontalBar("hiCostRegionChart", rows, "region", "amount_billion", {
+      limit: 21,
+      highlight: STATE.region,
+      color: COLORS[3],
+      leftMargin: 150,
+      xTitle: "miliardi di euro",
+      hovertemplate: "%{y}<br>Importo: %{x:,.2f} mld euro<extra></extra>"
+    });
+
+    var composition = tableRows("cost_national").filter(function (row) {
+      return row.cost_type !== "totali";
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.amount_billion = (toNumber(row.amount_eur) || 0) / 1000000000;
+      return copy;
+    });
+    horizontalBar("hiCostCompositionChart", sortDescending(composition, "amount_billion"), "cost_label", "amount_billion", {
+      limit: 8,
+      color: COLORS[4],
+      leftMargin: 230,
+      xTitle: "miliardi di euro",
+      hovertemplate: "%{y}<br>Importo: %{x:,.2f} mld euro<extra></extra>"
+    });
+
+    var displayRows = STATE.region === "Italia" ? rows : rows.filter(function (row) { return row.region === STATE.region; });
+    createTable("hiCostTable", displayRows, tableOption("cost_by_region_category").columns, 40);
+  }
+
+  function costLabel(costType) {
+    var match = toArray(STATE.payload.filters && STATE.payload.filters.cost_types).find(function (row) {
+      return row.id === costType;
+    });
+    return match ? match.label : costType;
+  }
+
+  function renderSeries() {
+    renderBedsSeries();
+    renderPharmaSeries();
+  }
+
+  function renderBedsSeries() {
+    var region = STATE.region;
+    var source = tableRows("beds_by_region_year");
+    var rows;
+    if (region === "Italia") {
+      var grouped = {};
+      source.forEach(function (row) {
+        grouped[row.year] = (grouped[row.year] || 0) + (toNumber(row.total_beds) || 0);
+      });
+      rows = Object.keys(grouped).map(function (year) {
+        return { year: Number(year), total_beds: grouped[year] };
+      });
+    } else {
+      rows = source.filter(function (row) { return row.region === region; });
+    }
+    rows.sort(function (a, b) { return a.year - b.year; });
+    var title = byId("hiBedsSeriesTitle");
+    if (title) title.textContent = "Posti letto nel tempo - " + region;
+    lineChart("hiBedsSeriesChart", [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: "Posti letto",
+      x: rows.map(function (row) { return row.year; }),
+      y: rows.map(function (row) { return row.total_beds; }),
+      line: { color: COLORS[2], width: 3 },
+      marker: { size: 8 },
+      hovertemplate: "%{x}<br>Posti letto: %{y:,.0f}<extra></extra>"
+    }], { yTitle: "posti letto" });
+  }
+
+  function renderPharmaSeries() {
+    var region = STATE.region;
+    var rows = tableRows("pharma_series").filter(function (row) {
+      return row.region === region;
+    });
+    var labels = unique(rows.map(function (row) { return row.cost_label; }));
+    var traces = labels.map(function (label, index) {
+      var series = rows.filter(function (row) { return row.cost_label === label; }).sort(function (a, b) { return a.year - b.year; });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: label,
+        x: series.map(function (row) { return row.year; }),
+        y: series.map(function (row) { return (toNumber(row.amount_eur) || 0) / 1000000000; }),
+        line: { color: COLORS[index % COLORS.length], width: 3 },
+        marker: { size: 7 },
+        hovertemplate: "%{x}<br>%{y:,.2f} mld euro<extra></extra>"
+      };
+    });
+    var title = byId("hiPharmaSeriesTitle");
+    if (title) title.textContent = "Spesa farmaceutica - " + region;
+    lineChart("hiPharmaSeriesChart", traces, { yTitle: "miliardi di euro" });
+  }
+
+  function renderHospitals() {
+    var rows = tableRows("hospital_activity_top");
+    if (STATE.region !== "Italia") rows = rows.filter(function (row) { return row.region === STATE.region; });
+    rows = sortDescending(rows, "discharges");
+    var title = byId("hiHospitalTitle");
+    if (title) title.textContent = "Top strutture per dimissioni - " + STATE.region;
+    horizontalBar("hiHospitalChart", rows, "structure", "discharges", {
+      limit: 22,
+      color: COLORS[6],
+      leftMargin: 260,
+      labelLength: 42,
+      xTitle: "dimissioni",
+      hovertemplate: "%{y}<br>Dimissioni: %{x:,.0f}<extra></extra>"
+    });
+    createTable("hiHospitalTable", rows, tableOption("hospital_activity_top").columns, 80);
+  }
+
+  function renderMobility() {
+    var mobility = STATE.payload.mobility || {};
+    var frame = byId("hiMobilityFrame");
+    var economic = byId("hiEconomicMobilityFrame");
+    if (frame && mobility.embed_url && frame.src !== mobility.embed_url) frame.src = mobility.embed_url;
+    if (economic && mobility.economic_embed_url && economic.src !== mobility.economic_embed_url) economic.src = mobility.economic_embed_url;
+  }
+
+  function renderMethod() {
+    renderList("hiMethodNotes", STATE.payload.methodology && STATE.payload.methodology.notes);
+    renderList("hiMethodWarnings", STATE.payload.methodology && STATE.payload.methodology.comparability_warnings);
+    renderDenominatorRules();
+    createTable("hiDefinitionsTable", tableRows("definitions"), tableOption("definitions").columns, 30);
+    createTable("hiSourcesTable", tableRows("sources"), tableOption("sources").columns, 30);
+  }
+
+  function renderList(id, items) {
+    var node = byId(id);
+    clear(node);
+    toArray(items).forEach(function (text) {
+      node.appendChild(create("li", "", text));
+    });
+  }
+
+  function renderDenominatorRules() {
+    var container = byId("hiDenominatorRules");
+    clear(container);
+    toArray(STATE.payload.methodology && STATE.payload.methodology.denominator_rules).forEach(function (rule) {
+      var item = create("div", "hi-coverage-item");
+      item.appendChild(create("strong", "", rule.label));
+      item.appendChild(create("span", "", rule.keywords && rule.keywords.length ? "Parole chiave: " + rule.keywords.join(", ") : "Regola generale se non ci sono parole chiave cliniche."));
+      item.appendChild(create("em", "", rule.denominator));
+      container.appendChild(item);
+    });
+  }
+
+  function unique(values) {
+    var seen = {};
+    return values.filter(function (value) {
+      if (!value || seen[value]) return false;
+      seen[value] = true;
+      return true;
+    });
+  }
+
+  function filteredByRegion(rows) {
+    if (STATE.region === "Italia") return toArray(rows);
+    return toArray(rows).filter(function (row) {
+      return !row.region || row.region === STATE.region;
+    });
+  }
+
+  function rowText(row) {
+    return Object.keys(row || {}).map(function (key) { return asText(row[key], ""); }).join(" ").toLowerCase();
+  }
+
+  function rowMatchesExplorer(row) {
+    if (row.region && STATE.region !== "Italia" && row.region !== STATE.region) return false;
+    if (row.discipline && STATE.discipline && STATE.table.indexOf("activity") !== -1 && row.discipline !== STATE.discipline) return false;
+    if (row.cost_type && row.cost_type !== STATE.costType && STATE.table.indexOf("cost") !== -1) return false;
+    var term = STATE.search.trim().toLowerCase();
+    return !term || rowText(row).indexOf(term) !== -1;
+  }
+
+  function filteredTableRows(tableName) {
+    return tableRows(tableName).filter(rowMatchesExplorer);
   }
 
   function tableOption(id) {
@@ -479,182 +885,72 @@
     return { id: id, label: id, columns: null };
   }
 
-  function topFiltered(tableName, predicate, limit) {
-    return rows(tableName).filter(function (row) {
-      return rowMatchesGlobalFilters(row) && (!predicate || predicate(row));
-    }).slice(0, limit || 80);
-  }
+  function createTable(containerId, tableRowsValue, columns, limit) {
+    var container = byId(containerId);
+    if (!container) return;
+    clear(container);
+    var rows = toArray(tableRowsValue).slice(0, limit || 120);
+    columns = columns && columns.length ? columns : inferColumns(rows);
 
-  function textIncludes(row, values) {
-    var text = rowText(row);
-    return values.some(function (value) { return text.indexOf(value) !== -1; });
-  }
-
-  function renderMainCharts() {
-    plotSummaryBar("hiProviderChart", summary("catalog_by_provider"), 12, true);
-    plotSummaryBar("hiThemeChart", summary("catalog_by_theme"), 14, true);
-    plotSummaryBar("hiStatusChart", summary("validated_by_status_code"), 8, false);
-    plotDonut("hiLinkRoleChart", summary("validated_link_roles"));
-  }
-
-  function renderAccess() {
-    var accessCatalog = topFiltered("catalog", function (row) {
-      return textIncludes(row, ["waiting", "attesa", "prestaz", "pnla", "services"]);
-    }, 80);
-    var candidates = rows("dataset_registry").filter(function (row) {
-      return rowMatchesGlobalFilters(row) && textIncludes(row, ["waiting", "attesa", "prestaz", "pnla", "services"]);
+    var table = create("table", "hi-table");
+    var thead = document.createElement("thead");
+    var headerRow = document.createElement("tr");
+    columns.forEach(function (column) {
+      headerRow.appendChild(create("th", "", column[1] || column[0]));
     });
-    if (!candidates.length) {
-      candidates = worklist("data_candidates").filter(function (row) {
-        return rowMatchesGlobalFilters(row) && textIncludes(row, ["waiting", "attesa", "prestaz", "pnla", "services"]);
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    if (!rows.length) {
+      var emptyRow = document.createElement("tr");
+      var emptyCell = create("td", "", "Nessun dato disponibile");
+      emptyCell.colSpan = Math.max(1, columns.length);
+      emptyRow.appendChild(emptyCell);
+      tbody.appendChild(emptyRow);
+    } else {
+      rows.forEach(function (row) {
+        var tr = document.createElement("tr");
+        columns.forEach(function (column) {
+          var key = column[0];
+          var td = document.createElement("td");
+          var value = row[key];
+          if (key === "url" && /^https?:\/\//i.test(asText(value, ""))) {
+            var link = document.createElement("a");
+            link.href = value;
+            link.target = "_blank";
+            link.rel = "noopener";
+            link.textContent = "pagina ufficiale";
+            td.appendChild(link);
+          } else if (key === "region" || key === "discipline" || key === "structure" || key === "indicator" || key === "name" || key === "provider") {
+            var strong = document.createElement("strong");
+            strong.textContent = compact(value, key === "structure" ? 72 : 56);
+            td.appendChild(strong);
+          } else {
+            td.textContent = compact(formatCell(key, value), 96);
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
       });
     }
-    var chartData = countRows(accessCatalog, "provider");
-    plotSummaryBar("hiAccessChart", chartData.length ? chartData : summary("catalog_by_access_type"), 8, false);
-    createTable("hiAccessTable", candidates.length ? candidates : accessCatalog, ["provider", "dataset_name", "theme", "access_type", "download_status", "source_page_url"], 12);
+    table.appendChild(tbody);
+    container.appendChild(table);
   }
 
-  function renderHospitals() {
-    var hospitalRows = rows("validated_links").filter(function (row) {
-      return rowMatchesGlobalFilters(row) && textIncludes(row, ["pne", "ospedal", "ricover", "hospital", "esiti", "strutture"]);
-    });
-    var agenasRows = rows("agenas_links").filter(function (row) {
-      return rowMatchesGlobalFilters(row) && textIncludes(row, ["pne", "ospedal", "ricover", "esiti", "strutture"]);
-    });
-    plotSummaryBar("hiHospitalChart", countRows(hospitalRows.length ? hospitalRows : agenasRows, "source_id"), 8, true);
-    createTable("hiHospitalTable", hospitalRows.length ? hospitalRows : agenasRows, ["provider", "source_id", "file_extension", "link_text", "validation_status_code", "final_url", "url"], 14);
-  }
-
-  function renderMobility() {
-    var mobilityRows = rows("catalog").filter(function (row) {
-      return rowMatchesGlobalFilters(row) && textIncludes(row, ["mobilita", "mobility"]);
-    });
-    var rankingRows = rows("source_ranking").filter(function (row) {
-      return rowMatchesGlobalFilters(row) && textIncludes(row, ["mobilita", "mobility"]);
-    });
-    plotSummaryBar("hiMobilityChart", countRows(mobilityRows.concat(rankingRows), "provider"), 8, false);
-    createTable("hiMobilityTable", rankingRows.length ? rankingRows : mobilityRows, ["provider", "dataset_name", "theme", "access_type", "license", "score", "source_page_url"], 12);
-  }
-
-  function renderRegionalMatrix() {
-    var regional = rows("regional_sources_seed");
-    var filtered = regional.filter(function (row) {
-      return rowMatchesGlobalFilters(row);
-    });
-    if (!filtered.length) filtered = regional;
-    var regions = uniqueSorted(filtered.map(function (row) { return row.region; }), "").filter(Boolean);
-    var modules = uniqueSorted(filtered.map(function (row) { return row.module_id; }), "").filter(Boolean);
-    var lookup = {};
-    filtered.forEach(function (row) {
-      lookup[asText(row.region) + "|" + asText(row.module_id)] = asText(row.status, "ND");
-    });
-    var z = regions.map(function (region) {
-      return modules.map(function (module) {
-        return statusValue(lookup[region + "|" + module]);
-      });
-    });
-    var text = regions.map(function (region) {
-      return modules.map(function (module) {
-        return region + " - " + module + ": " + asText(lookup[region + "|" + module], "ND");
-      });
-    });
-    plot("hiRegionalMatrix", [{
-      type: "heatmap",
-      x: modules,
-      y: regions,
-      z: z,
-      text: text,
-      hovertemplate: "%{text}<extra></extra>",
-      colorscale: [
-        [0, "#303030"],
-        [.5, "#d9ad48"],
-        [1, "#3aa6a1"]
-      ],
-      showscale: false
-    }], {
-      margin: { t: 18, r: 18, b: 110, l: 122 },
-      xaxis: { tickangle: -35 },
-      yaxis: { automargin: true }
-    });
-    renderRegionProfile(filtered, regional);
-  }
-
-  function statusValue(value) {
-    var text = asText(value, "").toLowerCase();
-    if (text.indexOf("mapped") !== -1 || text.indexOf("ok") !== -1) return 2;
-    if (text.indexOf("progress") !== -1) return 1;
-    return 0;
-  }
-
-  function renderRegionProfile(filtered, allRegional) {
-    var title = byId("hiRegionProfileTitle");
-    var tag = byId("hiRegionProfileTag");
-    var container = byId("hiRegionProfile");
-    clear(container);
-    var selectedRegion = STATE.region === "Tutte" ? "Italia" : STATE.region;
-    if (title) title.textContent = "Sanita in " + selectedRegion;
-    if (tag) tag.textContent = STATE.compare;
-
-    var regionRows = STATE.region === "Tutte" ? filtered : allRegional.filter(function (row) { return asText(row.region) === STATE.region; });
-    var mapped = regionRows.filter(function (row) { return statusValue(row.status) > 0; }).length;
-    var items = [
-      ["Moduli censiti", regionRows.length, "righe regione-modulo nel piano di mapping"],
-      ["Moduli con fonte mappata", mapped, "conteggio basato sullo stato del seed regionale"],
-      ["Stato prevalente", dominantValue(regionRows, "status"), "utile per capire la maturita del profilo regionale"],
-      ["Prossime aree", topValues(regionRows, "module_id", 5).join(", "), "accesso, strutture, personale, costi e territorio"]
-    ];
-    items.forEach(function (item) {
-      var node = create("div", "hi-profile-item");
-      node.appendChild(create("span", "", item[0]));
-      node.appendChild(create("strong", "", formatDisplay(item[1])));
-      node.appendChild(create("small", "", item[2]));
-      container.appendChild(node);
-    });
-  }
-
-  function renderResources() {
-    plotSummaryBar("hiResourceFormatChart", summary("health_resources_by_format"), 12, false);
-    plotSummaryBar("hiAccountingChart", summary("health_resources_by_basis"), 12, true);
-    createTable("hiResourceTable", worklist("health_expenditure_resources").filter(rowMatchesGlobalFilters), ["provider", "dataset_name", "format", "accounting_basis", "relevance_score", "resource_status", "candidate_url"], 18);
-  }
-
-  function renderQuality() {
-    plotDonut("hiQualityChart", summary("quality_by_status"));
-    plotDonut("hiAuditChart", summary("audit_by_status"));
-    var issues = worklist("quality_issues").concat(worklist("audit_issues"));
-    createTable("hiIssuesTable", issues, ["check_group", "check_name", "passed", "value", "message", "dataset_path"], 18);
+  function inferColumns(rows) {
+    var first = rows && rows.length ? rows[0] : {};
+    return Object.keys(first).slice(0, 8).map(function (key) { return [key, key.replace(/_/g, " ")]; });
   }
 
   function renderExplorer() {
     var option = tableOption(STATE.table);
-    var data = filteredRows(STATE.table);
+    var rows = filteredTableRows(STATE.table);
     var title = byId("hiTableTitle");
     var count = byId("hiTableCount");
     if (title) title.textContent = option.label;
-    if (count) count.textContent = formatNumber(data.length) + " righe";
-    createTable("hiTableExplorer", data, option.columns, 250);
-  }
-
-  function countRows(tableRows, field) {
-    var counts = {};
-    toArray(tableRows).forEach(function (row) {
-      var value = asText(row[field]);
-      counts[value] = (counts[value] || 0) + 1;
-    });
-    return Object.keys(counts).map(function (key) {
-      return { value: key, count: counts[key] };
-    }).sort(function (a, b) {
-      return b.count - a.count || a.value.localeCompare(b.value, "it");
-    });
-  }
-
-  function topValues(tableRows, field, limit) {
-    return countRows(tableRows, field).slice(0, limit || 5).map(function (row) { return row.value; });
-  }
-
-  function dominantValue(tableRows, field) {
-    var values = topValues(tableRows, field, 1);
-    return values.length ? values[0] : MISSING;
+    if (count) count.textContent = formatNumber(rows.length) + " righe";
+    createTable("hiTableExplorer", rows, option.columns, 250);
   }
 
   function csvEscape(value) {
@@ -665,11 +961,13 @@
 
   function downloadCurrentCsv() {
     var option = tableOption(STATE.table);
-    var data = filteredRows(STATE.table);
-    var columns = option.columns && option.columns.length ? option.columns : inferColumns(data);
-    var lines = [columns.map(csvEscape).join(",")];
-    data.forEach(function (row) {
-      lines.push(columns.map(function (column) { return csvEscape(row[column]); }).join(","));
+    var rows = filteredTableRows(STATE.table);
+    var columns = option.columns && option.columns.length ? option.columns : inferColumns(rows);
+    var keys = columns.map(function (column) { return column[0]; });
+    var labels = columns.map(function (column) { return column[1] || column[0]; });
+    var lines = [labels.map(csvEscape).join(",")];
+    rows.forEach(function (row) {
+      lines.push(keys.map(function (key) { return csvEscape(row[key]); }).join(","));
     });
     var blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     var link = document.createElement("a");
@@ -682,20 +980,23 @@
   }
 
   function renderDynamic() {
-    renderAccess();
+    renderNationalCharts();
+    renderRegionalRank();
+    renderRegionProfile();
+    renderRegionalSummaryTable();
+    renderDiscipline();
+    renderCosts();
+    renderSeries();
     renderHospitals();
-    renderMobility();
-    renderRegionalMatrix();
-    renderResources();
     renderExplorer();
   }
 
   function renderAll() {
     setupFilters();
     renderKpis();
-    renderMainCharts();
     renderDynamic();
-    renderQuality();
+    renderMobility();
+    renderMethod();
   }
 
   function fetchJson(url) {
@@ -708,7 +1009,7 @@
   function loadPayload(index) {
     index = index || 0;
     if (index >= DATA_SOURCES.length) {
-      setStatus("Dati non disponibili. La dashboard resta pronta e si aggiornera quando il payload sara pubblicato.", "error");
+      setStatus("Dati non disponibili. La dashboard si aggiornera quando il payload sara pubblicato.", "error");
       return;
     }
     fetchJson(DATA_SOURCES[index]).then(function (payload) {

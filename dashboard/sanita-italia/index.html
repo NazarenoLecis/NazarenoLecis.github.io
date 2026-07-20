@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sanit&agrave; italiana | Nazareno Lecis</title>
-  <meta name="description" content="Dashboard sulla sanit&agrave; italiana: accesso alle cure, qualit&agrave; degli ospedali, mobilit&agrave; sanitaria, risorse del SSN e fonti pubbliche.">
+  <meta name="description" content="Dashboard sulla sanit&agrave; italiana: attivit&agrave; ospedaliera, regioni, costi del SSN, serie storiche, mobilit&agrave; sanitaria, definizioni e fonti.">
   <link rel="icon" href="../../assets/logo.png" type="image/png">
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-1">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-2">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -41,13 +41,13 @@
       <div>
         <span class="eyebrow">Sanit&agrave; italiana</span>
         <h1>Accesso alle cure, qualit&agrave; degli ospedali, mobilit&agrave; sanitaria e risorse del SSN</h1>
-        <p class="lead">Dashboard operativa sulle fonti pubbliche disponibili per analizzare il Servizio sanitario nazionale. La prima versione pubblicabile concentra il lavoro su quadro regionale, mobilit&agrave;, ospedali ed esiti, spesa sanitaria e qualit&agrave; dei dati.</p>
+        <p class="lead">Dashboard con dati pubblici effettivi: dimissioni ospedaliere per disciplina e territorio, posti letto, costi regionali del SSN, serie storiche farmaceutiche, denominatori demografici e report ufficiali AGENAS sulla mobilit&agrave; sanitaria.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonti pubbliche e pipeline riproducibile</strong>
-          <span id="hiSourceMeta">AGENAS, Ministero della Salute, ISTAT, OpenBDAP, SIOPE, ISS e AIFA.</span>
+          <strong>Ministero della Salute, OpenBDAP, ISTAT, AGENAS</strong>
+          <span id="hiSourceMeta">Dati normalizzati dalla pipeline pubblica e aggiornati nel payload della dashboard.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Agenas" target="_blank" rel="noopener">Repository Agenas</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
       </div>
@@ -56,205 +56,213 @@
     <section class="workflow-grid hi-workflow" aria-label="Percorso di lettura">
       <div class="workflow-step">
         <span>1</span>
-        <h2>Scegli il territorio</h2>
-        <p>Regione, azienda sanitaria, struttura e anno sono il perimetro da normalizzare per ogni fonte.</p>
+        <h2>Italia</h2>
+        <p>Parti dal quadro nazionale: quante dimissioni, quali discipline, quante giornate, quanti posti letto e quali costi.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
-        <h2>Confronta accesso e qualit&agrave;</h2>
-        <p>Liste d'attesa, mobilit&agrave;, attivit&agrave; ospedaliera ed esiti restano separati.</p>
+        <h2>Regioni</h2>
+        <p>Confronta volumi, dotazioni e costi con rapporti per popolazione totale, over 65, over 75 o denominatore clinico.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
-        <h2>Guarda risorse e andamento</h2>
-        <p>Spesa, personale, dotazioni e serie storiche vengono lette insieme alla copertura dei dati.</p>
+        <h2>Metodo</h2>
+        <p>Leggi definizioni, fonti, anni, limiti e regole di normalizzazione prima di interpretare le classifiche.</p>
       </div>
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard sanit&agrave;">
-      <a href="#quadro">Quadro generale</a>
-      <a href="#accesso">Accesso</a>
-      <a href="#ospedali">Ospedali</a>
+      <a href="#indicatori">Indicatori</a>
+      <a href="#italia">Italia</a>
+      <a href="#regioni">Regioni</a>
+      <a href="#discipline">Discipline</a>
+      <a href="#costi">Costi</a>
+      <a href="#serie">Serie</a>
+      <a href="#strutture">Strutture</a>
       <a href="#mobilita">Mobilit&agrave;</a>
-      <a href="#territorio">Territorio</a>
-      <a href="#risorse">Risorse</a>
-      <a href="#confronti">Confronti</a>
-      <a href="#tabelle">Dati</a>
+      <a href="#dati">Dati</a>
       <a href="#metodo">Metodo</a>
     </nav>
 
     <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
+    <p class="hi-note"><strong>Perimetro:</strong> le prestazioni ora misurate sono dimissioni/ricoveri ospedalieri per disciplina. La specialistica ambulatoriale e le liste d'attesa entrano quando i flussi AGENAS saranno disponibili in forma tabellare estraibile.</p>
 
-    <section class="hi-filter-panel" aria-label="Filtri generali">
-      <label>Anno
-        <select id="hiYearFilter"></select>
-      </label>
-      <label>Regione
-        <select id="hiRegionFilter"></select>
-      </label>
-      <label>Fonte
-        <select id="hiProviderFilter"></select>
-      </label>
-      <label>Area
-        <select id="hiThemeFilter"></select>
-      </label>
-      <label>Confronto
-        <select id="hiCompareFilter">
-          <option value="italia">Italia</option>
-          <option value="macroarea">Macroarea</option>
-          <option value="regione-simile">Regione simile</option>
-        </select>
-      </label>
+    <section class="chart-filter-panel" aria-label="Filtri generali">
+      <div class="filter-grid">
+        <label>Regione
+          <select id="hiRegionFilter"></select>
+        </label>
+        <label>Disciplina
+          <select id="hiDisciplineFilter"></select>
+        </label>
+        <label>Indicatore regionale
+          <select id="hiMetricFilter">
+            <option value="discharges_per_1000">Dimissioni per 1.000 residenti</option>
+            <option value="discharges">Dimissioni</option>
+            <option value="total_beds">Posti letto</option>
+            <option value="beds_per_1000">Posti letto per 1.000 residenti</option>
+            <option value="ssn_cost_eur">Costo SSN</option>
+            <option value="ssn_cost_per_capita_eur">Costo SSN pro capite</option>
+            <option value="ssn_cost_per_over65_eur">Costo SSN per residente 65+</option>
+            <option value="bed_utilization_percent">Utilizzo posti letto</option>
+            <option value="avg_los_days">Degenza media</option>
+          </select>
+        </label>
+        <label>Denominatore disciplina
+          <select id="hiDenominatorFilter">
+            <option value="auto">Automatico per disciplina</option>
+            <option value="population_total">Popolazione totale</option>
+            <option value="population_65_plus">Popolazione 65+</option>
+            <option value="population_75_plus">Popolazione 75+</option>
+            <option value="population_0">Et&agrave; 0 / neonati</option>
+            <option value="population_0_14">Popolazione 0-14</option>
+            <option value="women_15_49">Donne 15-49</option>
+          </select>
+        </label>
+        <label>Tipo costo
+          <select id="hiCostTypeFilter"></select>
+        </label>
+      </div>
     </section>
 
-    <section id="quadro" class="hi-section">
-      <div class="hi-section-head">
-        <span class="eyebrow">Quadro generale</span>
-        <h2>Copertura, fonti e indicatori pronti</h2>
-        <p>La dashboard mostra gli indicatori sanitari solo quando la pipeline ha una base dati normalizzata e comparabile. In questa versione il quadro generale misura copertura delle fonti, link validati, risorse candidabili e controlli qualit&agrave;.</p>
+    <section id="indicatori" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Quadro rapido</span>
+        <div><h2>Indicatori principali</h2><p>Ultimi valori disponibili nel payload. Ogni scheda riporta misura, anno e fonte.</p></div>
       </div>
       <div id="hiKpis" class="hi-kpi-grid" aria-label="Indicatori principali"></div>
-      <div class="hi-grid-2">
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Fonti per ente</h3><span>catalogo</span></div>
-          <div id="hiProviderChart" class="hi-chart"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Aree sanitarie coperte</h3><span>catalogo</span></div>
-          <div id="hiThemeChart" class="hi-chart"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Link validati</h3><span>stato</span></div>
-          <div id="hiStatusChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Dataset e documenti</h3><span>discovery</span></div>
-          <div id="hiLinkRoleChart" class="hi-chart hi-chart-small"></div>
-        </article>
-      </div>
     </section>
 
-    <section id="accesso" class="hi-section">
-      <div class="hi-section-head">
-        <span class="eyebrow">Accesso alle prestazioni</span>
-        <h2>Liste d'attesa e prestazioni</h2>
-        <p>Il modulo prevede regione, prestazione, classe di priorit&agrave; e periodo. La vista attuale evidenzia fonti, link e risorse da portare nella pipeline prima di pubblicare tempi medi, quote entro standard e serie storiche.</p>
+    <section id="italia" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Italia</span>
+        <div><h2>Quante prestazioni ospedaliere e quali</h2><p>Volumi nazionali di dimissioni per disciplina, posti letto per disciplina e tipologia amministrativa di dimissione.</p></div>
       </div>
-      <div class="hi-grid-2">
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Fonti accesso e attese</h3><span>priorit&agrave;</span></div>
-          <div id="hiAccessChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Candidati dati</h3><span>download</span></div>
-          <div id="hiAccessTable" class="hi-table-wrap"></div>
-        </article>
-      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3>Dimissioni per disciplina</h3><span>Ministero Salute, 2022</span></div>
+        <div id="hiNationalActivityChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3>Posti letto per disciplina</h3><span>Ministero Salute, 2023</span></div>
+        <div id="hiNationalBedsChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3>Tipologia di dimissione</h3><span>SDO, ultimo anno disponibile</span></div>
+        <div id="hiDischargeTypeChart" class="hi-chart"></div>
+        <p id="hiDischargeTypeNote" class="hi-chart-credit">Le celle oscurate dalla fonte non sono trattate come zero.</p>
+      </article>
     </section>
 
-    <section id="ospedali" class="hi-section">
-      <div class="hi-section-head">
-        <span class="eyebrow">Ospedali, attivit&agrave; ed esiti</span>
-        <h2>PNE, strutture e profili ospedalieri</h2>
-        <p>Volumi, esiti, discipline e strutture saranno pubblicati separando valore osservato, eventuale aggiustamento del rischio, media nazionale, numerosit&agrave; dei casi e copertura temporale.</p>
+    <section id="regioni" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Regioni</span>
+        <div><h2>Confronto regionale</h2><p>La classifica usa l'indicatore selezionato nei filtri. Il profilo sotto il grafico mostra il territorio scelto rispetto al dato nazionale.</p></div>
       </div>
-      <div class="hi-grid-2">
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Materiali ospedalieri trovati</h3><span>AGENAS/PNE</span></div>
-          <div id="hiHospitalChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Link PNE e ospedali</h3><span>evidenze</span></div>
-          <div id="hiHospitalTable" class="hi-table-wrap"></div>
-        </article>
-      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiRegionalRankTitle">Classifica regionale</h3><span id="hiRegionalRankTag">indicatore</span></div>
+        <div id="hiRegionalRankChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonti: Ministero della Salute, OpenBDAP, ISTAT. I rapporti usano popolazione residente ISTAT 2026.</p>
+      </article>
+      <div id="hiRegionProfile" class="hi-profile-grid" aria-label="Profilo regionale"></div>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Tabella regionale</h3><span>volumi, dotazioni, costi</span></div>
+        <div id="hiRegionalSummaryTable" class="hi-table-wrap"></div>
+      </article>
     </section>
 
-    <section id="mobilita" class="hi-section">
-      <div class="hi-section-head">
+    <section id="discipline" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Discipline</span>
+        <div><h2>La stessa prestazione letta per territorio</h2><p>Per ogni disciplina il tasso pu&ograve; usare il denominatore automatico o una popolazione scelta manualmente.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiDisciplineRegionTitle">Disciplina per regione</h3><span id="hiDisciplineRegionTag">tasso</span></div>
+        <div id="hiDisciplineRegionChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiDisciplineNote" class="hi-chart-credit">La normalizzazione automatica usa regole dichiarate nel metodo.</p>
+      </article>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Dettaglio disciplina</h3><span>regioni</span></div>
+        <div id="hiDisciplineTable" class="hi-table-wrap"></div>
+      </article>
+    </section>
+
+    <section id="costi" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Costi</span>
+        <div><h2>Quanto costa il SSN e dove</h2><p>Costi di Conto economico degli Enti del SSN a livello regionale: totale, beni e servizi, personale, ammortamenti e altri costi.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiCostRegionTitle">Costi regionali</h3><span>OpenBDAP, 2024</span></div>
+        <div id="hiCostRegionChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo 2024. Importi in euro; non sono flussi di cassa.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3>Composizione dei costi nazionali</h3><span>miliardi di euro</span></div>
+        <div id="hiCostCompositionChart" class="hi-chart"></div>
+        <p class="hi-chart-credit">Le voci sono quelle esposte dall'API tematica OpenBDAP sulla finanza degli Enti del SSN.</p>
+      </article>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Dettaglio costi regionali</h3><span>quota e variazione</span></div>
+        <div id="hiCostTable" class="hi-table-wrap"></div>
+      </article>
+    </section>
+
+    <section id="serie" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Serie storiche</span>
+        <div><h2>Andamenti disponibili</h2><p>I posti letto hanno una serie minima 2021-2023; la spesa farmaceutica usa la serie OpenBDAP 2012-2024.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiBedsSeriesTitle">Posti letto nel tempo</h3><span>2021-2023</span></div>
+        <div id="hiBedsSeriesChart" class="hi-chart"></div>
+        <p class="hi-chart-credit">Fonte: Ministero della Salute. Serie costruita sui file CSV 2021 e 2023 normalizzati nella pipeline.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiPharmaSeriesTitle">Spesa farmaceutica</h3><span>2012-2024</span></div>
+        <div id="hiPharmaSeriesChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section id="strutture" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Strutture</span>
+        <div><h2>Ospedali con maggior volume</h2><p>Classifica delle strutture pubbliche ed equiparate con pi&ugrave; dimissioni nel perimetro del dataset Ministero della Salute.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiHospitalTitle">Top strutture per dimissioni</h3><span>Ministero Salute, 2022</span></div>
+        <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
+      </article>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Dettaglio strutture</h3><span>top volumi</span></div>
+        <div id="hiHospitalTable" class="hi-table-wrap"></div>
+      </article>
+    </section>
+
+    <section id="mobilita" class="dashboard-section">
+      <div class="section-head">
         <span class="eyebrow">Mobilit&agrave; sanitaria</span>
-        <h2>Flussi, attrattivit&agrave; e saldo economico</h2>
-        <p>Il disegno dati distingue origine, destinazione, prestazione, disciplina, anno, valore economico e volume. La prima vista rende visibili le fonti e il lavoro necessario per arrivare alla matrice origine-destinazione.</p>
+        <div><h2>Turismo sanitario, flussi e saldi</h2><p>La mobilit&agrave; viene mostrata con i report ufficiali AGENAS incorporati: flussi tra territori e risultati economici della mobilit&agrave;.</p></div>
       </div>
-      <div class="hi-grid-2">
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Fonti mobilit&agrave;</h3><span>catalogo</span></div>
-          <div id="hiMobilityChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Dataset mobilit&agrave;</h3><span>stato</span></div>
-          <div id="hiMobilityTable" class="hi-table-wrap"></div>
-        </article>
-      </div>
+      <article class="hi-card hi-embed-card">
+        <div class="hi-card-title"><h3>Flussi di mobilit&agrave;</h3><span>AGENAS</span></div>
+        <iframe id="hiMobilityFrame" title="Mobilit&agrave; sanitaria AGENAS" src="" loading="lazy" allowfullscreen></iframe>
+        <p class="hi-chart-credit">Report ufficiale AGENAS. La dashboard non ricostruisce flussi non ancora disponibili nella pipeline come tabella origine-destinazione.</p>
+      </article>
+      <article class="hi-card hi-embed-card">
+        <div class="hi-card-title"><h3>Risultati economici della mobilit&agrave;</h3><span>AGENAS</span></div>
+        <iframe id="hiEconomicMobilityFrame" title="Risultati economici della mobilit&agrave; AGENAS" src="" loading="lazy" allowfullscreen></iframe>
+        <p class="hi-chart-credit">Report ufficiale AGENAS sui saldi economici della mobilit&agrave; sanitaria.</p>
+      </article>
     </section>
 
-    <section id="territorio" class="hi-section">
-      <div class="hi-section-head">
-        <span class="eyebrow">Territorio</span>
-        <h2>Copertura regionale dei moduli</h2>
-        <p>La matrice regione-modulo mostra dove serve ancora mappare fonti regionali per accesso, servizi, emergenza, strutture, personale, costi, spesa sanitaria e assistenza territoriale.</p>
-      </div>
-      <div class="hi-grid-2 hi-grid-territory">
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Matrice regione-modulo</h3><span>mapping</span></div>
-          <div id="hiRegionalMatrix" class="hi-chart hi-chart-large"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3 id="hiRegionProfileTitle">Profilo regionale</h3><span id="hiRegionProfileTag">mapping</span></div>
-          <div id="hiRegionProfile" class="hi-profile-list"></div>
-        </article>
-      </div>
-    </section>
-
-    <section id="risorse" class="hi-section">
-      <div class="hi-section-head">
-        <span class="eyebrow">Risorse e spesa sanitaria</span>
-        <h2>OpenBDAP, SIOPE e denominatori demografici</h2>
-        <p>La pipeline mantiene distinta la contabilit&agrave; economica dai flussi di cassa e prepara spesa nominale, reale e corretta per popolazione totale e popolazione anziana.</p>
-      </div>
-      <div class="hi-grid-2">
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Risorse per formato</h3><span>spesa</span></div>
-          <div id="hiResourceFormatChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Base contabile</h3><span>competenza/cassa</span></div>
-          <div id="hiAccountingChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card hi-wide-card">
-          <div class="hi-card-title"><h3>Risorse sanitarie prioritarie</h3><span>OpenBDAP/SIOPE</span></div>
-          <div id="hiResourceTable" class="hi-table-wrap"></div>
-        </article>
-      </div>
-    </section>
-
-    <section id="confronti" class="hi-section">
-      <div class="hi-section-head">
-        <span class="eyebrow">Confronti</span>
-        <h2>Regioni, fonti e qualit&agrave; della pipeline</h2>
-        <p>Prima dei confronti sostantivi tra regioni, la dashboard espone i controlli che decidono se un indicatore pu&ograve; essere pubblicato senza perdere comparabilit&agrave;.</p>
-      </div>
-      <div class="hi-grid-2">
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Controlli dataset</h3><span>qualit&agrave;</span></div>
-          <div id="hiQualityChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card">
-          <div class="hi-card-title"><h3>Audit progetto</h3><span>pipeline</span></div>
-          <div id="hiAuditChart" class="hi-chart hi-chart-small"></div>
-        </article>
-        <article class="hi-card hi-wide-card">
-          <div class="hi-card-title"><h3>Problemi dati aperti</h3><span>azione</span></div>
-          <div id="hiIssuesTable" class="hi-table-wrap"></div>
-        </article>
-      </div>
-    </section>
-
-    <section id="tabelle" class="hi-section">
-      <div class="hi-section-head">
+    <section id="dati" class="dashboard-section">
+      <div class="section-head">
         <span class="eyebrow">Dati scaricabili</span>
-        <h2>Esplora le tabelle della pipeline</h2>
-        <p>Catalogo, link validati, piano risorse, dizionari, audit e inventari sono disponibili nello stesso payload pubblico della dashboard.</p>
+        <div><h2>Tabelle della dashboard</h2><p>Le tabelle sono parte dello stesso JSON pubblico e possono essere scaricate in CSV.</p></div>
       </div>
       <article class="hi-card">
         <div class="hi-card-title"><h3 id="hiTableTitle">Tabelle</h3><span id="hiTableCount">0 righe</span></div>
@@ -263,7 +271,7 @@
             <select id="hiTableSelect"></select>
           </label>
           <label>Cerca
-            <input id="hiTableSearch" type="search" placeholder="testo, fonte, regione">
+            <input id="hiTableSearch" type="search" placeholder="regione, disciplina, fonte">
           </label>
           <button id="hiDownloadCsv" type="button">Download CSV</button>
         </div>
@@ -271,34 +279,31 @@
       </article>
     </section>
 
-    <section id="metodo" class="hi-section">
-      <div class="hi-section-head">
-        <span class="eyebrow">Metodo</span>
-        <h2>Definizioni, limiti e prossimi indicatori</h2>
-        <p>Ogni indicatore sanitario richiede definizione, numeratore, denominatore, unit&agrave; di misura, copertura, fonte, aggiornamento, esclusioni e avvertenze sulla comparabilit&agrave;.</p>
+    <section id="metodo" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Metodo e fonti</span>
+        <div><h2>Definizioni, denominatori e limiti</h2><p>Ogni indicatore viene letto con numeratore, denominatore, anno, fonte e avvertenze sulla comparabilit&agrave;.</p></div>
       </div>
-      <div class="hi-method-grid">
-        <article>
-          <span>Versione iniziale</span>
-          <strong>Quadro regionale, mobilit&agrave;, ospedali ed esiti, spesa sanitaria.</strong>
-          <p>Liste d'attesa, personale e assistenza territoriale entrano quando copertura e confrontabilit&agrave; sono sufficienti.</p>
-        </article>
-        <article>
-          <span>Nessun punteggio unico</span>
-          <strong>Accessibilit&agrave;, esiti e risorse restano separati.</strong>
-          <p>Un indice sintetico nasconderebbe differenze sostanziali tra territori e servizi.</p>
-        </article>
-        <article>
-          <span>Normalizzazioni</span>
-          <strong>Popolazione totale, over 65, over 75 e base contabile.</strong>
-          <p>La spesa sanitaria viene letta distinguendo competenza economica, cassa e denominatori demografici.</p>
-        </article>
-        <article>
-          <span>Qualit&agrave;</span>
-          <strong>Casi, copertura, codifiche e criteri di inclusione.</strong>
-          <p>Gli indicatori ospedalieri non sono confrontabili senza numerosit&agrave;, rischio e perimetro clinico.</p>
-        </article>
+      <div class="hi-notes-panel">
+        <div>
+          <h3>Note metodologiche</h3>
+          <ul id="hiMethodNotes"></ul>
+          <h3>Avvertenze</h3>
+          <ul id="hiMethodWarnings"></ul>
+        </div>
+        <div>
+          <h3>Regole dei denominatori</h3>
+          <div id="hiDenominatorRules" class="hi-coverage-list"></div>
+        </div>
       </div>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Definizioni degli indicatori</h3><span>metodo</span></div>
+        <div id="hiDefinitionsTable" class="hi-table-wrap"></div>
+      </article>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Fonti usate</h3><span>pagine ufficiali</span></div>
+        <div id="hiSourcesTable" class="hi-table-wrap"></div>
+      </article>
     </section>
   </main>
 
