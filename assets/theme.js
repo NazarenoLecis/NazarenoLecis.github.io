@@ -275,7 +275,7 @@
     injectSocialStyle();
     removeTopGithubLink();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260721-dashboard-i18n-3", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260721-dashboard-i18n-4", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {
