@@ -7,31 +7,66 @@
   var COMPONENT_LABELS = {
     unadjusted: "Divario osservato",
     explained_overall: "Totale spiegato",
+    adjusted_unexplained: "Residuo adjusted",
     residual: "Adjusted / residuo",
     age: "Eta'",
     education: "Titolo di studio",
+    economic_activity: "Attivita' economica",
     sector: "Settore economico",
     occupation: "Professione",
     working_time: "Tempo di lavoro",
+    employment_contract: "Tipo di contratto",
     contract: "Contratto",
+    enterprise_control: "Controllo dell'impresa",
+    enterprise_size: "Dimensione dell'impresa",
     firm_size: "Dimensione impresa",
+    geographical_location: "Area geografica",
+    job_experience: "Esperienza lavorativa",
     public_private: "Pubblico/privato",
     other: "Altre componenti"
   };
   var COMPONENT_NOTES = {
     unadjusted: "Differenza osservata tra retribuzione oraria lorda media di uomini e donne.",
     explained_overall: "Parte del divario associata alle caratteristiche osservabili incluse nella decomposizione.",
+    adjusted_unexplained: "Parte non spiegata dopo i controlli della decomposizione SES; coincide con la misura adjusted pubblicata dalla fonte.",
     residual: "Parte non spiegata dalle variabili del modello; nella fonte Eurostat e' l'adjusted gender pay gap.",
     age: "Effetto della diversa composizione per classe di eta'.",
     education: "Effetto della diversa distribuzione per titolo di studio.",
+    economic_activity: "Effetto della diversa concentrazione tra attivita' economiche e settori produttivi.",
     sector: "Effetto della concentrazione in settori con livelli retributivi diversi.",
     occupation: "Effetto della diversa distribuzione tra professioni e livelli occupazionali.",
     working_time: "Effetto legato alla diversa presenza in tempo pieno e part-time.",
+    employment_contract: "Effetto della diversa composizione per tipologia contrattuale.",
     contract: "Effetto legato alla composizione per tipo di contratto.",
+    enterprise_control: "Effetto della diversa presenza in imprese a controllo pubblico o privato.",
+    enterprise_size: "Effetto della diversa distribuzione per classe dimensionale dell'impresa.",
     firm_size: "Effetto legato alla diversa distribuzione per dimensione dell'impresa.",
+    geographical_location: "Effetto della diversa distribuzione territoriale delle lavoratrici e dei lavoratori.",
+    job_experience: "Effetto associato alla diversa anzianita' o esperienza lavorativa osservata nella fonte.",
     public_private: "Effetto della diversa presenza tra settore pubblico e privato.",
     other: "Componenti residue pubblicate dalla fonte."
   };
+  var COMPONENT_ORDER = [
+    "adjusted_unexplained",
+    "economic_activity",
+    "employment_contract",
+    "enterprise_control",
+    "enterprise_size",
+    "geographical_location",
+    "job_experience",
+    "explained_overall",
+    "residual",
+    "age",
+    "education",
+    "occupation",
+    "working_time",
+    "unadjusted",
+    "sector",
+    "contract",
+    "firm_size",
+    "public_private",
+    "other"
+  ];
   var COUNTRY_ORDER = ["IT", "EU27_2020", "DE", "FR", "ES", "NL", "BE", "AT", "DK", "SE", "FI", "PT", "IE", "PL", "CZ", "EL"];
 
   var state = {
@@ -66,6 +101,31 @@
   function text(value, fallback) {
     if (value === null || value === undefined || value === "") return fallback || "";
     return String(value);
+  }
+
+  function translate(value) {
+    return window.SiteLanguage && window.SiteLanguage.t ? window.SiteLanguage.t(value) : value;
+  }
+
+  function normaliseCodeLabel(value) {
+    return text(value)
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, function (match) { return match.toUpperCase(); });
+  }
+
+  function componentLabel(statistic) {
+    return translate(COMPONENT_LABELS[statistic] || normaliseCodeLabel(statistic));
+  }
+
+  function componentNote(statistic) {
+    return translate(COMPONENT_NOTES[statistic] || "Componente pubblicata dalla decomposizione ufficiale Eurostat SES.");
+  }
+
+  function componentOrder(statistic) {
+    var index = COMPONENT_ORDER.indexOf(statistic);
+    return index < 0 ? 999 : index;
   }
 
   function percent(value, digits) {
@@ -145,7 +205,7 @@
       wrapper.setAttribute("data-filter", key);
       var label = document.createElement("span");
       var select = document.createElement("select");
-      label.textContent = labelText;
+      label.textContent = translate(labelText);
       select.addEventListener("change", function () {
         onChange(select.value);
       });
@@ -158,7 +218,7 @@
     options.forEach(function (option) {
       var item = document.createElement("option");
       item.value = option.value;
-      item.textContent = option.label;
+      item.textContent = translate(option.label);
       node.appendChild(item);
     });
     node.value = String(current);
@@ -176,7 +236,7 @@
       wrapper.setAttribute("data-filter", key);
       var label = document.createElement("span");
       var select = document.createElement("select");
-      label.textContent = labelText;
+      label.textContent = translate(labelText);
       select.multiple = true;
       select.addEventListener("change", function () {
         onChange(Array.prototype.slice.call(select.selectedOptions).map(function (option) {
@@ -197,7 +257,7 @@
     options.forEach(function (option) {
       var item = document.createElement("option");
       item.value = option.value;
-      item.textContent = option.label;
+      item.textContent = translate(option.label);
       item.selected = Boolean(selected[String(option.value)]);
       node.appendChild(item);
     });
@@ -266,10 +326,10 @@
     var source = document.createElement("em");
     var detail = document.createElement("span");
     card.className = "gpg-kpi";
-    title.textContent = label;
+    title.textContent = translate(label);
     value.textContent = row ? formatter(row.value) : "n.d.";
-    source.textContent = row ? text(row.year) + " · " + text(row.source, "fonte") : "non disponibile";
-    detail.textContent = note || "";
+    source.textContent = row ? text(row.year) + " · " + text(row.source, "fonte") : translate("non disponibile");
+    detail.textContent = translate(note || "");
     card.appendChild(title);
     card.appendChild(value);
     card.appendChild(source);
@@ -422,8 +482,7 @@
     var selected = rows.filter(function (row) {
       return row.geography_code === state.selectedCountry && row.statistic !== "unadjusted";
     }).sort(function (a, b) {
-      var order = ["explained_overall", "residual", "age", "education", "sector", "occupation", "working_time", "contract", "firm_size", "public_private", "other"];
-      return order.indexOf(a.statistic) - order.indexOf(b.statistic);
+      return componentOrder(a.statistic) - componentOrder(b.statistic);
     });
     if (!selected.length) {
       showEmpty("gpgAdjustedChart", "Decomposizione adjusted non disponibile per questo paese.");
@@ -432,10 +491,10 @@
     byId("gpgAdjustedTag").textContent = countryName(state.selectedCountry) + " · " + selected[0].year;
     plot("gpgAdjustedChart", [{
       type: "bar",
-      x: selected.map(function (row) { return COMPONENT_LABELS[row.statistic] || row.statistic; }),
+      x: selected.map(function (row) { return componentLabel(row.statistic); }),
       y: selected.map(function (row) { return row.value; }),
       marker: { color: selected.map(function (row) { return row.statistic === "residual" ? COLORS[0] : COLORS[1]; }) },
-      customdata: selected.map(function (row) { return COMPONENT_NOTES[row.statistic] || ""; }),
+      customdata: selected.map(function (row) { return componentNote(row.statistic); }),
       hovertemplate: "<b>%{x}</b><br>%{y:.1f}%<br>%{customdata}<extra></extra>"
     }], {
       height: 520,
@@ -455,8 +514,8 @@
       var title = document.createElement("h3");
       var note = document.createElement("span");
       item.className = "gpg-guide-item";
-      title.textContent = COMPONENT_LABELS[row.statistic] || row.statistic;
-      note.textContent = COMPONENT_NOTES[row.statistic] || "";
+      title.textContent = componentLabel(row.statistic);
+      note.textContent = componentNote(row.statistic);
       item.appendChild(title);
       item.appendChild(note);
       container.appendChild(item);
@@ -477,8 +536,8 @@
       var title = document.createElement("h3");
       var note = document.createElement("span");
       item.className = "gpg-method-item";
-      title.textContent = entry[0];
-      note.textContent = entry[1];
+      title.textContent = translate(entry[0]);
+      note.textContent = translate(entry[1]);
       item.appendChild(title);
       item.appendChild(note);
       container.appendChild(item);
@@ -523,4 +582,5 @@
 
   document.addEventListener("DOMContentLoaded", initialize);
   window.addEventListener("themechange", renderAll);
+  window.addEventListener("site-language-change", renderAll);
 })();
