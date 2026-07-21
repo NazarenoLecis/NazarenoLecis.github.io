@@ -1,11 +1,17 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-1";
-  var STATE = { payload: null, composition: "debt_by_instrument", costMode: "nominal" };
+  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-3";
+  var STATE = { payload: null, composition: "debt_by_instrument", costMode: "nominal", timeRanges: {} };
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f", "#9c755f"];
   var PLOT_CONFIG = { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false };
   var COMPOSITION_ORDER = ["debt_by_instrument", "debt_by_holder", "debt_by_subsector", "debt_by_residual_maturity"];
+  var SERIES_WINDOW_OPTIONS = [
+    { id: "all", label: "Tutti gli anni", years: null },
+    { id: "20", label: "Ultimi 20 anni", years: 20 },
+    { id: "10", label: "Ultimi 10 anni", years: 10 },
+    { id: "5", label: "Ultimi 5 anni", years: 5 }
+  ];
 
   function byId(id) { return document.getElementById(id); }
   function toArray(value) { return Array.isArray(value) ? value : []; }
@@ -44,6 +50,93 @@
   function mld(value) { return num(value) === null ? "ND" : fmtLoose(value, 1) + " mld"; }
   function dateYear(date) { return text(date).slice(0, 4) || "ND"; }
   function isMobile() { return window.matchMedia && window.matchMedia("(max-width: 640px)").matches; }
+  function yearFromDate(date) {
+    var year = Number(text(date).slice(0, 4));
+    return Number.isFinite(year) ? year : null;
+  }
+  function uniqueLabels(labels) {
+    var counts = {};
+    return labels.map(function (label) {
+      counts[label] = (counts[label] || 0) + 1;
+      return counts[label] === 1 ? label : label + " (" + counts[label] + ")";
+    });
+  }
+  function availableYearsFromPoints(points) {
+    var seen = {};
+    return toArray(points).map(function (point) {
+      return yearFromDate(point.date);
+    }).filter(function (year) {
+      if (year === null || seen[year]) return false;
+      seen[year] = true;
+      return true;
+    }).sort(function (a, b) { return a - b; });
+  }
+  function selectedTimeRange(chartId) {
+    return STATE.timeRanges[chartId] || "20";
+  }
+  function timeRangeStart(chartId, years) {
+    var selected = SERIES_WINDOW_OPTIONS.find(function (item) {
+      return item.id === selectedTimeRange(chartId);
+    });
+    if (!selected || !selected.years || !years.length) return null;
+    return Math.max.apply(null, years) - selected.years + 1;
+  }
+  function ensureTimeRangeControl(chartId, years) {
+    var chart = byId(chartId);
+    if (!chart || !chart.closest) return;
+    var card = chart.closest(".dp-card");
+    if (!card) return;
+    var controlId = chartId + "TimeRange";
+    var select = byId(controlId);
+    if (!select) {
+      var row = document.createElement("div");
+      row.className = "dp-inline-controls";
+
+      var label = document.createElement("label");
+      label.className = "dp-filter-label";
+      label.setAttribute("for", controlId);
+      label.textContent = "Periodo";
+
+      select = document.createElement("select");
+      select.id = controlId;
+      select.className = "dp-select dp-select-small";
+      select.addEventListener("change", function () {
+        STATE.timeRanges[chartId] = select.value;
+        if (STATE.payload) renderAll(STATE.payload);
+      });
+
+      label.appendChild(select);
+      row.appendChild(label);
+      card.insertBefore(row, chart);
+    }
+
+    var current = selectedTimeRange(chartId);
+    clear(select);
+    SERIES_WINDOW_OPTIONS.forEach(function (option) {
+      var item = document.createElement("option");
+      item.value = option.id;
+      item.textContent = option.label;
+      item.disabled = option.years !== null && years.length > 0 && years.length < option.years;
+      select.appendChild(item);
+    });
+    if (!Array.prototype.some.call(select.options, function (option) {
+      return option.value === current && !option.disabled;
+    })) {
+      current = "all";
+      STATE.timeRanges[chartId] = current;
+    }
+    select.value = current;
+  }
+  function filterPointsByTimeRange(chartId, points) {
+    var years = availableYearsFromPoints(points);
+    var start = timeRangeStart(chartId, years);
+    ensureTimeRangeControl(chartId, years);
+    if (start === null) return points;
+    return toArray(points).filter(function (point) {
+      var year = yearFromDate(point.date);
+      return year !== null && year >= start;
+    });
+  }
 
   function showEmpty(id, message) {
     var node = byId(id);
@@ -122,8 +215,8 @@
   function renderMainCharts(payload) {
     var total = payload.main_series && payload.main_series.total_debt;
     var debtGdp = payload.main_series && payload.main_series.debt_to_gdp;
-    var debtPoints = seriesPoints(total, false);
-    var gdpPoints = seriesPoints(debtGdp, true);
+    var debtPoints = filterPointsByTimeRange("dpDebtChart", seriesPoints(total, false));
+    var gdpPoints = filterPointsByTimeRange("dpDebtGdpChart", seriesPoints(debtGdp, true));
     plot("dpDebtChart", [{
       type: "scatter",
       mode: "lines",
@@ -185,8 +278,10 @@
   function renderHorizontalBar(id, rows, valueKey, unit, title, useShare) {
     if (!rows.length) return showEmpty(id, "Nessun dato disponibile");
     var mobile = isMobile();
-    var labels = rows.map(function (row) { return compactLabel(row.label, mobile ? 24 : 44); }).reverse();
+    var labels = uniqueLabels(rows.map(function (row) { return compactLabel(row.label, mobile ? 24 : 38); })).reverse();
     var values = rows.map(function (row) { return num(row[valueKey]); }).reverse();
+    var numericValues = values.filter(function (value) { return value !== null; });
+    var maxValue = numericValues.length ? Math.max.apply(null, numericValues) : 1;
     plot(id, [{
       type: "bar",
       orientation: "h",
@@ -194,13 +289,14 @@
       y: labels,
       marker: { color: rows.map(function (_, index) { return COLORS[index % COLORS.length]; }).reverse() },
       text: values.map(function (value) { return useShare ? pct(value) : mld(value); }),
-      textposition: "auto",
+      textposition: "outside",
+      cliponaxis: false,
       customdata: rows.map(function (row) { return [row.label, row.date, mld(row.value_bln_eur), pct(row.share_percent)]; }).reverse(),
       hovertemplate: "%{customdata[0]}<br>%{customdata[1]}<br>%{customdata[2]}<br>Quota: %{customdata[3]}<extra></extra>"
     }], {
       title: { text: title || "", font: { size: 13 } },
-      margin: { t: title ? 34 : 20, r: 24, b: 48, l: mobile ? 126 : 210 },
-      xaxis: { title: unit, ticksuffix: useShare ? "%" : "" },
+      margin: { t: title ? 34 : 20, r: 60, b: 48, l: mobile ? 118 : 230 },
+      xaxis: { title: unit, ticksuffix: useShare ? "%" : "", range: [0, maxValue * 1.16] },
       yaxis: { title: "" },
       showlegend: false
     });
@@ -236,18 +332,78 @@
     renderHorizontalBar("dpProfileChart", latestRows(payload, "debt_by_original_maturity_currency_residency"), "value_bln_eur", "Miliardi di euro", "", false);
   }
 
+  function renderProfileTable(rows) {
+    var tbody = byId("dpRedemptionProfileRows");
+    clear(tbody);
+    if (!tbody) return;
+    if (!rows.length) {
+      var tr = document.createElement("tr");
+      var td = document.createElement("td");
+      td.colSpan = 4;
+      td.textContent = "Nessun dato disponibile";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      [text(row.year), text(row.quarter), mld(row.amount_bln_eur_revalued), fmt(row.securities, 0)].forEach(function (value) {
+        var td = document.createElement("td");
+        td.textContent = value;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderRedemptionProfile(payload) {
+    var profile = payload.maturity_profile || {};
+    var yearly = toArray(profile.yearly);
+    var quarterly = toArray(profile.quarterly);
+    var meta = byId("dpMaturityProfileMeta");
+    if (meta) meta.textContent = profile.snapshot_date ? "Aggiornato al " + profile.snapshot_date : "MEF";
+    renderProfileTable(quarterly);
+    if (!yearly.length) return showEmpty("dpRedemptionProfileChart", "Nessun dato disponibile");
+
+    var years = yearly.map(function (row) { return row.year; });
+    var values = yearly.map(function (row) { return num(row.amount_bln_eur_revalued); });
+    var securities = yearly.map(function (row) { return num(row.securities); });
+    plot("dpRedemptionProfileChart", [{
+      type: "bar",
+      name: "Ammontare in scadenza",
+      x: years,
+      y: values,
+      marker: {
+        color: values,
+        colorscale: [[0, "#ffd1c3"], [0.45, "#ff5a1f"], [1, "#b9123b"]],
+        line: { color: "rgba(255,255,255,.08)", width: 1 }
+      },
+      customdata: yearly.map(function (row) { return [mld(row.amount_bln_eur_revalued), fmt(row.securities, 0)]; }),
+      hovertemplate: "Anno %{x}<br>%{customdata[0]}<br>Titoli: %{customdata[1]}<extra></extra>"
+    }], {
+      margin: { t: 22, r: 24, b: 86, l: 72 },
+      xaxis: { title: "Anno di scadenza", tickangle: -90 },
+      yaxis: { title: "Miliardi di euro" },
+      showlegend: false
+    });
+  }
+
   function renderHolders(payload) {
     renderHorizontalBar("dpHoldersChart", compositionRows(payload, "debt_by_holder"), "share_percent", "Quota sul debito", "", true);
   }
 
   function renderRates(payload) {
-    var rows = toArray(payload.interest_rates);
+    var rows = filterPointsByTimeRange("dpRatesChart", toArray(payload.interest_rates).map(function (row) {
+      return { date: row.date, value: num(row.value) };
+    }).filter(function (point) {
+      return point.date && point.value !== null;
+    }));
     plot("dpRatesChart", [{
       type: "scatter",
       mode: "lines",
       name: "Rendimento lungo termine",
       x: rows.map(function (row) { return row.date; }),
-      y: rows.map(function (row) { return num(row.value); }),
+      y: rows.map(function (row) { return row.value; }),
       line: { color: cssVar("--orange", COLORS[0]), width: 2.2 },
       hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>"
     }], { yaxis: { title: "%", ticksuffix: "%" }, xaxis: { title: "" } });
@@ -271,6 +427,7 @@
     }).filter(function (point) {
       return point.date && point.value !== null;
     });
+    points = filterPointsByTimeRange("dpDebtCostChart", points);
     var unitNode = byId("dpDebtCostUnit");
     if (unitNode) unitNode.textContent = isNominal ? "Miliardi di euro" : "Percentuale del PIL";
     setCostButtons();
@@ -316,8 +473,8 @@
   function renderMeta(payload) {
     var status = byId("dpStatus");
     var meta = byId("dpSourceMeta");
-    if (status) status.textContent = "Dati aggiornati al " + text(payload.meta && payload.meta.latest_bankitalia_date) + ". Refresh automatico il primo giorno di ogni mese.";
-    if (meta) meta.textContent = "Ultimo dato Banca d'Italia: " + text(payload.meta && payload.meta.latest_bankitalia_date) + ". Refresh automatico il primo giorno di ogni mese.";
+    if (status) status.textContent = "Dati aggiornati al " + text(payload.meta && payload.meta.latest_bankitalia_date) + ". Refresh automatico il 16 di ogni mese.";
+    if (meta) meta.textContent = "Ultimo dato Banca d'Italia: " + text(payload.meta && payload.meta.latest_bankitalia_date) + ". Refresh automatico il 16 di ogni mese.";
   }
 
   function renderAll(payload) {
@@ -326,6 +483,7 @@
     renderMainCharts(payload);
     renderComposition(payload);
     renderMaturity(payload);
+    renderRedemptionProfile(payload);
     renderHolders(payload);
     renderDebtCost(payload);
     renderRates(payload);
@@ -373,7 +531,7 @@
       .catch(function (error) {
         var status = byId("dpStatus");
         if (status) status.textContent = "Errore nel caricamento dei dati: " + error.message;
-        ["dpDebtChart", "dpDebtGdpChart", "dpCompositionChart", "dpMaturityChart", "dpProfileChart", "dpHoldersChart", "dpDebtCostChart", "dpRatesChart"].forEach(function (id) {
+        ["dpDebtChart", "dpDebtGdpChart", "dpCompositionChart", "dpMaturityChart", "dpRedemptionProfileChart", "dpProfileChart", "dpHoldersChart", "dpDebtCostChart", "dpRatesChart"].forEach(function (id) {
           showEmpty(id, "Dati non caricati");
         });
       });
