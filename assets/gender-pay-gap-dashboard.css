@@ -70,10 +70,33 @@ html[data-theme="light"] {
   font-size: .9rem;
 }
 
+.gpg-dashboard .source-panel a,
+.gpg-dashboard .related-link,
+.gpg-dashboard .gpg-notes-panel a {
+  color: var(--orange);
+  font-weight: 850;
+}
+
+.gpg-dashboard .source-panel a:hover,
+.gpg-dashboard .related-link:hover,
+.gpg-dashboard .gpg-notes-panel a:hover {
+  text-decoration: underline;
+}
+
+.gpg-dashboard code {
+  padding: 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: .9em;
+}
+
 .gpg-note,
 .gpg-status {
   margin: 0 0 18px;
   color: var(--muted);
+  line-height: 1.55;
 }
 
 .gpg-status:empty {
@@ -214,6 +237,14 @@ html[data-theme="light"] {
   padding-top: 12px;
   border-top: 1px solid var(--line);
   color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.45;
+}
+
+.gpg-chart-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .gpg-method-grid,
@@ -225,6 +256,43 @@ html[data-theme="light"] {
 .gpg-guide-item {
   min-width: 0;
   padding: 16px;
+}
+
+.gpg-notes-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.gpg-notes-panel article {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.gpg-notes-panel h3 {
+  margin: 0 0 10px;
+  color: var(--orange);
+  font-size: 1.02rem;
+  letter-spacing: 0;
+}
+
+.gpg-notes-panel ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.gpg-notes-panel li {
+  line-height: 1.52;
+}
+
+.gpg-notes-panel li + li {
+  margin-top: 8px;
 }
 
 .gpg-method-item h3,
@@ -254,7 +322,8 @@ html[data-theme="light"] {
   .gpg-filter-grid,
   .gpg-kpi-grid,
   .gpg-method-grid,
-  .gpg-guide-grid {
+  .gpg-guide-grid,
+  .gpg-notes-panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -263,7 +332,8 @@ html[data-theme="light"] {
   .gpg-filter-grid,
   .gpg-kpi-grid,
   .gpg-method-grid,
-  .gpg-guide-grid {
+  .gpg-guide-grid,
+  .gpg-notes-panel {
     grid-template-columns: 1fr;
   }
 

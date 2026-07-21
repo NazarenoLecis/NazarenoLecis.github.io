@@ -268,6 +268,12 @@
       <div>
         <h2>Fonte e repository</h2>
         <p>Il codice sorgente del progetto dati e' nel repository <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">NazarenoLecis/Crisi_abitativa</a>.</p>
+        <ul class="source-links">
+          <li><a class="related-link" href="https://ec.europa.eu/eurostat/web/population-demography/population-housing-censuses/database" target="_blank" rel="noopener">Eurostat Census Hub 2021</a>: stock abitativo per periodo di costruzione.</li>
+          <li><a class="related-link" href="https://ec.europa.eu/eurostat/databrowser/" target="_blank" rel="noopener">Eurostat Data Browser</a>: indicatori europei su costi abitativi, sovraffollamento, arretrati, giovani adulti e offerta.</li>
+          <li><a class="related-link" href="https://www.agenziaentrate.gov.it/portale/schede/fabbricatiterreni/omi/forniture-dati-omi" target="_blank" rel="noopener">Agenzia delle Entrate - forniture dati OMI</a>: quotazioni immobiliari semestrali.</li>
+          <li><a class="related-link" href="https://www.finanze.gov.it/it/statistiche-fiscali/opendata-dichiarazioni/" target="_blank" rel="noopener">MEF Dipartimento delle Finanze - open data dichiarazioni</a>: redditi imponibili usati nei rapporti locali quando disponibili.</li>
+        </ul>
         <p>La dashboard del sito consuma dati gia' puliti o endpoint pubblici. Le API e gli export pesanti non vengono eseguiti direttamente nel browser.</p>
         <p>Per aggiornare il focus locale bisogna pubblicare su Cloudflare R2 i JSON regionali in <code>crisi-abitativa/regions/</code> e aggiornare <code>local_index.json</code>.</p>
         <p>OMI descrive una quota territoriale della rendita immobiliare locale: oltre ai livelli di prezzi/affitti, nel file comunale sono inclusi anche indicatori di sostenibilita' economica come reddito medio disponibile e rapporti affitto-reddito (anni di reddito per 80 m² e canone di 50 m²).</p>

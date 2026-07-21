@@ -468,10 +468,10 @@
     if (!container) return;
     clear(container);
     [
-      ["Unadjusted", "Misura il divario osservato nella retribuzione oraria lorda media. Include differenze di settore, orario, contratto, carriera e composizione occupazionale."],
-      ["Adjusted", "Misura la parte residua dopo aver controllato per caratteristiche osservabili nella fonte ufficiale. Non e' una stima costruita nella dashboard."],
-      ["Composizione", "Quote diverse di part-time, settori a paga inferiore, professioni, dimensione d'impresa e progressioni di carriera possono spiegare parte del divario osservato."],
-      ["Limite", "La decomposizione non prova discriminazione individuale: mostra quanto resta non spiegato dalle variabili disponibili nei microdati SES."]
+      ["Unadjusted", "Misura il divario osservato nella retribuzione oraria lorda media. E' un indicatore aggregato: tiene insieme struttura del mercato del lavoro, settore, orario, contratto e livelli professionali."],
+      ["Adjusted", "Misura la parte residua dopo aver controllato per le caratteristiche osservabili nella decomposizione Eurostat SES 2022. La dashboard non produce una stima autonoma."],
+      ["Composizione", "La parte spiegata cattura quanto pesano distribuzioni diverse tra eta', istruzione, professioni, settori, orario di lavoro, contratto, dimensione d'impresa e pubblico/privato."],
+      ["Limite", "Il residuo adjusted non prova discriminazione individuale: indica solo la quota non spiegata dalle variabili disponibili nel modello ufficiale e puo' includere fattori non osservati."]
     ].forEach(function (entry) {
       var item = document.createElement("article");
       var title = document.createElement("h3");

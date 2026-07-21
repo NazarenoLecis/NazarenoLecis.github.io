@@ -503,6 +503,26 @@
   margin-top: 9px;
 }
 
+.hi-notes-panel a,
+.hi-source-links a {
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.hi-source-links {
+  margin: 12px 0 16px;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.hi-source-links li {
+  line-height: 1.52;
+}
+
+.hi-source-links li + li {
+  margin-top: 8px;
+}
+
 .hi-coverage-list {
   display: grid;
   gap: 10px;

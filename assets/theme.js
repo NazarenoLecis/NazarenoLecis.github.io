@@ -1,4 +1,6 @@
 (function () {
+  var themeScript = document.currentScript;
+
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     try {
@@ -10,6 +12,48 @@
       button.setAttribute("role", "button");
       button.setAttribute("tabindex", "0");
       button.setAttribute("aria-label", theme === "light" ? "Passa al tema scuro" : "Passa al tema chiaro");
+    });
+
+    restylePlotlyCharts(theme);
+    window.dispatchEvent(new CustomEvent("themechange", { detail: { theme: theme } }));
+  }
+
+  function cssVar(name, fallback) {
+    var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  }
+
+  function restylePlotlyCharts(theme) {
+    if (!window.Plotly || !window.Plotly.relayout) return;
+    var text = cssVar("--text", theme === "light" ? "#17120f" : "#f5f2ed");
+    var muted = cssVar("--muted", theme === "light" ? "#5f574f" : "#b9b2aa");
+    var line = cssVar("--line", theme === "light" ? "#ddd4ca" : "#303030");
+    var panel = cssVar("--panel", theme === "light" ? "#fffaf4" : "#090909");
+
+    document.querySelectorAll(".js-plotly-plot").forEach(function (chart) {
+      var update = {
+        "font.color": text,
+        "hoverlabel.bgcolor": panel,
+        "hoverlabel.bordercolor": line,
+        "hoverlabel.font.color": text,
+        "legend.font.color": muted
+      };
+      var layout = chart._fullLayout || {};
+      Object.keys(layout).forEach(function (key) {
+        if (/^[xy]axis[0-9]*$/.test(key)) {
+          update[key + ".gridcolor"] = line;
+          update[key + ".zerolinecolor"] = line;
+          update[key + ".linecolor"] = line;
+          update[key + ".tickfont.color"] = muted;
+          update[key + ".title.font.color"] = text;
+        }
+      });
+      if (Array.isArray(layout.annotations)) {
+        layout.annotations.forEach(function (_, index) {
+          update["annotations[" + index + "].font.color"] = text;
+        });
+      }
+      window.Plotly.relayout(chart, update).catch(function () {});
     });
   }
 
@@ -29,6 +73,22 @@
     schedule(function () {
       loadScript(src, key);
     }, { timeout: 2200 });
+  }
+
+  function assetUrl(fileName) {
+    var script = themeScript || document.querySelector('script[src*="assets/theme.js"]');
+    if (script && script.src) {
+      return new URL(fileName, script.src).href;
+    }
+    return "/assets/" + fileName;
+  }
+
+  function ensureFavicon() {
+    var link = document.querySelector('link[rel~="icon"]') || document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/png";
+    link.href = assetUrl("logo.png");
+    if (!link.parentNode) document.head.appendChild(link);
   }
 
   function isAlmaArticle() {
@@ -211,10 +271,11 @@
     } catch (error) {}
 
     apply(saved || "dark");
+    ensureFavicon();
     injectSocialStyle();
     removeTopGithubLink();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260701-dashboard-i18n", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260721-dashboard-i18n", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {
