@@ -1686,6 +1686,543 @@
     ": relazioni sui servizi sanitari regionali e mobilita' sanitaria.": ": reports on regional health services and healthcare mobility."
   });
 
+  Object.assign(text, {
+    "Dati non caricati": "Data not loaded",
+    "Dati non disponibili.": "Data not available.",
+    "Dati non disponibili": "Data not available",
+    "Non disponibile": "Not available",
+    "Ultimo dato ND": "Latest data n/a",
+    "DEBITO/PIL": "DEBT/GDP",
+    "VITA MEDIA RESIDUA": "RESIDUAL AVERAGE LIFE",
+    "BTP 10 ANNI": "10-YEAR BTP",
+    "COSTO DEL DEBITO": "DEBT COST",
+    "Anno di scadenza": "Maturity year",
+    "Quota sul debito": "Share of debt",
+    "Ultima osservazione": "Latest observation",
+    "Quota in scadenza": "Maturing share",
+    "Ammontare in scadenza": "Maturing amount",
+    "% del totale in scadenza": "% of total maturing",
+    "Rendimento lordo all'emissione": "Gross yield at issuance",
+    "Banca d'Italia - FPI": "Bank of Italy - FPI",
+    "Banca d'Italia - RTIT0100": "Bank of Italy - RTIT0100",
+    "I valori monetari Banca d'Italia sono in milioni di euro; nelle visualizzazioni sono convertiti anche in miliardi di euro.": "Bank of Italy monetary values are in million euros; in the visualisations they are also converted into billion euros.",
+    "Le composizioni usano le serie ufficiali selezionate per evitare doppio conteggio tra aggregati e sotto-aggregati.": "Composition views use selected official series to avoid double-counting aggregates and sub-aggregates.",
+    "I tassi selezionabili sono serie mensili Banca d'Italia sui rendimenti lordi all'emissione dei titoli di Stato.": "The selectable rates are monthly Bank of Italy series on gross issuance yields for government securities.",
+    "Il costo del debito e la voce Eurostat D41PAY, interessi passivi delle Amministrazioni pubbliche, in milioni di euro e in percentuale del PIL.": "Debt cost is the Eurostat D41PAY item, general-government interest expenditure, in million euros and as a percentage of GDP.",
+    "Il profilo scadenze usa i file MEF Scadenze suddivise per anno e aggrega il circolante rivalutato per anno e trimestre di scadenza.": "The maturity profile uses MEF maturities-by-year files and aggregates revalued outstanding securities by maturity year and quarter.",
+
+    "Tutti i corsi di laurea": "All degree programmes",
+    "tipi di corso": "degree types",
+    "gruppi disciplinari": "subject groups",
+    "atenei": "universities",
+    "classi di laurea": "degree classes",
+    "corsi di laurea": "degree programmes",
+    "Dashboard dettagliata:": "Detailed dashboard:",
+    "osservazioni, anni": "observations, years",
+    "Serie storiche:": "Time series:",
+
+    "I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione.": "Eurostat data on the construction period of dwellings are a 2021 snapshot, not a time series. They are therefore shown in a separate chart: the bar chart compares the share of the housing stock by construction period.",
+    "Eurostat permette di confrontare paesi con definizioni armonizzate. Il confronto aiuta a capire se l'Italia e' un caso isolato o parte di una dinamica piu' ampia, ma le medie nazionali nascondono differenze enormi tra territori.": "Eurostat makes it possible to compare countries with harmonised definitions. The comparison helps understand whether Italy is an isolated case or part of a wider dynamic, but national averages hide huge territorial differences.",
+    "Paesi min–max": "Country min-max",
+    "Anno ultimo dato": "Latest-value year",
+    "Quota di popolazione in famiglie in cui i costi abitativi totali superano il 40% del reddito disponibile. E' una misura diretta di pressione economica legata alla casa.": "Share of people in households where total housing costs exceed 40% of disposable income. It is a direct measure of economic pressure linked to housing.",
+
+    "Unità retributiva": "Pay unit",
+    "Unita' retributiva": "Pay unit",
+    "Statistica": "Statistic",
+    "Orario": "Working time",
+    "Annuale": "Annual",
+    "Mensile": "Monthly",
+    "Oraria": "Hourly",
+    "Media": "Mean",
+    "Mediana": "Median",
+    "Totale in equivalenti full-time": "Total in full-time equivalents",
+    "Totale industria": "Total industry",
+    "Industria esclusa costruzioni": "Industry excluding construction",
+    "Retribuzione mensile, non netto": "Monthly wage, not net pay",
+    "Quota sotto due terzi della mediana": "Share below two thirds of the median",
+    "Retribuzione oraria lorda (euro per ora)": "Gross hourly wage (euros per hour)",
+    "Retribuzione oraria, mensile e annuale sono periodi distinti e non vengono convertiti tra loro.": "Hourly, monthly and annual wages are distinct pay periods and are not converted into each other.",
+    "Media, mediana, D1, D9 e rapporti D9/D1": "Mean, median, D1, D9 and D9/D1 ratios",
+    "Sesso, eta', professione, settore, orario": "Sex, age, occupation, sector and working time",
+    "Regione, provincia, citta' o comune": "Region, province, city or municipality",
+    "ISTAT RACLI, API pubblica. I flussi settoriali RACLI integrati pubblicano il dettaglio Ateco per Italia, non per singola provincia. L'export non costruisce incroci provincia-settore senza celle ufficiali.": "ISTAT RACLI, public API. The integrated RACLI sector flows publish Ateco detail for Italy, not for each province. The export does not build province-sector crosses without official cells.",
+
+    "Miliardi correnti": "Current billion euros",
+    "Miliardi di euro correnti": "Current billion euros",
+    "Miliardi di euro": "Billion euros",
+    "Mld euro": "Bn euros",
+    "Quota precedente": "Previous share",
+    "Quota ultimo anno": "Latest-year share",
+    "Quota contribuenti": "Taxpayer share",
+    "Quota IRPEF": "Personal income-tax share",
+    "Quota spesa": "Spending share",
+    "Quota macro voce": "Macro-item share",
+    "Quota percentuale": "Percentage share",
+    "Quota sul PIL": "Share of GDP",
+    "Contributi sociali netti": "Net social contributions",
+    "Contributi sociali": "Social contributions",
+    "Tributi territoriali": "Local taxes",
+    "Tributi comunali": "Municipal taxes",
+    "Spesa sociale - Vecchiaia": "Social spending - Old age",
+    "Spesa sociale - Superstiti": "Social spending - Survivors",
+
+    "Italia": "Italy",
+    "Unione europea a 27": "European Union - 27 countries",
+    "Unione europea (27)": "European Union (27)",
+    "Unione europea (27 paesi)": "European Union (27 countries)",
+    "Austria": "Austria",
+    "Belgio": "Belgium",
+    "Bulgaria": "Bulgaria",
+    "Cipro": "Cyprus",
+    "Cechia": "Czechia",
+    "Germania": "Germany",
+    "Danimarca": "Denmark",
+    "Estonia": "Estonia",
+    "Grecia": "Greece",
+    "Spagna": "Spain",
+    "Finlandia": "Finland",
+    "Francia": "France",
+    "Croazia": "Croatia",
+    "Ungheria": "Hungary",
+    "Irlanda": "Ireland",
+    "Lituania": "Lithuania",
+    "Lussemburgo": "Luxembourg",
+    "Lettonia": "Latvia",
+    "Malta": "Malta",
+    "Paesi Bassi": "Netherlands",
+    "Polonia": "Poland",
+    "Portogallo": "Portugal",
+    "Romania": "Romania",
+    "Svezia": "Sweden",
+    "Slovenia": "Slovenia",
+    "Slovacchia": "Slovakia",
+
+    "Classi dimensionali nel tempo": "Size classes over time",
+    "Parametro": "Parameter",
+    "Parametro selezionato": "Selected parameter",
+    "Stesso anno e stesso settore": "Same year and same sector",
+    "Settore imprese": "Business sector",
+    "Numero imprese": "Number of enterprises",
+    "Numero imprese per settore": "Number of enterprises by sector",
+    "Valore aggiunto": "Value added",
+    "Valore aggiunto totale": "Total value added",
+    "Valore aggiunto / PIL (%)": "Value added / GDP (%)",
+    "Valore aggiunto per dipendente": "Value added per employee",
+    "Valore aggiunto imprese": "Business value added",
+    "Valore aggiunto imprese / PIL (%)": "Business value added / GDP (%)",
+    "Valore aggiunto per impresa": "Value added per enterprise",
+    "Valore aggiunto per occupato": "Value added per person employed",
+    "Valore aggiunto per classe dimensionale": "Value added by size class",
+    "Valore aggiunto per impresa per classe": "Value added per enterprise by class",
+    "Valore aggiunto per classe in rapporto al PIL": "Value added by class as a share of GDP",
+    "Valore aggiunto per occupato per classe": "Value added per person employed by class",
+    "Milioni di euro": "Million euros",
+    "Migliaia di euro per dipendente": "Thousand euros per employee",
+    "Migliaia di euro per impresa": "Thousand euros per enterprise",
+    "Migliaia di euro per occupato": "Thousand euros per person employed",
+    "% totale paese": "% country total",
+    "% del totale paese": "% of country total",
+    "Primo settore": "Largest sector",
+    "non e il PIL": "not GDP",
+    "non è il PIL": "not GDP",
+    "Paesi nel tempo": "Countries over time",
+    "Paesi e settore": "Countries and sector",
+    "Tutti i settori": "All sectors",
+    "Totale economia": "Total economy",
+    "Totale settori imprese SBS": "Total SBS business sectors",
+    "TOTAL - Totale economia": "TOTAL - Total economy",
+    "B-E - Industria esclusa costruzioni": "B-E - Industry excluding construction",
+    "C - Manifattura": "C - Manufacturing",
+    "L68A - Affitti imputati delle abitazioni occupate dai proprietari": "L68A - Imputed rents of owner-occupied dwellings",
+    "Quota sul valore aggiunto totale (%)": "Share of total value added (%)",
+    "Quota sulle imprese (%)": "Share of enterprises (%)",
+    "Quota sul valore aggiunto nazionale (%)": "Share of national value added (%)",
+    "Quota imprese (%)": "Enterprise share (%)",
+    "Quota valore aggiunto (%)": "Value-added share (%)",
+    "Classe di persone occupate": "Persons-employed size class",
+    "Persone occupate": "Persons employed",
+    "Quota imprese attive (%)": "Share of active enterprises (%)",
+    "Quota persone occupate (%)": "Share of persons employed (%)",
+    "Quota dipendenti (%)": "Share of employees (%)",
+    "Classe di dipendenti": "Employee size class",
+    "Classe 0 dipendenti": "0 employees class",
+    "La vista in livelli mostra la dimensione assoluta della misura selezionata, in milioni di euro correnti.": "The level view shows the absolute size of the selected measure, in current million euros.",
+    "La vista per sezioni principali e la piu adatta per leggere la composizione complessiva: evita di mescolare aggregati e sottovoci dello stesso ramo NACE.": "The main-sections view is best suited to reading the overall composition: it avoids mixing aggregates and sub-items from the same NACE branch.",
+
+    "Vecchiaia": "Old age",
+    "Invalidita' previdenziale": "Disability pensions",
+    "Invalidità previdenziale": "Disability pensions",
+    "Superstiti": "Survivors",
+    "Eta' media alla decorrenza": "Average age at pension start",
+    "Numero pensioni per decorrenza": "Number of pensions by start year",
+    "Spesa complessiva lorda": "Total gross spending",
+    "Quota su popolazione residente": "Share of resident population",
+    "Spesa sul PIL regionale": "Spending as a share of regional GDP",
+
+    "Ultimo anno": "Latest year",
+    "Tipologia dimissioni": "Discharge type",
+    "Medicina Generale": "General medicine",
+    "Chirurgia Generale": "General surgery",
+    "Ostetricia e Ginecologia": "Obstetrics and gynaecology",
+    "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis.": "Source: Ministry of Health, SDO by discharge type. Processing by Nazareno Lecis.",
+    "I dati SDO con celle oscurate non devono essere interpretati come zero.": "SDO data with suppressed cells must not be interpreted as zero."
+  });
+
+  Object.assign(text, {
+    "Gli indicatori locali sono proxy territoriali: non misurano canoni effettivi di contratto, prezzi effettivi di rogito o reddito disponibile familiare.": "Local indicators are territorial proxies: they do not measure actual contract rents, actual deed prices or household disposable income.",
+
+    "Le fonti aggregate integrate pubblicano D1/P10, mediana/P50, D9/P90 e media. D2-D8 e distribuzione piena non vengono interpolati se non esiste una tavola ufficiale con classi o frequenze.": "The integrated aggregate sources publish D1/P10, median/P50, D9/P90 and mean. D2-D8 and the full distribution are not interpolated unless an official table with classes or frequencies exists.",
+    "Le retribuzioni pubblicate sono lorde; il netto non viene stimato nel browser.": "Published wages are gross; net pay is not estimated in the browser.",
+    "Le giornate retribuite sono classi ufficiali RACLI: indicano continuita' o stagionalita' della posizione, ma non conteggi di lavoratori ricostruiti.": "Paid days are official RACLI classes: they indicate continuity or seasonality of the job position, not reconstructed worker counts.",
+    "Le tavole SES su istruzione, anzianita' e dimensione impresa sono punti delle edizioni quadriennali pubblicate da Eurostat.": "SES tables on education, seniority and firm size are points from the four-yearly releases published by Eurostat.",
+    "ISTAT RACLI; Eurostat Structure of Earnings Survey. Le API pubbliche aggregate espongono primo decile, mediana, nono decile e media. L'export non ricostruisce una distribuzione piena senza classi o frequenze ufficiali.": "ISTAT RACLI; Eurostat Structure of Earnings Survey. The public aggregate APIs expose first decile, median, ninth decile and mean. The export does not reconstruct a full distribution without official classes or frequencies.",
+    "ISTAT RACLI, settore privato. Disponibile per retribuzioni orarie dei employees del settore privato dal 2014, secondo celle pubblicate. Le giornate retribuite sono classi ufficiali, non conteggi individuali ricostruiti. La qualifica separa operai e apprendisti; dirigenti e impiegati sono aggregati quando la fonte li pubblica insieme.": "ISTAT RACLI, private sector. Available for hourly wages of private-sector employees from 2014, according to published cells. Paid days are official classes, not reconstructed individual counts. Qualification separates manual workers and apprentices; managers and clerical workers are aggregated when the source publishes them together.",
+
+    "Le serie di spesa in miliardi sono valori nominali in euro correnti quando non è selezionata una metrica reale o pro capite.": "Spending series in billions are nominal values in current euros when no real or per-capita metric is selected.",
+    "Le serie di spesa in miliardi sono valori nominali in euro correnti quando non Ã¨ selezionata una metrica reale o pro capite.": "Spending series in billions are nominal values in current euros when no real or per-capita metric is selected.",
+    "Le metriche reali usano HICP all-items Eurostat; le metriche pro capite usano la popolazione residente Eurostat al 1 gennaio.": "Real metrics use Eurostat all-items HICP; per-capita metrics use Eurostat resident population on 1 January.",
+    "Come leggere: ogni gruppo di barre confronta le regioni selezionate sulla stessa missione di spesa. Le missioni sono funzioni pubbliche, per esempio salute, trasporti, istruzione, ambiente e politiche sociali.": "How to read: each group of bars compares the selected regions on the same spending mission. Missions are public functions, for example health, transport, education, environment and social policies.",
+    "Come leggere: ogni gruppo di barre confronta le regioni selezionate sulla stessa voce di entrata. Le tipologie distinguono anche trasferimenti da amministrazioni pubbliche e trasferimenti dall'Unione Europea e dal resto del mondo.": "How to read: each group of bars compares the selected regions on the same revenue item. Types also distinguish transfers from public administrations and transfers from the European Union and the rest of the world.",
+
+    "Seleziona una regione": "Select a region",
+    "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Anno 2022. Celle oscurate nella selezione: 497. Le celle oscurate non sono trattate come zero.": "Source: Ministry of Health, SDO by discharge type. Processing by Nazareno Lecis. Year 2022. Suppressed cells in the selection: 497. Suppressed cells are not treated as zero.",
+    "Fonte: Corte dei conti, saldi economici della mobilita sanitaria. Elaborazione di Nazareno Lecis. Le compensazioni economiche derivano dai flussi di prestazioni/pazienti, ma il saldo netto non conserva la coppia origine-destinazione reale; il grafico abbina regioni con saldo passivo a regioni con saldo attivo e soggetti extraregionali per rappresentare i saldi netti 2024. Vaticano indica l'Ospedale Pediatrico Bambino Gesu.": "Source: Court of Auditors, economic balances of healthcare mobility. Processing by Nazareno Lecis. Economic compensations derive from service/patient flows, but the net balance does not preserve the actual origin-destination pair; the chart pairs regions with a negative balance with regions and extra-regional entities with a positive balance to represent 2024 net balances. Vatican indicates the Bambino Gesu Paediatric Hospital.",
+    "Le prestazioni mostrate nella prima versione sono ricoveri/dimissioni ospedaliere per disciplina; le prestazioni ambulatoriali saranno aggiunte quando la fonte AGENAS sara normalizzata in tabella.": "The services shown in the first version are hospital admissions/discharges by discipline; outpatient services will be added once the AGENAS source is normalised into a table.",
+
+    "Le serie confrontano grandezze aggregate con perimetri differenti. I trasferimenti dello Stato finanziano il complesso delle attivita' INPS e comprendono pensioni, assistenza, sostegno al reddito, famiglia, sgravi e altre voci. Le linee non costituiscono un'identita' contabile e non vanno sommate tra loro.": "The series compare aggregate measures with different scopes. State transfers fund the whole set of INPS activities and include pensions, welfare, income support, family policies, contribution relief and other items. The lines are not an accounting identity and should not be summed together.",
+    "Gli anni osservati hanno linea continua e marcatori pieni. Il tratto 2017-2022 e i marcatori vuoti 2018-2021 indicano stime interpolate linearmente solo per il numero di prestazioni; gli importi medi non sono interpolati.": "Observed years have a solid line and filled markers. The 2017-2022 segment and empty 2018-2021 markers indicate linearly interpolated estimates only for the number of benefits; average amounts are not interpolated.",
+    "La carriera semplificata usa l'indice ISTAT delle retribuzioni contrattuali del contratto scelto, calibrato sull'importo inserito. Gli imponibili INPS effettivi restano piu' precisi.": "The simplified career uses the ISTAT index of contractual wages for the selected contract, calibrated to the entered amount. Actual INPS taxable earnings remain more precise.",
+    "Affidabilita media. La carriera semplificata usa l'indice ISTAT delle retribuzioni contrattuali del contratto scelto, calibrato sull'importo inserito. Gli imponibili INPS effettivi restano piu' precisi. Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.": "Medium reliability. The simplified career uses the ISTAT index of contractual wages for the selected contract, calibrated to the entered amount. Actual INPS taxable earnings remain more precise. The virtual capital is a comparison threshold, not an individual account that is drawn down.",
+
+    "Gli importi assoluti mostrano la dimensione economica del settore: i paesi piu grandi tendono ad avere valori maggiori.": "Absolute amounts show the economic size of the sector: larger countries tend to have higher values.",
+    "Le classi 10-19, 20-49, 50-249 e 250+ restano separate: non vengono accorpate in un generico 10+.": "The 10-19, 20-49, 50-249 and 250+ classes remain separate: they are not grouped into a generic 10+.",
+    "Il focus micro usa Eurostat Business Demography, mentre il valore aggiunto per dimensione viene dalle Structural Business Statistics. Le due fonti servono domande diverse.": "The micro-enterprise focus uses Eurostat Business Demography, while value added by size class comes from Structural Business Statistics. The two sources answer different questions.",
+    "Include agricoltura, silvicoltura, pesca, industria e servizi nel perimetro dei conti nazionali. Le aggregazioni tematiche della dashboard, come turismo proxy, sono somme dichiarate di voci NACE e non settori ufficiali autonomi.": "It includes agriculture, forestry, fishing, industry and services within the national-accounts scope. The dashboard's thematic aggregates, such as the tourism proxy, are declared sums of NACE items and not autonomous official sectors.",
+    "Il valore aggiunto lordo e misurato a prezzi correnti in milioni di euro: confronta la dimensione economica delle attivita, non la produttivita o i margini delle imprese.": "Gross value added is measured at current prices in million euros: it compares the economic size of activities, not productivity or firm margins.",
+    "Il valore aggiunto totale non coincide con il PIL ai prezzi di mercato: il PIL aggiunge le imposte sui prodotti e sottrae i contributi ai prodotti.": "Total value added does not coincide with GDP at market prices: GDP adds taxes on products and subtracts subsidies on products.",
+    "Le serie storiche sono a prezzi correnti: variazioni nel tempo possono riflettere sia quantita prodotte sia prezzi, quindi non sono serie reali o depurate dall'inflazione.": "Time series are at current prices: changes over time can reflect both quantities produced and prices, so they are not real or inflation-adjusted series.",
+    "Le classi dimensionali arrivano dalle statistiche strutturali d'impresa: sono classi di persone occupate nell'impresa e hanno un perimetro diverso dai conti nazionali.": "Size classes come from Structural Business Statistics: they are firm-level persons-employed classes and have a different scope from national accounts.",
+    "Le classi dimensionali non sono una scomposizione dell'intera economia nazionale: descrivono il perimetro delle statistiche strutturali d'impresa e quindi vanno confrontate soprattutto dentro lo stesso settore e la stessa fonte.": "Size classes are not a breakdown of the whole national economy: they describe the Structural Business Statistics scope and should therefore mainly be compared within the same sector and source.",
+    "Il valore aggiunto per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana e calcolata tra i settori visualizzati, non dentro ogni settore.": "Value added per employee uses national-accounts employees by NACE branch. The median is computed across displayed sectors, not within each sector.",
+    "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella.": "Value per person employed is computed only within the SBS scope, dividing value added by persons employed published in the same cell."
+  });
+
+  Object.assign(text, {
+    "Altre attivita' di servizi": "Other service activities",
+    "Altre attivita' estrattive": "Other mining and quarrying",
+    "Altre attivita' manifatturiere": "Other manufacturing",
+    "Programmazione, consulenza informatica e attivita' connesse": "Computer programming, consultancy and related activities",
+    "Altre attivita' professionali, scientifiche e tecniche": "Other professional, scientific and technical activities",
+    "Biblioteche, archivi, musei e altre attivita' culturali": "Libraries, archives, museums and other cultural activities",
+    "ISTAT RACLI, settore privato. Disponibile per retribuzioni orarie dei dipendenti del settore privato dal 2014, secondo celle pubblicate. Le giornate retribuite sono classi ufficiali, non conteggi individuali ricostruiti. La qualifica separa operai e apprendisti; dirigenti e impiegati sono aggregati quando la fonte li pubblica insieme.": "ISTAT RACLI, private sector. Available for hourly wages of private-sector employees from 2014, according to published cells. Paid days are official classes, not reconstructed individual counts. Qualification separates manual workers and apprentices; managers and clerical workers are aggregated when the source publishes them together.",
+
+    "Altre entrate per riduzione di attivita' finanziarie": "Other revenue from reduction of financial assets",
+    "Tutela e valorizzazione dei beni e delle attivita culturali": "Protection and enhancement of cultural assets and activities",
+    "Entrate da riduzione di attivita finanziarie": "Revenue from reduction of financial assets",
+    "Entrate extratributarie": "Non-tax revenue",
+    "Riscossione crediti di medio-lungo termine": "Collection of medium- and long-term credits",
+    "Proventi derivanti dall'attivita' di controllo e repressione delle irregolarita' e degli illeciti": "Proceeds from monitoring and enforcement against irregularities and offences",
+    "Imposta regionale sulle attivita' produttive (IRAP)": "Regional tax on productive activities (IRAP)",
+
+    "nel dataset attivita reparti": "in the ward-activity dataset",
+    "Fonte: Ministero della Salute, dati di attivita dei reparti; ISTAT POSAS 2026 per denominatori. Elaborazione di Nazareno Lecis. Denominatore selezionato: automatico. La tabella riporta anche volumi assoluti, degenza media e utilizzo dei posti letto.": "Source: Ministry of Health, ward activity data; ISTAT POSAS 2026 for denominators. Processing by Nazareno Lecis. Selected denominator: automatic. The table also reports absolute volumes, average length of stay and bed utilisation.",
+    "Da regione a ospedali piu frequentati - Italia": "From region to most frequented hospitals - Italy",
+    "La dashboard misura dati effettivi: attivita ospedaliera 2022, posti letto 2010-2023, costi SSN 2024, serie farmaceutica 2012-2024, popolazione ISTAT 2026, PIL Eurostat 2024 e saldi di mobilita 2014-2024.": "The dashboard measures observed data: 2022 hospital activity, 2010-2023 beds, 2024 National Health Service costs, 2012-2024 pharmaceutical series, 2026 ISTAT population, 2024 Eurostat GDP and 2014-2024 mobility balances.",
+    "I tassi usano il denominatore demografico piu coerente: popolazione totale per indicatori generali, 0 anni per neonatologia, 0-14 per pediatria, donne 15-49 per ostetricia/ginecologia, 65+ o 75+ per discipline geriatriche o fragilita.": "Rates use the most coherent demographic denominator: total population for general indicators, age 0 for neonatology, ages 0-14 for paediatrics, women aged 15-49 for obstetrics/gynaecology, and 65+ or 75+ for geriatric or frailty-related disciplines.",
+    "Per le attivita ospedaliere con sigla provincia, i tassi provinciali usano il file POSAS province ISTAT e la tabella ufficiale dei codici territoriali per collegare codice provincia e sigla.": "For hospital activity with a province abbreviation, provincial rates use the ISTAT POSAS province file and the official territorial-code table to connect province code and abbreviation.",
+    "Dimessi": "Discharged patients",
+    "Numero di dimissioni registrate nei reparti delle strutture di ricovero pubbliche ed equiparate.": "Number of discharges recorded in wards of public and equivalent inpatient facilities.",
+    "popolazione totale o denominatore specifico della disciplina": "total population or discipline-specific denominator",
+    "conteggio e tasso per 1.000 residenti": "count and rate per 1,000 residents",
+    "Misura l'attivita ospedaliera disponibile in open data, non tutte le prestazioni ambulatorial": "Measures hospital activity available in open data, not all outpatient services",
+    "Somma delle giornate di degenza registrate nei reparti.": "Sum of days of stay recorded in wards.",
+    "dimessi per la degenza media; giornate disponibili per il tasso di utilizzo": "discharges for average length of stay; available days for the utilisation rate",
+    "giorni": "days",
+    "La degenza media dipende dal case mix e non e un indicatore di qualita se letta da sola.": "Average length of stay depends on the case mix and is not a quality indicator when read on its own.",
+    "Dati di struttura e di attivita dei reparti": "Facility and ward activity data",
+    "struttura, reparto/disciplina, regione, ASL": "facility, ward/discipline, region, local health authority",
+
+    "Classifica i singoli trattamenti per importo mensile lordo. Una persona puo' ricevere piu' trattamenti, quindi questo grafico non conta teste uniche. La fonte consente di dettagliare la coda alta fino a 5000 euro e oltre.": "Ranks individual benefits by gross monthly amount. One person can receive multiple benefits, so this chart does not count unique people. The source can detail the upper tail up to 5,000 euros and above.",
+    "Affidabilita media.": "Medium reliability.",
+    "Affidabilità media.": "Medium reliability.",
+    "Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.": "The virtual capital is a comparison threshold, not an individual account that is drawn down.",
+
+    "Il dettaglio entra nelle branche A64 ed esclude gli aggregati piu larghi per evitare letture gonfiate da sottovoci gia incluse.": "The detail enters A64 branches and excludes broader aggregates to avoid inflated readings from sub-items already included.",
+    "Il dato regionale ha meno dettaglio dei conti nazionali A64 e delle divisioni SBS: e utile per la geografia, con settori piu aggregati.": "Regional data have less detail than A64 national accounts and SBS divisions: they are useful for geography, with more aggregated sectors.",
+    "Business Demography mostra imprese, occupati e dipendenti nelle classi 0, 1-4 e 5-9, con settori disponibili anche piu fini per alcune attivita. Non pubblica valore aggiunto e non viene usata per stimarlo dentro la classe SBS 0-9.": "Business Demography shows enterprises, persons employed and employees in the 0, 1-4 and 5-9 classes, with finer sectors also available for some activities. It does not publish value added and is not used to estimate it within the SBS 0-9 class.",
+    "Disponibile a livello NUTS2 per il valore aggiunto regionale. I settori sono piu' aggregati rispetto ai conti nazionali A64.": "Available at NUTS2 level for regional value added. Sectors are more aggregated than in A64 national accounts.",
+    "Il dettaglio regionale usa le regioni NUTS pubblicate da Eurostat e settori piu aggregati; non tutte le combinazioni paese-settore-anno sono disponibili.": "The regional detail uses NUTS regions published by Eurostat and more aggregated sectors; not all country-sector-year combinations are available."
+  });
+
+  Object.assign(text, {
+    "Prezzi e affitti medi/mediani sono calcolati sulle zone OMI residenziali disponibili del comune e non sono pesati per transazioni, stock abitativo, superficie o popolazione.": "Mean and median prices and rents are computed on the municipality's available residential OMI zones and are not weighted by transactions, housing stock, area or population.",
+
+    "MEDIAN ORARIA LORDA": "GROSS HOURLY MEDIAN",
+    "MEDIA MENSILE LORDA": "GROSS MONTHLY MEAN",
+    "D9 / D1 ORARIO": "HOURLY D9 / D1",
+    "BASSA RETRIBUZIONE": "LOW PAY",
+    "COSTO ORARIO LAVORO": "HOURLY LABOUR COST",
+    "Mediana oraria lorda": "Gross hourly median",
+    "Media mensile lorda": "Gross monthly mean",
+    "D9 / D1 orario": "Hourly D9 / D1",
+    "Bassa retribuzione": "Low pay",
+    "Costo orario lavoro": "Hourly labour cost",
+    "P50 / mediana": "P50 / median",
+    "Punti ufficiali della retribuzione oraria": "Official points of hourly wages",
+    "La distribuzione piena non viene ricostruita da pochi percentili: quando la fonte pubblica solo D1, mediana, D9 e media, il grafico mostra solo quei punti.": "The full distribution is not reconstructed from a few percentiles: when the source publishes only D1, median, D9 and mean, the chart shows only those points.",
+    "Eurostat SES, OECD Average annual wages, net earnings e altre fonti non sono duplicati: cambiano universo statistico, media/mediana, correzione full-time equivalent, valuta e perimetro settoriale.": "Eurostat SES, OECD Average annual wages, net earnings and other sources are not duplicates: they differ by statistical universe, mean/median measure, full-time-equivalent correction, currency and sector scope.",
+    "ISTAT RACLI; Eurostat earn_ses_hourly. ISTAT RACLI fornisce dettaglio italiano per settore, eta', sesso e orario; Eurostat resta per confronto europeo.": "ISTAT RACLI; Eurostat earn_ses_hourly. ISTAT RACLI provides Italian detail by sector, age, sex and working time; Eurostat remains the European comparison source.",
+    "Province, paese di nascita, orario, qualifica, giornate retribuite e settori Ateco dettagliati": "Provinces, country of birth, working time, qualification, paid days and detailed Ateco sectors",
+    "Eurostat lc_lci_lev. Mantenuto separato dalla retribuzione ricevuta dal lavoratore.": "Eurostat lc_lci_lev. Kept separate from the wage received by the worker.",
+
+    "Cultura e religione - Servizi religiosi e altre comunita'": "Culture and religion - Religious services and other communities",
+    "Repository di elaborazione: NazarenoLecis/Bilancio_pubblico.": "Processing repository: NazarenoLecis/Bilancio_pubblico.",
+    "IMU (quota comuni)": "IMU (municipal share)",
+    "Imu - Imis (Quota Comuni)": "IMU - IMIS (municipal share)",
+
+    "SALDO TOTALE": "TOTAL BALANCE",
+    "Saldo totale": "Total balance",
+    "SPESA PER MISSIONE": "SPENDING BY MISSION",
+    "ENTRATE PER TIPOLOGIA": "REVENUE BY TYPE",
+    "PAGAMENTI": "PAYMENTS",
+    "MILIARDI CORRENTI": "CURRENT BILLION EUROS",
+    "PA localizzate nella regione": "Public administrations located in the region",
+    "Energia e diversificazione delle fonti energetiche": "Energy and diversification of energy sources",
+    "Come leggere: le missioni classificano la funzione della spesa regionale, per esempio sanita, trasporti, istruzione, ambiente, sviluppo economico e politiche sociali.": "How to read: missions classify the function of regional spending, for example healthcare, transport, education, environment, economic development and social policies.",
+    "Come leggere: la tipologia e' il codice OpenBDAP/FET a 6 cifre sotto il titolo. Qui si distinguono, per esempio, trasferimenti correnti da amministrazioni pubbliche e trasferimenti dall'Unione Europea e dal resto del mondo.": "How to read: the type is the six-digit OpenBDAP/FET code below the title. This distinguishes, for example, current transfers from public administrations and transfers from the European Union and the rest of the world.",
+    "Trasferimenti correnti - Trasferimenti correnti dall'Unione Europea e dal Resto del Mondo": "Current transfers - Current transfers from the European Union and the rest of the world",
+    "Trasferimenti correnti a organismi interni e/o unita' locali della amministrazione": "Current transfers to internal bodies and/or local units of the administration",
+    "Trasferimenti correnti a Comunita' Montane": "Current transfers to mountain communities",
+    "Codici gestionali SIOPE per Sardinia, pagamenti, in million euros.": "SIOPE management codes for Sardinia, payments, in million euros.",
+
+    "Unita` Coronarica": "Coronary care unit",
+    "Unita` Spinale": "Spinal unit",
+    "Attivita per regione e disciplina": "Activity by region and discipline",
+    "Posti letto per regione e disciplina": "Beds by region and discipline",
+    "Totale per regione - pro capite": "Total by region - per capita",
+    "Saldo mobilita per regione - 2024": "Mobility balance by region - 2024",
+    "Per Bolzano e Trento i denominatori ISTAT sono letti dal file province, perche le fonti sanitarie distinguono le province autonome.": "For Bolzano and Trento, ISTAT denominators are read from the province file because health sources distinguish the autonomous provinces.",
+    "INDICATOR": "INDICATOR",
+    "DEFINIZIONE": "DEFINITION",
+    "Definizione": "Definition",
+    "NUMERATORE": "NUMERATOR",
+    "Numeratore": "Numerator",
+    "UNITA": "UNIT",
+    "Unita": "Unit",
+    "Avvertenza": "Warning",
+    "Posti letto per Regione e disciplina 2010-2019": "Beds by region and discipline 2010-2019",
+    "Posti letto per Regione e disciplina 2020": "Beds by region and discipline 2020",
+    "Posti letto per Regione e disciplina 2021": "Beds by region and discipline 2021",
+    "Posti letto per Regione e disciplina 2022": "Beds by region and discipline 2022",
+    "Posti letto per Regione e disciplina 2023": "Beds by region and discipline 2023",
+    "serie storica posti letto per regione e disciplina": "bed time series by region and discipline",
+    "integrazione serie storica posti letto": "bed time-series integration",
+    "regione e disciplina": "region and discipline",
+    "La serie storica dei posti letto usa i CSV annuali del Ministero della Salute per regione e disciplina: dataset cumulato 2010-2019 e file annuali 2020, 2021, 2022 e 2023.": "The bed time series uses annual Ministry of Health CSVs by region and discipline: cumulative 2010-2019 dataset and annual files for 2020, 2021, 2022 and 2023.",
+    "La serie storica dei posti letto usa i CSV annuali del Ministry of Health per regione e disciplina: dataset cumulato 2010-2019 e file annuali 2020, 2021, 2022 e 2023.": "The bed time series uses annual Ministry of Health CSVs by region and discipline: cumulative 2010-2019 dataset and annual files for 2020, 2021, 2022 and 2023.",
+    "Codici statistici delle unita amministrative territor...": "Statistical codes of territorial administrative units...",
+    "associazione fra codici provincia ISTAT, sigle automobilistiche e regioni": "mapping between ISTAT province codes, vehicle registration abbreviations and regions",
+    "comuni, province, citta metropolitane e regioni": "municipalities, provinces, metropolitan cities and regions",
+
+    "Retribuzione annua lorda (RAL) iniziale": "Initial gross annual wage",
+    "Retribuzione annua lorda (RAL) finale": "Final gross annual wage",
+    "quota trattenuta o versata personalmente": "share withheld or paid personally",
+    "quota a carico del datore; zero per autonomi": "employer share; zero for self-employed workers",
+
+    "Paesi nel grafico": "Countries in chart",
+    "PAESI NEL GRAFICO": "COUNTRIES IN CHART",
+    "Settori nella regione": "Sectors in the region",
+    "Ogni linea mostra lo stesso settore in un paese. Cambiando parametro passi dai livelli nominali alle quote sul totale, al rapporto con il PIL o alla dinamica indicizzata.": "Each line shows the same sector in one country. Changing the parameter moves from nominal levels to shares of the total, the GDP ratio or indexed dynamics.",
+    "Ogni linea mostra lo stesso settore in un paese. Cambiando parametro passi dai livelli nominali alle quote sul totale, al rapporto con il GDP o alla dinamica indicizzata.": "Each line shows the same sector in one country. Changing the parameter moves from nominal levels to shares of the total, the GDP ratio or indexed dynamics.",
+    "I valori assoluti mostrano il valore aggiunto in million euros correnti.": "Absolute values show value added in current million euros.",
+    "Valori maggiori - valore aggiunto totale": "Highest values - total value added",
+    "Questa vista usa i conti nazionali: le sezioni NACE sono separate per evitare aggregati troppo grandi e il dettaglio esclude le voci gia incluse.": "This view uses national accounts: NACE sections are separated to avoid overly broad aggregates, and the detail excludes items already included.",
+    "Questa vista usa i conti nazionali: le sezioni NACE sono separate per evitare aggregati troppo grandi e il dettaglio esclude le voci already included.": "This view uses national accounts: NACE sections are separated to avoid overly broad aggregates, and the detail excludes items already included.",
+    "Qui leggi quante imprese appartengono a ogni classe. Una classe molto numerosa puo produrre una quota di valore aggiunto molto diversa.": "This view shows how many enterprises belong to each class. A very numerous class can produce a very different share of value added.",
+    "Quota delle active enterprises sotto i 10 employees - Manufacturing": "Share of active enterprises under 10 employees - Manufacturing",
+    "Questa vista usa Business Demography: descrive le classi 0, 1-4 e 5-9 dipendenti sotto la soglia 10. Non contiene valore aggiunto e non va confrontata come scomposizione della classe SBS 0-9.": "This view uses Business Demography: it describes the 0, 1-4 and 5-9 employee classes below the 10 threshold. It does not contain value added and should not be compared as a breakdown of the SBS 0-9 class.",
+    "Questa vista usa Business Demography: descrive le classi 0, 1-4 e 5-9 employees sotto la soglia 10. Non contiene valore aggiunto e non va confrontata come scomposizione della classe SBS 0-9.": "This view uses Business Demography: it describes the 0, 1-4 and 5-9 employee classes below the 10 threshold. It does not contain value added and should not be compared as a breakdown of the SBS 0-9 class.",
+    "Calcolato dividendo il valore aggiunto della branca per i dipendenti dei conti nazionali nella stessa branca, paese e anno. La mediana e una mediana tra settori aggregati, non dentro il settore.": "Computed by dividing the branch's value added by national-accounts employees in the same branch, country and year. The median is a median across aggregated sectors, not within the sector.",
+    "Calcolato dividendo il valore aggiunto della branca per i employees dei conti nazionali nella stessa branca, paese e anno. La mediana e una mediana tra settori aggregati, non dentro il settore.": "Computed by dividing the branch's value added by national-accounts employees in the same branch, country and year. The median is a median across aggregated sectors, not within the sector.",
+    "Il focus sulle micro-imprese usa Business Demography e separa 0, 1-4 e 5-9 dipendenti. E una vista descrittiva su imprese e occupazione, non una stima del valore aggiunto dentro la classe SBS 0-9.": "The micro-enterprise focus uses Business Demography and separates 0, 1-4 and 5-9 employees. It is a descriptive view of enterprises and employment, not an estimate of value added within the SBS 0-9 class.",
+    "Il focus sulle micro-imprese usa Business Demography e separa 0, 1-4 e 5-9 employees. E una vista descrittiva su imprese e occupazione, non una stima del valore aggiunto dentro la classe SBS 0-9.": "The micro-enterprise focus uses Business Demography and separates 0, 1-4 and 5-9 employees. It is a descriptive view of enterprises and employment, not an estimate of value added within the SBS 0-9 class.",
+    "Micro-imprese 0, 1-4, 5-9": "Micro-enterprises 0, 1-4, 5-9",
+    "Nei confronti europei puoi passare dai valori assoluti a quote sul PIL o sul valore aggiunto nazionale per ridurre l'effetto della scala del paese.": "In European comparisons you can move from absolute values to shares of GDP or national value added to reduce the effect of country scale.",
+    "Nei confronti europei puoi passare dai valori assoluti a quote sul GDP o sul valore aggiunto nazionale per ridurre l'effetto della scala del paese.": "In European comparisons you can move from absolute values to shares of GDP or national value added to reduce the effect of country scale."
+  });
+
+  var dynamicText = [
+    [/^Ultimo dato:\s*(.+)$/i, "Latest data: $1"],
+    [/^Ultimo dato Banca d'Italia:\s*(.+?)\. Refresh automatico il 16 di ogni mese\.$/i, "Latest Bank of Italy data: $1. Automatic refresh on the 16th of each month."],
+    [/^Dati aggiornati al\s+(.+?)\. Refresh automatico il 16 di ogni mese\.$/i, "Data updated to $1. Automatic refresh on the 16th of each month."],
+    [/^Vita media stimata\s+(.+?)\s+anni$/i, "Estimated average life $1 years"],
+    [/^VITA MEDIA STIMATA\s+(.+?)\s+ANNI\s+AGGIORNATO AL\s+(.+)$/i, "ESTIMATED AVERAGE LIFE $1 YEARS UPDATED TO $2"],
+    [/^Aggiornato al\s+(.+)$/i, "Updated to $1"],
+    [/^([0-9.,]+)\s*mld euro$/i, "$1 bn euros"],
+    [/^([0-9.,]+)\s*mln euro$/i, "$1 mn euros"],
+    [/^Anno\s+([0-9]{4})$/i, "Year $1"],
+    [/^Ultimo anno\s+\(([^)]+)\)$/i, "Latest year ($1)"],
+    [/^Fonte: AlmaLaurea\s+(.+)$/i, "Source: AlmaLaurea $1"],
+    [/^Dati caricati\. Ultimo anno conti nazionali:\s*(.+?);\s*SBS occupati:\s*(.+?);\s*PIL:\s*(.+?)\.$/i, "Data loaded. Latest national-accounts year: $1; SBS employment: $2; GDP: $3."],
+    [/^Quota sul totale:\s*(.+)$/i, "Share of total: $1"],
+    [/^Serie e tavole sorgente censite nell'elaborazione:\s*([0-9]+)\.$/i, "Source series and tables covered by the processing: $1."],
+    [/^Totale sistema; di cui pensionati INPS:\s*(.+)$/i, "Total system; of which INPS pensioners: $1"],
+    [/^Italia\s+[\u2014-]\s+(.+)$/i, "Italy - $1"],
+    [/^Paesi\s+min[\u2013-]max\s+[\u2014-]\s+(.+)$/i, "Country min-max - $1"],
+    [/^(.+?)\s+nei paesi$/i, "$1 across countries"],
+    [/^(.+?)\s+per classe dimensionale$/i, "$1 by size class"],
+    [/^(.+?)\s+-\s+Italia\s+-\s+non e il PIL$/i, "$1 - Italy - not GDP"],
+    [/^(.+?)\s+-\s+Italia\s+-\s+non è il PIL$/i, "$1 - Italy - not GDP"]
+  ];
+
+  var phraseText = [
+    ["Refresh automatico il 16 di ogni mese", "Automatic refresh on the 16th of each month"],
+    ["Ultimo dato Banca d'Italia", "Latest Bank of Italy data"],
+    ["Dati aggiornati al", "Data updated to"],
+    ["Ultimo dato", "Latest data"],
+    ["Fonte:", "Source:"],
+    ["Ministero della Salute", "Ministry of Health"],
+    ["Corte dei conti", "Court of Auditors"],
+    ["Ragioneria Generale dello Stato", "State General Accounting Department"],
+    ["Celle oscurate nella selezione:", "Suppressed cells in the selection:"],
+    ["Le celle oscurate non sono trattate come zero.", "Suppressed cells are not treated as zero."],
+    ["Le celle oscurate con *** sono escluse dalle somme e contate come dati mascherati.", "Cells suppressed with *** are excluded from sums and counted as masked data."],
+    ["Dimissioni per esito amministrativo", "Discharges by administrative outcome"],
+    ["Dimissioni aggregate per decesso, domicilio o trasferimento verso altra struttura.", "Aggregated discharges by death, home discharge or transfer to another facility."],
+    ["dimissioni note per tipologia", "discharges with known type"],
+    ["totale noto delle tre tipologie pubblicate", "known total of the three published types"],
+    ["conteggio e quota percentuale", "count and percentage share"],
+    ["SDO per tipologia dimissione", "SDO by discharge type"],
+    ["saldi economici della mobilita sanitaria", "economic balances of healthcare mobility"],
+    ["saldi economici della mobilità sanitaria", "economic balances of healthcare mobility"],
+    ["pagina ufficiale", "official page"],
+    ["Elaborazione di Nazareno Lecis.", "Processing by Nazareno Lecis."],
+    ["Elaborazione di Nazareno Lecis", "Processing by Nazareno Lecis"],
+    ["miliardi di euro correnti", "current billion euros"],
+    ["Miliardi di euro correnti", "Current billion euros"],
+    ["miliardi di euro", "billion euros"],
+    ["Miliardi di euro", "Billion euros"],
+    ["milioni di euro", "million euros"],
+    ["mld euro", "bn euros"],
+    ["mln euro", "mn euros"],
+    [" mld", " bn"],
+    [" mln", " mn"],
+    ["Quota sul totale", "Share of total"],
+    ["Quota sul debito", "Share of debt"],
+    ["Quota percentuale", "Percentage share"],
+    ["Quota sul PIL", "Share of GDP"],
+    ["% PIL", "% GDP"],
+    ["PIL", "GDP"],
+    ["Paesi min\u2013max", "Country min-max"],
+    ["Paesi min-max", "Country min-max"],
+    ["Anno ultimo dato", "Latest-value year"],
+    ["Anno ", "Year "],
+    ["La vista mostra", "The view shows"],
+    ["La carriera semplificata usa l'indice ISTAT delle retribuzioni contrattuali del contratto scelto, calibrato sull'importo inserito.", "The simplified career uses the ISTAT index of contractual wages for the selected contract, calibrated to the entered amount."],
+    ["Gli imponibili INPS effettivi restano piu' precisi.", "Actual INPS taxable earnings remain more precise."],
+    ["Il montante virtuale e' una soglia di confronto, non un conto individuale che viene svuotato.", "The virtual capital is a comparison threshold, not an individual account that is drawn down."],
+    ["gruppi disciplinari", "subject groups"],
+    ["tipi di corso", "degree types"],
+    ["classi di laurea", "degree classes"],
+    ["corsi di laurea", "degree programmes"],
+    ["laureati", "graduates"],
+    ["indagine", "survey"],
+    ["1 anno dalla laurea", "1 year after graduation"],
+    ["anni dalla laurea", "years after graduation"],
+    ["Retribuzione piu' alta:", "Highest wage:"],
+    ["Occupazione piu' alta:", "Highest employment:"],
+    ["piu' alta", "highest"],
+    ["più alta", "highest"],
+    ["Unione europea (27 paesi)", "European Union (27 countries)"],
+    ["Unione europea a 27", "European Union - 27 countries"],
+    ["Unione europea (27)", "European Union (27)"],
+    ["Paesi Bassi", "Netherlands"],
+    ["Belgio", "Belgium"],
+    ["Bulgaria", "Bulgaria"],
+    ["Cipro", "Cyprus"],
+    ["Cechia", "Czechia"],
+    ["Germania", "Germany"],
+    ["Danimarca", "Denmark"],
+    ["Estonia", "Estonia"],
+    ["Grecia", "Greece"],
+    ["Francia", "France"],
+    ["Croazia", "Croatia"],
+    ["Ungheria", "Hungary"],
+    ["Irlanda", "Ireland"],
+    ["Lituania", "Lithuania"],
+    ["Lussemburgo", "Luxembourg"],
+    ["Lettonia", "Latvia"],
+    ["Malta", "Malta"],
+    ["Polonia", "Poland"],
+    ["Portogallo", "Portugal"],
+    ["Romania", "Romania"],
+    ["Svezia", "Sweden"],
+    ["Slovenia", "Slovenia"],
+    ["Slovacchia", "Slovakia"],
+    ["Spagna", "Spain"],
+    ["Italia", "Italy"],
+    ["Sardegna", "Sardinia"],
+    ["Mediana", "Median"],
+    ["Media nazionale", "National mean"],
+    ["Mediana nazionale", "National median"],
+    ["Paesi nel grafico", "Countries in chart"],
+    ["PAESI NEL GRAFICO", "COUNTRIES IN CHART"],
+    ["Quota ", "Share "],
+    ["quota ", "share "],
+    ["SALDO TOTALE", "TOTAL BALANCE"],
+    ["Saldo totale", "Total balance"],
+    ["SPESA PER MISSIONE", "SPENDING BY MISSION"],
+    ["Spesa per missione", "Spending by mission"],
+    ["ENTRATE PER TIPOLOGIA", "REVENUE BY TYPE"],
+    ["Entrate per tipologia", "Revenue by type"],
+    ["PAGAMENTI PER CODICE", "PAYMENTS BY CODE"],
+    ["Pagamenti per codice", "Payments by code"],
+    ["PAGAMENTI", "PAYMENTS"],
+    ["Pagamenti", "Payments"],
+    ["pagamenti", "payments"],
+    ["Codici gestionali SIOPE", "SIOPE management codes"],
+    ["MILIARDI CORRENTI", "CURRENT BILLION EUROS"],
+    ["Miliardi correnti", "Current billion euros"],
+    ["IMPORTO", "AMOUNT"],
+    ["EURO/AB.", "EUROS/INHAB."],
+    ["EURO/DIMISSIONE", "EUROS/DISCHARGE"],
+    ["DEFINIZIONE", "DEFINITION"],
+    ["NUMERATORE", "NUMERATOR"],
+    ["UNITA", "UNIT"],
+    ["AVVERTENZA", "WARNING"],
+    ["Totale economia", "Total economy"],
+    ["Totale settori imprese SBS", "Total SBS business sectors"],
+    ["Totale industria", "Total industry"],
+    ["Industria esclusa costruzioni", "Industry excluding construction"],
+    ["Manifattura", "Manufacturing"],
+    ["Affitti imputati delle abitazioni occupate dai proprietari", "Imputed rents of owner-occupied dwellings"],
+    ["attivita' finanziarie", "financial assets"],
+    ["attivita finanziarie", "financial assets"],
+    ["attivita culturali", "cultural activities"],
+    ["attivita ospedaliera", "hospital activity"],
+    ["attivita reparti", "ward activity"],
+    ["attivita", "activities"],
+    ["piu frequentati", "most frequented"],
+    ["piu aggregati", "more aggregated"],
+    ["piu fini", "finer"],
+    ["piu grandi", "larger"],
+    ["gia incluse", "already included"],
+    ["Classi dimensionali", "Size classes"],
+    ["classe dimensionale", "size class"],
+    ["persone occupate", "persons employed"],
+    ["dipendenti", "employees"],
+    ["imprese attive", "active enterprises"],
+    ["Vecchiaia", "Old age"],
+    ["Invalidita' previdenziale", "Disability pensions"],
+    ["Invalidità previdenziale", "Disability pensions"],
+    ["Superstiti", "Survivors"],
+    ["Tipologia dimissioni", "Discharge type"],
+    ["Medicina Generale", "General medicine"],
+    ["Chirurgia Generale", "General surgery"],
+    ["Ostetricia e Ginecologia", "Obstetrics and gynaecology"]
+  ];
+
   function saveLanguage(language) {
     try {
       localStorage.setItem(storageKey, language);
@@ -1709,11 +2246,29 @@
     return match ? match[0] : "";
   }
 
+  function translateDynamicValue(key) {
+    var translated = null;
+    dynamicText.some(function (rule) {
+      if (!rule[0].test(key)) return false;
+      translated = key.replace(rule[0], rule[1]);
+      return true;
+    });
+    if (translated) return translated;
+
+    var output = key;
+    phraseText.forEach(function (pair) {
+      output = output.split(pair[0]).join(pair[1]);
+    });
+    return output !== key ? output : null;
+  }
+
   function translateValue(value, language) {
     if (language !== "en") return value;
     var key = normalise(value);
-    if (!key || !text[key]) return value;
-    return leadingSpace(value) + text[key] + trailingSpace(value);
+    if (!key) return value;
+    var translated = text[key] || translateDynamicValue(key);
+    if (!translated) return value;
+    return leadingSpace(value) + translated + trailingSpace(value);
   }
 
   function languageFromUrlOrStorage() {
@@ -1812,6 +2367,13 @@
     if (!node || node.nodeType !== Node.TEXT_NODE || (!force && shouldSkip(node))) return;
     if (!originalText.has(node)) originalText.set(node, node.nodeValue);
     var original = originalText.get(node);
+    if (language === "en") {
+      var expected = translateValue(original, language);
+      if (node.nodeValue !== original && node.nodeValue !== expected) {
+        original = node.nodeValue;
+        originalText.set(node, original);
+      }
+    }
     var next = language === "en" ? translateValue(original, language) : original;
     if (node.nodeValue !== next) node.nodeValue = next;
   }
@@ -1822,9 +2384,20 @@
 
   function translatePlotlyText(language) {
     document.querySelectorAll(".js-plotly-plot text").forEach(function (node) {
-      Array.prototype.forEach.call(node.childNodes, function (child) {
-        translateTextNode(child, language, true);
-      });
+      var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+      var child;
+      while ((child = walker.nextNode())) translateTextNode(child, language, true);
+    });
+  }
+
+  function translateKnownDynamicNodes(language) {
+    if (language !== "en") return;
+    document.querySelectorAll(".housing-kpis .kpi span").forEach(function (node) {
+      var value = normalise(node.textContent);
+      var next = value
+        .replace(/^Italia\s+[\u2014-]\s+/, "Italy - ")
+        .replace(/^Paesi\s+min[\u2013-]max\s+[\u2014-]\s+/, "Country min-max - ");
+      if (next !== value) node.textContent = next;
     });
   }
 
@@ -1844,6 +2417,7 @@
       var node;
       while ((node = walker.nextNode())) translateNode(node, language);
       translatePlotlyText(language);
+      translateKnownDynamicNodes(language);
     } finally {
       translateStaticPage.running = false;
     }
@@ -1901,7 +2475,7 @@
 
   function scheduleDashboardRefresh(language) {
     if (!isDashboardPage()) return;
-    [0, 250, 1000, 2200].forEach(function (delay) {
+    [0, 250, 1000, 2200, 5000, 9000].forEach(function (delay) {
       window.setTimeout(function () {
         translateStaticPage(languageFromUrlOrStorage());
       }, delay);

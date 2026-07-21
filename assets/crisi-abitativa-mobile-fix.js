@@ -7,6 +7,14 @@
     return document.getElementById(id);
   }
 
+  function currentLanguage() {
+    return window.SiteLanguage && window.SiteLanguage.get ? window.SiteLanguage.get() : document.documentElement.lang || "it";
+  }
+
+  function isEnglish() {
+    return currentLanguage() === "en";
+  }
+
   function injectStyle() {
     if (byId("housingMobileFixStyle")) return;
     var style = document.createElement("style");
@@ -39,14 +47,18 @@
   }
 
   function indicatorShortLabel() {
-    var title = (byId("europeTitle") && byId("europeTitle").textContent) || "indicatore";
-    return title
-      .replace(/Costi abitativi oltre il 40% del reddito/i, "costi >40% reddito")
-      .replace(/percentuale della popolazione/ig, "% pop.")
-      .replace(/della popolazione/ig, "")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 34);
+    var fallback = isEnglish() ? "indicator" : "indicatore";
+    var title = (byId("europeTitle") && byId("europeTitle").textContent) || fallback;
+    var label = isEnglish()
+      ? title
+        .replace(/Housing costs over 40% of income/i, "Housing costs >40% income")
+        .replace(/percentage of the population/ig, "% pop.")
+        .replace(/of the population/ig, "")
+      : title
+        .replace(/Costi abitativi oltre il 40% del reddito/i, "costi >40% reddito")
+        .replace(/percentuale della popolazione/ig, "% pop.")
+        .replace(/della popolazione/ig, "");
+    return label.replace(/\s+/g, " ").trim().slice(0, 34);
   }
 
   function setLabel(id, text) {
@@ -56,11 +68,14 @@
 
   function clarifyLabels() {
     var label = indicatorShortLabel();
-    setLabel("kpiItalyLabel", "Italia — " + label);
+    var dash = isEnglish() ? " - " : " \u2014 ";
+    setLabel("kpiItalyLabel", (isEnglish() ? "Italy" : "Italia") + dash + label);
     var range = byId("kpiRange") && byId("kpiRange").parentElement && byId("kpiRange").parentElement.querySelector("span");
-    if (range && range.textContent !== "Paesi min–max — " + label) range.textContent = "Paesi min–max — " + label;
+    var rangeText = (isEnglish() ? "Country min-max" : "Paesi min\u2013max") + dash + label;
+    if (range && range.textContent !== rangeText) range.textContent = rangeText;
     var year = byId("kpiYear") && byId("kpiYear").parentElement && byId("kpiYear").parentElement.querySelector("span");
-    if (year && year.textContent !== "Anno ultimo dato") year.textContent = "Anno ultimo dato";
+    var yearText = isEnglish() ? "Latest-value year" : "Anno ultimo dato";
+    if (year && year.textContent !== yearText) year.textContent = yearText;
   }
 
   function wrapTokens(text) {

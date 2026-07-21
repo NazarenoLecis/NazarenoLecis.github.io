@@ -95,6 +95,36 @@
     SI: "Slovenia",
     SK: "Slovacchia"
   };
+  var COUNTRY_LABELS_EN = {
+    AT: "Austria",
+    BE: "Belgium",
+    BG: "Bulgaria",
+    CY: "Cyprus",
+    CZ: "Czechia",
+    DE: "Germany",
+    DK: "Denmark",
+    EE: "Estonia",
+    EL: "Greece",
+    ES: "Spain",
+    EU27_2020: "European Union (27 countries)",
+    FI: "Finland",
+    FR: "France",
+    HR: "Croatia",
+    HU: "Hungary",
+    IE: "Ireland",
+    IT: "Italy",
+    LT: "Lithuania",
+    LU: "Luxembourg",
+    LV: "Latvia",
+    MT: "Malta",
+    NL: "Netherlands",
+    PL: "Poland",
+    PT: "Portugal",
+    RO: "Romania",
+    SE: "Sweden",
+    SI: "Slovenia",
+    SK: "Slovakia"
+  };
   var SECTOR_LABELS_IT = {
     TOTAL: "Totale economia",
     SBS_TOTAL: "Totale settori imprese SBS",
@@ -236,6 +266,157 @@
     U: "Organizzazioni extraterritoriali",
     U99: "Organizzazioni e organismi extraterritoriali"
   };
+  var SECTOR_LABELS_EN = {
+    TOTAL: "Total economy",
+    SBS_TOTAL: "Total SBS business sectors",
+    A: "Agriculture, forestry and fishing",
+    A01: "Crop and animal production",
+    A02: "Forestry",
+    A03: "Fishing and aquaculture",
+    B: "Mining and quarrying",
+    B05: "Mining of coal",
+    B06: "Extraction of crude petroleum and natural gas",
+    B07: "Mining of metal ores",
+    B08: "Other mining and quarrying",
+    B09: "Mining support services",
+    "B-E": "Industry excluding construction",
+    C: "Manufacturing",
+    C10: "Food industries",
+    "C10-C12": "Food, beverages and tobacco",
+    C11: "Beverages",
+    C12: "Tobacco",
+    C13: "Textiles",
+    "C13-C15": "Textiles, wearing apparel, leather and footwear",
+    C13_C14: "Textiles and wearing apparel",
+    C14: "Wearing apparel",
+    C15: "Leather, footwear and leather products",
+    C16: "Wood and products of wood",
+    "C16-C18": "Wood, paper and printing",
+    C17: "Paper and paper products",
+    C17_C18: "Paper and printing",
+    C18: "Printing and reproduction",
+    C19: "Coke and refined petroleum products",
+    C20: "Chemicals",
+    C20_C21: "Chemicals and pharmaceuticals",
+    C21: "Pharmaceuticals",
+    C22: "Rubber and plastics",
+    C22_C23: "Rubber, plastics and non-metallic minerals",
+    C23: "Other non-metallic mineral products",
+    C24: "Basic metals",
+    C24_C25: "Basic metals and fabricated metal products",
+    C25: "Fabricated metal products",
+    C26: "Computer, electronic and optical products",
+    C27: "Electrical equipment",
+    C28: "Machinery and equipment",
+    C29: "Motor vehicles, trailers and semi-trailers",
+    C29_C30: "Transport equipment",
+    C30: "Other transport equipment",
+    C31: "Furniture",
+    "C31-C33": "Furniture, other manufacturing and repair",
+    C31_C32: "Furniture and other manufacturing",
+    C32: "Other manufacturing",
+    C33: "Repair, maintenance and installation of machinery",
+    D: "Electricity, gas, steam and air conditioning",
+    D35: "Electricity, gas, steam and air conditioning",
+    E: "Water supply, sewerage, waste and remediation",
+    E36: "Water collection, treatment and supply",
+    E37: "Sewerage",
+    E38: "Waste collection, treatment and disposal",
+    "E37-E39": "Sewerage, waste and remediation",
+    E39: "Remediation and other waste management services",
+    F: "Construction",
+    F41: "Construction of buildings",
+    F42: "Civil engineering",
+    F43: "Specialised construction activities",
+    G: "Wholesale and retail trade",
+    G45: "Trade and repair of motor vehicles",
+    G46: "Wholesale trade",
+    G47: "Retail trade",
+    "G-I": "Trade, transport, accommodation and food services",
+    "G-J": "Trade, transport, accommodation, food services, information and communication",
+    H: "Transportation and storage",
+    H49: "Land transport and transport via pipelines",
+    H50: "Water transport",
+    H51: "Air transport",
+    H52: "Warehousing and support activities for transportation",
+    H53: "Postal and courier activities",
+    I: "Accommodation and food services",
+    I55: "Accommodation",
+    I56: "Food and beverage services",
+    J: "Information and communication",
+    J58: "Publishing",
+    "J58-J60": "Publishing, audiovisual and broadcasting",
+    J59: "Motion picture, video and music",
+    J59_J60: "Audiovisual and programming activities",
+    J60: "Programming and broadcasting",
+    J61: "Telecommunications",
+    J62: "Software and IT consulting",
+    J62_J63: "Software, IT consulting and information services",
+    J63: "Information services",
+    K: "Financial and insurance activities",
+    "K-N": "Financial, real-estate, professional and administrative services",
+    K64: "Financial services",
+    K65: "Insurance and pension funding",
+    K66: "Activities auxiliary to financial and insurance services",
+    L: "Real estate activities",
+    L68: "Real estate activities",
+    L68A: "Imputed rents of owner-occupied dwellings",
+    M: "Professional, scientific and technical activities",
+    M69: "Legal and accounting activities",
+    "M69-M71": "Legal, accounting, consulting and architecture",
+    M69_M70: "Legal, accounting and management consulting",
+    M70: "Head offices and management consulting",
+    M71: "Architecture and engineering",
+    M72: "Research and development",
+    M73: "Advertising and market research",
+    "M73-M75": "Advertising, market research and other professional activities",
+    M74: "Other professional, scientific and technical activities",
+    M74_M75: "Other professional and veterinary activities",
+    M75: "Veterinary activities",
+    M_N: "Professional, scientific, technical and administrative services",
+    N: "Administrative and support services",
+    N77: "Rental and leasing",
+    N78: "Employment activities",
+    N79: "Travel agencies and tour operators",
+    N80: "Security and investigation",
+    N81: "Services to buildings and landscape",
+    "N80-N82": "Security, building services and business support",
+    N82: "Office administrative and business support",
+    O: "Public administration and defence",
+    O84: "Public administration and defence; compulsory social security",
+    "O-Q": "Public administration, education, health and social work",
+    P: "Education",
+    P85: "Education",
+    Q: "Human health and social work",
+    Q86: "Human health",
+    Q87: "Residential care",
+    Q87_Q88: "Residential and social care",
+    Q88: "Social work without accommodation",
+    R: "Arts, sports and entertainment",
+    R90: "Creative, arts and entertainment activities",
+    R91: "Libraries, archives, museums and cultural activities",
+    R92: "Gambling and betting",
+    "R90-R92": "Creative, arts, entertainment and gambling",
+    R93: "Sports and recreation activities",
+    "R-U": "Arts, entertainment and other services",
+    S: "Other services",
+    S94: "Membership organisations",
+    S95: "Repair of computers and personal goods",
+    S96: "Other personal services",
+    T: "Activities of households",
+    U: "Extraterritorial organisations",
+    U99: "Extraterritorial organisations and bodies"
+  };
+  var THEME_LABELS_EN = {
+    THEME_TOURISM_NARROW: "Tourism (narrow proxy)",
+    THEME_TOURISM_EXTENDED: "Tourism (extended proxy)",
+    THEME_ICT: "Digital, media and telecommunications",
+    THEME_PUBLIC_SOCIAL: "Public sector, education, health and social work",
+    THEME_UTILITIES: "Energy, water, waste and networks",
+    THEME_LOCAL_SERVICES: "Other: culture, sport and personal services",
+    THEME_CULTURE_SPORT: "Culture, sport and recreation",
+    THEME_OTHER_SERVICES: "Other personal services"
+  };
 
   var state = {
     payload: null,
@@ -326,29 +507,45 @@
     return row.label || row.name || row.code || "";
   }
 
+  function currentLanguage() {
+    return window.SiteLanguage && window.SiteLanguage.get ? window.SiteLanguage.get() : document.documentElement.lang || "it";
+  }
+
+  function isEnglish() {
+    return currentLanguage() === "en";
+  }
+
+  function translateLabel(value) {
+    return window.SiteLanguage && window.SiteLanguage.t ? window.SiteLanguage.t(value) : value;
+  }
+
   function countryLabel(code, fallback) {
-    return COUNTRY_LABELS_IT[code] || fallback || code || "";
+    var labels = isEnglish() ? COUNTRY_LABELS_EN : COUNTRY_LABELS_IT;
+    return labels[code] || translateLabel(fallback || code || "");
   }
 
   function sectorLabel(rowOrCode, fallback) {
     var code = typeof rowOrCode === "string" ? rowOrCode : rowOrCode && rowOrCode.sector_code;
     var sourceLabel = typeof rowOrCode === "string" ? fallback : rowOrCode && rowOrCode.sector_label;
     var theme = THEMATIC_AGGREGATES.find(function (item) { return item.code === code; });
-    return SECTOR_LABELS_IT[code] || (theme && theme.label) || sourceLabel || fallback || code || "";
+    var labels = isEnglish() ? SECTOR_LABELS_EN : SECTOR_LABELS_IT;
+    var themeLabel = isEnglish() ? THEME_LABELS_EN[code] : theme && theme.label;
+    return labels[code] || themeLabel || translateLabel(sourceLabel || fallback || code || "");
   }
 
   function formatMoney(value) {
     var parsed = number(value);
     if (parsed === null) return "ND";
-    if (Math.abs(parsed) >= 1000) return (parsed / 1000).toLocaleString("it-IT", { maximumFractionDigits: 1, useGrouping: true }) + " mld EUR";
-    return parsed.toLocaleString("it-IT", { maximumFractionDigits: 1, useGrouping: true }) + " mln EUR";
+    var locale = isEnglish() ? "en-US" : "it-IT";
+    if (Math.abs(parsed) >= 1000) return (parsed / 1000).toLocaleString(locale, { maximumFractionDigits: 1, useGrouping: true }) + (isEnglish() ? " bn EUR" : " mld EUR");
+    return parsed.toLocaleString(locale, { maximumFractionDigits: 1, useGrouping: true }) + (isEnglish() ? " mn EUR" : " mln EUR");
   }
 
   function formatShare(value) {
     var parsed = number(value);
     if (parsed === null) return "ND";
     var digits = Math.abs(parsed) > 0 && Math.abs(parsed) < 0.1 ? 2 : 1;
-    return parsed.toLocaleString("it-IT", { maximumFractionDigits: digits, useGrouping: true }) + "%";
+    return parsed.toLocaleString(isEnglish() ? "en-US" : "it-IT", { maximumFractionDigits: digits, useGrouping: true }) + "%";
   }
 
   function median(values) {
@@ -433,8 +630,8 @@
       var title = document.createElement("strong");
       var body = document.createElement("span");
       node.className = "vai-guidance";
-      title.textContent = item.title;
-      body.textContent = item.text;
+      title.textContent = translateLabel(item.title);
+      body.textContent = translateLabel(item.text);
       node.appendChild(title);
       node.appendChild(body);
       container.appendChild(node);
@@ -445,11 +642,11 @@
     var wrapper = document.createElement("label");
     var span = document.createElement("span");
     var select = document.createElement("select");
-    span.textContent = label;
+    span.textContent = translateLabel(label);
     options.forEach(function (option) {
       var item = document.createElement("option");
       item.value = option.value;
-      item.textContent = option.label;
+      item.textContent = translateLabel(option.label);
       if (String(option.value) === String(value)) item.selected = true;
       select.appendChild(item);
     });
@@ -469,14 +666,14 @@
     toArray(values).forEach(function (value) {
       selected[String(value)] = true;
     });
-    span.textContent = label;
+    span.textContent = translateLabel(label);
     wrapper.className = "vai-multi-filter";
     select.multiple = true;
     select.size = Math.min(Math.max(options.length, 4), 8);
     options.forEach(function (option) {
       var item = document.createElement("option");
       item.value = option.value;
-      item.textContent = option.label;
+      item.textContent = translateLabel(option.label);
       item.selected = Boolean(selected[String(option.value)]);
       select.appendChild(item);
     });
@@ -555,7 +752,7 @@
 
   function themeSectorOptions() {
     return THEMATIC_AGGREGATES.map(function (theme) {
-      return { value: theme.code, label: "Tema - " + theme.label };
+      return { value: theme.code, label: (isEnglish() ? "Theme" : "Tema") + " - " + sectorLabel(theme.code, theme.label) };
     });
   }
 
@@ -564,7 +761,7 @@
   }
 
   function sbsSectorOptionsWithTotal() {
-    return [{ value: SBS_TOTAL_CODE, label: "Totale settori imprese SBS" }]
+    return [{ value: SBS_TOTAL_CODE, label: sectorLabel(SBS_TOTAL_CODE) }]
       .concat(sectorOptions("sbs_sectors", false));
   }
 
@@ -620,9 +817,9 @@
         country_name: components[0].country_name,
         year: components[0].year,
         sector_code: theme.code,
-        sector_label: theme.label,
+        sector_label: sectorLabel(theme.code, theme.label),
         value_million_eur: components.reduce(function (sum, row) { return sum + number(row.value_million_eur); }, 0),
-        theme_note: theme.note,
+        theme_note: translateLabel(theme.note),
         theme_component_codes: components.map(function (row) { return row.sector_code; }),
         theme_components: components.map(function (row) { return sectorLabel(row); }).join("; ")
       };
@@ -2345,6 +2542,13 @@
   }
 
   document.addEventListener("DOMContentLoaded", load);
+  window.addEventListener("site-language-change", function () {
+    if (!state.payload) return;
+    renderAll();
+    if (window.SiteLanguage && window.SiteLanguage.refresh) {
+      window.setTimeout(function () { window.SiteLanguage.refresh(); }, 0);
+    }
+  });
   new MutationObserver(function () {
     if (state.payload) renderAll();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
