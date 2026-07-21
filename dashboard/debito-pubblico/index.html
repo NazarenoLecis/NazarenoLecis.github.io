@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/debito-pubblico-dashboard.css?v=20260721-3">
+  <link rel="stylesheet" href="../../assets/debito-pubblico-dashboard.css?v=20260721-5">
   <link rel="preload" href="https://data.nazarenolecis.com/debito-pubblico/data.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/debito-pubblico-dashboard.js?v=20260721-3"></script>
+  <script defer src="../../assets/debito-pubblico-dashboard.js?v=20260721-5"></script>
 </head>
 <body>
   <header class="site-header">
@@ -35,13 +35,13 @@
       <div>
         <span class="eyebrow">Finanza pubblica</span>
         <h1>Debito pubblico italiano</h1>
-        <p class="lead">Serie storiche e composizione del debito pubblico: stock, costo, strumenti, detentori, vita residua, scadenza originaria, valuta, residenza dei creditori e tassi benchmark.</p>
+        <p class="lead">Serie storiche e composizione del debito pubblico: stock, costo, strumenti, detentori, vita residua, scadenza originaria, valuta, residenza dei creditori e rendimenti all'emissione.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
           <strong>Fonti: Banca d'Italia, MEF, Eurostat</strong>
-          <span id="dpSourceMeta">Dati ufficiali elaborati in JSON e pubblicati su R2. Refresh automatico il 16 di ogni mese.</span>
+          <span id="dpSourceMeta">Dati ufficiali aggiornati automaticamente. Refresh automatico il 16 di ogni mese.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Debito_pubblico_italiano" target="_blank" rel="noopener">Apri repository dati</a>
         </div>
       </div>
@@ -79,19 +79,22 @@
     </section>
 
     <section class="dashboard-section" id="quadro">
-      <div class="section-head"><span class="eyebrow">Quadro generale</span><div><h2>Serie storiche principali</h2><p>Il debito monetario e' mensile; il rapporto debito/PIL e' annuale.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Quadro generale</span><div><h2>Serie storica del debito pubblico</h2><p>Scegli se leggere lo stock in miliardi di euro o il rapporto debito/PIL.</p></div></div>
       <div class="dp-stack">
         <article class="dp-card">
-          <div class="dp-card-title"><h3>Debito pubblico</h3><span>Miliardi di euro</span></div>
+          <div class="dp-card-title">
+            <h3>Debito pubblico</h3>
+            <div class="dp-title-controls">
+              <span id="dpDebtUnit">Miliardi di euro</span>
+              <div class="dp-segmented" aria-label="Misura debito pubblico">
+                <button type="button" data-debt-mode="nominal" class="is-active">Nominale</button>
+                <button type="button" data-debt-mode="percent_gdp">% PIL</button>
+              </div>
+            </div>
+          </div>
           <div class="dp-chart dp-chart-wide" id="dpDebtChart"></div>
           <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
-          <p class="dp-chart-note">La serie mostra lo stock di debito lordo delle Amministrazioni pubbliche a fine mese, espresso in miliardi di euro.</p>
-        </article>
-        <article class="dp-card">
-          <div class="dp-card-title"><h3>Debito sul PIL</h3><span>Percentuale del PIL</span></div>
-          <div class="dp-chart dp-chart-wide" id="dpDebtGdpChart"></div>
-          <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
-          <p class="dp-chart-note">Il rapporto debito/PIL mette lo stock del debito in relazione alla dimensione dell'economia. La frequenza e' annuale, quindi non va confrontata punto per punto con la serie mensile dello stock.</p>
+          <p class="dp-chart-note">Il filtro cambia tra stock lordo delle Amministrazioni pubbliche a fine mese e rapporto debito/PIL annuale. Le frequenze sono diverse: il dato nominale segue l'aggiornamento mensile, mentre il rapporto con il PIL va letto come misura annuale della dimensione del debito rispetto all'economia.</p>
         </article>
       </div>
     </section>
@@ -155,17 +158,23 @@
     </section>
 
     <section class="dashboard-section" id="tassi">
-      <div class="section-head"><span class="eyebrow">Tassi</span><div><h2>Rendimento benchmark a lungo termine</h2><p>Serie Eurostat mensile sui rendimenti dei titoli di Stato italiani usati per il criterio di convergenza EMU.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Tassi</span><div><h2>Rendimenti all'emissione dei titoli</h2><p>Serie mensili Banca d'Italia su BOT a 1 anno e BTP a 5, 10 e 20 anni.</p></div></div>
       <article class="dp-card">
-        <div class="dp-card-title"><h3>Rendimento lungo termine</h3><span>Eurostat</span></div>
+        <div class="dp-card-title">
+          <h3>Rendimento per titolo</h3>
+          <div class="dp-title-controls">
+            <span id="dpRatesMeta">Banca d'Italia</span>
+            <label><span>Titolo</span><select id="dpRateSeriesSelect"></select></label>
+          </div>
+        </div>
         <div class="dp-chart dp-chart-wide" id="dpRatesChart"></div>
-        <p class="dp-chart-credit">Fonte: Eurostat, dataset <code>irt_lt_mcby_m</code>. Elaborazione di Nazareno Lecis.</p>
-        <p class="dp-chart-note">Benchmark significa tasso di riferimento: qui e' il rendimento mensile dei titoli di Stato italiani a lungo termine usato da Eurostat per il criterio di convergenza EMU. Non e' il costo medio dello stock gia emesso, ma un indicatore del costo di mercato sul lungo periodo.</p>
+        <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica RTIT0100. Elaborazione di Nazareno Lecis.</p>
+        <p class="dp-chart-note">Il BOT a 1 anno corrisponde alla serie ufficiale sul BOT a 12 mesi e usa il tasso lordo di aggiudicazione; i BTP a 5, 10 e 20 anni usano il rendimento lordo all'emissione. Sono rendimenti sui nuovi collocamenti e non rappresentano il costo medio dello stock gia' emesso. Quando si parla di BTP benchmark si intende il titolo di riferimento per una specifica scadenza, per esempio il BTP decennale usato dal mercato come riferimento sul lungo periodo.</p>
       </article>
     </section>
 
     <section class="dashboard-section" id="metodo">
-      <div class="section-head"><span class="eyebrow">Metodo</span><div><h2>Fonti e perimetri</h2><p>Il payload pubblico e' generato dal repository dati e pubblicato su Cloudflare R2.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Metodo</span><div><h2>Fonti e perimetri</h2><p>I dati sono costruiti dal repository dati a partire da fonti ufficiali e aggiornati automaticamente.</p></div></div>
       <div class="dp-notes-panel">
         <div><h3>Note metodologiche</h3><ul id="dpNotes"></ul></div>
         <div><h3>Fonti</h3><ul id="dpSources"></ul></div>

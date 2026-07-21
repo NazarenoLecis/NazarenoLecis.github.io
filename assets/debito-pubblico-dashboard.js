@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-3";
-  var STATE = { payload: null, composition: "debt_by_instrument", costMode: "nominal", timeRanges: {} };
+  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-5";
+  var STATE = { payload: null, composition: "debt_by_instrument", debtMode: "nominal", costMode: "nominal", rateSeries: "btp_10y", timeRanges: {} };
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f", "#9c755f"];
   var PLOT_CONFIG = { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false };
   var COMPOSITION_ORDER = ["debt_by_instrument", "debt_by_holder", "debt_by_subsector", "debt_by_residual_maturity"];
@@ -212,30 +212,35 @@
     toArray(payload.kpis).forEach(function (item) { node.appendChild(makeKpi(item)); });
   }
 
+  function setDebtButtons() {
+    document.querySelectorAll("[data-debt-mode]").forEach(function (button) {
+      button.classList.toggle("is-active", button.getAttribute("data-debt-mode") === STATE.debtMode);
+    });
+  }
+
   function renderMainCharts(payload) {
     var total = payload.main_series && payload.main_series.total_debt;
     var debtGdp = payload.main_series && payload.main_series.debt_to_gdp;
-    var debtPoints = filterPointsByTimeRange("dpDebtChart", seriesPoints(total, false));
-    var gdpPoints = filterPointsByTimeRange("dpDebtGdpChart", seriesPoints(debtGdp, true));
+    var isNominal = STATE.debtMode === "nominal";
+    var selected = isNominal ? total : debtGdp;
+    var points = filterPointsByTimeRange("dpDebtChart", seriesPoints(selected, !isNominal));
+    var unitNode = byId("dpDebtUnit");
+    if (unitNode) unitNode.textContent = isNominal ? "Miliardi di euro" : "Percentuale del PIL";
+    setDebtButtons();
     plot("dpDebtChart", [{
       type: "scatter",
-      mode: "lines",
-      name: "Debito pubblico",
-      x: debtPoints.map(function (point) { return point.date; }),
-      y: debtPoints.map(function (point) { return point.value; }),
-      line: { color: cssVar("--orange", COLORS[0]), width: 2.5 },
-      hovertemplate: "%{x}<br>%{y:.1f} mld euro<extra></extra>"
-    }], { yaxis: { title: "Miliardi di euro" }, xaxis: { title: "" } });
-    plot("dpDebtGdpChart", [{
-      type: "scatter",
-      mode: "lines+markers",
-      name: "Debito/PIL",
-      x: gdpPoints.map(function (point) { return point.date; }),
-      y: gdpPoints.map(function (point) { return point.value; }),
-      line: { color: COLORS[1], width: 2.5 },
-      marker: { size: 5 },
-      hovertemplate: "%{x}<br>%{y:.1f}% PIL<extra></extra>"
-    }], { yaxis: { title: "% PIL", ticksuffix: "%" }, xaxis: { title: "" } });
+      mode: isNominal ? "lines" : "lines+markers",
+      name: isNominal ? "Debito pubblico" : "Debito/PIL",
+      x: points.map(function (point) { return point.date; }),
+      y: points.map(function (point) { return point.value; }),
+      line: { color: isNominal ? cssVar("--orange", COLORS[0]) : COLORS[1], width: 2.5 },
+      marker: { size: 5, color: isNominal ? cssVar("--orange", COLORS[0]) : COLORS[1] },
+      hovertemplate: isNominal ? "%{x}<br>%{y:.1f} mld euro<extra></extra>" : "%{x}<br>%{y:.1f}% PIL<extra></extra>"
+    }], {
+      yaxis: { title: isNominal ? "Miliardi di euro" : "% PIL", ticksuffix: isNominal ? "" : "%" },
+      xaxis: { title: "" },
+      showlegend: false
+    });
   }
 
   function compositionRows(payload, key) {
@@ -392,21 +397,53 @@
     renderHorizontalBar("dpHoldersChart", compositionRows(payload, "debt_by_holder"), "share_percent", "Quota sul debito", "", true);
   }
 
+  function securityYieldSeries(payload) {
+    return toArray(payload.security_yields && payload.security_yields.series);
+  }
+
+  function populateRateSelect(payload) {
+    var select = byId("dpRateSeriesSelect");
+    if (!select) return;
+    clear(select);
+    var series = securityYieldSeries(payload);
+    series.forEach(function (item) {
+      var option = document.createElement("option");
+      option.value = item.id || item.series_key;
+      option.textContent = item.label || item.id || item.series_key;
+      select.appendChild(option);
+    });
+    var hasSelected = series.some(function (item) { return (item.id || item.series_key) === STATE.rateSeries; });
+    if (!hasSelected && series.length) STATE.rateSeries = series[0].id || series[0].series_key;
+    select.value = STATE.rateSeries;
+  }
+
+  function selectedRateSeries(payload) {
+    return securityYieldSeries(payload).find(function (item) {
+      return (item.id || item.series_key) === STATE.rateSeries;
+    });
+  }
+
   function renderRates(payload) {
-    var rows = filterPointsByTimeRange("dpRatesChart", toArray(payload.interest_rates).map(function (row) {
-      return { date: row.date, value: num(row.value) };
+    populateRateSelect(payload);
+    var series = selectedRateSeries(payload);
+    if (!series) return showEmpty("dpRatesChart", "Nessun dato disponibile");
+    var rows = filterPointsByTimeRange("dpRatesChart", toArray(series.points).map(function (point) {
+      return { date: point[0], value: num(point[1]) };
     }).filter(function (point) {
       return point.date && point.value !== null;
     }));
+    var meta = byId("dpRatesMeta");
+    if (meta) meta.textContent = series.rate_kind || "Rendimento lordo all'emissione";
     plot("dpRatesChart", [{
       type: "scatter",
-      mode: "lines",
-      name: "Rendimento lungo termine",
+      mode: "lines+markers",
+      name: series.label || "Rendimento",
       x: rows.map(function (row) { return row.date; }),
       y: rows.map(function (row) { return row.value; }),
       line: { color: cssVar("--orange", COLORS[0]), width: 2.2 },
+      marker: { size: 4, color: cssVar("--orange", COLORS[0]) },
       hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>"
-    }], { yaxis: { title: "%", ticksuffix: "%" }, xaxis: { title: "" } });
+    }], { yaxis: { title: "%", ticksuffix: "%" }, xaxis: { title: "" }, showlegend: false });
   }
 
   function setCostButtons() {
@@ -498,12 +535,25 @@
         if (STATE.payload) renderComposition(STATE.payload);
       });
     }
+    document.querySelectorAll("[data-debt-mode]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        STATE.debtMode = button.getAttribute("data-debt-mode") || "nominal";
+        if (STATE.payload) renderMainCharts(STATE.payload);
+      });
+    });
     document.querySelectorAll("[data-cost-mode]").forEach(function (button) {
       button.addEventListener("click", function () {
         STATE.costMode = button.getAttribute("data-cost-mode") || "nominal";
         if (STATE.payload) renderDebtCost(STATE.payload);
       });
     });
+    var rateSelect = byId("dpRateSeriesSelect");
+    if (rateSelect) {
+      rateSelect.addEventListener("change", function () {
+        STATE.rateSeries = rateSelect.value;
+        if (STATE.payload) renderRates(STATE.payload);
+      });
+    }
   }
 
   function initThemeObserver() {
@@ -531,7 +581,7 @@
       .catch(function (error) {
         var status = byId("dpStatus");
         if (status) status.textContent = "Errore nel caricamento dei dati: " + error.message;
-        ["dpDebtChart", "dpDebtGdpChart", "dpCompositionChart", "dpMaturityChart", "dpRedemptionProfileChart", "dpProfileChart", "dpHoldersChart", "dpDebtCostChart", "dpRatesChart"].forEach(function (id) {
+        ["dpDebtChart", "dpCompositionChart", "dpMaturityChart", "dpRedemptionProfileChart", "dpProfileChart", "dpHoldersChart", "dpDebtCostChart", "dpRatesChart"].forEach(function (id) {
           showEmpty(id, "Dati non caricati");
         });
       });
