@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-8";
+  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-9";
   var STATE = { payload: null, composition: "debt_by_instrument", debtMode: "nominal", maturityMode: "amount", costMode: "nominal", rateSeries: "btp_10y", timeRanges: {} };
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f", "#9c755f"];
   var PLOT_CONFIG = { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false };
@@ -203,7 +203,7 @@
     var value = document.createElement("strong");
     var date = document.createElement("em");
     label.textContent = item.label;
-    value.textContent = item.unit === "% PIL" || item.unit === "%" ? fmtLoose(item.value, 1) + " " + item.unit : fmtLoose(item.value, 1) + " " + item.unit;
+    value.textContent = item.unit === "anni" ? fmt(item.value, 1) + " " + item.unit : fmtLoose(item.value, 1) + " " + item.unit;
     date.textContent = item.date ? "Ultimo dato: " + item.date : "Ultimo dato ND";
     node.appendChild(label);
     node.appendChild(value);
@@ -390,7 +390,7 @@
       return total + (num(row.amount_bln_eur_revalued) || 0);
     }, 0);
     var weightedYears = num(profile.weighted_average_residual_years);
-    if (duration) duration.textContent = weightedYears === null ? "Vita media ND" : "Vita media stimata " + fmtLoose(weightedYears, 1) + " anni";
+    if (duration) duration.textContent = weightedYears === null ? "Vita media ND" : "Vita media stimata " + fmt(weightedYears, 1) + " anni";
     setMaturityButtons();
     renderProfileTable(quarterly, yearlyTotal);
     if (!yearly.length) return showEmpty("dpRedemptionProfileChart", "Nessun dato disponibile");
