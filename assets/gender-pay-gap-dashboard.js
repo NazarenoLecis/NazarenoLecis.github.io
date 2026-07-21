@@ -128,6 +128,10 @@
     return index < 0 ? 999 : index;
   }
 
+  function unadjustedAxisTitle() {
+    return translate("Gender pay gap non aggiustato (%)");
+  }
+
   function percent(value, digits) {
     var number = toNumber(value);
     if (number === null) return "n.d.";
@@ -280,6 +284,9 @@
   function plot(id, traces, layout) {
     var node = byId(id);
     if (!node || !window.Plotly) return;
+    node.querySelectorAll(".gpg-empty").forEach(function (item) {
+      item.remove();
+    });
     window.Plotly.react(node, traces, plotLayout(layout), { responsive: true, displayModeBar: false });
   }
 
@@ -289,7 +296,7 @@
     clear(node);
     var box = document.createElement("div");
     box.className = "gpg-empty";
-    box.textContent = message;
+    box.textContent = translate(message);
     node.appendChild(box);
   }
 
@@ -342,10 +349,10 @@
     if (!container) return;
     clear(container);
     var country = state.selectedCountry || "IT";
-    appendKpi(container, "Unadjusted", latestRow(unadjustedRows(), { geography_code: country }), function (value) { return percent(value, 1); }, countryName(country));
+    appendKpi(container, "Non aggiustato", latestRow(unadjustedRows(), { geography_code: country }), function (value) { return percent(value, 1); }, countryName(country));
     appendKpi(container, "Adjusted", latestRow(adjustedRows(), { geography_code: country }), function (value) { return percent(value, 1); }, "Residuo della decomposizione SES");
     appendKpi(container, "Parte spiegata", latestRow(decompositionRows(), { geography_code: country, statistic: "explained_overall" }), function (value) { return percent(value, 1); }, "Composizione osservabile");
-    appendKpi(container, "Paesi disponibili", { value: countryOptions(unadjustedRows()).length, year: "dataset", source: "Eurostat" }, function (value) { return String(value); }, "Serie unadjusted pubblicate");
+    appendKpi(container, "Paesi disponibili", { value: countryOptions(unadjustedRows()).length, year: "dataset", source: "Eurostat" }, function (value) { return String(value); }, "Serie non aggiustate pubblicate");
   }
 
   function defaultCountries(options) {
@@ -426,14 +433,20 @@
     plot("gpgSeriesChart", traces, {
       height: 520,
       xaxis: yearAxis(selectedRows),
-      yaxis: { title: "Gender pay gap unadjusted (%)", gridcolor: cssVar("--gpg-grid", "#4a4a4a"), zerolinecolor: cssVar("--gpg-grid", "#4a4a4a"), rangemode: "normal" }
+      yaxis: { title: unadjustedAxisTitle(), gridcolor: cssVar("--gpg-grid", "#4a4a4a"), zerolinecolor: cssVar("--gpg-grid", "#4a4a4a"), rangemode: "normal" }
     });
   }
 
   function renderComparison() {
-    var rows = unadjustedRows();
+    var rows = unadjustedRows().filter(function (row) {
+      return toNumber(row.value) !== null;
+    });
     var container = byId("gpgComparisonFilters");
     var values = years(rows);
+    if (!values.length) {
+      showEmpty("gpgComparisonChart", "Nessun confronto disponibile.");
+      return;
+    }
     if (!state.comparisonYear || values.indexOf(String(state.comparisonYear)) < 0) {
       state.comparisonYear = values[values.length - 1];
     }
@@ -444,7 +457,7 @@
       renderComparison();
     });
     var selected = rows.filter(function (row) {
-      return String(row.year) === String(state.comparisonYear) && toNumber(row.value) !== null;
+      return String(row.year) === String(state.comparisonYear);
     }).sort(function (a, b) {
       return toNumber(a.value) - toNumber(b.value);
     });
@@ -463,7 +476,7 @@
     }], {
       height: Math.max(520, selected.length * 24 + 140),
       margin: { t: 24, r: 24, b: 56, l: 150 },
-      xaxis: { title: "Gender pay gap unadjusted (%)", gridcolor: cssVar("--gpg-grid", "#4a4a4a"), zerolinecolor: cssVar("--gpg-grid", "#4a4a4a") },
+      xaxis: { title: unadjustedAxisTitle(), gridcolor: cssVar("--gpg-grid", "#4a4a4a"), zerolinecolor: cssVar("--gpg-grid", "#4a4a4a") },
       yaxis: { title: "", automargin: true }
     });
   }
@@ -527,7 +540,7 @@
     if (!container) return;
     clear(container);
     [
-      ["Unadjusted", "Misura il divario osservato nella retribuzione oraria lorda media. E' un indicatore aggregato: tiene insieme struttura del mercato del lavoro, settore, orario, contratto e livelli professionali."],
+      ["Non aggiustato", "Misura il divario osservato nella retribuzione oraria lorda media. E' un indicatore aggregato: tiene insieme struttura del mercato del lavoro, settore, orario, contratto e livelli professionali."],
       ["Adjusted", "Misura la parte residua dopo aver controllato per le caratteristiche osservabili nella decomposizione Eurostat SES 2022. La dashboard non produce una stima autonoma."],
       ["Composizione", "La parte spiegata cattura quanto pesano distribuzioni diverse tra eta', istruzione, professioni, settori, orario di lavoro, contratto, dimensione d'impresa e pubblico/privato."],
       ["Limite", "Il residuo adjusted non prova discriminazione individuale: indica solo la quota non spiegata dalle variabili disponibili nel modello ufficiale e puo' includere fattori non osservati."]

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gender pay gap | Nazareno Lecis</title>
-  <meta name="description" content="Dashboard sul gender pay gap: divario unadjusted, adjusted, decomposizione e confronti europei da fonti ufficiali Eurostat.">
+  <meta name="description" content="Dashboard sul gender pay gap: divario non aggiustato, adjusted, decomposizione e confronti europei da fonti ufficiali Eurostat.">
   <link rel="icon" href="../../assets/logo.png" type="image/png">
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/gender-pay-gap-dashboard.css?v=20260721-1">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/gender-pay-gap-dashboard.js?v=20260721-2"></script>
+  <script defer src="../../assets/gender-pay-gap-dashboard.js?v=20260721-3"></script>
 </head>
 <body>
   <header class="site-header">
@@ -35,13 +35,13 @@
       <div>
         <span class="eyebrow">Gender pay gap</span>
         <h1>Divario retributivo di genere in Europa</h1>
-        <p class="lead">Una dashboard dedicata al gender pay gap: misura non corretta, confronto europeo e decomposizione adjusted quando esiste una fonte ufficiale riproducibile.</p>
+        <p class="lead">Una dashboard dedicata al gender pay gap: misura non aggiustata, confronto europeo e decomposizione adjusted quando esiste una fonte ufficiale riproducibile.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
           <strong>Fonti ufficiali</strong>
-          <span>Eurostat <code>earn_gr_gpgr2</code> per la serie unadjusted; Eurostat SES 2022 per adjusted e decomposizione.</span>
+          <span>Eurostat <code>earn_gr_gpgr2</code> per la serie non aggiustata; Eurostat SES 2022 per adjusted e decomposizione.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Salari_Italia" target="_blank" rel="noopener">Apri repository Salari_Italia</a>
           <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
         </div>
@@ -52,7 +52,7 @@
       <a href="#indicatori">Indicatori</a><a href="#serie">Serie</a><a href="#confronto">Confronto</a><a href="#adjusted">Adjusted</a><a href="#metodo">Metodo e fonti</a>
     </nav>
 
-    <p class="gpg-note"><strong>Perimetro:</strong> l'unadjusted gender pay gap misura la differenza percentuale tra retribuzione oraria lorda media di uomini e donne. Va letto come divario medio tra gruppi, non come differenza salariale a parita' di persona, ruolo e impresa. L'adjusted non viene stimato nella dashboard: viene mostrato solo dalla decomposizione ufficiale disponibile.</p>
+    <p class="gpg-note"><strong>Perimetro:</strong> il gender pay gap non aggiustato misura la differenza percentuale tra retribuzione oraria lorda media di uomini e donne. Va letto come divario medio tra gruppi, non come differenza salariale a parita' di persona, ruolo e impresa. L'adjusted non viene stimato nella dashboard: viene mostrato solo dalla decomposizione ufficiale disponibile.</p>
     <p id="gpgStatus" class="gpg-status">Caricamento dati...</p>
 
     <section id="indicatori" class="dashboard-section">
@@ -66,7 +66,7 @@
     <section id="serie" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Serie storica</span>
-        <div><h2>Gender pay gap unadjusted</h2><p>Il menu paesi mostra solo economie con dati ufficiali nel payload pubblicato.</p></div>
+        <div><h2>Gender pay gap non aggiustato</h2><p>Il menu paesi mostra solo economie con dati ufficiali nel payload pubblicato.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri serie</summary><div id="gpgSeriesFilters" class="gpg-filter-grid"></div></details>
       <article class="gpg-card gpg-chart-block">
@@ -116,17 +116,17 @@
         <article>
           <h3>Note metodologiche</h3>
           <ul>
-            <li>L'unadjusted gender pay gap Eurostat confronta la retribuzione oraria lorda media degli uomini e delle donne e la esprime in percentuale della retribuzione oraria lorda media maschile.</li>
+            <li>Il gender pay gap non aggiustato Eurostat confronta la retribuzione oraria lorda media degli uomini e delle donne e la esprime in percentuale della retribuzione oraria lorda media maschile.</li>
             <li>La misura e' utile per confronti armonizzati, ma incorpora composizione occupazionale, settore, orario, contratto, eta', istruzione, progressioni di carriera e partecipazione al mercato del lavoro.</li>
             <li>La dashboard non ricostruisce microdati, retribuzioni nette, bonus, ore annuali, contratti individuali o differenze dentro la stessa impresa: mostra solo indicatori ufficiali gia' pubblicati o derivati nel payload dati.</li>
             <li>La decomposizione SES 2022 separa componente spiegata e residuo usando variabili osservabili nei microdati della Structure of Earnings Survey. Il residuo e' l'adjusted gender pay gap della fonte, non una prova diretta di discriminazione individuale.</li>
-            <li>Copertura temporale e paesi disponibili possono cambiare tra serie unadjusted e decomposizione: i filtri mostrano solo combinazioni presenti nelle fonti caricate.</li>
+            <li>Copertura temporale e paesi disponibili possono cambiare tra serie non aggiustata e decomposizione: i filtri mostrano solo combinazioni presenti nelle fonti caricate.</li>
           </ul>
         </article>
         <article>
           <h3>Fonti e link</h3>
           <ul class="gpg-source-links">
-            <li><a class="related-link" href="https://ec.europa.eu/eurostat/databrowser/product/view/earn_gr_gpgr2" target="_blank" rel="noopener">Eurostat <code>earn_gr_gpgr2</code></a>: gender pay gap unadjusted per attivita' NACE Rev. 2.</li>
+            <li><a class="related-link" href="https://ec.europa.eu/eurostat/databrowser/product/view/earn_gr_gpgr2" target="_blank" rel="noopener">Eurostat <code>earn_gr_gpgr2</code></a>: gender pay gap non aggiustato per attivita' NACE Rev. 2.</li>
             <li><a class="related-link" href="https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Gender_pay_gap_statistics" target="_blank" rel="noopener">Eurostat Statistics Explained</a>: definizioni, tabelle e contesto statistico sul gender pay gap.</li>
             <li><a class="related-link" href="https://ec.europa.eu/eurostat/web/products-statistical-working-papers/w/ks-01-25-035" target="_blank" rel="noopener">Eurostat working paper <code>KS-01-25-035</code></a>: decomposizione del gender pay gap basata su SES 2022.</li>
             <li><a class="related-link" href="https://github.com/NazarenoLecis/Salari_Italia" target="_blank" rel="noopener">Repository Salari_Italia</a>: codice e pipeline di elaborazione.</li>
