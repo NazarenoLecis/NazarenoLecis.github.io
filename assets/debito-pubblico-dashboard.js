@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-6";
-  var STATE = { payload: null, composition: "debt_by_instrument", debtMode: "nominal", costMode: "nominal", rateSeries: "btp_10y", timeRanges: {} };
+  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-8";
+  var STATE = { payload: null, composition: "debt_by_instrument", debtMode: "nominal", maturityMode: "amount", costMode: "nominal", rateSeries: "btp_10y", timeRanges: {} };
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f", "#9c755f"];
   var PLOT_CONFIG = { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false };
   var COMPOSITION_ORDER = [
@@ -342,7 +342,20 @@
     renderHorizontalBar("dpProfileChart", latestRows(payload, "debt_by_original_maturity_currency_residency"), "value_bln_eur", "Miliardi di euro", "", false);
   }
 
-  function renderProfileTable(rows) {
+  function maturityShare(row, total) {
+    var direct = num(row && row.share_percent);
+    if (direct !== null) return direct;
+    var amount = num(row && row.amount_bln_eur_revalued);
+    return amount !== null && total ? amount / total * 100 : null;
+  }
+
+  function setMaturityButtons() {
+    document.querySelectorAll("[data-maturity-mode]").forEach(function (button) {
+      button.classList.toggle("is-active", button.getAttribute("data-maturity-mode") === STATE.maturityMode);
+    });
+  }
+
+  function renderProfileTable(rows, totalAmount) {
     var tbody = byId("dpRedemptionProfileRows");
     clear(tbody);
     if (!tbody) return;
@@ -357,7 +370,7 @@
     }
     rows.forEach(function (row) {
       var tr = document.createElement("tr");
-      [text(row.year), text(row.quarter), mld(row.amount_bln_eur_revalued), fmt(row.securities, 0)].forEach(function (value) {
+      [text(row.year), text(row.quarter), mld(row.amount_bln_eur_revalued), pct(maturityShare(row, totalAmount))].forEach(function (value) {
         var td = document.createElement("td");
         td.textContent = value;
         tr.appendChild(td);
@@ -371,16 +384,25 @@
     var yearly = toArray(profile.yearly);
     var quarterly = toArray(profile.quarterly);
     var meta = byId("dpMaturityProfileMeta");
+    var duration = byId("dpMaturityProfileDuration");
     if (meta) meta.textContent = profile.snapshot_date ? "Aggiornato al " + profile.snapshot_date : "MEF";
-    renderProfileTable(quarterly);
+    var yearlyTotal = yearly.reduce(function (total, row) {
+      return total + (num(row.amount_bln_eur_revalued) || 0);
+    }, 0);
+    var weightedYears = num(profile.weighted_average_residual_years);
+    if (duration) duration.textContent = weightedYears === null ? "Vita media ND" : "Vita media stimata " + fmtLoose(weightedYears, 1) + " anni";
+    setMaturityButtons();
+    renderProfileTable(quarterly, yearlyTotal);
     if (!yearly.length) return showEmpty("dpRedemptionProfileChart", "Nessun dato disponibile");
 
+    var isShare = STATE.maturityMode === "share";
     var years = yearly.map(function (row) { return row.year; });
-    var values = yearly.map(function (row) { return num(row.amount_bln_eur_revalued); });
-    var securities = yearly.map(function (row) { return num(row.securities); });
+    var amounts = yearly.map(function (row) { return num(row.amount_bln_eur_revalued); });
+    var shares = yearly.map(function (row) { return maturityShare(row, yearlyTotal); });
+    var values = isShare ? shares : amounts;
     plot("dpRedemptionProfileChart", [{
       type: "bar",
-      name: "Ammontare in scadenza",
+      name: isShare ? "Quota in scadenza" : "Ammontare in scadenza",
       x: years,
       y: values,
       marker: {
@@ -388,12 +410,14 @@
         colorscale: [[0, "#ffd1c3"], [0.45, "#ff5a1f"], [1, "#b9123b"]],
         line: { color: "rgba(255,255,255,.08)", width: 1 }
       },
-      customdata: yearly.map(function (row) { return [mld(row.amount_bln_eur_revalued), fmt(row.securities, 0)]; }),
-      hovertemplate: "Anno %{x}<br>%{customdata[0]}<br>Titoli: %{customdata[1]}<extra></extra>"
+      customdata: yearly.map(function (row) {
+        return [mld(row.amount_bln_eur_revalued), pct(maturityShare(row, yearlyTotal))];
+      }),
+      hovertemplate: "Anno %{x}<br>%{customdata[0]}<br>%{customdata[1]} del totale<extra></extra>"
     }], {
       margin: { t: 22, r: 24, b: 86, l: 72 },
       xaxis: { title: "Anno di scadenza", tickangle: -90 },
-      yaxis: { title: "Miliardi di euro" },
+      yaxis: { title: isShare ? "% del totale in scadenza" : "Miliardi di euro", ticksuffix: isShare ? "%" : "" },
       showlegend: false
     });
   }
@@ -544,6 +568,12 @@
       button.addEventListener("click", function () {
         STATE.debtMode = button.getAttribute("data-debt-mode") || "nominal";
         if (STATE.payload) renderMainCharts(STATE.payload);
+      });
+    });
+    document.querySelectorAll("[data-maturity-mode]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        STATE.maturityMode = button.getAttribute("data-maturity-mode") || "amount";
+        if (STATE.payload) renderRedemptionProfile(STATE.payload);
       });
     });
     document.querySelectorAll("[data-cost-mode]").forEach(function (button) {

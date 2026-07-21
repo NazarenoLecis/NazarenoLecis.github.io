@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/debito-pubblico-dashboard.css?v=20260721-6">
+  <link rel="stylesheet" href="../../assets/debito-pubblico-dashboard.css?v=20260721-8">
   <link rel="preload" href="https://data.nazarenolecis.com/debito-pubblico/data.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/debito-pubblico-dashboard.js?v=20260721-6"></script>
+  <script defer src="../../assets/debito-pubblico-dashboard.js?v=20260721-8"></script>
 </head>
 <body>
   <header class="site-header">
@@ -68,11 +68,21 @@
     <section class="dashboard-section" id="scadenze">
       <div class="section-head"><span class="eyebrow">Profilo scadenze</span><div><h2>Quanto debito deve essere rinnovato</h2><p>Ammontare dei titoli in circolazione per anno e trimestre di scadenza.</p></div></div>
       <article class="dp-card">
-        <div class="dp-card-title"><h3>Profilo scadenze per anno</h3><span id="dpMaturityProfileMeta">MEF</span></div>
+        <div class="dp-card-title">
+          <h3>Profilo scadenze per anno</h3>
+          <div class="dp-title-controls">
+            <span id="dpMaturityProfileDuration">Vita media ND</span>
+            <span id="dpMaturityProfileMeta">MEF</span>
+            <div class="dp-segmented" aria-label="Misura profilo scadenze">
+              <button type="button" data-maturity-mode="amount" class="is-active">Mld euro</button>
+              <button type="button" data-maturity-mode="share">% totale</button>
+            </div>
+          </div>
+        </div>
         <div class="dp-chart dp-chart-profile" id="dpRedemptionProfileChart"></div>
         <p class="dp-chart-credit">Fonte: MEF, Scadenze suddivise per anno. Elaborazione di Nazareno Lecis.</p>
-        <p class="dp-chart-note">Le barre mostrano il circolante in scadenza per anno: sono rimborsi/refinanziamenti attesi dei titoli esistenti, non nuovo debito. Il valore usa il circolante euro rivalutato quando il MEF lo rende disponibile.</p>
-        <div class="dp-table-wrap dp-table-scroll"><table class="dp-table"><thead><tr><th>Anno</th><th>Trimestre</th><th>Mld euro</th><th>Titoli</th></tr></thead><tbody id="dpRedemptionProfileRows"></tbody></table></div>
+        <p class="dp-chart-note">Le barre mostrano il circolante in scadenza per anno: sono rimborsi/refinanziamenti attesi dei titoli esistenti, non nuovo debito. Il filtro % totale calcola la quota sul totale del profilo MEF. La vita media e' stimata dalle singole date di scadenza dei titoli e dagli importi rivalutati; non e' una duration finanziaria con cedole e flussi intermedi.</p>
+        <div class="dp-table-wrap dp-table-scroll"><table class="dp-table"><thead><tr><th>Anno</th><th>Trimestre</th><th>Mld euro</th><th>% totale</th></tr></thead><tbody id="dpRedemptionProfileRows"></tbody></table></div>
       </article>
     </section>
 
