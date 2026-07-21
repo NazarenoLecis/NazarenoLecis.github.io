@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/debito-pubblico-dashboard.css?v=20260721-5">
+  <link rel="stylesheet" href="../../assets/debito-pubblico-dashboard.css?v=20260721-6">
   <link rel="preload" href="https://data.nazarenolecis.com/debito-pubblico/data.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/debito-pubblico-dashboard.js?v=20260721-5"></script>
+  <script defer src="../../assets/debito-pubblico-dashboard.js?v=20260721-6"></script>
 </head>
 <body>
   <header class="site-header">
@@ -51,8 +51,6 @@
       <a href="#scadenze">Scadenze</a>
       <a href="#quadro">Quadro</a>
       <a href="#composizione">Composizione</a>
-      <a href="#durata">Durata</a>
-      <a href="#detentori">Detentori</a>
       <a href="#costo">Costo</a>
       <a href="#tassi">Tassi</a>
       <a href="#metodo">Metodo</a>
@@ -63,8 +61,8 @@
 
     <section class="workflow-grid" aria-label="Come leggere la dashboard">
       <div class="workflow-step"><span>1</span><h2>Stock</h2><p>Parti da livello del debito e rapporto debito/PIL, tenendo separati dati mensili e annuali.</p></div>
-      <div class="workflow-step"><span>2</span><h2>Struttura</h2><p>Passa a strumenti, detentori e sottosettori per vedere chi finanzia il debito e con quali forme.</p></div>
-      <div class="workflow-step"><span>3</span><h2>Rischio</h2><p>Usa costo/PIL, vita residua, profilo scadenze, valuta, residenza e tassi per leggere duration e sensibilita' finanziaria.</p></div>
+      <div class="workflow-step"><span>2</span><h2>Struttura</h2><p>Usa il selettore per passare tra strumenti, sottosettori, detentori e vita residua.</p></div>
+      <div class="workflow-step"><span>3</span><h2>Rischio</h2><p>Usa costo/PIL, profilo scadenze e tassi per leggere rifinanziamento e sensibilita' finanziaria.</p></div>
     </section>
 
     <section class="dashboard-section" id="scadenze">
@@ -100,41 +98,13 @@
     </section>
 
     <section class="dashboard-section" id="composizione">
-      <div class="section-head"><span class="eyebrow">Composizione</span><div><h2>Come e' fatto il debito</h2><p>Cambia sezione per confrontare strumenti, sottosettori e detentori sull'ultima data disponibile.</p></div></div>
+      <div class="section-head"><span class="eyebrow">Composizione</span><div><h2>Come e' fatto il debito</h2><p>Cambia sezione per confrontare strumenti, sottosettori, detentori e vita residua sull'ultima data disponibile.</p></div></div>
       <article class="dp-card">
         <div class="dp-card-title"><h3 id="dpCompositionTitle">Composizione</h3><label><span>Sezione</span><select id="dpCompositionSelect"></select></label></div>
         <div class="dp-chart dp-chart-wide" id="dpCompositionChart"></div>
         <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
         <p class="dp-chart-note">La quota e' calcolata sull'aggregato del debito lordo. Le serie selezionate evitano di sommare aggregati e sotto-aggregati della stessa tavola.</p>
         <div class="dp-table-wrap"><table class="dp-table"><thead><tr><th>Voce</th><th>Data</th><th>Mld euro</th><th>Quota</th></tr></thead><tbody id="dpCompositionRows"></tbody></table></div>
-      </article>
-    </section>
-
-    <section class="dashboard-section" id="durata">
-      <div class="section-head"><span class="eyebrow">Duration e profilo</span><div><h2>Vita residua, valuta e residenza</h2><p>La vita residua mostra le fasce aggregate. Le altre misure aiutano a leggere scadenza originaria, valuta e residenza dei creditori.</p></div></div>
-      <div class="dp-stack">
-        <article class="dp-card">
-          <div class="dp-card-title"><h3>Vita residua</h3><span>Ultima osservazione</span></div>
-          <div class="dp-chart dp-chart-wide" id="dpMaturityChart"></div>
-          <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
-          <p class="dp-chart-note">La vita residua distribuisce il debito in base al tempo che manca alla scadenza. E' una misura utile per valutare il rischio di rifinanziamento nel breve periodo.</p>
-        </article>
-        <article class="dp-card">
-          <div class="dp-card-title"><h3>Scadenza, valuta e residenza</h3><span>Aggregati selezionati</span></div>
-          <div class="dp-chart dp-chart-wide" id="dpProfileChart"></div>
-          <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
-          <p class="dp-chart-note">Queste grandezze sono indicatori/aggregati selezionati e possono sovrapporsi: servono per leggere profilo originario, valuta di denominazione e residenza dei creditori, non per ricostruire una somma unica.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="dashboard-section" id="detentori">
-      <div class="section-head"><span class="eyebrow">Possessori</span><div><h2>Chi detiene il debito</h2><p>Residenti, non residenti, Banca d'Italia e intermediari finanziari.</p></div></div>
-      <article class="dp-card">
-        <div class="dp-card-title"><h3>Detentori del debito lordo</h3><span>Quote sull'ultimo stock</span></div>
-        <div class="dp-chart dp-chart-wide" id="dpHoldersChart"></div>
-        <p class="dp-chart-credit">Fonte: Banca d'Italia, Base Dati Statistica FPI. Elaborazione di Nazareno Lecis.</p>
-        <p class="dp-chart-note">La distribuzione mostra chi detiene il debito lordo: residenti, non residenti, Banca d'Italia e altri intermediari finanziari. Le quote sono sull'ultimo stock disponibile.</p>
       </article>
     </section>
 

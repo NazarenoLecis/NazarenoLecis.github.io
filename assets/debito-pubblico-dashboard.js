@@ -1,11 +1,16 @@
 (function () {
   "use strict";
 
-  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-5";
+  var DATA_URL = "https://data.nazarenolecis.com/debito-pubblico/data.json?v=20260721-6";
   var STATE = { payload: null, composition: "debt_by_instrument", debtMode: "nominal", costMode: "nominal", rateSeries: "btp_10y", timeRanges: {} };
   var COLORS = ["#ff5a1f", "#4e79a7", "#76b7b2", "#f2a541", "#e15759", "#b07aa1", "#59a14f", "#9c755f"];
   var PLOT_CONFIG = { responsive: true, displayModeBar: false, scrollZoom: false, doubleClick: false, showTips: false };
-  var COMPOSITION_ORDER = ["debt_by_instrument", "debt_by_holder", "debt_by_subsector", "debt_by_residual_maturity"];
+  var COMPOSITION_ORDER = [
+    "debt_by_instrument",
+    "debt_by_subsector",
+    "debt_by_holder",
+    "debt_by_residual_maturity"
+  ];
   var SERIES_WINDOW_OPTIONS = [
     { id: "all", label: "Tutti gli anni", years: null },
     { id: "20", label: "Ultimi 20 anni", years: 20 },
