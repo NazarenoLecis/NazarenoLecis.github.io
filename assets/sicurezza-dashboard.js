@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260722-9";
+  var VERSION = "20260722-10";
   var PAYLOAD_GLOBALS = {
     metadata: "SICUREZZA_DASHBOARD_METADATA",
     reported: "SICUREZZA_REPORTED_CRIMES",
@@ -28,8 +28,10 @@
     totale_cittadinanza: "Totale cittadinanza",
     immigrati_o_stranieri: "Stranieri / immigrati",
     italiani_o_non_immigrati: "Italiani / non immigrati",
+    non_residenti: "Non residenti",
     non_classificato: "Non classificato"
   };
+  var CITIZENSHIP_ORDER = ["totale_cittadinanza", "immigrati_o_stranieri", "italiani_o_non_immigrati", "non_residenti", "non_classificato"];
 
   var CRIME_LABELS = {
     TOT: "Totale reati denunciati",
@@ -138,10 +140,35 @@
     { value: "increase", label: "Solo aumenti" },
     { value: "decrease", label: "Solo diminuzioni" }
   ];
+  var CONTRIBUTION_THRESHOLD_OPTIONS = [
+    { value: "0", label: "Tutte" },
+    { value: "5", label: "Almeno 5%" },
+    { value: "10", label: "Almeno 10%" },
+    { value: "20", label: "Almeno 20%" },
+    { value: "50", label: "Almeno 50%" }
+  ];
+  var SURVEY_PERCEPTION = [
+    { indicator: "Si sente sicuro uscendo al buio", period: "2015-2016", value: 60.6 },
+    { indicator: "Si sente sicuro uscendo al buio", period: "2022-2023", value: 76.0 },
+    { indicator: "Evita luoghi ritenuti a rischio", period: "2015-2016", value: 28.0 },
+    { indicator: "Evita luoghi ritenuti a rischio", period: "2022-2023", value: 19.8 },
+    { indicator: "Non esce per paura", period: "2015-2016", value: 23.0 },
+    { indicator: "Non esce per paura", period: "2022-2023", value: 12.6 }
+  ];
+  var SURVEY_VICTIMIZATION = [
+    { indicator: "Reati personali contro la proprieta", period: "2015-2016", value: 3.7 },
+    { indicator: "Reati personali contro la proprieta", period: "2022-2023", value: 2.3 },
+    { indicator: "Borseggi", period: "2015-2016", value: 1.6 },
+    { indicator: "Borseggi", period: "2022-2023", value: 1.0 },
+    { indicator: "Rapine", period: "2015-2016", value: 0.5 },
+    { indicator: "Rapine", period: "2022-2023", value: 0.2 },
+    { indicator: "Furti in abitazione principale", period: "2015-2016", value: 1.8 },
+    { indicator: "Furti in abitazione principale", period: "2022-2023", value: 0.6 }
+  ];
   var CHART_IDS = [
     "siTrendChart", "siCompositionChart", "siContributionChart", "siRankingChart", "siScatterChart",
     "siTreemapChart", "siPropertyFocusChart", "siViolentChart", "siPersonFocusChart", "siCrimeChart",
-    "siPeopleChart", "siDemographyChart", "siCounterChart"
+    "siPeopleChart", "siDemographyChart", "siCounterChart", "siPerceptionChart", "siVictimizationChart"
   ];
 
   var STATE = {
@@ -156,12 +183,13 @@
     crime: "TOT",
     measure: "absolute",
     role: "offender",
-    citizenship: "all",
+    citizenship: "totale_cittadinanza",
     counterDirection: "all",
     compositionMode: "themes",
     compositionMetric: "share",
     comparisonYear: null,
     contributionDirection: "all",
+    contributionThreshold: 5,
     search: "",
     peopleLoaded: false,
     fullReportedLoaded: false,
@@ -197,7 +225,8 @@
       "siTrendTag", "siCompositionTag", "siContributionTag", "siRankingTag", "siScatterTag",
       "siTreemapTag", "siTableTag", "siPropertyTag", "siViolentTag", "siPersonFocusTag", "siCrimeTag", "siPeopleTag",
       "siDemographyTag", "siCounterTag", "siTerritoryTable", "siCounterTable", "siPeopleNotice",
-      "siMethodNotes", "siSourceList", "siPlannedSourceList", "siPropertyFocusChart", "siPersonFocusChart"
+      "siMethodNotes", "siSourceList", "siPlannedSourceList", "siPropertyFocusChart", "siPersonFocusChart",
+      "siPerceptionTag", "siVictimizationTag"
     ].forEach(function (id) {
       els[id] = document.getElementById(id);
     });
@@ -235,12 +264,13 @@
       STATE.crime = "TOT";
       STATE.measure = "absolute";
       STATE.role = "offender";
-      STATE.citizenship = "all";
+      STATE.citizenship = "totale_cittadinanza";
       STATE.counterDirection = "all";
       STATE.compositionMode = "themes";
       STATE.compositionMetric = "share";
       STATE.comparisonYear = null;
       STATE.contributionDirection = "all";
+      STATE.contributionThreshold = 5;
       STATE.search = "";
       if (els.siSearch) els.siSearch.value = "";
       renderAll();
@@ -331,6 +361,7 @@
     if (name === "compositionMetric") STATE.compositionMetric = value;
     if (name === "comparisonYear") STATE.comparisonYear = numberOrNull(value);
     if (name === "contributionDirection") STATE.contributionDirection = value;
+    if (name === "contributionThreshold") STATE.contributionThreshold = numberOrNull(value);
     renderAll();
   }
 
@@ -502,13 +533,14 @@
     populateControlGroup("compositionMode", COMPOSITION_MODE_OPTIONS, STATE.compositionMode);
     populateControlGroup("compositionMetric", COMPOSITION_METRIC_OPTIONS, STATE.compositionMetric);
     populateControlGroup("contributionDirection", CONTRIBUTION_DIRECTION_OPTIONS, STATE.contributionDirection);
+    populateControlGroup("contributionThreshold", CONTRIBUTION_THRESHOLD_OPTIONS, String(STATE.contributionThreshold));
     populatePeopleFilters();
   }
 
   function populatePeopleFilters() {
     var people = peopleRows();
     var roles = unique(people.map(function (row) { return row.person_role; })).sort();
-    var citizenship = unique(people.map(function (row) { return row.citizenship_group; })).sort();
+    var citizenship = unique(people.map(normalizedCitizenshipGroup)).filter(Boolean).sort(sortCitizenshipGroup);
     var roleOptions = roles.map(function (value) {
       return { value: value, label: ROLE_LABELS[value] || labelize(value) };
     });
@@ -517,9 +549,13 @@
       STATE.role = roles.indexOf("offender") >= 0 ? "offender" : roleOptions[0].value;
     }
     populateControlGroup("role", roleOptions, STATE.role);
-    populateControlGroup("citizenship", [{ value: "all", label: "Tutte" }].concat(citizenship.map(function (value) {
+    if (!citizenship.length) citizenship = ["totale_cittadinanza"];
+    if (!citizenship.some(function (value) { return value === STATE.citizenship; })) {
+      STATE.citizenship = citizenship.indexOf("totale_cittadinanza") >= 0 ? "totale_cittadinanza" : citizenship[0];
+    }
+    populateControlGroup("citizenship", citizenship.map(function (value) {
       return { value: value, label: CITIZENSHIP_LABELS[value] || labelize(value) };
-    })), STATE.citizenship);
+    }), STATE.citizenship);
     setControlDisabled("role", roles.length === 0);
     setControlDisabled("citizenship", citizenship.length === 0);
   }
@@ -720,6 +756,8 @@
     if (id === "siPeopleChart") return renderPeopleChart();
     if (id === "siDemographyChart") return renderDemographyChart();
     if (id === "siCounterChart") return renderCounterChart();
+    if (id === "siPerceptionChart") return renderSurveyChart("siPerceptionChart", "siPerceptionTag", SURVEY_PERCEPTION, "Percezione della sicurezza");
+    if (id === "siVictimizationChart") return renderSurveyChart("siVictimizationChart", "siVictimizationTag", SURVEY_VICTIMIZATION, "Vittimizzazione dichiarata");
   }
 
   function renderTrendChart() {
@@ -782,29 +820,36 @@
       els.siContributionTag.textContent = "confronto non disponibile";
       return emptyChart("siContributionChart", "Scegli un anno finale successivo al primo anno disponibile.");
     }
-    var currentRows = selectedTerritoryRows(STATE.year).filter(nonTotalReported);
-    var prevRows = selectedTerritoryRows(comparison).filter(nonTotalReported);
-    var current = aggregateBy(currentRows, function (row) { return themeLabel(row._theme); });
-    var previous = mapByKey(aggregateBy(prevRows, function (row) { return themeLabel(row._theme); }));
+    var threshold = isFiniteNumber(STATE.contributionThreshold) ? STATE.contributionThreshold : 0;
+    var currentRows = selectedTerritoryRows(STATE.year).filter(contributionCrimeFilter);
+    var prevRows = selectedTerritoryRows(comparison).filter(contributionCrimeFilter);
+    var current = aggregateBy(currentRows, function (row) { return row.crime_code; });
+    var previous = mapByKey(aggregateBy(prevRows, function (row) { return row.crime_code; }));
     var data = current.map(function (row) {
       var base = (previous[row.key] || {}).value || 0;
-      return { key: row.key, value: row.value - base, current: row.value, base: base };
+      var changeAbs = row.value - base;
+      var changePct = base ? changeAbs / base * 100 : null;
+      var sample = row.rows && row.rows[0] || { crime_code: row.key };
+      return { key: crimeLabel(sample), code: row.key, value: changeAbs, changePct: changePct, current: row.value, base: base };
     }).filter(function (row) {
       if (STATE.contributionDirection === "increase") return row.value > 0;
       if (STATE.contributionDirection === "decrease") return row.value < 0;
       return row.value !== 0;
-    }).sort(function (a, b) { return Math.abs(b.value) - Math.abs(a.value); }).slice(0, 12).reverse();
-    els.siContributionTag.textContent = comparison + "-" + STATE.year + " - " + contributionDirectionLabel();
+    }).filter(function (row) {
+      if (!threshold) return true;
+      return isFiniteNumber(row.changePct) && Math.abs(row.changePct) >= threshold;
+    }).sort(function (a, b) { return Math.abs(b.changePct || 0) - Math.abs(a.changePct || 0); }).slice(0, 30).reverse();
+    els.siContributionTag.textContent = comparison + "-" + STATE.year + " - " + contributionDirectionLabel() + " - soglia " + threshold + "%";
     if (!data.length) return emptyChart("siContributionChart", "Nessuna variazione calcolabile.");
     plot("siContributionChart", [{
       type: "bar",
       orientation: "h",
-      x: data.map(function (row) { return row.value; }),
+      x: data.map(function (row) { return row.changePct; }),
       y: data.map(function (row) { return row.key; }),
-      customdata: data.map(function (row) { return [formatInteger(row.base), formatInteger(row.current)]; }),
+      customdata: data.map(function (row) { return [formatInteger(row.base), formatInteger(row.current), formatInteger(row.value), row.code]; }),
       marker: { color: data.map(function (row) { return row.value >= 0 ? "#d96363" : "#5e9f65"; }) },
-      hovertemplate: "%{y}<br>Anno confronto: %{customdata[0]}<br>Anno finale: %{customdata[1]}<br>Variazione: %{x:,.0f}<extra></extra>"
-    }], { xTitle: "Variazione assoluta " + comparison + "-" + STATE.year, marginLeft: 190 });
+      hovertemplate: "%{y}<br>Codice: %{customdata[3]}<br>Anno confronto: %{customdata[0]}<br>Anno finale: %{customdata[1]}<br>Variazione assoluta: %{customdata[2]}<br>Variazione %: %{x:.1f}%<extra></extra>"
+    }], { xTitle: "Variazione % " + comparison + "-" + STATE.year, marginLeft: 260 });
   }
 
   function renderRankingChart() {
@@ -975,6 +1020,28 @@
       marker: { color: "#d4a348" },
       hovertemplate: "%{y}<br>Valore: %{x:,.0f}<extra></extra>"
     }], { xTitle: "Persone", marginLeft: 170 });
+  }
+
+  function renderSurveyChart(chartId, tagId, rows, title) {
+    var tag = els[tagId];
+    if (tag) tag.textContent = "ISTAT 2015-2016 vs 2022-2023";
+    var indicators = unique(rows.map(function (row) { return row.indicator; }));
+    var periods = unique(rows.map(function (row) { return row.period; })).sort();
+    if (!rows.length) return emptyChart(chartId, "Dati campionari non disponibili.");
+    plot(chartId, periods.map(function (period, index) {
+      return {
+        type: "bar",
+        orientation: "h",
+        name: period,
+        x: indicators.map(function (indicator) {
+          var row = rows.find(function (item) { return item.indicator === indicator && item.period === period; });
+          return row ? row.value : null;
+        }),
+        y: indicators,
+        marker: { color: COLORS[index % COLORS.length] },
+        hovertemplate: "%{y}<br>" + period + ": %{x:.1f}%<extra></extra>"
+      };
+    }), { xTitle: "% popolazione/famiglie di riferimento", yTitle: "", legend: true, marginLeft: 230, barmode: "group" });
   }
 
   function peopleBreakdownKey(row) {
@@ -1156,8 +1223,7 @@
       .filter(function (row) { return row.year === STATE.year; })
       .filter(function (row) { return STATE.role === "all" || row.person_role === STATE.role; })
       .filter(function (row) {
-        if (STATE.citizenship !== "all") return row.citizenship_group === STATE.citizenship;
-        return !hasDetailedCitizenship() || row.citizenship_group !== "totale_cittadinanza";
+        return normalizedCitizenshipGroup(row) === STATE.citizenship;
       });
     var local = base.filter(peopleAreaFilter).filter(peopleCrimeFilter);
     if (local.length) return local;
@@ -1207,6 +1273,13 @@
     return row.crime_code !== "TOT" && row._theme === STATE.theme;
   }
 
+  function contributionCrimeFilter(row) {
+    if (!nonTotalReported(row)) return false;
+    if (STATE.theme !== "all" && row._theme !== STATE.theme) return false;
+    if (STATE.crime !== "all" && STATE.crime !== "TOT") return row.crime_code === STATE.crime;
+    return true;
+  }
+
   function peopleCrimeFilter(row) {
     if (STATE.crime !== "all" && STATE.crime !== "TOT") return row.crime_code === STATE.crime;
     if (STATE.theme !== "all") return row.crime_code !== "TOT" && row._theme === STATE.theme;
@@ -1244,10 +1317,23 @@
     return STATE.records.filter(function (row) { return row.indicator_group === "people"; });
   }
 
-  function hasDetailedCitizenship() {
-    return peopleRows().some(function (row) {
-      return row.citizenship_group === "immigrati_o_stranieri" || row.citizenship_group === "italiani_o_non_immigrati";
-    });
+  function normalizedCitizenshipGroup(row) {
+    var raw = String(row && row.citizenship_group || "").trim();
+    var text = String(row && (row.citizenship || row.person_category || row.person_code || "") || "").toLowerCase();
+    if (raw === "immigrati_o_stranieri") return raw;
+    if (raw === "italiani_o_non_immigrati") return raw;
+    if (raw === "totale_cittadinanza") return raw;
+    if (raw === "non_residenti") return raw;
+    if (text.indexOf("non resident") >= 0) return "non_residenti";
+    return raw || "non_classificato";
+  }
+
+  function sortCitizenshipGroup(a, b) {
+    var left = CITIZENSHIP_ORDER.indexOf(a);
+    var right = CITIZENSHIP_ORDER.indexOf(b);
+    left = left >= 0 ? left : 999;
+    right = right >= 0 ? right : 999;
+    return left === right ? sortItalian(CITIZENSHIP_LABELS[a] || a, CITIZENSHIP_LABELS[b] || b) : left - right;
   }
 
   function territoryRowsForControls() {
@@ -1435,7 +1521,15 @@
   }
 
   function years() {
-    return unique(STATE.records.map(function (row) { return row.year; })).filter(isFiniteNumber).sort(function (a, b) { return a - b; });
+    var recordYears = unique(STATE.records.map(function (row) { return row.year; })).filter(isFiniteNumber).sort(function (a, b) { return a - b; });
+    var start = isFiniteNumber(STATE.meta.start_year) ? STATE.meta.start_year : recordYears[0];
+    var end = isFiniteNumber(STATE.meta.end_year) ? STATE.meta.end_year : recordYears[recordYears.length - 1];
+    if (isFiniteNumber(start) && isFiniteNumber(end) && start <= end) {
+      var out = [];
+      for (var year = start; year <= end; year += 1) out.push(year);
+      return out;
+    }
+    return recordYears;
   }
 
   function latestYear() {

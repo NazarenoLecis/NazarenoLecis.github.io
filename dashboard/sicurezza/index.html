@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-9">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-10">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-9"></script>
+  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-10"></script>
 </head>
 <body>
   <header class="site-header">
@@ -128,7 +128,6 @@
       </div>
       <p class="si-filter-help">Per confronti territoriali usa i tassi quando disponibili. I valori assoluti restano utili per capire il volume amministrativo del fenomeno.</p>
       <div id="siKpis" class="si-kpi-grid" aria-label="Indicatori principali sicurezza"></div>
-      <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
     </section>
 
     <section id="andamento" class="si-section">
@@ -173,12 +172,14 @@
             <label>Anno finale<select data-si-control="year"></select></label>
             <label>Confronto con<select data-si-control="comparisonYear"></select></label>
             <label>Direzione<select data-si-control="contributionDirection"></select></label>
+            <label>Soglia %<select data-si-control="contributionThreshold"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
           </div>
           <div id="siContributionChart" class="si-chart si-chart-compact"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> scegli anno finale, anno di confronto e direzione per isolare aumenti o diminuzioni per categoria di reato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> mostra i singoli reati con variazione percentuale almeno pari alla soglia scelta rispetto all'anno di confronto. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -372,6 +373,18 @@
         <article class="si-panel"><h3>Vittimizzazione</h3><p>Persone o famiglie che dichiarano di aver subito reati, comprese situazioni non denunciate. Aiuta a stimare il sommerso e la propensione alla denuncia.</p></article>
         <article class="si-panel"><h3>Sicurezza percepita</h3><p>Paura del crimine, rischio percepito e comportamenti di evitamento. Puo muoversi in modo diverso rispetto alle denunce registrate.</p></article>
       </div>
+      <div class="si-chart-grid si-section-gap">
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Sicurezza percepita</h3><span id="siPerceptionTag">indagine campionaria</span></div>
+          <div id="siPerceptionChart" class="si-chart si-chart-compact"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> percentuali da indagine campionaria ISTAT sulla percezione della sicurezza, confrontabili con cautela con le denunce registrate ma non sommabili. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Vittimizzazione dichiarata</h3><span id="siVictimizationTag">indagine campionaria</span></div>
+          <div id="siVictimizationChart" class="si-chart si-chart-compact"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> quote di persone o famiglie che dichiarano di aver subito reati nei 12 mesi precedenti l'intervista; misura anche fenomeni non denunciati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+        </article>
+      </div>
       <article class="si-panel si-section-gap">
         <h3>Come leggere questa parte</h3>
         <div class="si-definition-table">
@@ -405,6 +418,10 @@
           <ul id="siSourceList" class="si-source-links"></ul>
         </div>
       </div>
+      <article class="si-panel si-section-gap">
+        <h3>Note rapide di lettura</h3>
+        <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
+      </article>
     </section>
   </main>
 
