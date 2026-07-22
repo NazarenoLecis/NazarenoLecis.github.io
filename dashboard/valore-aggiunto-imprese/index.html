@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-10">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260722-1"></script>
+  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260722-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -35,7 +35,7 @@
       <div>
         <span class="eyebrow">Valore aggiunto imprese</span>
         <h1>Settori, paesi, dimensione d'impresa e territorio</h1>
-        <p class="lead">Una lettura europea del valore aggiunto lordo: quali settori pesano di piu, quali generano importi contenuti, come cambia il quadro tra paesi, classi dimensionali d'impresa e territori.</p>
+        <p class="lead">Una lettura europea del valore aggiunto lordo: quali settori pesano di più, quali generano importi contenuti, come cambia il quadro tra paesi, classi dimensionali d'impresa e territori.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
@@ -54,10 +54,10 @@
     <p class="vai-note"><strong>Come leggere la dashboard:</strong> i valori assoluti sono in milioni di euro correnti. Il valore aggiunto totale non coincide con il PIL: il PIL aggiunge al valore aggiunto le imposte sui prodotti al netto dei contributi. Le viste indicano sempre il dataset usato: conti nazionali per settori e PIL, SBS per dimensione d'impresa e Business Demography per il focus micro 0, 1-4 e 5-9 dipendenti.</p>
 
     <section class="vai-reading-grid" aria-label="Percorso di lettura dashboard">
-      <div class="vai-reading-card"><span>1</span><h2>Parti dai settori</h2><p>Usa la vista per vedere i settori con piu valore aggiunto o quelli con importi minori nel paese selezionato.</p></div>
-      <div class="vai-reading-card"><span>2</span><h2>Guarda la serie</h2><p>Seleziona piu anni, settori o paesi per leggere livelli e dinamiche nel tempo.</p></div>
+      <div class="vai-reading-card"><span>1</span><h2>Parti dai settori</h2><p>Usa la vista per vedere i settori con più valore aggiunto o quelli con importi minori nel paese selezionato.</p></div>
+      <div class="vai-reading-card"><span>2</span><h2>Guarda la serie</h2><p>Seleziona più anni, settori o paesi per leggere livelli e dinamiche nel tempo.</p></div>
       <div class="vai-reading-card"><span>3</span><h2>Confronta i paesi</h2><p>Scegli un settore e confronta tutti i paesi UE disponibili nello stesso anno.</p></div>
-      <div class="vai-reading-card"><span>4</span><h2>Controlla i limiti</h2><p>Dimensione d'impresa e territorio arrivano da tavole diverse: le note finali spiegano cosa e confrontabile.</p></div>
+      <div class="vai-reading-card"><span>4</span><h2>Controlla i limiti</h2><p>Dimensione d'impresa e territorio arrivano da tavole diverse: le note finali spiegano cosa è confrontabile.</p></div>
     </section>
 
     <p id="vaiStatus" class="vai-status">Caricamento dati...</p>
@@ -65,7 +65,7 @@
     <section id="quadro" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Quadro rapido</span>
-        <div><h2>Valore aggiunto e settori osservati</h2><p>Il paese e l'anno selezionati guidano indicatori, lettura settoriale e grafici principali. La dashboard mostra l'intera struttura disponibile, dai settori maggiori a quelli con valore aggiunto piu contenuto.</p></div>
+        <div><h2>Valore aggiunto e settori osservati</h2><p>Il paese e l'anno selezionati guidano indicatori, lettura settoriale e grafici principali. La dashboard mostra l'intera struttura disponibile, dai settori maggiori a quelli con valore aggiunto più contenuto.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri principali</summary><div id="vaiGlobalFilters" class="filter-grid"></div></details>
       <div id="vaiKpis" class="vai-kpi-grid" aria-label="Indicatori principali valore aggiunto"></div>
@@ -132,8 +132,8 @@
       </article>
       <details class="chart-filter-panel vai-section-gap" open><summary>Filtri confronto dimensione</summary><div id="vaiSizeCompareFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
-        <div class="vai-card-title"><h3 id="vaiSizeCompareTitle">Confronto paesi per classe dimensionale</h3><span id="vaiSizeCompareTag">paesi</span></div>
-        <p class="vai-card-note" id="vaiSizeCompareNote">Confronta piu paesi nello stesso anno e settore. L'asse X resta la classe dimensionale d'impresa, mentre ogni colore rappresenta un paese selezionato.</p>
+        <div class="vai-card-title"><h3 id="vaiSizeCompareTitle">Valore aggiunto per occupato per classe - confronto paesi</h3><span id="vaiSizeCompareTag">paesi</span></div>
+        <p class="vai-card-note" id="vaiSizeCompareNote">Settore/perimetro: Totale settori imprese SBS.</p>
         <div id="vaiSizeCompareChart" class="vai-chart vai-chart-wide"></div>
         <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a>. Elaborazione di Nazareno Lecis.</p>
         <div id="vaiSizeCompareGuidance" class="vai-guidance-list" aria-live="polite"></div>
@@ -158,12 +158,12 @@
     <section id="territorio" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Territorio</span>
-        <div><h2>Regioni e settori dentro i paesi</h2><p>Quando Eurostat pubblica il dato NUTS2, la dashboard mostra sia le regioni che pesano di piu in un settore sia i settori che generano valore aggiunto dentro una regione.</p></div>
+        <div><h2>Regioni e settori dentro i paesi</h2><p>Quando Eurostat pubblica il dato NUTS2, la dashboard mostra sia le regioni che pesano di più in un settore sia i settori che generano valore aggiunto dentro una regione.</p></div>
       </div>
       <details class="chart-filter-panel" open><summary>Filtri territorio</summary><div id="vaiRegionalFilters" class="filter-grid"></div></details>
       <article class="vai-card vai-chart-block">
         <div class="vai-card-title"><h3 id="vaiRegionalTitle">Valore aggiunto regionale</h3><span id="vaiRegionalTag">NUTS2</span></div>
-        <p class="vai-card-note">Le regioni sono un dettaglio territoriale armonizzato Eurostat. Il dato regionale usa una classificazione settoriale piu aggregata: non va letto come dettaglio A64 o SBS.</p>
+        <p class="vai-card-note">Le regioni sono un dettaglio territoriale armonizzato Eurostat. Il dato regionale usa una classificazione settoriale più aggregata: non va letto come dettaglio A64 o SBS.</p>
         <div id="vaiRegionalChart" class="vai-chart vai-chart-wide"></div>
         <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gva/default/table?lang=en" target="_blank" rel="noopener">Eurostat Regional Gross Value Added <code>nama_10r_3gva</code></a>. Elaborazione di Nazareno Lecis.</p>
         <div id="vaiRegionalGuidance" class="vai-guidance-list" aria-live="polite"></div>
@@ -173,28 +173,28 @@
     <section id="metodo" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Fonti e metodologia</span>
-        <div><h2>Cosa e disponibile e cosa no</h2><p>La dashboard separa dati osservati e dimensioni non pubblicate, senza stimare valore aggiunto dove la fonte non lo consente.</p></div>
+        <div><h2>Cosa è disponibile e cosa no</h2><p>La dashboard separa dati osservati e dimensioni non pubblicate, senza stimare valore aggiunto dove la fonte non lo consente.</p></div>
       </div>
       <div class="vai-method-grid">
         <article>
           <h3>Cosa misura il valore aggiunto</h3>
-          <p>Il valore aggiunto lordo misura il valore creato da un'attivita economica al netto dei beni e servizi intermedi acquistati da altre attivita. Non coincide con fatturato, utile, margine o produttivita per addetto.</p>
+          <p>Il valore aggiunto lordo misura il valore creato da un'attività economica al netto dei beni e servizi intermedi acquistati da altre attività. Non coincide con fatturato, utile, margine o produttività per addetto.</p>
         </article>
         <article>
           <h3>Prezzi correnti</h3>
-          <p>I valori sono in milioni di euro a prezzi correnti. Le serie storiche mostrano livelli nominali: una crescita puo dipendere da volumi, prezzi o cambiamenti nella struttura economica.</p>
+          <p>I valori sono in milioni di euro a prezzi correnti. Le serie storiche mostrano livelli nominali: una crescita può dipendere da volumi, prezzi o cambiamenti nella struttura economica.</p>
         </article>
         <article>
           <h3>Rapporti al PIL</h3>
-          <p>Quando selezioni il rapporto al PIL, il denominatore e il PIL nominale Eurostat dello stesso paese e anno. La misura aiuta il confronto tra economie di dimensione diversa, ma resta una quota nominale.</p>
+          <p>Quando selezioni il rapporto al PIL, il denominatore è il PIL nominale Eurostat dello stesso paese e anno. La misura aiuta il confronto tra economie di dimensione diversa, ma resta una quota nominale.</p>
         </article>
         <article>
           <h3>PIL e valore aggiunto</h3>
-          <p>Il totale dei settori misura il valore aggiunto lordo. Il PIL ai prezzi di mercato e piu alto perche aggiunge le imposte sui prodotti e sottrae i contributi ai prodotti.</p>
+          <p>Il totale dei settori misura il valore aggiunto lordo. Il PIL ai prezzi di mercato è più alto perché aggiunge le imposte sui prodotti e sottrae i contributi ai prodotti.</p>
         </article>
         <article>
           <h3>Settori e doppi conteggi</h3>
-          <p>La vista per sezioni usa aggregati principali per evitare di sommare sottovoci gia incluse. Il dettaglio Eurostat e utile per leggere singole branche, ma non tutte le voci possono essere sommate tra loro.</p>
+          <p>La vista per sezioni usa aggregati principali per evitare di sommare sottovoci già incluse. Il dettaglio Eurostat è utile per leggere singole branche, ma non tutte le voci possono essere sommate tra loro.</p>
         </article>
         <article>
           <h3>Settori specifici e codici NACE</h3>
@@ -202,7 +202,7 @@
         </article>
         <article>
           <h3>Dimensione d'impresa</h3>
-          <p>Le classi dimensionali arrivano dalle Structural Business Statistics e indicano persone occupate nell'impresa. Il perimetro non coincide perfettamente con i conti nazionali e non copre allo stesso modo agricoltura, pesca e attivita pubbliche.</p>
+          <p>Le classi dimensionali arrivano dalle Structural Business Statistics e indicano persone occupate nell'impresa. Il perimetro non coincide perfettamente con i conti nazionali e non copre allo stesso modo agricoltura, pesca e attività pubbliche.</p>
         </article>
         <article>
           <h3>Micro-imprese 0, 1-4 e 5-9</h3>
@@ -210,11 +210,11 @@
         </article>
         <article>
           <h3>Valore per occupato</h3>
-          <p>Il valore per occupato e calcolato solo dove SBS pubblica valore aggiunto e persone occupate nella stessa cella. Non e una stima di produttivita dell'intera economia nazionale.</p>
+          <p>Il valore per occupato è calcolato dove SBS pubblica valore aggiunto e persone occupate nella stessa cella. È una misura media per addetto nel perimetro delle Structural Business Statistics.</p>
         </article>
         <article>
           <h3>Valore per dipendente e mediana</h3>
-          <p>Il valore per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana mostrata nel grafico e la mediana dei settori visualizzati, non una mediana dei dipendenti o delle imprese dentro il settore.</p>
+          <p>Il valore per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana mostrata nel grafico è la mediana dei settori visualizzati, non una mediana dei dipendenti o delle imprese dentro il settore.</p>
         </article>
         <article>
           <h3>Territorio e dati mancanti</h3>
@@ -255,7 +255,7 @@
             </article>
             <article>
               <h4>Valore aggiunto regionale</h4>
-              <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gva/default/table?lang=en" target="_blank" rel="noopener"><code>nama_10r_3gva</code></a>. Usato per confronti territoriali dentro i paesi dove il dato NUTS2 e disponibile.</p>
+              <p>Dataset <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gva/default/table?lang=en" target="_blank" rel="noopener"><code>nama_10r_3gva</code></a>. Usato per confronti territoriali dentro i paesi dove il dato NUTS2 è disponibile.</p>
             </article>
           </div>
         </div>

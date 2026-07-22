@@ -20,7 +20,7 @@
       code: "THEME_TOURISM_EXTENDED",
       label: "Turismo (proxy esteso)",
       components: ["I", "N79", "H50", "H51", "R90-R92", "R90", "R91", "R92", "R93"],
-      note: "Aggiunge trasporto marittimo, trasporto aereo, cultura, intrattenimento e sport. Include anche attivita non turistiche."
+      note: "Aggiunge trasporto marittimo, trasporto aereo, cultura, intrattenimento e sport. Include anche attività non turistiche."
     },
     {
       code: "THEME_ICT",
@@ -30,7 +30,7 @@
     },
     {
       code: "THEME_PUBLIC_SOCIAL",
-      label: "Pubblico, istruzione, sanita e sociale",
+      label: "Pubblico, istruzione, sanità e sociale",
       components: ["O", "P", "Q"],
       note: "Ricostruisce l'aggregato O-Q mantenendo esplicite le componenti usate."
     },
@@ -44,7 +44,7 @@
       code: "THEME_LOCAL_SERVICES",
       label: "Altro: cultura, sport e servizi personali",
       components: ["R", "S"],
-      note: "Aggrega attivita ricreative, culturali, sportive e altri servizi alla persona."
+      note: "Aggrega attività ricreative, culturali, sportive e altri servizi alla persona."
     },
     {
       code: "THEME_CULTURE_SPORT",
@@ -130,14 +130,14 @@
     TOTAL: "Totale economia",
     SBS_TOTAL: "Totale settori imprese SBS",
     A: "Agricoltura, silvicoltura e pesca",
-    A01: "Agricoltura e attivita connesse",
+    A01: "Agricoltura e attività connesse",
     A02: "Silvicoltura",
     A03: "Pesca e acquacoltura",
     B: "Estrazione di minerali",
     B05: "Estrazione di carbone",
     B06: "Estrazione di petrolio e gas naturale",
     B07: "Estrazione di minerali metalliferi",
-    B08: "Altre attivita estrattive",
+    B08: "Altre attività estrattive",
     B09: "Servizi di supporto all'estrazione",
     "B-E": "Industria esclusa costruzioni",
     C: "Manifattura",
@@ -198,7 +198,7 @@
     H49: "Trasporto terrestre e mediante condotte",
     H50: "Trasporto marittimo e per vie d'acqua",
     H51: "Trasporto aereo",
-    H52: "Magazzinaggio e attivita di supporto ai trasporti",
+    H52: "Magazzinaggio e attività di supporto ai trasporti",
     H53: "Servizi postali e corriere",
     I: "Alloggio e ristorazione",
     I55: "Alloggio",
@@ -207,31 +207,31 @@
     J58: "Editoria",
     "J58-J60": "Editoria, audiovisivo e trasmissioni",
     J59: "Cinema, video e musica",
-    J59_J60: "Audiovisivo e attivita di programmazione",
+    J59_J60: "Audiovisivo e attività di programmazione",
     J60: "Programmazione e trasmissione",
     J61: "Telecomunicazioni",
     J62: "Software e consulenza informatica",
     J62_J63: "Software, consulenza informatica e servizi informativi",
     J63: "Servizi informativi",
-    K: "Attivita finanziarie e assicurative",
+    K: "Attività finanziarie e assicurative",
     "K-N": "Servizi finanziari, immobiliari, professionali e amministrativi",
     K64: "Servizi finanziari",
     K65: "Assicurazioni e fondi pensione",
-    K66: "Attivita ausiliarie dei servizi finanziari e assicurativi",
-    L: "Attivita immobiliari",
-    L68: "Attivita immobiliari",
+    K66: "Attività ausiliarie dei servizi finanziari e assicurativi",
+    L: "Attività immobiliari",
+    L68: "Attività immobiliari",
     L68A: "Affitti imputati delle abitazioni occupate dai proprietari",
-    M: "Attivita professionali, scientifiche e tecniche",
-    M69: "Attivita legali e contabilita",
-    "M69-M71": "Legale, contabilita, consulenza e architettura",
-    M69_M70: "Legale, contabilita e consulenza gestionale",
+    M: "Attività professionali, scientifiche e tecniche",
+    M69: "Attività legali e contabilità",
+    "M69-M71": "Legale, contabilità, consulenza e architettura",
+    M69_M70: "Legale, contabilità e consulenza gestionale",
     M70: "Direzione aziendale e consulenza gestionale",
     M71: "Architettura e ingegneria",
     M72: "Ricerca e sviluppo",
-    M73: "Pubblicita e ricerche di mercato",
-    "M73-M75": "Pubblicita, ricerche di mercato e altre attivita professionali",
-    M74: "Altre attivita professionali, scientifiche e tecniche",
-    M74_M75: "Altre attivita professionali e veterinarie",
+    M73: "Pubblicità e ricerche di mercato",
+    "M73-M75": "Pubblicità, ricerche di mercato e altre attività professionali",
+    M74: "Altre attività professionali, scientifiche e tecniche",
+    M74_M75: "Altre attività professionali e veterinarie",
     M75: "Servizi veterinari",
     M_N: "Servizi professionali, scientifici, tecnici e amministrativi",
     N: "Servizi amministrativi e di supporto",
@@ -244,26 +244,26 @@
     N82: "Supporto amministrativo e servizi alle imprese",
     O: "Pubblica amministrazione e difesa",
     O84: "Pubblica amministrazione e difesa; assicurazione sociale obbligatoria",
-    "O-Q": "Pubblica amministrazione, istruzione, sanita e sociale",
+    "O-Q": "Pubblica amministrazione, istruzione, sanità e sociale",
     P: "Istruzione",
     P85: "Istruzione",
-    Q: "Sanita e assistenza sociale",
-    Q86: "Sanita",
+    Q: "Sanità e assistenza sociale",
+    Q86: "Sanità",
     Q87: "Assistenza residenziale",
     Q87_Q88: "Assistenza residenziale e sociale",
     Q88: "Assistenza sociale non residenziale",
     R: "Arte, sport e intrattenimento",
-    R90: "Attivita creative, artistiche e di intrattenimento",
-    R91: "Biblioteche, archivi, musei e attivita culturali",
+    R90: "Attività creative, artistiche e di intrattenimento",
+    R91: "Biblioteche, archivi, musei e attività culturali",
     R92: "Gioco e scommesse",
-    "R90-R92": "Attivita creative, artistiche, intrattenimento e gioco",
-    R93: "Attivita sportive e ricreative",
+    "R90-R92": "Attività creative, artistiche, intrattenimento e gioco",
+    R93: "Attività sportive e ricreative",
     "R-U": "Arte, intrattenimento e altri servizi",
     S: "Altri servizi",
     S94: "Organizzazioni associative",
     S95: "Riparazione di computer e beni personali",
     S96: "Altri servizi alla persona",
-    T: "Attivita di famiglie e convivenze",
+    T: "Attività di famiglie e convivenze",
     U: "Organizzazioni extraterritoriali",
     U99: "Organizzazioni e organismi extraterritoriali"
   };
@@ -933,7 +933,7 @@
     var sections = mainSectionRows(rows).filter(function (row) { return number(row.value_million_eur) !== null; });
     var top = sections.slice().sort(function (a, b) { return b.value_million_eur - a.value_million_eur; })[0];
     var kpis = [
-      { label: "Valore aggiunto totale", value: formatMoney(total), note: text(state.year) + " - " + countryLabel(state.country) + " - non e il PIL" },
+      { label: "Valore aggiunto totale", value: formatMoney(total), note: text(state.year) + " - " + countryLabel(state.country) + " - non è il PIL" },
       { label: "PIL", value: formatMoney(gdp), note: "Denominatore dei rapporti al PIL" },
       { label: "Primo settore", value: top ? sectorLabel(top) : "ND", note: top ? formatMoney(top.value_million_eur) : "" },
       { label: "Settori disponibili", value: rows.filter(function (row) { return row.value_million_eur !== null; }).length, note: "voci National Accounts" }
@@ -1001,7 +1001,7 @@
 
   function seriesMetricExplanation(metric, unit) {
     if (metric === "gdp_share") {
-      return "La quota sul PIL divide il valore aggiunto per il PIL nominale dello stesso paese e anno: e utile per confrontare economie di dimensione diversa.";
+      return "La quota sul PIL divide il valore aggiunto per il PIL nominale dello stesso paese e anno: è utile per confrontare economie di dimensione diversa.";
     }
     if (metric === "share") {
       return unit === "enterprises"
@@ -1323,7 +1323,7 @@
     }).filter(Boolean);
     byId("vaiSeriesTitle").textContent = "Settori nel tempo";
     byId("vaiSeriesTag").textContent = countryLabel(state.seriesCountry) + " - " + text(state.seriesStartYear) + "-" + text(state.seriesEndYear);
-    byId("vaiSeriesNote").textContent = "Ogni linea e un settore nello stesso paese. Il parametro selezionato cambia la lettura tra dimensione economica, composizione, peso sul PIL e dinamica.";
+    byId("vaiSeriesNote").textContent = "Ogni linea è un settore nello stesso paese. Il parametro selezionato cambia la lettura tra dimensione economica, composizione, peso sul PIL e dinamica.";
     renderGuidance("vaiSeriesGuidance", [
       {
         title: "Settori selezionati",
@@ -1380,8 +1380,8 @@
     byId("vaiSeriesTitle").textContent = sectorLabel(state.sizeTrendSector) + " per classe dimensionale";
     byId("vaiSeriesTag").textContent = countryLabel(state.sizeTrendCountry) + " - " + text(state.seriesStartYear) + "-" + text(state.seriesEndYear);
     byId("vaiSeriesNote").textContent = state.sizeTrendSector === SBS_TOTAL_CODE
-      ? "Ogni linea e una classe dimensionale aggregata sui settori SBS disponibili. La misura corrente lavora su " + measureText + " nel perimetro delle statistiche strutturali d'impresa."
-      : "Ogni linea e una classe dimensionale nel settore selezionato. La misura corrente lavora su " + measureText + " nel perimetro delle statistiche strutturali d'impresa.";
+      ? "Ogni linea è una classe dimensionale aggregata sui settori SBS disponibili. La misura corrente lavora su " + measureText + " nel perimetro delle statistiche strutturali d'impresa."
+      : "Ogni linea è una classe dimensionale nel settore selezionato. La misura corrente lavora su " + measureText + " nel perimetro delle statistiche strutturali d'impresa.";
     renderGuidance("vaiSeriesGuidance", [
       {
         title: "Classi dimensionali",
@@ -1764,13 +1764,13 @@
 
   function sectorMeasureExplanation(config) {
     if (config.valueKey === "gdp_share") {
-      return "Il valore aggiunto e diviso per il PIL nominale dello stesso paese e anno: la misura riduce l'effetto della dimensione complessiva dell'economia.";
+      return "Il valore aggiunto è diviso per il PIL nominale dello stesso paese e anno: la misura riduce l'effetto della dimensione complessiva dell'economia.";
     }
     if (config.valueKey === "value_per_employed") {
       return "Il valore per occupato divide il valore aggiunto SBS del settore per le persone occupate nello stesso settore, paese e anno.";
     }
     if (config.valueKey === "value_per_employee") {
-      return "Il valore per dipendente divide il valore aggiunto dei conti nazionali per i dipendenti della stessa branca NACE. La linea di mediana e calcolata tra i settori mostrati.";
+      return "Il valore per dipendente divide il valore aggiunto dei conti nazionali per i dipendenti della stessa branca NACE. La linea di mediana è calcolata tra i settori mostrati.";
     }
     if (config.valueKey === "value_per_enterprise") {
       return "Il valore per impresa divide il valore aggiunto SBS del settore per il numero di imprese attive nello stesso settore, paese e anno.";
@@ -1832,7 +1832,7 @@
         ? "Questa vista usa le statistiche strutturali d'impresa: copre il perimetro SBS disponibile per imprese, occupati e valore aggiunto. Le sezioni e le divisioni non vanno sommate tra loro."
         : (state.sectorMode === "themes"
           ? "Questa vista somma voci NACE osservate per costruire aggregazioni tematiche leggibili, incluso un proxy del turismo. Le aggregazioni non sono settori ufficiali e non vanno sommate tra loro."
-          : "Questa vista usa i conti nazionali: le sezioni NACE sono separate per evitare aggregati troppo grandi e il dettaglio esclude le voci gia incluse.");
+          : "Questa vista usa i conti nazionali: le sezioni NACE sono separate per evitare aggregati troppo grandi e il dettaglio esclude le voci già incluse.");
     }
     renderGuidance("vaiSectorGuidance", [
       {
@@ -1849,7 +1849,7 @@
           ? "Il turismo compare come proxy stretto e proxy esteso: sono somme dichiarate di voci NACE, utili per orientarsi ma non equivalenti a una misura ufficiale del turismo."
           : (state.sectorMode === "sections"
             ? "Commercio, trasporti e alloggio-ristorazione sono mostrati come settori distinti, non dentro l'aggregato G-I."
-            : "Il dettaglio entra nelle branche A64 ed esclude gli aggregati piu larghi per evitare letture gonfiate da sottovoci gia incluse."))
+            : "Il dettaglio entra nelle branche A64 ed esclude gli aggregati più larghi per evitare letture gonfiate da sottovoci già incluse."))
       },
       {
         title: config.title,
@@ -1971,14 +1971,14 @@
       {
         title: "Parametro selezionato",
         text: state.europeMeasure === "gdp_share"
-          ? "Il valore aggiunto del settore e diviso per il PIL nominale del paese: il confronto pesa meno la dimensione assoluta dell'economia."
+          ? "Il valore aggiunto del settore è diviso per il PIL nominale del paese: il confronto pesa meno la dimensione assoluta dell'economia."
           : (state.europeMeasure === "share"
             ? "La quota mostra quanto il settore pesa dentro il valore aggiunto totale del paese nello stesso anno."
-            : "Gli importi assoluti mostrano la dimensione economica del settore: i paesi piu grandi tendono ad avere valori maggiori.")
+            : "Gli importi assoluti mostrano la dimensione economica del settore: i paesi più grandi tendono ad avere valori maggiori.")
       },
       {
         title: "Stesso anno e stesso settore",
-        text: "Il confronto usa una sola combinazione anno-settore; se un paese manca, la cella non e pubblicata nella fonte integrata."
+        text: "Il confronto usa una sola combinazione anno-settore; se un paese manca, la cella non è pubblicata nella fonte integrata."
       }
     ]);
     if (!rows.length) {
@@ -2078,7 +2078,7 @@
         : (config.unit === "enterprise_share"
           ? "La quota mostra il peso percentuale di ogni classe sul numero totale di imprese " + sizeScope + "."
           : (config.unit === "value_gdp_share"
-            ? "Il rapporto al PIL divide il valore aggiunto della classe per il PIL nominale del paese nello stesso anno. Nel tooltip la seconda percentuale e la quota della classe dentro il valore aggiunto " + sizeScope + "."
+            ? "Il rapporto al PIL divide il valore aggiunto della classe per il PIL nominale del paese nello stesso anno. Nel tooltip la seconda percentuale è la quota della classe dentro il valore aggiunto " + sizeScope + "."
             : (config.unit === "value_per_employed"
               ? "Il valore per occupato divide il valore aggiunto della classe per le persone occupate nella stessa classe."
               : (config.unit === "value_per_enterprise"
@@ -2095,7 +2095,7 @@
             ? "La misura confronta il valore aggiunto generato per persona occupata nella classe dimensionale."
             : (config.unit.indexOf("value") === 0
               ? "Qui leggi dove si concentra il valore aggiunto, non quante imprese esistono in ogni classe."
-              : "Qui leggi quante imprese appartengono a ogni classe. Una classe molto numerosa puo produrre una quota di valore aggiunto molto diversa."))
+              : "Qui leggi quante imprese appartengono a ogni classe. Una classe molto numerosa può produrre una quota di valore aggiunto molto diversa."))
       },
       {
         title: "Classi sopra 10 persone",
@@ -2344,33 +2344,29 @@
     }).filter(function (trace) {
       return trace.y.some(function (value) { return number(value) !== null; });
     });
-    title.textContent = (isEnglish() ? "Country comparison by firm-size class" : "Confronto paesi per classe dimensionale") + " - " + sectorLabel(state.sizeCompareSector);
+    title.textContent = translateLabel(config.title) + (isEnglish() ? " - country comparison" : " - confronto paesi");
     tag.textContent = countries.length + " " + (isEnglish() ? "countries" : "paesi") + " - " + text(state.sizeCompareYear);
     note.textContent = isEnglish()
-      ? "The chart compares the selected countries in the same year and business sector. The X axis is the firm-size class; each colour is one selected country."
-      : "Il grafico confronta i paesi selezionati nello stesso anno e settore imprese. L'asse X e la classe dimensionale; ogni colore rappresenta un paese.";
+      ? "Sector/scope: " + sectorLabel(state.sizeCompareSector) + "."
+      : "Settore/perimetro: " + sectorLabel(state.sizeCompareSector) + ".";
     renderGuidance("vaiSizeCompareGuidance", [
+      {
+        title: isEnglish() ? "How to read" : "Come leggere",
+        text: isEnglish()
+          ? "Each X-axis group is a firm-size class; each colour is one selected country."
+          : "Ogni gruppo sull'asse X è una classe dimensionale; ogni colore è un paese selezionato."
+      },
       {
         title: isEnglish() ? "Same cell" : "Stessa cella",
         text: isEnglish()
-          ? "Country comparisons use the same SBS business sector, year and indicator, so differences are read across firm-size classes."
-          : "Il confronto usa lo stesso settore SBS, lo stesso anno e lo stesso indicatore, quindi le differenze si leggono tra classi dimensionali."
-      },
-      {
-        title: isEnglish() ? "Hours worked" : "Ore lavorate",
-        text: config.unit === "value_per_employed"
-          ? (isEnglish()
-            ? "Value per person employed is apparent labour productivity by headcount. It is not corrected for differences in hours worked; a per-hour indicator would require adding hours worked to the payload with the same country, sector, year and firm-size class."
-            : "Il valore per occupato e una produttivita apparente per testa. Non corregge per le differenze nelle ore lavorate; un indicatore per ora richiederebbe di integrare nel payload le ore lavorate con lo stesso paese, settore, anno e classe dimensionale.")
-          : (isEnglish()
-            ? "For cross-country productivity readings, prefer indicators with the same SBS perimeter and remember that headcount-based ratios do not adjust for hours worked."
-            : "Nei confronti di produttivita tra paesi usa indicatori nello stesso perimetro SBS e ricorda che i rapporti per testa non correggono le ore lavorate.")
+          ? "The comparison uses the same SBS business sector, year and indicator for all selected countries."
+          : "Il confronto usa lo stesso settore SBS, lo stesso anno e lo stesso indicatore per tutti i paesi selezionati."
       },
       {
         title: isEnglish() ? "Computed total" : "Totale calcolato",
         text: isEnglish()
           ? "The Total bar is computed from the five published size classes available in the dashboard; it is not an additional source row."
-          : "La barra Totale e calcolata dalle cinque classi dimensionali pubblicate nella dashboard; non e una riga aggiuntiva della fonte."
+          : "La barra Totale è calcolata dalle cinque classi dimensionali pubblicate nella dashboard; non è una riga aggiuntiva della fonte."
       },
       {
         title: isEnglish() ? "Selected countries" : "Paesi selezionati",
@@ -2538,7 +2534,7 @@
       },
       {
         title: "Classe 0 dipendenti",
-        text: "La classe 0 dipendenti puo avere persone occupate perche include titolari, lavoratori indipendenti o altre forme non classificate come dipendenti."
+        text: "La classe 0 dipendenti può avere persone occupate perché include titolari, lavoratori indipendenti o altre forme non classificate come dipendenti."
       }
     ]);
     if (!rows.length || !values.some(function (value) { return number(value) !== null; })) {
@@ -2665,13 +2661,13 @@
         title: state.regionalView === "regions" ? "Regioni per settore" : "Barchart regionale per settore",
         text: state.regionalView === "regions"
           ? "Il grafico mostra le regioni NUTS2 del paese selezionato per una voce settoriale. Se ci sono molte regioni, vengono visualizzate le prime 30."
-          : "Il grafico mostra quali settori generano piu valore aggiunto nella regione selezionata."
+          : "Il grafico mostra quali settori generano più valore aggiunto nella regione selezionata."
       },
       {
         title: "Settori regionali",
         text: state.regionalView === "sectors" && state.regionalSectorMode === "all"
           ? "La vista tutte le voci pubblicate include anche aggregati sovrapposti: serve per esplorare la fonte, non per sommare le barre."
-          : "Il dato regionale ha meno dettaglio dei conti nazionali A64 e delle divisioni SBS: e utile per la geografia, con settori piu aggregati."
+          : "Il dato regionale ha meno dettaglio dei conti nazionali A64 e delle divisioni SBS: è utile per la geografia, con settori più aggregati."
       }
     ]);
     if (!rows.length) {
@@ -2726,21 +2722,21 @@
     if (!notes) return;
     clear(notes);
     [
-      "Il valore aggiunto lordo e misurato a prezzi correnti in milioni di euro: confronta la dimensione economica delle attivita, non la produttivita o i margini delle imprese.",
+      "Il valore aggiunto lordo è misurato a prezzi correnti in milioni di euro: confronta la dimensione economica delle attività, non la produttività o i margini delle imprese.",
       "Il valore aggiunto totale non coincide con il PIL ai prezzi di mercato: il PIL aggiunge le imposte sui prodotti e sottrae i contributi ai prodotti.",
-      "Le serie storiche sono a prezzi correnti: variazioni nel tempo possono riflettere sia quantita prodotte sia prezzi, quindi non sono serie reali o depurate dall'inflazione.",
-      "I conti nazionali Eurostat sono usati per il confronto settoriale perche coprono l'intera economia e includono agricoltura, silvicoltura, pesca e servizi.",
-      "La vista per sezioni principali e la piu adatta per leggere la composizione complessiva: evita di mescolare aggregati e sottovoci dello stesso ramo NACE.",
-      "Il dettaglio settoriale A64 e utile per voci specifiche, ma va letto come gerarchia: alcune righe sono sottoinsiemi di aggregati gia presenti.",
+      "Le serie storiche sono a prezzi correnti: variazioni nel tempo possono riflettere sia quantità prodotte sia prezzi, quindi non sono serie reali o depurate dall'inflazione.",
+      "I conti nazionali Eurostat sono usati per il confronto settoriale perché coprono l'intera economia e includono agricoltura, silvicoltura, pesca e servizi.",
+      "La vista per sezioni principali è la più adatta per leggere la composizione complessiva: evita di mescolare aggregati e sottovoci dello stesso ramo NACE.",
+      "Il dettaglio settoriale A64 è utile per voci specifiche, ma va letto come gerarchia: alcune righe sono sottoinsiemi di aggregati già presenti.",
       "Alcuni fenomeni economici non coincidono con una singola branca NACE: la dashboard mostra le voci ufficiali disponibili senza costruire stime settoriali aggiuntive.",
       "Le classi dimensionali arrivano dalle statistiche strutturali d'impresa: sono classi di persone occupate nell'impresa e hanno un perimetro diverso dai conti nazionali.",
       "Le classi dimensionali non sono una scomposizione dell'intera economia nazionale: descrivono il perimetro delle statistiche strutturali d'impresa e quindi vanno confrontate soprattutto dentro lo stesso settore e la stessa fonte.",
-      "Il focus sulle micro-imprese usa Business Demography e separa 0, 1-4 e 5-9 dipendenti. E una vista descrittiva su imprese e occupazione, non una stima del valore aggiunto dentro la classe SBS 0-9.",
+      "Il focus sulle micro-imprese usa Business Demography e separa 0, 1-4 e 5-9 dipendenti. È una vista descrittiva su imprese e occupazione, non una stima del valore aggiunto dentro la classe SBS 0-9.",
       "Quando una vista cambia dataset, cambia anche il perimetro: conti nazionali, SBS e Business Demography non vanno sommati o confrontati come se fossero una sola tabella.",
       "I rapporti al PIL usano il PIL nominale Eurostat dello stesso paese e anno. Sono utili nei confronti tra paesi, ma non trasformano i valori in serie reali.",
-      "Il valore aggiunto per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana e calcolata tra i settori visualizzati, non dentro ogni settore.",
-      "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella: e una produttivita apparente per testa e non corregge per le ore lavorate. Un indicatore per ora richiede di integrare nel payload le ore lavorate nello stesso perimetro.",
-      "Il dettaglio regionale usa le regioni NUTS pubblicate da Eurostat e settori piu aggregati; non tutte le combinazioni paese-settore-anno sono disponibili.",
+      "Il valore aggiunto per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana è calcolata tra i settori visualizzati, non dentro ogni settore.",
+      "Il valore per occupato è calcolato solo nel perimetro SBS, dividendo il valore aggiunto ufficiale Eurostat per le persone occupate pubblicate nella stessa cella.",
+      "Il dettaglio regionale usa le regioni NUTS pubblicate da Eurostat e settori più aggregati; non tutte le combinazioni paese-settore-anno sono disponibili.",
       "Nei confronti europei puoi passare dai valori assoluti a quote sul PIL o sul valore aggiunto nazionale per ridurre l'effetto della scala del paese.",
       "L'indice base 100 confronta dinamiche relative, non livelli: due linee simili in base 100 possono corrispondere a valori assoluti molto distanti."
     ].forEach(function (note) {
