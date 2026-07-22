@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-6">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-7">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-6"></script>
+  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-7"></script>
 </head>
 <body>
   <header class="site-header">
@@ -43,12 +43,13 @@
         <h1>Criminalita registrata, vittime, percezione e sistema di sicurezza</h1>
         <p class="lead">Una dashboard per leggere serie storiche nazionali, regionali, provinciali e dei comuni capoluogo, distinguendo reati, territori, autori e vittime senza confondere denunce, vittimizzazione e percezione.</p>
       </div>
-      <aside class="si-source-panel" aria-label="Recap dashboard">
+      <aside class="si-source-panel" aria-label="Fonte dati">
         <span class="logo"></span>
         <div>
-          <strong>Recap</strong>
-          <span id="siTopRecap">Caricamento dei dati principali...</span>
-          <span><a href="https://github.com/NazarenoLecis/sicurezza" target="_blank" rel="noopener">Repo sicurezza</a></span>
+          <strong>Fonti: ISTAT e Ministero dell'Interno</strong>
+          <span id="siTopRecap">Serie sui delitti denunciati in caricamento...</span>
+          <span class="source-credit">Elaborazione di Nazareno Lecis.</span>
+          <a class="related-link" href="https://github.com/NazarenoLecis/sicurezza" target="_blank" rel="noopener">Apri repository sicurezza</a>
         </div>
       </aside>
     </section>
@@ -141,17 +142,37 @@
       <div class="si-chart-grid">
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Serie storica</h3><span id="siTrendTag">confronto territoriale</span></div>
+          <div class="si-chart-controls">
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
+          </div>
           <div id="siTrendChart" class="si-chart"></div>
-          <p class="si-chart-credit">Leggi il territorio selezionato insieme alla linea Italia: valori assoluti mostrano volume, tassi e indici aiutano il confronto.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> la serie mantiene l'Italia come benchmark quando scegli un territorio. Fonte: ISTAT, delitti denunciati dalle Forze di polizia. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Composizione dei reati</h3><span id="siCompositionTag">ultimo anno selezionato</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+          </div>
           <div id="siCompositionChart" class="si-chart"></div>
-          <p class="si-chart-credit">Categorie operative: servono a orientarsi, non sono un indice sintetico di pericolosita.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> le categorie operative servono a orientarsi, non sono un indice sintetico di pericolosita. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Cosa spiega l'aumento o la diminuzione</h3><span id="siContributionTag">variazione rispetto all'anno precedente</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+          </div>
           <div id="siContributionChart" class="si-chart si-chart-compact"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> la barra mostra quali famiglie di reato pesano sulla variazione annua del territorio selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -167,15 +188,41 @@
       <div class="si-chart-grid">
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Ranking territoriale</h3><span id="siRankingTag">filtri correnti</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
+          </div>
           <div id="siRankingChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> usa i tassi per confronti territoriali; i valori assoluti misurano volume amministrativo. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Valore e variazione annua</h3><span id="siScatterTag">scostamenti</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
+          </div>
           <div id="siScatterChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> il grafico separa livello del fenomeno e direzione del trend. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
-          <div class="si-panel-title"><h3>Peso territoriale per regione</h3><span id="siTreemapTag">regioni e territori</span></div>
+          <div class="si-panel-title"><h3>Distribuzione territoriale</h3><span id="siTreemapTag">territori selezionati</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
+          </div>
           <div id="siTreemapChart" class="si-chart si-chart-compact"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> mostra i territori con il valore piu alto nel perimetro selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
       <article class="si-panel si-section-gap">
@@ -194,8 +241,13 @@
       </div>
       <article class="si-panel si-chart-block">
         <div class="si-panel-title"><h3>Principali reati patrimoniali</h3><span id="siPropertyTag">Italia e territorio</span></div>
+        <div class="si-chart-controls">
+          <label>Livello<select data-si-control="level"></select></label>
+          <label>Territorio<select data-si-control="territory"></select></label>
+          <label>Misura<select data-si-control="measure"></select></label>
+        </div>
         <div id="siPropertyFocusChart" class="si-chart"></div>
-        <p class="si-chart-credit">Il focus usa i reati disponibili classificati come patrimonio o predatori. Cambia livello e territorio nei filtri sopra.</p>
+        <p class="si-chart-credit"><strong>Nota:</strong> il focus usa i reati disponibili classificati come patrimonio o predatori. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
@@ -210,16 +262,33 @@
       <div class="si-chart-grid">
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Violenti vs altri reati</h3><span id="siViolentTag">classificazione operativa</span></div>
+          <div class="si-chart-controls">
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+          </div>
           <div id="siViolentChart" class="si-chart"></div>
-          <p class="si-chart-credit">La classificazione e documentata nel repo: e una regola operativa sui codici reato, non una definizione legale esaustiva.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> classificazione operativa sui codici reato, non definizione legale esaustiva. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Principali reati contro la persona</h3><span id="siPersonFocusTag">Italia e territorio</span></div>
+          <div class="si-chart-controls">
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
+          </div>
           <div id="siPersonFocusChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> confronta i principali reati contro la persona nel territorio selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Scheda reato selezionato</h3><span id="siCrimeTag">territorio selezionato</span></div>
+          <div class="si-chart-controls">
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+          </div>
           <div id="siCrimeChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> seleziona un reato specifico per leggere la sua serie nel territorio. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -236,12 +305,27 @@
       <div class="si-chart-grid">
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Autori, vittime e cittadinanza</h3><span id="siPeopleTag">dimensioni persone</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Ruolo<select data-si-control="role"></select></label>
+            <label>Cittadinanza<select data-si-control="citizenship"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
+          </div>
           <div id="siPeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit">Questo grafico mostra conteggi registrati per cittadinanza. Per dire se un gruppo "delinque di piu" servono tassi con denominatori coerenti, non solo conteggi.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> conteggi registrati per cittadinanza, non tassi di propensione. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Identikit per sesso ed eta</h3><span id="siDemographyTag">quando disponibile</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Ruolo<select data-si-control="role"></select></label>
+            <label>Cittadinanza<select data-si-control="citizenship"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
+          </div>
           <div id="siDemographyChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> identikit registrato nei dataflow disponibili, oggi soprattutto nazionale. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -256,7 +340,15 @@
       </div>
       <article class="si-panel si-chart-block">
         <div class="si-panel-title"><h3>Controtendenze rispetto all'Italia</h3><span id="siCounterTag">variazioni annue</span></div>
+        <div class="si-chart-controls">
+          <label>Anno<select data-si-control="year"></select></label>
+          <label>Livello<select data-si-control="level"></select></label>
+          <label>Categoria<select data-si-control="theme"></select></label>
+          <label>Reato<select data-si-control="crime"></select></label>
+          <label>Scostamenti<select data-si-control="counterDirection"></select></label>
+        </div>
         <div id="siCounterChart" class="si-chart si-chart-compact"></div>
+        <p class="si-chart-credit"><strong>Nota:</strong> evidenzia territori che si muovono in direzione opposta all'Italia. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         <div id="siCounterTable" class="si-table-wrap si-section-gap"></div>
       </article>
     </section>
@@ -266,7 +358,7 @@
         <span class="eyebrow">Percezione e vittimizzazione</span>
         <div>
           <h2>Denunce, vittime reali e paura del crimine non sono la stessa cosa</h2>
-          <p>Questa sezione esplicita cosa manca ancora per confrontare criminalita registrata, vittimizzazione subita e sicurezza percepita.</p>
+          <p>Tre famiglie di indicatori rispondono a domande diverse: reati registrati, esperienze subite e sicurezza percepita.</p>
         </div>
       </div>
       <div class="si-method-grid">
@@ -274,19 +366,30 @@
         <article class="si-panel"><h3>Vittimizzazione</h3><p>Misura persone o famiglie che dichiarano di aver subito reati, incluse situazioni non denunciate. Richiede dataset campionari separati e metadati propri.</p></article>
         <article class="si-panel"><h3>Percezione</h3><p>Misura paura, evitamento e sicurezza percepita. Puo migliorare o peggiorare anche quando le denunce si muovono in modo diverso.</p></article>
       </div>
-      <div id="siPlannedSourceList" class="si-link-list si-section-gap"></div>
+      <article class="si-panel si-section-gap">
+        <h3>Fonti di contesto</h3>
+        <ul id="siPlannedSourceList" class="si-source-links"></ul>
+      </article>
     </section>
 
     <section id="metodo" class="si-section">
       <div class="si-section-head">
         <span class="eyebrow">Dati e metodologia</span>
         <div>
-          <h2>Cosa e incluso, cosa manca e da dove arrivano i dati</h2>
-          <p>La dashboard mostra solo cio che e presente nei JSON. Le fonti successive verranno integrate quando il repo dati avra download, pulizia e controlli dedicati.</p>
+          <h2>Fonti, definizioni e limiti</h2>
+          <p>Note rapide per leggere correttamente denunce, territori, autori, vittime e confronti per cittadinanza.</p>
         </div>
       </div>
-      <div id="siMethodNotes" class="si-method-grid"></div>
-      <div id="siSourceList" class="si-link-list si-section-gap"></div>
+      <div class="si-notes-panel">
+        <div>
+          <h3>Note metodologiche</h3>
+          <ul id="siMethodNotes"></ul>
+        </div>
+        <div>
+          <h3>Fonti</h3>
+          <ul id="siSourceList" class="si-source-links"></ul>
+        </div>
+      </div>
     </section>
   </main>
 
