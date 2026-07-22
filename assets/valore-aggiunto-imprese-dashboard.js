@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/valore-aggiunto-imprese/dashboard.json?v=20260720-10";
+  var DEFAULT_DATA_URL = "https://data.nazarenolecis.com/valore-aggiunto-imprese/dashboard.json?v=20260722-3";
   var COLORS = ["#ff6b2a", "#5b8fd9", "#5fc3b2", "#f0b44d", "#e66b6b", "#6fbd72", "#bd8ac7", "#9edb85"];
   var EU27 = ["AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "EL", "ES", "FI", "FR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL", "PT", "RO", "SE", "SI", "SK"];
   var SECTION_CODES = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U"];
@@ -669,32 +669,77 @@
   }
 
   function makeMultiSelect(container, label, values, options, onChange) {
-    var wrapper = document.createElement("label");
-    var span = document.createElement("span");
-    var select = document.createElement("select");
+    var wrapper = document.createElement("fieldset");
+    var legend = document.createElement("legend");
+    var details = document.createElement("details");
+    var summary = document.createElement("summary");
+    var summaryText = document.createElement("span");
+    var summaryCount = document.createElement("em");
+    var list = document.createElement("div");
     var selected = {};
     toArray(values).forEach(function (value) {
       selected[String(value)] = true;
     });
-    span.textContent = translateLabel(label);
     wrapper.className = "vai-multi-filter";
-    select.multiple = true;
-    select.size = Math.min(Math.max(options.length, 4), 8);
-    options.forEach(function (option) {
-      var item = document.createElement("option");
-      item.value = option.value;
-      item.textContent = translateLabel(option.label);
-      item.selected = Boolean(selected[String(option.value)]);
-      select.appendChild(item);
-    });
-    select.addEventListener("change", function () {
-      var next = Array.prototype.slice.call(select.selectedOptions).map(function (option) {
-        return option.value;
+    legend.textContent = translateLabel(label);
+    details.className = "vai-check-dropdown";
+    summaryText.className = "vai-check-summary-text";
+    summaryCount.className = "vai-check-summary-count";
+    list.className = "vai-checkbox-list";
+    summary.appendChild(summaryText);
+    summary.appendChild(summaryCount);
+    function updateSummary() {
+      var selectedOptions = options.filter(function (option) {
+        return selected[String(option.value)];
       });
-      onChange(next);
+      var selectedLabels = selectedOptions.map(function (option) {
+        return translateLabel(option.label);
+      });
+      if (!selectedLabels.length) {
+        summaryText.textContent = translateLabel("Nessuna selezione");
+      } else if (selectedLabels.length <= 3) {
+        summaryText.textContent = selectedLabels.join(", ");
+      } else {
+        summaryText.textContent = selectedLabels.slice(0, 3).join(", ") + " +" + (selectedLabels.length - 3);
+      }
+      summaryCount.textContent = selectedLabels.length + "/" + options.length;
+    }
+    options.forEach(function (option) {
+      var item = document.createElement("label");
+      var input = document.createElement("input");
+      var textNode = document.createElement("span");
+      item.className = "vai-checkbox-option";
+      input.type = "checkbox";
+      input.value = option.value;
+      input.checked = Boolean(selected[String(option.value)]);
+      textNode.textContent = translateLabel(option.label);
+      input.addEventListener("change", function () {
+        var next = Array.prototype.slice.call(list.querySelectorAll("input:checked")).map(function (checkbox) {
+          return checkbox.value;
+        });
+        if (!next.length) {
+          input.checked = true;
+          return;
+        }
+        selected[String(option.value)] = input.checked;
+        updateSummary();
+        onChange(next);
+      });
+      item.appendChild(input);
+      item.appendChild(textNode);
+      list.appendChild(item);
     });
-    wrapper.appendChild(span);
-    wrapper.appendChild(select);
+    updateSummary();
+    details.addEventListener("toggle", function () {
+      if (!details.open) return;
+      document.querySelectorAll(".vai-check-dropdown[open]").forEach(function (node) {
+        if (node !== details) node.open = false;
+      });
+    });
+    details.appendChild(summary);
+    details.appendChild(list);
+    wrapper.appendChild(legend);
+    wrapper.appendChild(details);
     container.appendChild(wrapper);
   }
 
@@ -1014,6 +1059,9 @@
     if (unit === "value_per_employed") {
       return "I valori assoluti dividono il valore aggiunto della classe per le persone occupate nella stessa classe, settore, paese e anno.";
     }
+    if (unit === "value_per_hour_worked") {
+      return "I valori assoluti dividono il valore aggiunto della classe per le ore lavorate dai dipendenti nella stessa cella SBS.";
+    }
     return unit === "enterprises"
       ? "I valori assoluti contano le imprese pubblicate nella fonte per classe dimensionale."
       : "I valori assoluti mostrano il valore aggiunto in milioni di euro correnti.";
@@ -1093,6 +1141,16 @@
     return values;
   }
 
+  function sectorHoursByCode(country, year) {
+    var values = {};
+    records("sector_hours_worked").forEach(function (row) {
+      if (row.country_code !== country || Number(row.year) !== Number(year)) return;
+      var value = number(row.hours_worked_thousand);
+      if (value !== null) values[row.sector_code] = value;
+    });
+    return values;
+  }
+
   function seriesRowsForRange() {
     if (state.seriesView === "countries") {
       return nationalRowsWithThemes().filter(function (row) {
@@ -1103,16 +1161,18 @@
     }
     if (state.seriesView === "size") {
       var config = sizeTrendConfig();
-      if (config.unit === "value_per_employed") {
-        var employment = {};
+      if (config.unit === "value_per_employed" || config.unit === "value_per_hour_worked") {
+        var denominator = {};
+        var denominatorKey = config.unit === "value_per_hour_worked" ? "hours_worked" : "persons_employed";
+        var denominatorRecordKey = config.unit === "value_per_hour_worked" ? "firm_size_hours_worked" : "firm_size_employment";
         sizeSourceRows(
-          "firm_size_employment",
-          "persons_employed",
+          denominatorRecordKey,
+          denominatorKey,
           state.sizeTrendCountry,
           state.sizeTrendSector,
           null
         ).forEach(function (row) {
-          employment[Number(row.year) + "-" + row.size_class] = number(row.persons_employed);
+          denominator[Number(row.year) + "-" + row.size_class] = number(row[denominatorKey]);
         });
         return sizeSourceRows(
           "firm_size_value_added",
@@ -1121,13 +1181,16 @@
           state.sizeTrendSector,
           null
         ).map(function (row) {
-          var employed = employment[Number(row.year) + "-" + row.size_class];
-          return Object.assign({}, row, {
-            persons_employed: employed,
-            value_per_employed: employed ? number(row.value_million_eur) * 1000 / employed : null
-          });
+          var denominatorValue = denominator[Number(row.year) + "-" + row.size_class];
+          var ratio = config.unit === "value_per_hour_worked"
+            ? (denominatorValue ? number(row.value_million_eur) * 1000000 / denominatorValue : null)
+            : (denominatorValue ? number(row.value_million_eur) * 1000 / denominatorValue : null);
+          var additions = {};
+          additions[denominatorKey] = denominatorValue;
+          additions[config.valueField] = ratio;
+          return Object.assign({}, row, additions);
         }).filter(function (row) {
-          return number(row.value_per_employed) !== null;
+          return number(row[config.valueField]) !== null;
         });
       }
       return sizeSourceRows(
@@ -1196,14 +1259,14 @@
       });
       makeMultiSelect(container, "Paesi nel grafico", state.countryTrendCountries, countryOpts, function (values) {
         state.countryTrendCountries = values.length ? values : DEFAULT_TREND_COUNTRIES.slice();
-        renderSeriesFilters();
         renderSeriesChart();
       });
     } else if (state.seriesView === "size") {
       makeSelect(container, "Misura", state.sizeTrendMeasure, [
         { value: "value_added", label: "Valore aggiunto" },
         { value: "enterprises", label: "Numero imprese" },
-        { value: "value_per_employed", label: "Valore aggiunto per occupato" }
+        { value: "value_per_employed", label: "Valore aggiunto per occupato" },
+        { value: "value_per_hour_worked", label: "Valore aggiunto per ora lavorata" }
       ], function (value) {
         state.sizeTrendMeasure = value;
         renderSeriesFilters();
@@ -1228,7 +1291,6 @@
       });
       makeMultiSelect(container, "Settori nel grafico", state.seriesSectors, sectorOpts, function (values) {
         state.seriesSectors = values.length ? values : DEFAULT_SERIES_SECTORS.slice();
-        renderSeriesFilters();
         renderSeriesChart();
       });
     }
@@ -1376,7 +1438,9 @@
     }).filter(Boolean);
     var measureText = config.unit === "enterprises"
       ? "numero di imprese"
-      : (config.unit === "value_per_employed" ? "valore aggiunto per occupato" : "valore aggiunto");
+      : (config.unit === "value_per_hour_worked"
+        ? "valore aggiunto per ora lavorata dai dipendenti"
+        : (config.unit === "value_per_employed" ? "valore aggiunto per occupato" : "valore aggiunto"));
     byId("vaiSeriesTitle").textContent = sectorLabel(state.sizeTrendSector) + " per classe dimensionale";
     byId("vaiSeriesTag").textContent = countryLabel(state.sizeTrendCountry) + " - " + text(state.seriesStartYear) + "-" + text(state.seriesEndYear);
     byId("vaiSeriesNote").textContent = state.sizeTrendSector === SBS_TOTAL_CODE
@@ -1391,7 +1455,10 @@
         title: "Dato mostrato",
         text: config.unit === "enterprises"
           ? seriesMetricExplanation(state.seriesMetric, "enterprises")
-          : seriesMetricExplanation(state.seriesMetric, config.unit === "value_per_employed" ? "value_per_employed" : "value_added")
+          : seriesMetricExplanation(
+            state.seriesMetric,
+            config.unit === "value_per_employed" || config.unit === "value_per_hour_worked" ? config.unit : "value_added"
+          )
       }
     ]);
     return traces;
@@ -1441,6 +1508,14 @@
         label: "Valore aggiunto per occupato"
       };
     }
+    if (state.sizeTrendMeasure === "value_per_hour_worked") {
+      return {
+        key: "firm_size_value_added",
+        valueField: "value_per_hour_worked",
+        unit: "value_per_hour_worked",
+        label: "Valore aggiunto per ora lavorata"
+      };
+    }
     return {
       key: "firm_size_value_added",
       valueField: "value_million_eur",
@@ -1451,7 +1526,11 @@
 
   function sortedSizeRows(rows) {
     return rows.slice().sort(function (a, b) {
-      return SIZE_ORDER.indexOf(a.size_class) - SIZE_ORDER.indexOf(b.size_class);
+      var aIndex = a.size_class === "TOTAL" ? SIZE_ORDER.length : SIZE_ORDER.indexOf(a.size_class);
+      var bIndex = b.size_class === "TOTAL" ? SIZE_ORDER.length : SIZE_ORDER.indexOf(b.size_class);
+      if (aIndex < 0) aIndex = SIZE_ORDER.length + 1;
+      if (bIndex < 0) bIndex = SIZE_ORDER.length + 1;
+      return aIndex - bIndex;
     });
   }
 
@@ -1495,7 +1574,8 @@
       { value: "value_added_share", label: "Quota valore aggiunto (%)" },
       { value: "value_gdp_share", label: "Valore aggiunto / PIL (%)" },
       { value: "value_per_enterprise", label: "Valore aggiunto per impresa" },
-      { value: "value_per_employed", label: "Valore aggiunto per occupato" }
+      { value: "value_per_employed", label: "Valore aggiunto per occupato" },
+      { value: "value_per_hour_worked", label: "Valore aggiunto per ora lavorata" }
     ];
   }
 
@@ -1550,6 +1630,16 @@
         empty: "Valore aggiunto per occupato non disponibile per questa selezione."
       };
     }
+    if (measure === "value_per_hour_worked") {
+      return {
+        key: "firm_size_value_added",
+        valueField: "value_million_eur",
+        unit: "value_per_hour_worked",
+        title: "Valore aggiunto per ora lavorata per classe",
+        yTitle: "Euro per ora lavorata",
+        empty: "Valore aggiunto per ora lavorata non disponibile per questa selezione."
+      };
+    }
     if (measure === "enterprise_share") {
       return {
         key: "firm_size_enterprises",
@@ -1584,12 +1674,14 @@
       na_share: { source: "national", valueKey: "share", title: "Quota sul valore aggiunto totale", axis: "% del totale", empty: "Quote settoriali non disponibili per questa selezione." },
       na_gdp_share: { source: "national", valueKey: "gdp_share", title: "Valore aggiunto in rapporto al PIL", axis: "% PIL", empty: "Rapporto al PIL non disponibile per questa selezione." },
       na_value_per_employee: { source: "national", valueKey: "value_per_employee", title: "Valore aggiunto per dipendente", axis: "Migliaia di euro per dipendente", empty: "Valore aggiunto per dipendente non disponibile per questa selezione." },
+      na_value_per_hour_worked: { source: "national", valueKey: "value_per_hour_worked", title: "Valore aggiunto per ora lavorata", axis: "Euro per ora lavorata", empty: "Valore aggiunto per ora lavorata non disponibile per questa selezione." },
       sbs_enterprises: { source: "sbs_enterprises", valueKey: "enterprises", title: "Numero di imprese per settore", axis: "Numero di imprese", empty: "Numero di imprese per settore non disponibile per questa selezione." },
       sbs_enterprise_share: { source: "sbs_enterprises", valueKey: "enterprise_share", title: "Quota sulle imprese per settore", axis: "% imprese", empty: "Quote sulle imprese non disponibili per questa selezione." },
       sbs_value: { source: "sbs_value", valueKey: "value_million_eur", title: "Valore aggiunto delle imprese per settore", axis: "Milioni di euro", empty: "Valore aggiunto delle imprese per settore non disponibile per questa selezione." },
       sbs_gdp_share: { source: "sbs_value", valueKey: "gdp_share", title: "Valore aggiunto delle imprese in rapporto al PIL", axis: "% PIL", empty: "Rapporto al PIL SBS non disponibile per questa selezione." },
       sbs_value_per_enterprise: { source: "sbs_value", valueKey: "value_per_enterprise", title: "Valore aggiunto per impresa", axis: "Migliaia di euro per impresa", empty: "Valore aggiunto per impresa non disponibile per questa selezione." },
-      sbs_value_per_employed: { source: "sbs_value", valueKey: "value_per_employed", title: "Valore aggiunto per occupato", axis: "Migliaia di euro per occupato", empty: "Valore aggiunto per occupato non disponibile per questa selezione." }
+      sbs_value_per_employed: { source: "sbs_value", valueKey: "value_per_employed", title: "Valore aggiunto per occupato", axis: "Migliaia di euro per occupato", empty: "Valore aggiunto per occupato non disponibile per questa selezione." },
+      sbs_value_per_hour_worked: { source: "sbs_value", valueKey: "value_per_hour_worked", title: "Valore aggiunto per ora lavorata", axis: "Euro per ora lavorata", empty: "Valore aggiunto per ora lavorata non disponibile per questa selezione." }
     };
     return configs[state.sectorMeasure] || configs.na_value;
   }
@@ -1600,12 +1692,14 @@
       { value: "na_share", label: "Quota sul valore aggiunto totale (%)" },
       { value: "na_gdp_share", label: "Valore aggiunto / PIL (%)" },
       { value: "na_value_per_employee", label: "Valore aggiunto per dipendente" },
+      { value: "na_value_per_hour_worked", label: "Valore aggiunto per ora lavorata" },
       { value: "sbs_enterprises", label: "Numero imprese per settore" },
       { value: "sbs_enterprise_share", label: "Quota sulle imprese (%)" },
       { value: "sbs_value", label: "Valore aggiunto imprese" },
       { value: "sbs_gdp_share", label: "Valore aggiunto imprese / PIL (%)" },
       { value: "sbs_value_per_enterprise", label: "Valore aggiunto per impresa" },
-      { value: "sbs_value_per_employed", label: "Valore aggiunto per occupato" }
+      { value: "sbs_value_per_employed", label: "Valore aggiunto per occupato" },
+      { value: "sbs_value_per_hour_worked", label: "Valore aggiunto per ora lavorata" }
     ];
   }
 
@@ -1633,28 +1727,36 @@
     records("firm_size_enterprises").forEach(function (row) {
       if (row.country_code !== country || Number(row.year) !== Number(year)) return;
       if (sectorCodes.indexOf(row.sector_code) < 0) return;
-      var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0 };
+      var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0, hours_worked: 0 };
       item.enterprises += number(row.enterprises) || 0;
       bySector[row.sector_code] = item;
     });
     records("firm_size_value_added").forEach(function (row) {
       if (row.country_code !== country || Number(row.year) !== Number(year)) return;
       if (sectorCodes.indexOf(row.sector_code) < 0) return;
-      var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0 };
+      var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0, hours_worked: 0 };
       item.value_million_eur += number(row.value_million_eur) || 0;
       bySector[row.sector_code] = item;
     });
     records("firm_size_employment").forEach(function (row) {
       if (row.country_code !== country || Number(row.year) !== Number(year)) return;
       if (sectorCodes.indexOf(row.sector_code) < 0) return;
-      var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0 };
+      var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0, hours_worked: 0 };
       item.persons_employed += number(row.persons_employed) || 0;
+      bySector[row.sector_code] = item;
+    });
+    records("firm_size_hours_worked").forEach(function (row) {
+      if (row.country_code !== country || Number(row.year) !== Number(year)) return;
+      if (sectorCodes.indexOf(row.sector_code) < 0) return;
+      var item = bySector[row.sector_code] || { sector_code: row.sector_code, sector_label: sectorLabel(row), enterprises: 0, value_million_eur: 0, persons_employed: 0, hours_worked: 0 };
+      item.hours_worked += number(row.hours_worked) || 0;
       bySector[row.sector_code] = item;
     });
     return Object.keys(bySector).map(function (code) {
       var item = bySector[code];
       item.value_per_enterprise = item.enterprises ? item.value_million_eur * 1000 / item.enterprises : null;
       item.value_per_employed = item.persons_employed ? item.value_million_eur * 1000 / item.persons_employed : null;
+      item.value_per_hour_worked = item.hours_worked ? item.value_million_eur * 1000000 / item.hours_worked : null;
       return item;
     });
   }
@@ -1672,22 +1774,29 @@
       var total = totalValue(rows) || candidates.reduce(function (sum, row) { return sum + number(row.value_million_eur); }, 0);
       var gdp = gdpValue(state.sectorCountry, state.sectorYear);
       var employeesBySector = sectorEmployeesByCode(state.sectorCountry, state.sectorYear);
+      var hoursBySector = sectorHoursByCode(state.sectorCountry, state.sectorYear);
       return candidates.map(function (row) {
         var value = row.value_million_eur;
         var employeeCodes = row.theme_component_codes || [row.sector_code];
         var employees = employeeCodes.reduce(function (sum, code) {
           return sum + (employeesBySector[code] || 0);
         }, 0);
+        var hours = employeeCodes.reduce(function (sum, code) {
+          return sum + (hoursBySector[code] || 0);
+        }, 0);
         if (config.valueKey === "share" && total) value = row.value_million_eur / total * 100;
         if (config.valueKey === "gdp_share") value = gdp ? row.value_million_eur / gdp * 100 : null;
         if (config.valueKey === "value_per_employee") value = employees ? row.value_million_eur / employees : null;
+        if (config.valueKey === "value_per_hour_worked") value = hours ? row.value_million_eur * 1000 / hours : null;
         return Object.assign({}, row, {
           plot_value: value,
           raw_value: row.value_million_eur,
           share: total ? row.value_million_eur / total * 100 : null,
           gdp_share: gdp ? row.value_million_eur / gdp * 100 : null,
           employees_thousand: employees || null,
-          value_per_employee: employees ? row.value_million_eur / employees : null
+          hours_worked_thousand: hours || null,
+          value_per_employee: employees ? row.value_million_eur / employees : null,
+          value_per_hour_worked: hours ? row.value_million_eur * 1000 / hours : null
         });
       });
     }
@@ -1772,6 +1881,11 @@
     if (config.valueKey === "value_per_employee") {
       return "Il valore per dipendente divide il valore aggiunto dei conti nazionali per i dipendenti della stessa branca NACE. La linea di mediana è calcolata tra i settori mostrati.";
     }
+    if (config.valueKey === "value_per_hour_worked") {
+      return sectorMeasureUsesSbs()
+        ? "Il valore per ora divide il valore aggiunto SBS per le ore lavorate dai dipendenti nello stesso settore, paese e anno."
+        : "Il valore per ora divide il valore aggiunto dei conti nazionali per le ore lavorate nella stessa branca NACE. La mediana e calcolata tra i settori mostrati.";
+    }
     if (config.valueKey === "value_per_enterprise") {
       return "Il valore per impresa divide il valore aggiunto SBS del settore per il numero di imprese attive nello stesso settore, paese e anno.";
     }
@@ -1790,6 +1904,11 @@
     }
     if (config.valueKey === "value_per_employee") {
       return "%{y}<br>%{x:,.1f} mila EUR per dipendente<br>%{customdata[7]:,.1f} mila dipendenti<extra></extra>";
+    }
+    if (config.valueKey === "value_per_hour_worked") {
+      return sectorMeasureUsesSbs()
+        ? "%{y}<br>%{x:,.1f} EUR per ora lavorata<br>%{customdata[10]:,.0f} ore lavorate SBS<extra></extra>"
+        : "%{y}<br>%{x:,.1f} EUR per ora lavorata<br>%{customdata[9]:,.1f} mila ore lavorate<extra></extra>";
     }
     if (config.valueKey === "value_per_enterprise") {
       return "%{y}<br>%{x:,.1f} mila EUR per impresa<br>%{customdata[1]:,.0f} imprese<extra></extra>";
@@ -1863,9 +1982,10 @@
     var chartHeight = Math.max(470, candidates.length * 28 + 140);
     var chartNode = byId("vaiSectorChart");
     if (chartNode) chartNode.style.minHeight = chartHeight + "px";
-    var medianValue = config.valueKey === "value_per_employee"
+    var medianValue = config.valueKey === "value_per_employee" || config.valueKey === "value_per_hour_worked"
       ? median(candidates.map(function (row) { return row.plot_value; }))
       : null;
+    var medianUnit = config.valueKey === "value_per_hour_worked" ? " EUR/ora" : " mila EUR";
     var medianLayout = medianValue === null ? {} : {
       shapes: [{
         type: "line",
@@ -1878,7 +1998,7 @@
         line: { color: "#f0b44d", width: 2, dash: "dot" }
       }],
       annotations: [{
-        text: "Mediana settori: " + medianValue.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mila EUR",
+        text: "Mediana settori: " + medianValue.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + medianUnit,
         x: medianValue,
         y: 1.04,
         xref: "x",
@@ -1904,7 +2024,9 @@
           row.theme_components || "",
           row.theme_note || "",
           row.employees_thousand || null,
-          row.value_per_employee || null
+          row.value_per_employee || null,
+          row.hours_worked_thousand || null,
+          row.hours_worked || null
         ];
       }),
       hovertemplate: sectorHoverTemplate(config)
@@ -2051,8 +2173,17 @@
     employmentRows.forEach(function (row) {
       employmentByClass[row.size_class] = number(row.persons_employed);
     });
+    var hoursRows = sizeRows("firm_size_hours_worked", "hours_worked");
+    var hoursByClass = {};
+    hoursRows.forEach(function (row) {
+      hoursByClass[row.size_class] = number(row.hours_worked);
+    });
     var gdp = gdpValue(state.sizeCountry, state.sizeYear);
-    var total = rows.reduce(function (sum, row) { return sum + number(row[config.valueField]); }, 0);
+    var totalRow = rows.find(function (row) { return row.size_class === "TOTAL"; });
+    var total = totalRow
+      ? number(totalRow[config.valueField])
+      : rows.filter(function (row) { return row.size_class !== "TOTAL"; })
+        .reduce(function (sum, row) { return sum + number(row[config.valueField]); }, 0);
     var sizeScope = state.sizeSector === SBS_TOTAL_CODE
       ? "del totale dei settori SBS disponibili"
       : "del settore selezionato";
@@ -2069,6 +2200,10 @@
         var employed = employmentByClass[row.size_class];
         return employed ? value * 1000 / employed : null;
       }
+      if (config.unit === "value_per_hour_worked") {
+        var hours = hoursByClass[row.size_class];
+        return hours ? value * 1000000 / hours : null;
+      }
       return value;
     });
     byId("vaiSizeTitle").textContent = rows[0] ? config.title + " - " + sectorLabel(rows[0]) : config.title;
@@ -2081,11 +2216,13 @@
             ? "Il rapporto al PIL divide il valore aggiunto della classe per il PIL nominale del paese nello stesso anno. Nel tooltip la seconda percentuale è la quota della classe dentro il valore aggiunto " + sizeScope + "."
             : (config.unit === "value_per_employed"
               ? "Il valore per occupato divide il valore aggiunto della classe per le persone occupate nella stessa classe."
-              : (config.unit === "value_per_enterprise"
-                ? "Il valore aggiunto per impresa divide il valore aggiunto della classe per il numero di imprese della stessa classe."
-                : (config.unit === "value_added_share"
-                  ? "La quota mostra quale parte del valore aggiunto " + sizeScope + " arriva da ogni classe dimensionale."
-                  : "Il grafico mostra il valore aggiunto generato dalle imprese di ciascuna classe dimensionale.")))));
+              : (config.unit === "value_per_hour_worked"
+                ? "Il valore per ora divide il valore aggiunto della classe per le ore lavorate dai dipendenti nella stessa cella SBS."
+                : (config.unit === "value_per_enterprise"
+                  ? "Il valore aggiunto per impresa divide il valore aggiunto della classe per il numero di imprese della stessa classe."
+                  : (config.unit === "value_added_share"
+                    ? "La quota mostra quale parte del valore aggiunto " + sizeScope + " arriva da ogni classe dimensionale."
+                    : "Il grafico mostra il valore aggiunto generato dalle imprese di ciascuna classe dimensionale."))))));
     renderGuidance("vaiSizeGuidance", [
       {
         title: config.unit.indexOf("value") === 0 ? "Valore prodotto" : "Imprese osservate",
@@ -2093,9 +2230,11 @@
           ? "La misura normalizza il valore aggiunto rispetto alla dimensione complessiva dell'economia nazionale. La quota mostrata nel tooltip usa invece come base il valore aggiunto " + sizeScope + "."
           : (config.unit === "value_per_employed"
             ? "La misura confronta il valore aggiunto generato per persona occupata nella classe dimensionale."
-            : (config.unit.indexOf("value") === 0
-              ? "Qui leggi dove si concentra il valore aggiunto, non quante imprese esistono in ogni classe."
-              : "Qui leggi quante imprese appartengono a ogni classe. Una classe molto numerosa può produrre una quota di valore aggiunto molto diversa."))
+            : (config.unit === "value_per_hour_worked"
+              ? "La misura confronta il valore aggiunto generato per ora lavorata dai dipendenti nella classe dimensionale."
+              : (config.unit.indexOf("value") === 0
+                ? "Qui leggi dove si concentra il valore aggiunto, non quante imprese esistono in ogni classe."
+                : "Qui leggi quante imprese appartengono a ogni classe. Una classe molto numerosa può produrre una quota di valore aggiunto molto diversa.")))
       },
       {
         title: "Classi sopra 10 persone",
@@ -2114,7 +2253,7 @@
     }
     plot("vaiSizeChart", [{
       type: "bar",
-      x: rows.map(function (row) { return row.size_class; }),
+      x: rows.map(function (row) { return sizeClassLabel(row.size_class); }),
       y: values,
       marker: { color: COLORS },
       customdata: rows.map(function (row) {
@@ -2123,7 +2262,8 @@
           config.unit === "enterprise_share" ? value : enterprisesByClass[row.size_class],
           total ? value / total * 100 : null,
           employmentByClass[row.size_class],
-          gdp ? value / gdp * 100 : null
+          gdp ? value / gdp * 100 : null,
+          hoursByClass[row.size_class]
         ];
       }),
       hovertemplate: config.unit === "value_added"
@@ -2134,11 +2274,13 @@
             ? "%{x}<br>%{y:.2f}% del PIL<br>%{customdata[1]:.1f}% del valore aggiunto della selezione SBS<extra></extra>"
             : (config.unit === "value_per_employed"
               ? "%{x}<br>%{y:,.1f} mila EUR per occupato<br>%{customdata[2]:,.0f} occupati<extra></extra>"
-              : (config.unit === "value_added_share"
-                ? "%{x}<br>%{y:.1f}% del valore aggiunto<extra></extra>"
-                : (config.unit === "value_per_enterprise"
-                  ? "%{x}<br>%{y:,.1f} mila EUR per impresa<br>%{customdata[0]:,.0f} imprese<extra></extra>"
-                  : "%{x}<br>%{y:,.0f} imprese<br>%{customdata[1]:.1f}% della selezione SBS<extra></extra>")))))
+              : (config.unit === "value_per_hour_worked"
+                ? "%{x}<br>%{y:,.1f} EUR per ora lavorata<br>%{customdata[4]:,.0f} ore lavorate<extra></extra>"
+                : (config.unit === "value_added_share"
+                  ? "%{x}<br>%{y:.1f}% del valore aggiunto<extra></extra>"
+                  : (config.unit === "value_per_enterprise"
+                    ? "%{x}<br>%{y:,.1f} mila EUR per impresa<br>%{customdata[0]:,.0f} imprese<extra></extra>"
+                    : "%{x}<br>%{y:,.0f} imprese<br>%{customdata[1]:.1f}% della selezione SBS<extra></extra>"))))))
     }], {
       margin: { t: 18, r: 24, b: 82, l: 92 },
       yaxis: { title: config.yTitle, rangemode: "tozero" },
@@ -2217,19 +2359,29 @@
       state.sizeCompareSector,
       state.sizeCompareYear
     );
+    var hoursRows = sizeSourceRows(
+      "firm_size_hours_worked",
+      "hours_worked",
+      country,
+      state.sizeCompareSector,
+      state.sizeCompareYear
+    );
     var valueByClass = mapSizeValue(valueRows, "value_million_eur");
     var enterprisesByClass = mapSizeValue(enterpriseRows, "enterprises");
     var employedByClass = mapSizeValue(employmentRows, "persons_employed");
+    var hoursByClass = mapSizeValue(hoursRows, "hours_worked");
     var totalValue = sumSizeMap(valueByClass);
     var totalEnterprises = sumSizeMap(enterprisesByClass);
     var totalEmployed = sumSizeMap(employedByClass);
+    var totalHours = sumSizeMap(hoursByClass);
     var gdp = gdpValue(country, state.sizeCompareYear);
-    var sourceRow = valueRows[0] || enterpriseRows[0] || employmentRows[0] || {};
+    var sourceRow = valueRows[0] || enterpriseRows[0] || employmentRows[0] || hoursRows[0] || {};
 
     return SIZE_ORDER.concat(["TOTAL"]).map(function (sizeClass) {
       var value = sizeClass === "TOTAL" ? totalValue : number(valueByClass[sizeClass]);
       var enterprises = sizeClass === "TOTAL" ? totalEnterprises : number(enterprisesByClass[sizeClass]);
       var employed = sizeClass === "TOTAL" ? totalEmployed : number(employedByClass[sizeClass]);
+      var hours = sizeClass === "TOTAL" ? totalHours : number(hoursByClass[sizeClass]);
       var plotValue = null;
       if (config.unit === "enterprises") plotValue = enterprises;
       if (config.unit === "enterprise_share") plotValue = totalEnterprises ? enterprises / totalEnterprises * 100 : null;
@@ -2238,6 +2390,7 @@
       if (config.unit === "value_gdp_share") plotValue = gdp ? value / gdp * 100 : null;
       if (config.unit === "value_per_enterprise") plotValue = enterprises ? value * 1000 / enterprises : null;
       if (config.unit === "value_per_employed") plotValue = employed ? value * 1000 / employed : null;
+      if (config.unit === "value_per_hour_worked") plotValue = hours ? value * 1000000 / hours : null;
       return {
         country_code: country,
         country_name: sourceRow.country_name,
@@ -2247,6 +2400,7 @@
         value_million_eur: value,
         enterprises: enterprises,
         persons_employed: employed,
+        hours_worked: hours,
         gdp_share: gdp ? value / gdp * 100 : null,
         plot_value: plotValue
       };
@@ -2270,7 +2424,6 @@
     });
     makeMultiSelect(container, "Paesi nel grafico", state.sizeCompareCountries, countryOpts, function (values) {
       state.sizeCompareCountries = values.length ? values : DEFAULT_SIZE_COMPARE_COUNTRIES.slice();
-      renderSizeCompareFilters();
       renderSizeCompareChart();
     });
     makeSelect(container, "Settore imprese", state.sizeCompareSector, sbsSectorOptionsWithTotal(), function (value) {
@@ -2296,6 +2449,9 @@
     }
     if (config.unit === "value_per_employed") {
       return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:,.1f} " + (isEnglish() ? "thousand EUR per person employed" : "mila EUR per occupato") + "<br>" + (isEnglish() ? "Persons employed" : "Occupati") + ": %{customdata[3]:,.0f}<extra></extra>";
+    }
+    if (config.unit === "value_per_hour_worked") {
+      return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:,.1f} EUR " + (isEnglish() ? "per hour worked" : "per ora lavorata") + "<br>" + (isEnglish() ? "Hours worked" : "Ore lavorate") + ": %{customdata[5]:,.0f}<extra></extra>";
     }
     if (config.unit === "value_added_share") {
       return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:.1f}% " + (isEnglish() ? "of value added" : "del valore aggiunto") + "<extra></extra>";
@@ -2336,7 +2492,8 @@
             row.value_million_eur,
             row.enterprises,
             row.persons_employed,
-            row.gdp_share
+            row.gdp_share,
+            row.hours_worked
           ];
         }),
         hovertemplate: sizeCompareHoverTemplate(config)
@@ -2361,6 +2518,16 @@
         text: isEnglish()
           ? "The comparison uses the same SBS business sector, year and indicator for all selected countries."
           : "Il confronto usa lo stesso settore SBS, lo stesso anno e lo stesso indicatore per tutti i paesi selezionati."
+      },
+      {
+        title: isEnglish() ? "Hours worked" : "Ore lavorate",
+        text: config.unit === "value_per_hour_worked"
+          ? (isEnglish()
+            ? "The hourly indicator divides value added by hours worked by employees in the same SBS cell."
+            : "L'indicatore orario divide il valore aggiunto per le ore lavorate dai dipendenti nella stessa cella SBS.")
+          : (isEnglish()
+            ? "Headcount indicators do not adjust for different hours worked; use the hourly indicator when it is available."
+            : "Gli indicatori per testa non correggono le ore lavorate; usa l'indicatore orario quando il dato e disponibile.")
       },
       {
         title: isEnglish() ? "Computed total" : "Totale calcolato",
@@ -2735,7 +2902,7 @@
       "Quando una vista cambia dataset, cambia anche il perimetro: conti nazionali, SBS e Business Demography non vanno sommati o confrontati come se fossero una sola tabella.",
       "I rapporti al PIL usano il PIL nominale Eurostat dello stesso paese e anno. Sono utili nei confronti tra paesi, ma non trasformano i valori in serie reali.",
       "Il valore aggiunto per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana è calcolata tra i settori visualizzati, non dentro ogni settore.",
-      "Il valore per occupato è calcolato solo nel perimetro SBS, dividendo il valore aggiunto ufficiale Eurostat per le persone occupate pubblicate nella stessa cella.",
+      "Il valore per occupato e calcolato nel perimetro SBS dividendo il valore aggiunto ufficiale Eurostat per le persone occupate pubblicate nella stessa cella. Il valore per ora lavorata usa invece le ore lavorate dai dipendenti pubblicate nella stessa cella SBS.",
       "Il dettaglio regionale usa le regioni NUTS pubblicate da Eurostat e settori più aggregati; non tutte le combinazioni paese-settore-anno sono disponibili.",
       "Nei confronti europei puoi passare dai valori assoluti a quote sul PIL o sul valore aggiunto nazionale per ridurre l'effetto della scala del paese.",
       "L'indice base 100 confronta dinamiche relative, non livelli: due linee simili in base 100 possono corrispondere a valori assoluti molto distanti."
