@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-8">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-9">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-8"></script>
+  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-9"></script>
 </head>
 <body>
   <header class="site-header">
@@ -310,7 +310,7 @@
       <p id="siPeopleNotice" class="si-note">Caricamento dei dati persone...</p>
       <div class="si-chart-grid">
         <article class="si-panel si-chart-block">
-          <div class="si-panel-title"><h3>Autori, vittime e cittadinanza</h3><span id="siPeopleTag">dimensioni persone</span></div>
+          <div class="si-panel-title"><h3>Autori o vittime per cittadinanza</h3><span id="siPeopleTag">ruolo selezionato</span></div>
           <div class="si-chart-controls">
             <label>Anno<select data-si-control="year"></select></label>
             <label>Ruolo<select data-si-control="role"></select></label>
@@ -319,7 +319,7 @@
             <label>Reato<select data-si-control="crime"></select></label>
           </div>
           <div id="siPeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> conteggi registrati per cittadinanza, non tassi di propensione. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Sono conteggi registrati, non tassi di propensione. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Identikit per sesso ed eta</h3><span id="siDemographyTag">quando disponibile</span></div>
@@ -363,15 +363,24 @@
       <div class="si-section-head">
         <span class="eyebrow">Percezione e vittimizzazione</span>
         <div>
-          <h2>Denunce, vittime reali e paura del crimine non sono la stessa cosa</h2>
-          <p>Tre famiglie di indicatori rispondono a domande diverse: reati registrati, esperienze subite e sicurezza percepita.</p>
+          <h2>Percezione, vittimizzazione e denunce misurano cose diverse</h2>
+          <p>La sezione chiarisce come leggere insieme fonti amministrative e indagini campionarie, senza trasformarle in un unico numero.</p>
         </div>
       </div>
       <div class="si-method-grid">
-        <article class="si-panel"><h3>Denunce</h3><p>Misurano delitti registrati dalle Forze di polizia e trasmessi all'autorita giudiziaria. Sono utili per serie territoriali granulari, ma dipendono anche dalla propensione alla denuncia.</p></article>
-        <article class="si-panel"><h3>Vittimizzazione</h3><p>Misura persone o famiglie che dichiarano di aver subito reati, incluse situazioni non denunciate. Richiede dataset campionari separati e metadati propri.</p></article>
-        <article class="si-panel"><h3>Percezione</h3><p>Misura paura, evitamento e sicurezza percepita. Puo migliorare o peggiorare anche quando le denunce si muovono in modo diverso.</p></article>
+        <article class="si-panel"><h3>Denunce registrate</h3><p>Delitti denunciati o accertati dalle Forze di polizia e trasmessi all'autorita giudiziaria. Sono la fonte piu granulare per territorio, anno e tipo di reato.</p></article>
+        <article class="si-panel"><h3>Vittimizzazione</h3><p>Persone o famiglie che dichiarano di aver subito reati, comprese situazioni non denunciate. Aiuta a stimare il sommerso e la propensione alla denuncia.</p></article>
+        <article class="si-panel"><h3>Sicurezza percepita</h3><p>Paura del crimine, rischio percepito e comportamenti di evitamento. Puo muoversi in modo diverso rispetto alle denunce registrate.</p></article>
       </div>
+      <article class="si-panel si-section-gap">
+        <h3>Come leggere questa parte</h3>
+        <div class="si-definition-table">
+          <div><strong>Domanda</strong><span>Quanti delitti risultano registrati?</span><span>Quante persone dichiarano di averne subiti?</span><span>Quanto le persone si sentono insicure?</span></div>
+          <div><strong>Unita</strong><span>Denunce o delitti registrati</span><span>Persone/famiglie intervistate</span><span>Opinioni e comportamenti dichiarati</span></div>
+          <div><strong>Uso corretto</strong><span>Serie territoriali e confronto tra reati</span><span>Sommerso e profilo delle vittime</span><span>Paura, evitamento e fiducia nello spazio pubblico</span></div>
+        </div>
+        <p class="si-chart-credit"><strong>Nota:</strong> percezione e vittimizzazione vanno affiancate ai reati denunciati, non sommate. Fonte: ISTAT, indagini su sicurezza dei cittadini e percezione della sicurezza. Elaborazione di Nazareno Lecis.</p>
+      </article>
       <article class="si-panel si-section-gap">
         <h3>Fonti di contesto</h3>
         <ul id="siPlannedSourceList" class="si-source-links"></ul>

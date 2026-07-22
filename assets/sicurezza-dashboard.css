@@ -455,6 +455,39 @@
   line-height: 1.4;
 }
 
+.si-definition-table {
+  display: grid;
+  gap: 1px;
+  overflow: hidden;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+}
+
+.si-definition-table div {
+  display: grid;
+  grid-template-columns: minmax(110px, .6fr) repeat(3, minmax(0, 1fr));
+  gap: 1px;
+}
+
+.si-definition-table strong,
+.si-definition-table span {
+  min-width: 0;
+  padding: 12px;
+  background: var(--panel);
+  font-size: .9rem;
+  line-height: 1.35;
+}
+
+.si-definition-table strong {
+  color: var(--text);
+}
+
+.si-definition-table span {
+  color: var(--muted);
+}
+
 .si-chart-empty {
   min-height: 260px;
   display: grid;
@@ -705,6 +738,10 @@
     max-width: none;
     margin-top: 6px;
     text-align: left;
+  }
+
+  .si-definition-table div {
+    grid-template-columns: 1fr;
   }
 
   .si-table {
