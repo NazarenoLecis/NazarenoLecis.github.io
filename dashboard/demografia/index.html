@@ -11,8 +11,9 @@
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260722-4">
   <script defer src="../../assets/theme.js"></script>
+  <script defer src="../../assets/lang.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/demografia-dashboard.js?v=20260722-6"></script>
+  <script defer src="../../assets/demografia-dashboard.js?v=20260722-8"></script>
 </head>
 <body>
   <header class="site-header">
@@ -88,16 +89,27 @@
       </div>
       <article class="di-card di-chart-block">
         <div class="di-card-title"><h3>Popolazione per età e sesso</h3><span id="diKebabTag">Italia</span></div>
-        <p class="di-explain">Seleziona Italia o una regione. Per l'Italia la distribuzione usa età singole; per le regioni Eurostat pubblica classi quinquennali. Il livello provinciale è disponibile per nati, decessi, fecondità e bilancio demografico, ma non per la popolazione per età in questa fonte.</p>
+        <p class="di-explain">Seleziona Italia, una regione o un paese UE. L'Italia può essere letta per residenti totali, nati in Italia, nati all'estero o sovrapposizione tra nati in Italia e nati all'estero; i confronti tra territori usano classi quinquennali quando serve allineare le età.</p>
         <div class="di-chart-controls">
           <label>Popolazione
             <select id="diKebabPopulation">
               <option value="total">Totale residenti</option>
+              <option value="native_born">Nati in Italia</option>
               <option value="foreign_born">Nati all'estero</option>
+              <option value="native_foreign_overlap">Nati in Italia + nati all'estero</option>
             </select>
           </label>
           <label>Territorio
             <select id="diKebabTerritory"></select>
+          </label>
+          <label>Confronto
+            <select id="diKebabCompare"></select>
+          </label>
+          <label>Misura
+            <select id="diKebabMeasure">
+              <option value="absolute">Milioni di persone</option>
+              <option value="percent">% della popolazione selezionata</option>
+            </select>
           </label>
           <label>Anno
             <select id="diKebabYear"></select>
@@ -105,7 +117,7 @@
           <button id="diKebabPlay" class="di-control-button" type="button" aria-pressed="false">Avvia evoluzione</button>
         </div>
         <div id="diKebabChart" class="di-chart di-chart-tall"></div>
-        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: la modalità nati all'estero misura i residenti nati fuori dal paese, non i soli cittadini stranieri; l'evoluzione riproduce gli anni disponibili uno dopo l'altro.</p>
+        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: nati all'estero misura i residenti nati fuori dal paese, non i soli cittadini stranieri; nati in Italia è calcolato sottraendo i nati all'estero dai residenti totali. La scala resta fissa durante l'evoluzione; in percentuale ogni distribuzione è normalizzata sulla popolazione selezionata.</p>
       </article>
     </section>
 
