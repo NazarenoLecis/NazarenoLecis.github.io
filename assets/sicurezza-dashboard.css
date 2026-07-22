@@ -241,6 +241,10 @@
   padding: 16px;
 }
 
+.si-filter-panel-wide {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
 .si-filter-panel label {
   min-width: 0;
   font-size: .76rem;
@@ -261,6 +265,13 @@
   color: var(--text);
   font: inherit;
   font-size: .95rem;
+}
+
+.si-filter-panel select:disabled,
+.si-filter-panel input:disabled {
+  color: var(--muted);
+  opacity: .62;
+  cursor: not-allowed;
 }
 
 .si-reset {
@@ -317,7 +328,8 @@
 }
 
 .si-grid-two,
-.si-method-grid {
+.si-method-grid,
+.si-chart-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
@@ -336,6 +348,10 @@
   margin: 0;
   font-size: 1.05rem;
   letter-spacing: 0;
+}
+
+.si-section-gap {
+  margin-top: 14px;
 }
 
 .si-panel-title {
@@ -360,11 +376,53 @@
   scrollbar-width: thin;
 }
 
+.si-chart-block {
+  display: grid;
+  grid-template-rows: auto minmax(320px, auto) auto;
+}
+
+.si-chart {
+  width: 100%;
+  min-height: 380px;
+}
+
+.si-chart-compact {
+  min-height: 330px;
+}
+
+.si-chart-credit {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: .86rem;
+  line-height: 1.4;
+}
+
+.si-chart-empty {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.45;
+}
+
 .si-table {
   width: 100%;
   min-width: 620px;
   border-collapse: collapse;
   table-layout: fixed;
+}
+
+.si-table button {
+  border: 0;
+  background: transparent;
+  color: var(--orange);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
 }
 
 .si-table th,
@@ -450,10 +508,30 @@
   line-height: 1.45;
 }
 
+.si-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.si-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: .84rem;
+  font-weight: 750;
+}
+
 @media (max-width: 1100px) {
   .si-head,
   .si-grid-two,
-  .si-method-grid {
+  .si-method-grid,
+  .si-chart-grid {
     grid-template-columns: 1fr;
   }
 
@@ -462,6 +540,7 @@
   }
 
   .si-filter-panel,
+  .si-filter-panel-wide,
   .si-kpi-grid,
   .si-coverage-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -479,6 +558,7 @@
 
   .si-workflow,
   .si-filter-panel,
+  .si-filter-panel-wide,
   .si-kpi-grid,
   .si-coverage-grid {
     grid-template-columns: 1fr;
@@ -513,5 +593,9 @@
 
   .si-table {
     min-width: 560px;
+  }
+
+  .si-chart {
+    min-height: 320px;
   }
 }
