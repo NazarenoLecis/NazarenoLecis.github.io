@@ -320,7 +320,8 @@
   text-transform: uppercase;
 }
 
-.di-chart-controls select {
+.di-chart-controls select,
+.di-control-button {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--line);
@@ -332,7 +333,21 @@
   font-weight: 750;
 }
 
-.di-chart-controls select:focus {
+.di-control-button {
+  align-self: end;
+  border-color: color-mix(in srgb, var(--orange) 65%, var(--line));
+  background: var(--orange);
+  color: #050505;
+  cursor: pointer;
+}
+
+.di-control-button[data-active="true"] {
+  background: color-mix(in srgb, var(--orange) 22%, var(--card));
+  color: var(--orange);
+}
+
+.di-chart-controls select:focus,
+.di-control-button:focus {
   outline: 2px solid color-mix(in srgb, var(--orange) 60%, transparent);
   outline-offset: 2px;
 }

@@ -2,23 +2,26 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/demografia/dashboard.json?v=20260722-3",
-    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-3"
+    "../../data/demografia/dashboard.json?v=20260722-4",
+    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-4"
   ];
 
   var STATE = {
     payload: null,
+    kebabPopulation: "total",
     kebabTerritory: "country:ITA",
     kebabYear: null,
+    kebabPlaying: false,
+    kebabTimer: null,
     seriesTerritory: "country:ITA",
-    seriesCompare: "country:DEU",
+    seriesCompare: "country:ESP",
     seriesMetric: "population_total",
     ageSharesTerritory: "country:ITA",
-    ageSharesCompare: "country:DEU",
+    ageSharesCompare: "country:ESP",
     distributionTerritory: "country:ITA",
-    distributionCompare: "country:DEU",
+    distributionCompare: "country:ESP",
     dependencyTerritory: "country:ITA",
-    dependencyCompare: "country:DEU",
+    dependencyCompare: "country:ESP",
     regionalLevel: "province",
     regionalMetric: "live_births",
     regionalYear: null,
@@ -27,24 +30,24 @@
     regionalCompare: null,
     regionalSeriesMetric: "live_births",
     vitalTerritory: "country:ITA",
-    vitalCompare: "country:DEU",
+    vitalCompare: "country:ESP",
     birthDeathTerritory: "country:ITA",
-    birthDeathCompare: "country:DEU",
+    birthDeathCompare: "country:ESP",
     migrationTerritory: "country:ITA",
-    migrationCompare: "country:DEU",
+    migrationCompare: "country:ESP",
     educationCountry: "ITA",
-    educationCompareCountry: "DEU",
+    educationCompareCountry: "ESP",
     educationAge: "25-64",
     educationSex: "T",
     educationYear: null,
     tertiaryCountry: "ITA",
-    tertiaryCompareCountry: "DEU",
+    tertiaryCompareCountry: "ESP",
     tertiaryAge: "25-64",
     tertiarySex: "T",
     tertiaryLevel: "tertiary",
     europeMetric: "share_65_plus",
     europeYear: null,
-    europeCountry: "DEU",
+    europeCountry: "ESP",
     europeSeriesMetric: "share_65_plus"
   };
 
@@ -242,6 +245,13 @@
   function setStatus(message, state) {
     var node = byId("diStatus");
     if (!node) return;
+    if (!message) {
+      node.hidden = true;
+      node.textContent = "";
+      node.removeAttribute("data-state");
+      return;
+    }
+    node.hidden = false;
     node.textContent = message;
     if (state) node.dataset.state = state;
     else node.removeAttribute("data-state");
@@ -416,13 +426,32 @@
     return option ? option.label : parts.code;
   }
 
+  function ageLabel(row) {
+    if (row.age_label !== null && row.age_label !== undefined && row.age_label !== "") return String(row.age_label);
+    var low = toNumber(row.age_low);
+    var high = toNumber(row.age_high);
+    if (low === null) return "ND";
+    if (high === null || low === high) return String(low);
+    if (high >= 120) return String(low) + "+";
+    return String(low) + "-" + String(high);
+  }
+
+  function hasContinuousCountryScope(row) {
+    var year = toNumber(row.year);
+    return !(row.iso3 === "DEU" && year !== null && year < 1991);
+  }
+
   function rowsForAgeTerritory(payload, territory) {
     var parts = territoryParts(territory);
     if (parts.level === "region") {
-      return sortByYear((payload.regional_age_structure || []).filter(function (row) { return row.geo_code === parts.code; }));
+      return sortByYear((payload.regional_age_structure || []).filter(function (row) {
+        return row.geo_code === parts.code && hasCompleteAgeCoverage(row);
+      }));
     }
     if (parts.level === "country") {
-      return sortByYear((payload.country_age_structure || []).filter(function (row) { return row.iso3 === parts.code; }));
+      return sortByYear((payload.country_age_structure || []).filter(function (row) {
+        return row.iso3 === parts.code && hasCompleteAgeCoverage(row) && hasContinuousCountryScope(row);
+      }));
     }
     return [];
   }
@@ -430,7 +459,9 @@
   function rowsForBalanceTerritory(payload, territory) {
     var parts = territoryParts(territory);
     if (parts.level === "country") {
-      return sortByYear((payload.country_demographic_balance || []).filter(function (row) { return row.iso3 === parts.code; }));
+      return sortByYear((payload.country_demographic_balance || []).filter(function (row) {
+        return row.iso3 === parts.code && hasContinuousCountryScope(row);
+      }));
     }
     return sortByYear((payload.regional_demographic_balance || []).filter(function (row) { return row.geo_code === parts.code && row.geo_level === parts.level; }));
   }
@@ -438,12 +469,86 @@
   function rowsForFertilityTerritory(payload, territory, indicator) {
     var parts = territoryParts(territory);
     var rows = parts.level === "country"
-      ? (payload.country_fertility || []).filter(function (row) { return row.iso3 === parts.code; })
+      ? (payload.country_fertility || []).filter(function (row) { return row.iso3 === parts.code && hasContinuousCountryScope(row); })
       : (payload.regional_fertility || []).filter(function (row) { return row.geo_code === parts.code && row.geo_level === parts.level; });
     return sortByYear(rows.filter(function (row) {
       if (indicator === "total_fertility_rate") return row.indicator === "total_fertility_rate" || row.indicator === "fertility_nr";
       return row.indicator === indicator;
     }));
+  }
+
+  function kebabPopulationOptions(payload) {
+    var options = [{ value: "total", label: "Totale residenti" }];
+    if ((payload.immigrant_population_age_sex || []).length) {
+      options.push({ value: "foreign_born", label: "Nati all'estero" });
+    }
+    return options;
+  }
+
+  function kebabTerritoryOptions(payload, ageTerritories) {
+    if (STATE.kebabPopulation === "foreign_born") return [{ value: "country:ITA", label: "Italia" }];
+    return ageTerritories;
+  }
+
+  function rowsForKebab(payload) {
+    var parts = territoryParts(STATE.kebabTerritory);
+    if (STATE.kebabPopulation === "foreign_born") {
+      return sortByYear((payload.immigrant_population_age_sex || []).filter(function (row) {
+        return row.iso3 === "ITA" && row.category === "FOR";
+      }));
+    }
+    if (parts.level === "region") return payload.regional_population_age_sex || [];
+    return payload.population_age_sex || [];
+  }
+
+  function kebabYears(payload) {
+    var parts = territoryParts(STATE.kebabTerritory);
+    var rows = rowsForKebab(payload).filter(function (row) {
+      if (STATE.kebabPopulation === "foreign_born") return row.sex === "M" || row.sex === "F";
+      var match = parts.level === "region" ? row.geo_code === parts.code : row.iso3 === parts.code;
+      return match && (row.sex === "M" || row.sex === "F");
+    });
+    return unique(rows.map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
+  }
+
+  function stopKebabAnimation() {
+    if (STATE.kebabTimer) window.clearInterval(STATE.kebabTimer);
+    STATE.kebabTimer = null;
+    STATE.kebabPlaying = false;
+    syncKebabPlayButton();
+  }
+
+  function advanceKebabYear(payload) {
+    var years = kebabYears(payload);
+    if (years.length < 2) return;
+    var current = Number(STATE.kebabYear);
+    var index = years.indexOf(current);
+    STATE.kebabYear = years[index >= 0 && index < years.length - 1 ? index + 1 : 0];
+    renderKebabChart(payload);
+  }
+
+  function startKebabAnimation(payload) {
+    var years = kebabYears(payload);
+    if (years.length < 2) return;
+    if (STATE.kebabTimer) window.clearInterval(STATE.kebabTimer);
+    STATE.kebabPlaying = true;
+    syncKebabPlayButton();
+    advanceKebabYear(payload);
+    STATE.kebabTimer = window.setInterval(function () {
+      advanceKebabYear(STATE.payload);
+    }, 850);
+  }
+
+  function syncKebabPlayButton() {
+    var node = byId("diKebabPlay");
+    if (!node) return;
+    node.textContent = STATE.kebabPlaying ? "Ferma evoluzione" : "Avvia evoluzione";
+    node.dataset.active = STATE.kebabPlaying ? "true" : "false";
+    node.setAttribute("aria-pressed", STATE.kebabPlaying ? "true" : "false");
+    node.onclick = function () {
+      if (STATE.kebabPlaying) stopKebabAnimation();
+      else startKebabAnimation(STATE.payload);
+    };
   }
 
   function preferredRows(rows) {
@@ -454,6 +559,14 @@
       if (!byYear[year] || row.status === "observed") byYear[year] = row;
     });
     return sortByYear(Object.keys(byYear).map(function (year) { return byYear[year]; }));
+  }
+
+  function hasCompleteAgeCoverage(row) {
+    var ageMin = toNumber(row.age_min);
+    var ageMax = toNumber(row.age_max);
+    var ageClasses = toNumber(row.age_classes);
+    if (ageMin === null || ageMax === null || ageClasses === null) return true;
+    return ageMin <= 0 && ageMax >= 85 && ageClasses >= 16;
   }
 
   function rowsForMetricTerritory(payload, metric, territory) {
@@ -575,17 +688,18 @@
     var countries = countryOptions(payload);
     var countryTerritories = countryTerritoryOptions(payload);
 
-    STATE.kebabTerritory = fillSelect("diKebabTerritory", ageTerritories, STATE.kebabTerritory, function (value) { STATE.kebabTerritory = value; STATE.kebabYear = null; });
+    STATE.kebabPopulation = fillSelect("diKebabPopulation", kebabPopulationOptions(payload), STATE.kebabPopulation, function (value) { STATE.kebabPopulation = value; STATE.kebabTerritory = "country:ITA"; STATE.kebabYear = null; stopKebabAnimation(); });
+    STATE.kebabTerritory = fillSelect("diKebabTerritory", kebabTerritoryOptions(payload, ageTerritories), STATE.kebabTerritory, function (value) { STATE.kebabTerritory = value; STATE.kebabYear = null; stopKebabAnimation(); });
     STATE.seriesTerritory = fillSelect("diSeriesTerritory", allTerritories, STATE.seriesTerritory, function (value) { STATE.seriesTerritory = value; });
     STATE.seriesCompare = fillSelect("diSeriesCompare", compareOptions(allTerritories), STATE.seriesCompare, function (value) { STATE.seriesCompare = value; });
     STATE.seriesMetric = fillSelect("diSeriesMetric", selectOptions("diSeriesMetric"), STATE.seriesMetric, function (value) { STATE.seriesMetric = value; });
 
     STATE.ageSharesTerritory = fillSelect("diAgeSharesTerritory", ageTerritories, STATE.ageSharesTerritory, function (value) { STATE.ageSharesTerritory = value; });
-    STATE.ageSharesCompare = fillSelect("diAgeSharesCompare", compareOptions(ageTerritories), STATE.ageSharesCompare, function (value) { STATE.ageSharesCompare = value; });
+    STATE.ageSharesCompare = fillSelect("diAgeSharesCompare", compareOptions(countryTerritories), STATE.ageSharesCompare, function (value) { STATE.ageSharesCompare = value; });
     STATE.distributionTerritory = fillSelect("diDistributionTerritory", ageTerritories, STATE.distributionTerritory, function (value) { STATE.distributionTerritory = value; });
-    STATE.distributionCompare = fillSelect("diDistributionCompare", compareOptions(ageTerritories), STATE.distributionCompare, function (value) { STATE.distributionCompare = value; });
+    STATE.distributionCompare = fillSelect("diDistributionCompare", compareOptions(countryTerritories), STATE.distributionCompare, function (value) { STATE.distributionCompare = value; });
     STATE.dependencyTerritory = fillSelect("diDependencyTerritory", ageTerritories, STATE.dependencyTerritory, function (value) { STATE.dependencyTerritory = value; });
-    STATE.dependencyCompare = fillSelect("diDependencyCompare", compareOptions(ageTerritories), STATE.dependencyCompare, function (value) { STATE.dependencyCompare = value; });
+    STATE.dependencyCompare = fillSelect("diDependencyCompare", compareOptions(countryTerritories), STATE.dependencyCompare, function (value) { STATE.dependencyCompare = value; });
 
     STATE.regionalLevel = fillSelect("diRegionalLevel", [{ value: "province", label: "Province" }, { value: "region", label: "Regioni" }], STATE.regionalLevel, function (value) { STATE.regionalLevel = value; STATE.regionalYear = null; });
     var rankMetrics = metricOptionsForLevel(STATE.regionalLevel);
@@ -612,35 +726,38 @@
     STATE.europeSeriesMetric = fillSelect("diEuropeSeriesMetric", selectOptions("diEuropeSeriesMetric"), STATE.europeSeriesMetric, function (value) { STATE.europeSeriesMetric = value; });
 
     fillEducationControls(payload);
+    syncKebabPlayButton();
   }
 
   function renderKebabControls(payload) {
-    var parts = territoryParts(STATE.kebabTerritory);
-    var rows = parts.level === "region" ? payload.regional_population_age_sex || [] : payload.population_age_sex || [];
-    var filtered = rows.filter(function (row) {
-      return parts.level === "region" ? row.geo_code === parts.code : row.iso3 === parts.code;
-    });
-    var years = unique(filtered.map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
+    var years = kebabYears(payload);
     if (!years.length) return;
-    var preferred = payload.meta && payload.meta.latest_observed_year || years[years.length - 1];
-    STATE.kebabYear = fillSelect("diKebabYear", years.map(function (year) { return { value: year, label: String(year) }; }), STATE.kebabYear || preferred, function (value) { STATE.kebabYear = Number(value); });
+    var preferred = STATE.kebabPopulation === "foreign_born"
+      ? years[years.length - 1]
+      : payload.meta && payload.meta.latest_observed_year || years[years.length - 1];
+    var selected = years.includes(Number(STATE.kebabYear)) ? Number(STATE.kebabYear) : preferred;
+    if (!years.includes(Number(selected))) selected = years[years.length - 1];
+    STATE.kebabYear = fillSelect("diKebabYear", years.map(function (year) { return { value: year, label: String(year) }; }), selected, function (value) { STATE.kebabYear = Number(value); stopKebabAnimation(); });
   }
 
   function renderKebabChart(payload) {
     renderKebabControls(payload);
     var parts = territoryParts(STATE.kebabTerritory);
-    var rows = parts.level === "region" ? payload.regional_population_age_sex || [] : payload.population_age_sex || [];
-    var filtered = rows.filter(function (row) {
-      var match = parts.level === "region" ? row.geo_code === parts.code : row.iso3 === parts.code;
+    var filtered = rowsForKebab(payload).filter(function (row) {
+      var match = STATE.kebabPopulation === "foreign_born"
+        ? row.iso3 === "ITA"
+        : parts.level === "region" ? row.geo_code === parts.code : row.iso3 === parts.code;
       return match && Number(row.year) === Number(STATE.kebabYear) && (row.sex === "M" || row.sex === "F");
     });
-    var hasObserved = filtered.some(function (row) { return row.status === "observed"; });
-    filtered = filtered.filter(function (row) { return row.status === (hasObserved ? "observed" : "projected"); });
+    if (STATE.kebabPopulation !== "foreign_born") {
+      var hasObserved = filtered.some(function (row) { return row.status === "observed"; });
+      filtered = filtered.filter(function (row) { return row.status === (hasObserved ? "observed" : "projected"); });
+    }
     var byAge = {};
     filtered.forEach(function (row) {
       var age = toNumber(row.age_low);
       if (age === null) return;
-      var key = row.age_label || String(age);
+      var key = ageLabel(row);
       if (!byAge[key]) byAge[key] = { label: key, low: age, M: 0, F: 0 };
       byAge[key][row.sex] += toNumber(row.value) || 0;
     });
@@ -652,7 +769,8 @@
     var limit = Math.ceil(maxValue * 12) / 10;
     var tickValues = [-limit, -limit / 2, 0, limit / 2, limit];
     var tag = byId("diKebabTag");
-    if (tag) tag.textContent = territoryLabel(payload, STATE.kebabTerritory) + ", " + STATE.kebabYear;
+    var populationLabel = STATE.kebabPopulation === "foreign_born" ? "nati all'estero" : "totale residenti";
+    if (tag) tag.textContent = territoryLabel(payload, STATE.kebabTerritory) + ", " + populationLabel + ", " + STATE.kebabYear;
     plot("diKebabChart", [
       { type: "bar", orientation: "h", name: "Uomini", x: male, y: ages.map(function (r) { return r.label; }), marker: { color: COLORS.blue }, customdata: ages.map(function (r) { return r.M; }), hovertemplate: "Età %{y}<br>Uomini: %{customdata:,.0f}<extra></extra>" },
       { type: "bar", orientation: "h", name: "Donne", x: female, y: ages.map(function (r) { return r.label; }), marker: { color: COLORS.orange }, customdata: ages.map(function (r) { return r.F; }), hovertemplate: "Età %{y}<br>Donne: %{customdata:,.0f}<extra></extra>" }
@@ -925,8 +1043,7 @@
   fetchJsonFrom(0).then(function (payload) {
     STATE.payload = payload;
     renderAll(payload);
-    var prepared = payload.meta && payload.meta.updated_at ? payload.meta.updated_at.slice(0, 10) : "data non disponibile";
-    setStatus("Dati caricati. Payload aggiornato: " + prepared + ".");
+    setStatus("");
   }).catch(function (error) {
     setStatus("Dati non disponibili: " + error.message + ".", "error");
     [

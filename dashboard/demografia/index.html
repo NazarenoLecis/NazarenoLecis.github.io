@@ -9,11 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260722-3">
-  <link rel="preload" href="../../data/demografia/dashboard.json" as="fetch" crossorigin>
+  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260722-4">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/demografia-dashboard.js?v=20260722-3"></script>
+  <script defer src="../../assets/demografia-dashboard.js?v=20260722-4"></script>
 </head>
 <body>
   <header class="site-header">
@@ -48,8 +47,8 @@
         <span class="logo"></span>
         <div>
           <strong>Eurostat e fonti statistiche ufficiali</strong>
-          <span>Dati normalizzati dalla pipeline demografica pubblica e preparati in un payload statico.</span>
-          <span class="source-credit"><a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">Repository demografia</a>. Elaborazione di Nazareno Lecis.</span>
+          <span>Serie armonizzate per una lettura pubblica, con coperture diverse secondo la disponibilità delle fonti.</span>
+          <span class="source-credit"><a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">Repository demografia</a>. Elaborazione: Nazareno Lecis.</span>
         </div>
       </div>
     </section>
@@ -85,21 +84,28 @@
     <section id="kebab" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Età e sesso</span>
-        <div><h2>Kebab demografico</h2><p>Distribuzione per età, con uomini a sinistra e donne a destra. Gli anni osservati sono preferiti quando si sovrappongono alle proiezioni.</p></div>
+        <div><h2>Kebab demografico</h2><p>Distribuzione per età, con uomini a sinistra e donne a destra. Formalmente è una piramide demografica: qui la chiamiamo Kebab per leggere la forma delle coorti senza dare per scontata una base larga.</p></div>
       </div>
       <article class="di-card di-chart-block">
         <div class="di-card-title"><h3>Popolazione per età e sesso</h3><span id="diKebabTag">Italia</span></div>
         <p class="di-explain">Seleziona Italia o una regione. Per l'Italia la distribuzione usa età singole; per le regioni Eurostat pubblica classi quinquennali. Il livello provinciale è disponibile per nati, decessi, fecondità e bilancio demografico, ma non per la popolazione per età in questa fonte.</p>
         <div class="di-chart-controls">
+          <label>Popolazione
+            <select id="diKebabPopulation">
+              <option value="total">Totale residenti</option>
+              <option value="foreign_born">Nati all'estero</option>
+            </select>
+          </label>
           <label>Territorio
             <select id="diKebabTerritory"></select>
           </label>
           <label>Anno
             <select id="diKebabYear"></select>
           </label>
+          <button id="diKebabPlay" class="di-control-button" type="button" aria-pressed="false">Avvia evoluzione</button>
         </div>
         <div id="diKebabChart" class="di-chart di-chart-tall"></div>
-        <p class="di-chart-credit">Fonte: Eurostat, popolazione residente e proiezioni EUROPOP. Elaborazione di Nazareno Lecis.</p>
+        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: la modalità nati all'estero misura i residenti nati fuori dal paese, non i soli cittadini stranieri; l'evoluzione riproduce gli anni disponibili uno dopo l'altro.</p>
       </article>
     </section>
 
@@ -135,7 +141,7 @@
             </label>
           </div>
           <div id="diPopulationChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat <code>demo_pjan</code> e <code>proj_23np</code>. Elaborazione di Nazareno Lecis.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e bilancio demografico. Elaborazione: Nazareno Lecis. Nota: Italia e paesi UE includono serie dal 1960 quando complete; per la Germania gli anni prima del 1991 sono esclusi dai confronti perché il perimetro territoriale non è continuo.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Quote per grandi classi di età</h3><span>percentuale popolazione</span></div>
@@ -144,12 +150,12 @@
             <label>Territorio
               <select id="diAgeSharesTerritory"></select>
             </label>
-            <label>Confronto
+            <label>Paese confronto
               <select id="diAgeSharesCompare"></select>
             </label>
           </div>
           <div id="diAgeSharesChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat. Classi 0-14, 15-64, 65+ e 80+. Elaborazione di Nazareno Lecis.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>. Elaborazione: Nazareno Lecis. Nota: le quote sono calcolate sulla popolazione totale del territorio; il paese di confronto esclude anni con copertura per età incompleta.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Età media, mediana e quantili</h3><span>anni</span></div>
@@ -158,12 +164,12 @@
             <label>Territorio
               <select id="diDistributionTerritory"></select>
             </label>
-            <label>Confronto
+            <label>Paese confronto
               <select id="diDistributionCompare"></select>
             </label>
           </div>
           <div id="diAgeDistributionChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: elaborazione sulla distribuzione per età. Quantili P10, P25, mediana, P75 e P90.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>. Elaborazione: Nazareno Lecis. Nota: P10 e P90 indicano le età sotto cui si trovano rispettivamente il 10% e il 90% della popolazione; gli anni incompleti non entrano nel confronto paese.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Dipendenza anziani</h3><span>65+ ogni 100 persone 15-64</span></div>
@@ -172,12 +178,12 @@
             <label>Territorio
               <select id="diDependencyTerritory"></select>
             </label>
-            <label>Confronto
+            <label>Paese confronto
               <select id="diDependencyCompare"></select>
             </label>
           </div>
           <div id="diDependencyChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat. Indicatore calcolato come popolazione 65+ / popolazione 15-64.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>. Elaborazione: Nazareno Lecis. Nota: la dipendenza anziani è popolazione 65+ ogni 100 persone 15-64; è un rapporto demografico, non un tasso di occupazione.</p>
         </article>
       </div>
     </section>
@@ -217,7 +223,7 @@
             </label>
           </div>
           <div id="diRegionalRankChart" class="di-chart di-chart-tall"></div>
-          <p class="di-chart-credit">Fonte: Eurostat <code>demo_r_pjangroup</code>, <code>demo_r_gind3</code> e <code>demo_r_find3</code>. Elaborazione di Nazareno Lecis.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat regionale <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_pjangroup/default/table" target="_blank" rel="noopener"><code>demo_r_pjangroup</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_find3/default/table" target="_blank" rel="noopener"><code>demo_r_find3</code></a>. Elaborazione: Nazareno Lecis. Nota: la popolazione per età è regionale; nati, decessi, saldo e fecondità arrivano anche a livello provinciale quando disponibili.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Serie territoriale</h3><span id="diRegionalSeriesTag">territorio selezionato</span></div>
@@ -251,7 +257,7 @@
             </label>
           </div>
           <div id="diRegionalSeriesChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat regionale. Le serie di fecondità e bilancio possono avere coperture leggermente diverse dalla popolazione per età.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat regionale <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_pjangroup/default/table" target="_blank" rel="noopener"><code>demo_r_pjangroup</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_find3/default/table" target="_blank" rel="noopener"><code>demo_r_find3</code></a>. Elaborazione: Nazareno Lecis. Nota: confronta territori dello stesso livello; la copertura parte dal 1990 per la popolazione regionale e dal 2000 per molti indicatori provinciali.</p>
         </article>
       </div>
     </section>
@@ -274,10 +280,10 @@
             </label>
           </div>
           <div id="diFertilityChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat <code>demo_frate</code> e indicatori di bilancio demografico. Elaborazione di Nazareno Lecis.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_find3/default/table" target="_blank" rel="noopener"><code>demo_r_find3</code></a>. Elaborazione: Nazareno Lecis. Nota: fecondità significa figli per donna; natalità significa nati vivi per 1.000 abitanti e dipende anche dalla struttura per età.</p>
         </article>
         <article class="di-card di-chart-block">
-          <div class="di-card-title"><h3>Nati, decessi e saldo naturale</h3><span>persone</span></div>
+          <div class="di-card-title"><h3>Nati, decessi e saldo naturale</h3><span>migliaia di persone</span></div>
           <p class="di-explain">La serie mostra il movimento naturale della popolazione. Il saldo naturale è la differenza tra nati vivi e decessi; quando la fonte pubblica il saldo direttamente, il grafico usa quel valore.</p>
           <div class="di-chart-controls">
             <label>Territorio
@@ -288,10 +294,10 @@
             </label>
           </div>
           <div id="diBirthDeathChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat <code>demo_gind</code> e <code>demo_r_gind3</code>. Nati vivi, decessi e saldo naturale.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a>. Elaborazione: Nazareno Lecis. Nota: il saldo naturale è nati vivi meno decessi; il grafico mostra migliaia di persone per rendere leggibile la serie.</p>
         </article>
         <article class="di-card di-chart-block">
-          <div class="di-card-title"><h3>Migrazioni e saldo</h3><span>persone</span></div>
+          <div class="di-card-title"><h3>Migrazioni e saldo</h3><span>migliaia di persone</span></div>
           <p class="di-explain">Il saldo migratorio con aggiustamento statistico è letto insieme all'immigrazione quando disponibile. Per regioni e province la fonte territoriale pubblica soprattutto il saldo.</p>
           <div class="di-chart-controls">
             <label>Territorio
@@ -302,7 +308,7 @@
             </label>
           </div>
           <div id="diMigrationChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat, bilancio demografico. L'emigrazione stimata è derivata da immigrazione e saldo migratorio con aggiustamento.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a>. Elaborazione: Nazareno Lecis. Nota: il saldo migratorio include l'aggiustamento statistico; l'emigrazione stimata è ricavata da immigrazione e saldo quando entrambi sono disponibili.</p>
         </article>
       </div>
     </section>
@@ -334,7 +340,7 @@
             </label>
           </div>
           <div id="diEducationChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat <code>edat_lfse_03</code>. Quote percentuali sulla popolazione 25-64.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>. Elaborazione: Nazareno Lecis. Nota: le quote sono percentuali sulla fascia, sesso e paese selezionati; alcune voci sono aggregati ISCED, altre sottocategorie.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Istruzione e popolazione totale</h3><span>quota e popolazione</span></div>
@@ -357,7 +363,7 @@
             </label>
           </div>
           <div id="diTertiaryChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat <code>edat_lfse_03</code>. Elaborazione di Nazareno Lecis.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a> e popolazione <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>. Elaborazione: Nazareno Lecis. Nota: la linea percentuale mostra il livello di istruzione scelto; la linea grigia mostra la popolazione totale del paese in milioni.</p>
         </article>
       </div>
     </section>
@@ -390,7 +396,7 @@
             </label>
           </div>
           <div id="diEuropeRankChart" class="di-chart di-chart-tall"></div>
-          <p class="di-chart-credit">Fonte: Eurostat, paesi UE27. Elaborazione di Nazareno Lecis.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la classifica usa solo i paesi con valore disponibile nell'anno selezionato; l'Italia è evidenziata in arancione.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Italia, UE mediana e paese scelto</h3><span id="diEuropeSeriesTag">serie storica</span></div>
@@ -414,7 +420,7 @@
             </label>
           </div>
           <div id="diEuropeSeriesChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte: Eurostat. La mediana UE non è una media ponderata per popolazione.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la mediana UE è calcolata anno per anno sui paesi disponibili e non è ponderata per popolazione; il paese precaricato è la Spagna.</p>
         </article>
       </div>
     </section>
@@ -428,7 +434,7 @@
         <div>
           <h3>Definizioni</h3>
           <ul>
-            <li><strong>Kebab demografico:</strong> distribuzione della popolazione per età e sesso, con uomini a sinistra e donne a destra.</li>
+            <li><strong>Kebab demografico:</strong> nome usato qui per la piramide demografica, cioè la distribuzione della popolazione per età e sesso con uomini a sinistra e donne a destra.</li>
             <li><strong>Dipendenza anziani:</strong> persone 65+ ogni 100 persone tra 15 e 64 anni.</li>
             <li><strong>Indice di vecchiaia:</strong> persone 65+ ogni 100 persone tra 0 e 14 anni.</li>
             <li><strong>Fecondità:</strong> numero medio di figli per donna secondo il tasso di fecondità totale Eurostat.</li>
@@ -440,8 +446,8 @@
           <h3>Fonti</h3>
           <p>Eurostat: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>.</p>
           <p>Eurostat regionale: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_pjangroup/default/table" target="_blank" rel="noopener"><code>demo_r_pjangroup</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_find3/default/table" target="_blank" rel="noopener"><code>demo_r_find3</code></a>.</p>
-          <p>Dati e trasformazioni sono pubblicati nel <a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">repository demografia</a> e nel payload statico della dashboard.</p>
-          <p>Elaborazione di Nazareno Lecis.</p>
+          <p>Dati e trasformazioni sono pubblicati nel <a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">repository demografia</a>; le tabelle finali sono prodotte in CSV e Parquet.</p>
+          <p>Elaborazione: Nazareno Lecis.</p>
         </div>
       </div>
     </section>
