@@ -2,8 +2,8 @@
   "use strict";
 
   var VERSION = "20260722-4";
+  var PAYLOAD_GLOBAL = "SICUREZZA_DASHBOARD_PAYLOAD";
   var DATA_BASES = [
-    "../../data/sicurezza/",
     "https://data.nazarenolecis.com/sicurezza/"
   ];
 
@@ -169,7 +169,7 @@
 
   function loadData() {
     setStatus("Caricamento payload dashboard ...");
-    fetchJson("dashboard_payload.json").then(function (payload) {
+    loadPayload().then(function (payload) {
       STATE.meta = payload.meta || {};
       STATE.records = (payload.records || []).map(normalizeRecord);
       STATE.year = latestYear();
@@ -182,15 +182,34 @@
     });
   }
 
-  function fetchJson(fileName) {
+  function loadPayload() {
+    return loadJavascriptPayload("dashboard_payload.js");
+  }
+
+  function loadJavascriptPayload(fileName) {
     var index = 0;
     function tryNext() {
-      if (index >= DATA_BASES.length) return Promise.reject(new Error("file non disponibile: " + fileName));
+      if (index >= DATA_BASES.length) return Promise.reject(new Error("payload non disponibile: " + fileName));
       var url = DATA_BASES[index] + fileName + "?v=" + VERSION;
       index += 1;
-      return fetch(url, { cache: "no-store" }).then(function (response) {
-        if (!response.ok) throw new Error(response.status + " " + response.statusText);
-        return response.json();
+      window[PAYLOAD_GLOBAL] = null;
+      return new Promise(function (resolve, reject) {
+        var script = document.createElement("script");
+        script.async = true;
+        script.src = url;
+        script.onload = function () {
+          script.remove();
+          if (window[PAYLOAD_GLOBAL] && window[PAYLOAD_GLOBAL].records) {
+            resolve(window[PAYLOAD_GLOBAL]);
+            return;
+          }
+          reject(new Error("payload JavaScript senza dati"));
+        };
+        script.onerror = function () {
+          script.remove();
+          reject(new Error("script non disponibile"));
+        };
+        document.head.appendChild(script);
       }).catch(tryNext);
     }
     return tryNext();
