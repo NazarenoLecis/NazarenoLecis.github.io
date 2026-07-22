@@ -1378,20 +1378,38 @@
     return { color: "rgba(0,0,0,0)", line: { color: color, width: 2.4 } };
   }
 
-  function kebabCustomData(ages, sex, denominator) {
+  function kebabAgeSexKey(row, sex) {
+    return [row.low, row.label, sex].join("|");
+  }
+
+  function kebabAgeSexDenominatorMap(payload, rows, territory, year) {
+    var totalRows = aggregateRowsToIntervals(totalKebabRowsForYear(payload, territory, year, true), rows);
+    var totalAges = kebabAgeBuckets(totalRows.length ? totalRows : rows);
+    var denominators = {};
+    totalAges.forEach(function (row) {
+      denominators[kebabAgeSexKey(row, "M")] = row.M || 0;
+      denominators[kebabAgeSexKey(row, "F")] = row.F || 0;
+    });
+    return denominators;
+  }
+
+  function kebabCustomData(ages, sex, denominator, ageSexDenominators) {
     return ages.map(function (row) {
       var value = row[sex] || 0;
       var share = denominator ? (value / denominator) * 100 : 0;
-      return [value, share];
+      var ageSexDenominator = ageSexDenominators ? ageSexDenominators[kebabAgeSexKey(row, sex)] : 0;
+      var ageSexShare = ageSexDenominator ? (value / ageSexDenominator) * 100 : 0;
+      return [value, share, ageSexShare];
     });
   }
 
   function kebabHoverTemplate(label, sex) {
     var shareLabel = STATE.kebabMeasure === "percent_total" ? textFor("Quota sul totale", "Share of total") : textFor("Quota", "Share");
-    return textFor("Età", "Age") + " %{y}<br>" + label + " - " + sexLabel(sex) + ": %{customdata[0]:,.0f}<br>" + shareLabel + ": %{customdata[1]:.2f}%<extra></extra>";
+    var ageSexShareLabel = textFor("Quota nella fascia sesso-età", "Share of age-sex band");
+    return textFor("Età", "Age") + " %{y}<br>" + label + " - " + sexLabel(sex) + ": %{customdata[0]:,.0f}<br>" + shareLabel + ": %{customdata[1]:.2f}%<br>" + ageSexShareLabel + ": %{customdata[2]:.2f}%<extra></extra>";
   }
 
-  function addKebabTracePair(traces, rows, label, outlined, denominatorOverride) {
+  function addKebabTracePair(traces, rows, label, outlined, denominatorOverride, ageSexDenominators) {
     var ages = kebabAgeBuckets(rows);
     var denominator = denominatorOverride || kebabDenominator(ages);
     if (!ages.length || !denominator) return ages;
@@ -1403,7 +1421,7 @@
       x: ages.map(function (row) { return -kebabValue(row.M || 0, denominator); }),
       y: y,
       marker: kebabTraceMarker(COLORS.blue, outlined),
-      customdata: kebabCustomData(ages, "M", denominator),
+      customdata: kebabCustomData(ages, "M", denominator, ageSexDenominators),
       hovertemplate: kebabHoverTemplate(label, "M"),
       opacity: outlined ? 1 : 0.88
     });
@@ -1414,7 +1432,7 @@
       x: ages.map(function (row) { return kebabValue(row.F || 0, denominator); }),
       y: y,
       marker: kebabTraceMarker(COLORS.orange, outlined),
-      customdata: kebabCustomData(ages, "F", denominator),
+      customdata: kebabCustomData(ages, "F", denominator, ageSexDenominators),
       hovertemplate: kebabHoverTemplate(label, "F"),
       opacity: outlined ? 1 : 0.88
     });
@@ -1440,20 +1458,25 @@
     if (STATE.kebabPopulation === "native_foreign_overlap") {
       var nativeRows = nativeBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory);
       var foreignRows = foreignBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory);
-      primaryAges = addKebabTracePair(traces, nativeRows, textFor("Nati nel paese", "Born in the country"), false, kebabTraceDenominator(payload, nativeRows, STATE.kebabTerritory, STATE.kebabYear));
-      addKebabTracePair(traces, foreignRows, textFor("Nati all'estero", "Foreign-born"), true, kebabTraceDenominator(payload, foreignRows, STATE.kebabTerritory, STATE.kebabYear));
+      var nativeAgeSexDenominators = kebabAgeSexDenominatorMap(payload, nativeRows, STATE.kebabTerritory, STATE.kebabYear);
+      var foreignAgeSexDenominators = kebabAgeSexDenominatorMap(payload, foreignRows, STATE.kebabTerritory, STATE.kebabYear);
+      primaryAges = addKebabTracePair(traces, nativeRows, textFor("Nati nel paese", "Born in the country"), false, kebabTraceDenominator(payload, nativeRows, STATE.kebabTerritory, STATE.kebabYear), nativeAgeSexDenominators);
+      addKebabTracePair(traces, foreignRows, textFor("Nati all'estero", "Foreign-born"), true, kebabTraceDenominator(payload, foreignRows, STATE.kebabTerritory, STATE.kebabYear), foreignAgeSexDenominators);
     } else {
       var primaryRows = kebabRowsForYear(payload, STATE.kebabYear, STATE.kebabPopulation, STATE.kebabTerritory, kebabGroupedCountryForComparison());
+      var primaryAgeSexDenominators = kebabAgeSexDenominatorMap(payload, primaryRows, STATE.kebabTerritory, STATE.kebabYear);
       primaryAges = addKebabTracePair(
         traces,
         primaryRows,
         territoryLabel(payload, STATE.kebabTerritory),
         false,
-        kebabTraceDenominator(payload, primaryRows, STATE.kebabTerritory, STATE.kebabYear)
+        kebabTraceDenominator(payload, primaryRows, STATE.kebabTerritory, STATE.kebabYear),
+        primaryAgeSexDenominators
       );
       if (STATE.kebabPopulation === "total" && STATE.kebabCompare !== "none") {
         var compareRows = kebabRowsForYear(payload, STATE.kebabYear, "total", STATE.kebabCompare, true);
-        addKebabTracePair(traces, compareRows, territoryLabel(payload, STATE.kebabCompare), true, kebabTraceDenominator(payload, compareRows, STATE.kebabCompare, STATE.kebabYear));
+        var compareAgeSexDenominators = kebabAgeSexDenominatorMap(payload, compareRows, STATE.kebabCompare, STATE.kebabYear);
+        addKebabTracePair(traces, compareRows, territoryLabel(payload, STATE.kebabCompare), true, kebabTraceDenominator(payload, compareRows, STATE.kebabCompare, STATE.kebabYear), compareAgeSexDenominators);
       }
     }
     if (!traces.length || !primaryAges.length) return showEmpty("diKebabChart");
