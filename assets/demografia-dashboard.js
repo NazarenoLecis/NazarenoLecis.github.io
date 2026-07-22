@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/demografia/dashboard.json?v=20260722-5",
-    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-5"
+    "../../data/demografia/dashboard.json?v=20260722-6",
+    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-6"
   ];
 
   var STATE = {
@@ -566,9 +566,10 @@
     var years = kebabYears(payload);
     if (years.length < 2) return;
     if (STATE.kebabTimer) window.clearInterval(STATE.kebabTimer);
+    STATE.kebabYear = years[0];
     STATE.kebabPlaying = true;
     syncKebabPlayButton();
-    advanceKebabYear(payload);
+    renderKebabChart(payload);
     STATE.kebabTimer = window.setInterval(function () {
       advanceKebabYear(STATE.payload);
     }, 850);
