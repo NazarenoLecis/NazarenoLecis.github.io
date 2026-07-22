@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/demografia/dashboard.json?v=20260722-4",
-    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-4"
+    "../../data/demografia/dashboard.json?v=20260722-5",
+    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-5"
   ];
 
   var STATE = {
@@ -436,6 +436,41 @@
     return String(low) + "-" + String(high);
   }
 
+  function intervalBounds(row) {
+    var low = toNumber(row.age_low);
+    var high = toNumber(row.age_high);
+    if (low === null) return null;
+    if (high === null) high = low;
+    return { low: low, high: high, width: high - low };
+  }
+
+  function finestNonOverlappingAgeRows(rows) {
+    var bySex = {};
+    rows.forEach(function (row) {
+      if (!bySex[row.sex]) bySex[row.sex] = [];
+      bySex[row.sex].push(row);
+    });
+    return Object.keys(bySex).flatMap(function (sex) {
+      var selected = [];
+      bySex[sex].slice().sort(function (a, b) {
+        var boundsA = intervalBounds(a);
+        var boundsB = intervalBounds(b);
+        if (!boundsA || !boundsB) return boundsA ? -1 : boundsB ? 1 : 0;
+        if (boundsA.width !== boundsB.width) return boundsA.width - boundsB.width;
+        if (boundsA.low !== boundsB.low) return boundsA.low - boundsB.low;
+        return boundsA.high - boundsB.high;
+      }).forEach(function (row) {
+        var bounds = intervalBounds(row);
+        if (!bounds) return;
+        var overlaps = selected.some(function (item) {
+          return !(bounds.high < item.low || bounds.low > item.high);
+        });
+        if (!overlaps) selected.push(Object.assign({ row: row }, bounds));
+      });
+      return selected.map(function (item) { return item.row; });
+    });
+  }
+
   function hasContinuousCountryScope(row) {
     var year = toNumber(row.year);
     return !(row.iso3 === "DEU" && year !== null && year < 1991);
@@ -753,6 +788,7 @@
       var hasObserved = filtered.some(function (row) { return row.status === "observed"; });
       filtered = filtered.filter(function (row) { return row.status === (hasObserved ? "observed" : "projected"); });
     }
+    filtered = finestNonOverlappingAgeRows(filtered);
     var byAge = {};
     filtered.forEach(function (row) {
       var age = toNumber(row.age_low);
