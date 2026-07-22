@@ -13,7 +13,7 @@
   <script defer src="../../assets/theme.js"></script>
   <script defer src="../../assets/lang.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/demografia-dashboard.js?v=20260722-8"></script>
+  <script defer src="../../assets/demografia-dashboard.js?v=20260722-9"></script>
 </head>
 <body>
   <header class="site-header">
@@ -109,6 +109,7 @@
             <select id="diKebabMeasure">
               <option value="absolute">Milioni di persone</option>
               <option value="percent">% della popolazione selezionata</option>
+              <option value="percent_total">% della popolazione totale</option>
             </select>
           </label>
           <label>Scala
@@ -124,7 +125,7 @@
           <button id="diKebabPlay" class="di-control-button" type="button" aria-pressed="false">Avvia evoluzione</button>
         </div>
         <div id="diKebabChart" class="di-chart di-chart-tall"></div>
-        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: totale residenti mostra una sola distribuzione; la sovrapposizione nati nel paese / nati all'estero mostra due profili distinti sulla stessa scala. Nati all'estero misura i residenti nati fuori dal paese selezionato, non i soli cittadini stranieri; nati nel paese è calcolato sottraendo i nati all'estero dai residenti totali. Le regioni italiane sono disponibili per il totale residenti, ma non per questa scomposizione per paese di nascita in <code>migr_pop3ctb</code>. Fissa sulla selezione mantiene la scala stabile tra gli anni della scelta corrente; Scala comune rende confrontabili paesi e regioni; Adatta ai dati ingrandisce l'anno visualizzato.</p>
+        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: totale residenti mostra una sola distribuzione; la sovrapposizione nati nel paese / nati all'estero mostra due profili distinti sulla stessa scala. Nati all'estero misura i residenti nati fuori dal paese selezionato, non i soli cittadini stranieri; nati nel paese è calcolato sottraendo i nati all'estero dai residenti totali. La percentuale sulla popolazione selezionata usa come denominatore solo il profilo scelto; la percentuale sulla popolazione totale usa tutti i residenti del territorio e dell'anno. Le regioni italiane sono disponibili per il totale residenti, ma non per questa scomposizione per paese di nascita in <code>migr_pop3ctb</code>. Fissa sulla selezione mantiene la scala stabile tra gli anni della scelta corrente; Scala comune rende confrontabili paesi e regioni; Adatta ai dati ingrandisce l'anno visualizzato.</p>
       </article>
     </section>
 
@@ -152,7 +153,9 @@
                 <option value="share_65_plus">Quota 65+</option>
                 <option value="share_80_plus">Quota 80+</option>
                 <option value="median_age">Età mediana</option>
+                <option value="dependency_youth">Dipendenza giovanile</option>
                 <option value="dependency_old">Dipendenza anziani</option>
+                <option value="dependency_total">Dipendenza totale</option>
                 <option value="live_births">Nati vivi</option>
                 <option value="deaths">Decessi</option>
                 <option value="natural_change">Saldo naturale</option>
@@ -191,8 +194,8 @@
           <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>. Elaborazione: Nazareno Lecis. Nota: P10 e P90 indicano le età sotto cui si trovano rispettivamente il 10% e il 90% della popolazione; gli anni incompleti non entrano nel confronto paese.</p>
         </article>
         <article class="di-card di-chart-block">
-          <div class="di-card-title"><h3>Dipendenza anziani</h3><span>65+ ogni 100 persone 15-64</span></div>
-          <p class="di-explain">Il tasso di dipendenza anziani non misura il lavoro effettivo, ma il rapporto demografico tra popolazione 65+ e popolazione in età convenzionalmente attiva.</p>
+          <div class="di-card-title"><h3>Dipendenza demografica</h3><span>0-14 e 65+ ogni 100 persone 15-64</span></div>
+          <p class="di-explain">Il grafico separa dipendenza giovanile, dipendenza degli anziani e dipendenza totale. Sono rapporti demografici sulla popolazione 15-64, non misure del lavoro effettivo.</p>
           <div class="di-chart-controls">
             <label>Territorio
               <select id="diDependencyTerritory"></select>
@@ -202,7 +205,7 @@
             </label>
           </div>
           <div id="diDependencyChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>. Elaborazione: Nazareno Lecis. Nota: la dipendenza anziani è popolazione 65+ ogni 100 persone 15-64; è un rapporto demografico, non un tasso di occupazione.</p>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>. Elaborazione: Nazareno Lecis. Nota: la dipendenza giovanile è popolazione 0-14 ogni 100 persone 15-64; la dipendenza anziani è popolazione 65+ ogni 100 persone 15-64; la dipendenza totale somma 0-14 e 65+ sullo stesso denominatore.</p>
         </article>
       </div>
     </section>
@@ -228,7 +231,9 @@
                 <option value="population_total">Popolazione totale</option>
                 <option value="share_65_plus">Quota 65+</option>
                 <option value="median_age">Età mediana</option>
+                <option value="dependency_youth">Dipendenza giovanile</option>
                 <option value="dependency_old">Dipendenza anziani</option>
+                <option value="dependency_total">Dipendenza totale</option>
                 <option value="live_births">Nati vivi</option>
                 <option value="deaths">Decessi</option>
                 <option value="natural_change">Saldo naturale</option>
@@ -271,7 +276,9 @@
                 <option value="population_total">Popolazione totale</option>
                 <option value="share_65_plus">Quota 65+</option>
                 <option value="median_age">Età mediana</option>
+                <option value="dependency_youth">Dipendenza giovanile</option>
                 <option value="dependency_old">Dipendenza anziani</option>
+                <option value="dependency_total">Dipendenza totale</option>
                 <option value="live_births">Nati vivi</option>
                 <option value="deaths">Decessi</option>
                 <option value="natural_change">Saldo naturale</option>
@@ -396,18 +403,22 @@
     <section id="europa" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Confronto europeo</span>
-        <div><h2>Italia nel contesto UE</h2><p>Confronti armonizzati tra paesi UE su struttura per età, fecondità, natalità, migrazione e istruzione.</p></div>
+        <div><h2>Italia nel contesto UE</h2><p>Confronti armonizzati tra paesi UE su struttura per età, dipendenza demografica, speranza di vita, fecondità, natalità, migrazione e istruzione.</p></div>
       </div>
       <div class="di-stack">
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3 id="diEuropeRankTitle">Classifica paesi UE</h3><span id="diEuropeRankTag">UE27</span></div>
-          <p class="di-explain" id="diEuropeRankExplain">Scegli indicatore e anno. L'Italia ? evidenziata rispetto agli altri paesi UE disponibili.</p>
+          <p class="di-explain" id="diEuropeRankExplain">Scegli indicatore e anno. L'Italia è evidenziata rispetto agli altri paesi UE disponibili.</p>
           <div class="di-chart-controls">
             <label>Indicatore
               <select id="diEuropeMetric">
                 <option value="share_65_plus">Quota 65+</option>
                 <option value="median_age">Età mediana</option>
+                <option value="dependency_youth">Dipendenza giovanile</option>
                 <option value="dependency_old">Dipendenza anziani</option>
+                <option value="dependency_total">Dipendenza totale</option>
+                <option value="life_expectancy_birth">Speranza di vita alla nascita</option>
+                <option value="life_expectancy_65">Speranza di vita a 65 anni</option>
                 <option value="live_births">Nati vivi</option>
                 <option value="deaths">Decessi</option>
                 <option value="natural_change">Saldo naturale</option>
@@ -421,11 +432,11 @@
             </label>
           </div>
           <div id="diEuropeRankChart" class="di-chart di-chart-tall"></div>
-          <p class="di-chart-credit" id="diEuropeRankCredit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la classifica usa solo i paesi con valore disponibile nell'anno selezionato; l'Italia ? evidenziata in arancione.</p>
+          <p class="di-chart-credit" id="diEuropeRankCredit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la classifica usa solo i paesi con valore disponibile nell'anno selezionato; l'Italia è evidenziata in arancione.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3 id="diEuropeSeriesTitle">Italia, UE mediana e paese scelto</h3><span id="diEuropeSeriesTag">serie storica</span></div>
-          <p class="di-explain" id="diEuropeSeriesExplain">La mediana UE ? calcolata anno per anno sui paesi disponibili. Il paese scelto permette un confronto diretto con l'Italia.</p>
+          <p class="di-explain" id="diEuropeSeriesExplain">La mediana UE è calcolata anno per anno sui paesi disponibili. Il paese scelto permette un confronto diretto con l'Italia.</p>
           <div class="di-chart-controls">
             <label>Paese confronto
               <select id="diEuropeCountry"></select>
@@ -434,7 +445,11 @@
               <select id="diEuropeSeriesMetric">
                 <option value="share_65_plus">Quota 65+</option>
                 <option value="median_age">Età mediana</option>
+                <option value="dependency_youth">Dipendenza giovanile</option>
                 <option value="dependency_old">Dipendenza anziani</option>
+                <option value="dependency_total">Dipendenza totale</option>
+                <option value="life_expectancy_birth">Speranza di vita alla nascita</option>
+                <option value="life_expectancy_65">Speranza di vita a 65 anni</option>
                 <option value="live_births">Nati vivi</option>
                 <option value="deaths">Decessi</option>
                 <option value="natural_change">Saldo naturale</option>
@@ -445,7 +460,7 @@
             </label>
           </div>
           <div id="diEuropeSeriesChart" class="di-chart"></div>
-          <p class="di-chart-credit" id="diEuropeSeriesCredit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la mediana UE ? calcolata anno per anno sui paesi disponibili e non ? ponderata per popolazione; il paese precaricato ? la Spagna.</p>
+          <p class="di-chart-credit" id="diEuropeSeriesCredit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la mediana UE è calcolata anno per anno sui paesi disponibili e non è ponderata per popolazione; il paese precaricato è la Spagna.</p>
         </article>
       </div>
     </section>
@@ -460,8 +475,11 @@
           <h3>Definizioni</h3>
           <ul>
             <li><strong>Kebab demografico:</strong> formalmente noto come piramide demografica.</li>
+            <li><strong>Dipendenza giovanile:</strong> persone 0-14 ogni 100 persone tra 15 e 64 anni.</li>
             <li><strong>Dipendenza anziani:</strong> persone 65+ ogni 100 persone tra 15 e 64 anni.</li>
+            <li><strong>Dipendenza totale:</strong> persone 0-14 e 65+ ogni 100 persone tra 15 e 64 anni.</li>
             <li><strong>Indice di vecchiaia:</strong> persone 65+ ogni 100 persone tra 0 e 14 anni.</li>
+            <li><strong>Speranza di vita:</strong> anni medi attesi alle condizioni di mortalità dell'anno; a 65 anni indica anni residui.</li>
             <li><strong>Fecondità:</strong> numero medio di figli per donna secondo il tasso di fecondità totale Eurostat.</li>
             <li><strong>Saldo naturale:</strong> nati vivi meno decessi nello stesso anno e territorio.</li>
             <li><strong>Proiezioni:</strong> scenario base EUROPOP2023, non previsione puntuale certa.</li>
@@ -469,7 +487,7 @@
         </div>
         <div>
           <h3>Fonti</h3>
-          <p>Eurostat: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>.</p>
+          <p>Eurostat: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec/default/table" target="_blank" rel="noopener"><code>demo_mlexpec</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>.</p>
           <p>Eurostat regionale: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_pjangroup/default/table" target="_blank" rel="noopener"><code>demo_r_pjangroup</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_find3/default/table" target="_blank" rel="noopener"><code>demo_r_find3</code></a>.</p>
           <p>Pipeline e trasformazioni: <a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">repository demografia</a>.</p>
         </div>

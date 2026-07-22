@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/demografia/dashboard.json?v=20260722-10",
-    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-10"
+    "../../data/demografia/dashboard.json?v=20260722-11",
+    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-11"
   ];
 
   var STATE = {
@@ -75,8 +75,11 @@
     share_80_plus: { label: "Quota 80+", labelEn: "Share 80+", axis: "% popolazione", axisEn: "% population", suffix: "%" },
     median_age: { label: "Età mediana", labelEn: "Median age", axis: "Anni", axisEn: "Years" },
     mean_age: { label: "Età media", labelEn: "Mean age", axis: "Anni", axisEn: "Years" },
+    dependency_youth: { label: "Dipendenza giovanile", labelEn: "Youth dependency", axis: "Ogni 100 persone 15-64", axisEn: "Per 100 people aged 15-64" },
     dependency_old: { label: "Dipendenza anziani", labelEn: "Old-age dependency", axis: "Ogni 100 persone 15-64", axisEn: "Per 100 people aged 15-64" },
     dependency_total: { label: "Dipendenza totale", labelEn: "Total dependency", axis: "Ogni 100 persone 15-64", axisEn: "Per 100 people aged 15-64" },
+    life_expectancy_birth: { label: "Speranza di vita alla nascita", labelEn: "Life expectancy at birth", axis: "Anni", axisEn: "Years" },
+    life_expectancy_65: { label: "Speranza di vita a 65 anni", labelEn: "Life expectancy at age 65", axis: "Anni residui", axisEn: "Remaining years" },
     total_fertility_rate: { label: "Fecondità", labelEn: "Fertility", axis: "Figli per donna", axisEn: "Children per woman" },
     mean_age_at_childbirth: { label: "Età media al parto", labelEn: "Mean age at childbirth", axis: "Anni", axisEn: "Years" },
     balance_gbirthrt: { label: "Natalità", labelEn: "Birth rate", axis: "Nati per 1.000 abitanti", axisEn: "Live births per 1,000 residents" },
@@ -109,6 +112,34 @@
       explain: "Rapporto tra popolazione 65+ e popolazione 15-64. Serve a leggere la pressione demografica potenziale sulle età attive.",
       source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
       note: "Il valore indica persone 65+ ogni 100 residenti 15-64; non è un tasso di occupazione o contribuzione."
+    },
+    dependency_youth: {
+      rankTitle: "Paesi UE per dipendenza giovanile",
+      seriesTitle: "Dipendenza giovanile nel confronto UE",
+      explain: "Rapporto tra popolazione 0-14 e popolazione 15-64. Mostra il carico demografico potenziale legato alle età giovani.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
+      note: "Il valore indica persone 0-14 ogni 100 residenti 15-64; non misura spesa pubblica o partecipazione al lavoro."
+    },
+    dependency_total: {
+      rankTitle: "Paesi UE per dipendenza demografica totale",
+      seriesTitle: "Dipendenza demografica totale nel confronto UE",
+      explain: "Somma della popolazione 0-14 e 65+ rapportata alla popolazione 15-64. Sintetizza il carico demografico potenziale sulle età convenzionalmente attive.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
+      note: "Il valore indica residenti 0-14 e 65+ ogni 100 residenti 15-64; è un rapporto demografico, non un indicatore del numero effettivo di occupati."
+    },
+    life_expectancy_birth: {
+      rankTitle: "Paesi UE per speranza di vita alla nascita",
+      seriesTitle: "Speranza di vita alla nascita nel confronto UE",
+      explain: "Numero medio di anni che una persona appena nata vivrebbe se restassero costanti le condizioni di mortalità dell'anno selezionato.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec/default/table" target="_blank" rel="noopener"><code>demo_mlexpec</code></a>.',
+      note: "La misura è in anni ed è una misura di periodo; non è una previsione individuale della durata della vita."
+    },
+    life_expectancy_65: {
+      rankTitle: "Paesi UE per speranza di vita a 65 anni",
+      seriesTitle: "Speranza di vita a 65 anni nel confronto UE",
+      explain: "Numero medio di anni residui attesi per chi ha raggiunto 65 anni, alle condizioni di mortalità dell'anno selezionato.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec/default/table" target="_blank" rel="noopener"><code>demo_mlexpec</code></a>.',
+      note: "La misura è in anni residui e va letta separatamente dalla speranza di vita alla nascita."
     },
     live_births: {
       rankTitle: "Paesi UE per numero di nati vivi",
@@ -176,6 +207,34 @@
       source: 'Data source: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> and <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
       note: "The value is people aged 65+ per 100 residents aged 15-64; it is not an employment or contribution rate."
     },
+    dependency_youth: {
+      rankTitle: "EU countries by youth dependency",
+      seriesTitle: "Youth dependency in the EU comparison",
+      explain: "Ratio between the population aged 0-14 and the population aged 15-64. It shows potential demographic pressure linked to younger ages.",
+      source: 'Data source: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> and <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
+      note: "The value is people aged 0-14 per 100 residents aged 15-64; it does not measure public spending or labour-market participation."
+    },
+    dependency_total: {
+      rankTitle: "EU countries by total dependency",
+      seriesTitle: "Total dependency in the EU comparison",
+      explain: "Population aged 0-14 and 65+ divided by the population aged 15-64. It summarises potential demographic pressure on conventionally working ages.",
+      source: 'Data source: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> and <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
+      note: "The value is residents aged 0-14 and 65+ per 100 residents aged 15-64; it is a demographic ratio, not a count of people actually employed."
+    },
+    life_expectancy_birth: {
+      rankTitle: "EU countries by life expectancy at birth",
+      seriesTitle: "Life expectancy at birth in the EU comparison",
+      explain: "Average number of years a newborn would live if the mortality conditions of the selected year remained constant.",
+      source: 'Data source: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec/default/table" target="_blank" rel="noopener"><code>demo_mlexpec</code></a>.',
+      note: "The measure is in years and is a period measure; it is not an individual prediction of lifespan."
+    },
+    life_expectancy_65: {
+      rankTitle: "EU countries by life expectancy at age 65",
+      seriesTitle: "Life expectancy at age 65 in the EU comparison",
+      explain: "Average remaining years expected for people who have reached age 65, under the mortality conditions of the selected year.",
+      source: 'Data source: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec/default/table" target="_blank" rel="noopener"><code>demo_mlexpec</code></a>.',
+      note: "The measure is in remaining years and should be read separately from life expectancy at birth."
+    },
     live_births: {
       rankTitle: "EU countries by live births",
       seriesTitle: "Live births in the EU comparison",
@@ -231,7 +290,9 @@
     "population_change",
     "share_65_plus",
     "median_age",
-    "dependency_old"
+    "dependency_youth",
+    "dependency_old",
+    "dependency_total"
   ];
 
   var BALANCE_METRICS = {
@@ -256,8 +317,14 @@
     share_80_plus: true,
     median_age: true,
     mean_age: true,
+    dependency_youth: true,
     dependency_old: true,
     dependency_total: true
+  };
+
+  var LIFE_EXPECTANCY_METRICS = {
+    life_expectancy_birth: true,
+    life_expectancy_65: true
   };
 
   var EDUCATION_LABELS = {
@@ -828,7 +895,8 @@
   function kebabMeasureOptions() {
     return [
       { value: "absolute", label: textFor("Milioni di persone", "Millions of people") },
-      { value: "percent", label: textFor("% della popolazione selezionata", "% of selected population") }
+      { value: "percent", label: textFor("% della popolazione selezionata", "% of selected population") },
+      { value: "percent_total", label: textFor("% della popolazione totale", "% of total population") }
     ];
   }
 
@@ -942,14 +1010,28 @@
     return ages.reduce(function (sum, row) { return sum + (row.M || 0) + (row.F || 0); }, 0);
   }
 
+  function kebabIsPercentMeasure() {
+    return STATE.kebabMeasure === "percent" || STATE.kebabMeasure === "percent_total";
+  }
+
+  function kebabTotalDenominator(payload, territory, year) {
+    return kebabDenominator(kebabAgeBuckets(totalKebabRowsForYear(payload, territory, year, true)));
+  }
+
+  function kebabTraceDenominator(payload, rows, territory, year) {
+    var selectedDenominator = kebabDenominator(kebabAgeBuckets(rows));
+    if (STATE.kebabMeasure !== "percent_total") return selectedDenominator;
+    return kebabTotalDenominator(payload, territory, year) || selectedDenominator;
+  }
+
   function kebabValue(value, denominator) {
-    if (STATE.kebabMeasure === "percent") return denominator ? (value / denominator) * 100 : 0;
+    if (kebabIsPercentMeasure()) return denominator ? (value / denominator) * 100 : 0;
     return value / 1000000;
   }
 
-  function kebabMaxForRows(rows) {
+  function kebabMaxForRows(rows, denominatorOverride) {
     var ages = kebabAgeBuckets(rows);
-    var denominator = kebabDenominator(ages);
+    var denominator = denominatorOverride || kebabDenominator(ages);
     return ages.reduce(function (maximum, row) {
       return Math.max(maximum, Math.abs(kebabValue(row.M || 0, denominator)), Math.abs(kebabValue(row.F || 0, denominator)));
     }, 0);
@@ -959,13 +1041,20 @@
     return STATE.kebabCompare !== "none";
   }
 
-  function kebabAxisRowsForYear(payload, year) {
+  function kebabAxisGroupsForYear(payload, year) {
     if (STATE.kebabPopulation === "native_foreign_overlap") {
-      return [nativeBornKebabRowsForYear(payload, year, STATE.kebabTerritory), foreignBornKebabRowsForYear(payload, year, STATE.kebabTerritory)];
+      var nativeRows = nativeBornKebabRowsForYear(payload, year, STATE.kebabTerritory);
+      var foreignRows = foreignBornKebabRowsForYear(payload, year, STATE.kebabTerritory);
+      return [
+        { rows: nativeRows, denominator: kebabTraceDenominator(payload, nativeRows, STATE.kebabTerritory, year) },
+        { rows: foreignRows, denominator: kebabTraceDenominator(payload, foreignRows, STATE.kebabTerritory, year) }
+      ];
     }
-    var groups = [kebabRowsForYear(payload, year, STATE.kebabPopulation, STATE.kebabTerritory, kebabGroupedCountryForComparison())];
+    var primaryRows = kebabRowsForYear(payload, year, STATE.kebabPopulation, STATE.kebabTerritory, kebabGroupedCountryForComparison());
+    var groups = [{ rows: primaryRows, denominator: kebabTraceDenominator(payload, primaryRows, STATE.kebabTerritory, year) }];
     if (STATE.kebabPopulation === "total" && STATE.kebabCompare !== "none") {
-      groups.push(kebabRowsForYear(payload, year, "total", STATE.kebabCompare, true));
+      var compareRows = kebabRowsForYear(payload, year, "total", STATE.kebabCompare, true);
+      groups.push({ rows: compareRows, denominator: kebabTraceDenominator(payload, compareRows, STATE.kebabCompare, year) });
     }
     return groups;
   }
@@ -1007,12 +1096,12 @@
     } else {
       var years = STATE.kebabScaleMode === "fit" ? [STATE.kebabYear] : kebabYears(payload);
       years.forEach(function (year) {
-        kebabAxisRowsForYear(payload, year).forEach(function (rows) {
-          maxValue = Math.max(maxValue, kebabMaxForRows(rows));
+        kebabAxisGroupsForYear(payload, year).forEach(function (group) {
+          maxValue = Math.max(maxValue, kebabMaxForRows(group.rows, group.denominator));
         });
       });
     }
-    var minimum = STATE.kebabMeasure === "percent" ? 1 : 0.1;
+    var minimum = kebabIsPercentMeasure() ? 1 : 0.1;
     var limit = Math.max(minimum, Math.ceil(maxValue * 12) / 10);
     STATE.kebabScaleCache[key] = limit;
     return limit;
@@ -1111,6 +1200,13 @@
         return Object.assign({}, row, { metric_value: row.value });
       }));
     }
+    if (LIFE_EXPECTANCY_METRICS[metric] && parts.level === "country") {
+      return sortByYear((payload.life_expectancy || []).filter(function (row) {
+        return row.iso3 === parts.code && row.indicator === metric && row.sex === "T";
+      }).map(function (row) {
+        return Object.assign({}, row, { metric_value: row.value });
+      }));
+    }
     var rows = [];
     if (AGE_METRICS[metric]) {
       rows = rowsForAgeTerritory(payload, territory).map(function (row) {
@@ -1194,7 +1290,7 @@
 
   function metricOptionsForLevel(level) {
     return REGIONAL_METRICS.filter(function (metric) {
-      return level !== "province" || !["share_65_plus", "median_age", "dependency_old"].includes(metric);
+      return level !== "province" || !["share_65_plus", "median_age", "dependency_youth", "dependency_old", "dependency_total"].includes(metric);
     }).map(function (metric) { return { value: metric, label: metricLabel(metric) }; });
   }
 
@@ -1291,12 +1387,13 @@
   }
 
   function kebabHoverTemplate(label, sex) {
-    return textFor("Età", "Age") + " %{y}<br>" + label + " - " + sexLabel(sex) + ": %{customdata[0]:,.0f}<br>" + textFor("Quota", "Share") + ": %{customdata[1]:.2f}%<extra></extra>";
+    var shareLabel = STATE.kebabMeasure === "percent_total" ? textFor("Quota sul totale", "Share of total") : textFor("Quota", "Share");
+    return textFor("Età", "Age") + " %{y}<br>" + label + " - " + sexLabel(sex) + ": %{customdata[0]:,.0f}<br>" + shareLabel + ": %{customdata[1]:.2f}%<extra></extra>";
   }
 
-  function addKebabTracePair(traces, rows, label, outlined) {
+  function addKebabTracePair(traces, rows, label, outlined, denominatorOverride) {
     var ages = kebabAgeBuckets(rows);
-    var denominator = kebabDenominator(ages);
+    var denominator = denominatorOverride || kebabDenominator(ages);
     if (!ages.length || !denominator) return ages;
     var y = ages.map(function (row) { return row.label; });
     traces.push({
@@ -1326,8 +1423,14 @@
 
   function kebabTickText(values) {
     return values.map(function (value) {
-      return Math.abs(value).toLocaleString(localeTag(), { maximumFractionDigits: STATE.kebabMeasure === "percent" ? 1 : 1 }) + (STATE.kebabMeasure === "percent" ? "%" : "");
+      return Math.abs(value).toLocaleString(localeTag(), { maximumFractionDigits: kebabIsPercentMeasure() ? 1 : 1 }) + (kebabIsPercentMeasure() ? "%" : "");
     });
+  }
+
+  function kebabAxisTitle() {
+    if (STATE.kebabMeasure === "percent_total") return textFor("% della popolazione totale", "% of total population");
+    if (STATE.kebabMeasure === "percent") return textFor("% della popolazione selezionata", "% of selected population");
+    return textFor("Milioni di persone", "Millions of people");
   }
 
   function renderKebabChart(payload) {
@@ -1335,17 +1438,22 @@
     var traces = [];
     var primaryAges = [];
     if (STATE.kebabPopulation === "native_foreign_overlap") {
-      primaryAges = addKebabTracePair(traces, nativeBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory), textFor("Nati nel paese", "Born in the country"), false);
-      addKebabTracePair(traces, foreignBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory), textFor("Nati all'estero", "Foreign-born"), true);
+      var nativeRows = nativeBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory);
+      var foreignRows = foreignBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory);
+      primaryAges = addKebabTracePair(traces, nativeRows, textFor("Nati nel paese", "Born in the country"), false, kebabTraceDenominator(payload, nativeRows, STATE.kebabTerritory, STATE.kebabYear));
+      addKebabTracePair(traces, foreignRows, textFor("Nati all'estero", "Foreign-born"), true, kebabTraceDenominator(payload, foreignRows, STATE.kebabTerritory, STATE.kebabYear));
     } else {
+      var primaryRows = kebabRowsForYear(payload, STATE.kebabYear, STATE.kebabPopulation, STATE.kebabTerritory, kebabGroupedCountryForComparison());
       primaryAges = addKebabTracePair(
         traces,
-        kebabRowsForYear(payload, STATE.kebabYear, STATE.kebabPopulation, STATE.kebabTerritory, kebabGroupedCountryForComparison()),
+        primaryRows,
         territoryLabel(payload, STATE.kebabTerritory),
-        false
+        false,
+        kebabTraceDenominator(payload, primaryRows, STATE.kebabTerritory, STATE.kebabYear)
       );
       if (STATE.kebabPopulation === "total" && STATE.kebabCompare !== "none") {
-        addKebabTracePair(traces, kebabRowsForYear(payload, STATE.kebabYear, "total", STATE.kebabCompare, true), territoryLabel(payload, STATE.kebabCompare), true);
+        var compareRows = kebabRowsForYear(payload, STATE.kebabYear, "total", STATE.kebabCompare, true);
+        addKebabTracePair(traces, compareRows, territoryLabel(payload, STATE.kebabCompare), true, kebabTraceDenominator(payload, compareRows, STATE.kebabCompare, STATE.kebabYear));
       }
     }
     if (!traces.length || !primaryAges.length) return showEmpty("diKebabChart");
@@ -1362,7 +1470,7 @@
       bargap: 0.05,
       hovermode: "closest",
       xaxis: {
-        title: { text: STATE.kebabMeasure === "percent" ? textFor("% della popolazione selezionata", "% of selected population") : textFor("Milioni di persone", "Millions of people") },
+        title: { text: kebabAxisTitle() },
         range: [-limit, limit],
         tickvals: tickValues,
         ticktext: kebabTickText(tickValues)
@@ -1408,12 +1516,17 @@
   function renderDependencyChart(payload) {
     var rows = preferredRows(rowsForAgeTerritory(payload, STATE.dependencyTerritory));
     var traces = [
+      { type: "scatter", mode: "lines+markers", name: territoryLabel(payload, STATE.dependencyTerritory) + " " + textFor("giovani", "youth"), x: rows.map(function (r) { return r.year; }), y: rows.map(function (r) { return r.dependency_youth; }), line: { color: COLORS.teal, width: 3 } },
       { type: "scatter", mode: "lines+markers", name: territoryLabel(payload, STATE.dependencyTerritory) + " " + textFor("anziani", "old-age"), x: rows.map(function (r) { return r.year; }), y: rows.map(function (r) { return r.dependency_old; }), line: { color: COLORS.orange, width: 3 } },
       { type: "scatter", mode: "lines+markers", name: territoryLabel(payload, STATE.dependencyTerritory) + " " + textFor("totale", "total"), x: rows.map(function (r) { return r.year; }), y: rows.map(function (r) { return r.dependency_total; }), line: { color: COLORS.blue, width: 3 } }
     ];
     if (STATE.dependencyCompare !== "none") {
       var compareRows = preferredRows(rowsForAgeTerritory(payload, STATE.dependencyCompare));
-      traces.push({ type: "scatter", mode: "lines+markers", name: territoryLabel(payload, STATE.dependencyCompare) + " " + textFor("anziani", "old-age"), x: compareRows.map(function (r) { return r.year; }), y: compareRows.map(function (r) { return r.dependency_old; }), line: { color: COLORS.gray, width: 3, dash: "dash" } });
+      traces.push(
+        { type: "scatter", mode: "lines+markers", name: territoryLabel(payload, STATE.dependencyCompare) + " " + textFor("giovani", "youth"), x: compareRows.map(function (r) { return r.year; }), y: compareRows.map(function (r) { return r.dependency_youth; }), line: { color: COLORS.teal, width: 2, dash: "dash" } },
+        { type: "scatter", mode: "lines+markers", name: territoryLabel(payload, STATE.dependencyCompare) + " " + textFor("anziani", "old-age"), x: compareRows.map(function (r) { return r.year; }), y: compareRows.map(function (r) { return r.dependency_old; }), line: { color: COLORS.orange, width: 2, dash: "dash" } },
+        { type: "scatter", mode: "lines+markers", name: territoryLabel(payload, STATE.dependencyCompare) + " " + textFor("totale", "total"), x: compareRows.map(function (r) { return r.year; }), y: compareRows.map(function (r) { return r.dependency_total; }), line: { color: COLORS.blue, width: 2, dash: "dash" } }
+      );
     }
     plot("diDependencyChart", traces, { yaxis: { title: { text: textFor("Persone ogni 100 in età 15-64", "People per 100 aged 15-64") } } });
   }
@@ -1431,8 +1544,9 @@
       return Number(row.year) === Number(STATE.regionalYear) && toNumber(row.metric_value) !== null;
     }).sort(function (a, b) { return toNumber(a.metric_value) - toNumber(b.metric_value); });
     var rows = STATE.regionalRankSize === "all" ? allRows : allRows.slice(Math.max(0, allRows.length - 30));
+    var chartHeight = STATE.regionalRankSize === "all" ? Math.max(640, rows.length * 19 + 190) : 640;
     var chart = byId("diRegionalRankChart");
-    if (chart) chart.style.height = STATE.regionalRankSize === "all" ? Math.max(720, rows.length * 18 + 220) + "px" : "";
+    if (chart) chart.style.height = chartHeight + "px";
     var title = byId("diRegionalRankTitle");
     if (title) title.textContent = levelLabel(STATE.regionalLevel) + (isEnglish() ? " by " : " per ") + lowerFirst(metricLabel(STATE.regionalMetric));
     var tag = byId("diRegionalRankTag");
@@ -1444,7 +1558,7 @@
       x: rows.map(function (row) { return scaledValue(row.metric_value, STATE.regionalMetric); }),
       y: rows.map(function (row) { return row.geo_name || row.geo_code; }),
       marker: { color: rows.map(function (row) { return STATE.regionalFocus && row.geo_code === territoryParts(STATE.regionalFocus).code ? COLORS.orange : COLORS.blue; }) }
-    }], { xaxis: { title: { text: metricAxis(STATE.regionalMetric) }, ticksuffix: metric.suffix || "" }, margin: { l: 170, r: 34, t: 18, b: 62 } });
+    }], { height: chartHeight, xaxis: { title: { text: metricAxis(STATE.regionalMetric) }, ticksuffix: metric.suffix || "" }, margin: { l: 170, r: 34, t: 18, b: 62 } });
   }
 
   function renderRegionalSeriesChart(payload) {
