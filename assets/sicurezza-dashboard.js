@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260722-7";
+  var VERSION = "20260722-8";
   var PAYLOAD_GLOBALS = {
     metadata: "SICUREZZA_DASHBOARD_METADATA",
     reported: "SICUREZZA_REPORTED_CRIMES",
@@ -40,14 +40,21 @@
     SHOPROB: "Rapine in esercizi commerciali",
     STREETROB: "Rapine in pubblica via",
     HOUSEROB: "Rapine in abitazione",
+    ROBBHOM: "Omicidi per rapina",
     INTENHOM: "Omicidi volontari",
     ATTEMPHOM: "Tentati omicidi",
     MAFIAHOM: "Omicidi di tipo mafioso",
     ROADHOM: "Omicidi stradali",
+    UNINTHOM: "Omicidi colposi",
+    MANSHOM: "Omicidi preterintenzionali",
+    MASSMURD: "Stragi",
+    TERRORHOM: "Omicidi con finalita terroristica",
     INFANTHOM: "Infanticidi",
     RAPE: "Violenze sessuali",
     RAPEUN18: "Violenze sessuali su minori",
     KIDNAPP: "Sequestri di persona",
+    ATTACK: "Attentati",
+    CULPINJU: "Lesioni colpose",
     EXTORT: "Estorsioni",
     DRUG: "Stupefacenti",
     CYBERCRIM: "Delitti informatici",
@@ -55,13 +62,17 @@
     MONEYLAU: "Riciclaggio",
     USURY: "Usura",
     DAMAGE: "Danneggiamenti",
+    DAMARS: "Danneggiamenti seguiti da incendio",
     ARSON: "Incendi",
+    FOREARS: "Incendi boschivi",
     MENACE: "Minacce",
     BLOWS: "Percosse",
     PROSTI: "Prostituzione",
     PORNO: "Pornografia",
+    CORRUPUN18: "Corruzione di minorenni",
     COUNTER: "Contraffazione",
     SMUGGL: "Contrabbando",
+    INTPROP: "Violazioni della proprieta intellettuale",
     RECEIV: "Ricettazione",
     CRIMASS: "Associazione per delinquere",
     MAFIASS: "Associazione mafiosa",
@@ -72,11 +83,11 @@
     all: { label: "Tutte le categorie", codes: [] },
     violent_person: {
       label: "Violenza contro la persona",
-      codes: ["INTENHOM", "ATTEMPHOM", "MAFIAHOM", "INFANTHOM", "ROADHOM", "TERRORHOM", "UNINTHOM", "RAPE", "RAPEUN18", "BLOWS", "MENACE", "KIDNAPP", "ATTACK"]
+      codes: ["INTENHOM", "ATTEMPHOM", "MAFIAHOM", "INFANTHOM", "ROADHOM", "ROBBHOM", "TERRORHOM", "UNINTHOM", "MANSHOM", "MASSMURD", "RAPE", "RAPEUN18", "CORRUPUN18", "BLOWS", "CULPINJU", "MENACE", "KIDNAPP", "ATTACK"]
     },
     property: {
       label: "Patrimonio",
-      codes: ["THEFT", "BURGTHEF", "SHOPTHEF", "CARTHEF", "MOPETHEF", "MOTORTHEF", "TRUCKTHEF", "VEHITHEF", "DAMAGE", "RECEIV", "ARSON"]
+      codes: ["THEFT", "BURGTHEF", "SHOPTHEF", "CARTHEF", "MOPETHEF", "MOTORTHEF", "TRUCKTHEF", "VEHITHEF", "DAMAGE", "DAMARS", "RECEIV", "ARSON", "FOREARS"]
     },
     predatory: {
       label: "Reati predatori",
@@ -84,7 +95,7 @@
     },
     economic_digital: {
       label: "Economici e digitali",
-      codes: ["SWINCYB", "CYBERCRIM", "MONEYLAU", "USURY", "COUNTER", "SMUGGL", "CORRUPUN18", "INTPROP"]
+      codes: ["SWINCYB", "CYBERCRIM", "MONEYLAU", "USURY", "COUNTER", "SMUGGL", "INTPROP"]
     },
     drugs: { label: "Stupefacenti", codes: ["DRUG"] },
     organized: { label: "Criminalita organizzata", codes: ["MAFIASS", "MAFIAHOM", "CRIMASS", "EXTORT", "USURY", "MONEYLAU", "ARSON"] },
@@ -104,6 +115,19 @@
     { value: "worse", label: "Peggiora mentre Italia migliora" },
     { value: "better", label: "Migliora mentre Italia peggiora" }
   ];
+  var COMPOSITION_MODE_OPTIONS = [
+    { value: "themes", label: "Categorie di reato" },
+    { value: "crimes", label: "Singoli reati" }
+  ];
+  var COMPOSITION_METRIC_OPTIONS = [
+    { value: "share", label: "Quota percentuale" },
+    { value: "absolute", label: "Valori assoluti" }
+  ];
+  var CONTRIBUTION_DIRECTION_OPTIONS = [
+    { value: "all", label: "Aumenti e diminuzioni" },
+    { value: "increase", label: "Solo aumenti" },
+    { value: "decrease", label: "Solo diminuzioni" }
+  ];
 
   var STATE = {
     meta: {},
@@ -119,6 +143,10 @@
     role: "all",
     citizenship: "all",
     counterDirection: "all",
+    compositionMode: "themes",
+    compositionMetric: "share",
+    comparisonYear: null,
+    contributionDirection: "all",
     search: "",
     peopleLoaded: false
   };
@@ -189,6 +217,10 @@
       STATE.role = "all";
       STATE.citizenship = "all";
       STATE.counterDirection = "all";
+      STATE.compositionMode = "themes";
+      STATE.compositionMetric = "share";
+      STATE.comparisonYear = null;
+      STATE.contributionDirection = "all";
       STATE.search = "";
       if (els.siSearch) els.siSearch.value = "";
       renderAll();
@@ -257,6 +289,10 @@
     if (name === "role") STATE.role = value;
     if (name === "citizenship") STATE.citizenship = value;
     if (name === "counterDirection") STATE.counterDirection = value;
+    if (name === "compositionMode") STATE.compositionMode = value;
+    if (name === "compositionMetric") STATE.compositionMetric = value;
+    if (name === "comparisonYear") STATE.comparisonYear = numberOrNull(value);
+    if (name === "contributionDirection") STATE.contributionDirection = value;
     renderAll();
   }
 
@@ -367,6 +403,9 @@
     }), STATE.theme);
     populateControlGroup("measure", MEASURE_OPTIONS, STATE.measure);
     populateControlGroup("counterDirection", COUNTER_OPTIONS, STATE.counterDirection);
+    populateControlGroup("compositionMode", COMPOSITION_MODE_OPTIONS, STATE.compositionMode);
+    populateControlGroup("compositionMetric", COMPOSITION_METRIC_OPTIONS, STATE.compositionMetric);
+    populateControlGroup("contributionDirection", CONTRIBUTION_DIRECTION_OPTIONS, STATE.contributionDirection);
     populatePeopleFilters();
   }
 
@@ -487,9 +526,17 @@
     populateControlGroup("crime", crimeOptions, STATE.crime);
     populateControlGroup("measure", MEASURE_OPTIONS, STATE.measure);
     populateControlGroup("counterDirection", COUNTER_OPTIONS, STATE.counterDirection);
+    populateComparisonYearFilters();
 
     setControlDisabled("region", STATE.level === "national");
     setControlDisabled("province", STATE.level === "national" || STATE.level === "regional");
+  }
+
+  function populateComparisonYearFilters() {
+    var options = comparisonYearOptions();
+    var selected = normalizedComparisonYear();
+    populateControlGroup("comparisonYear", options, selected === null ? "" : String(selected));
+    setControlDisabled("comparisonYear", selected === null);
   }
 
   function renderKpis() {
@@ -518,14 +565,13 @@
   }
 
   function renderCoverage() {
-    var people = peopleRows();
     els.siCoverage.innerHTML = [
-      coverageItem("Delitti denunciati", true, "Serie per anno, reato e territorio fino ai comuni capoluogo."),
-      coverageItem("Benchmark Italia", true, "Il confronto nazionale resta sempre disponibile nei grafici principali."),
-      coverageItem("Tassi", reportedRows().some(function (row) { return isFiniteNumber(row.value_rate_per_100k); }), "Disponibili dove la popolazione e stata agganciata correttamente."),
-      coverageItem("Autori e vittime", people.length > 0, people.length ? "Payload persone caricato; oggi soprattutto nazionale." : "Caricamento o integrazione in corso."),
-      coverageItem("Cittadinanza", unique(people.map(function (row) { return row.citizenship_group; })).length > 0, "Italiani/stranieri solo come conteggi registrati, non come tassi."),
-      coverageItem("Percezione/vittimizzazione", false, "Sezione metodologica pronta; dataset campionari da integrare.")
+      coverageItem("Denunce registrate", "Serie per anno, reato e territorio fino ai comuni capoluogo."),
+      coverageItem("Benchmark Italia", "Il confronto nazionale resta disponibile nelle serie principali quando scegli un territorio."),
+      coverageItem("Tassi per 100.000", "Usali per confrontare territori; i valori assoluti descrivono il volume registrato."),
+      coverageItem("Autori e vittime", "Sono conteggi di persone registrate nelle fonti disponibili, non tassi di propensione."),
+      coverageItem("Cittadinanza", "Italiani e stranieri vanno confrontati solo con denominatori coerenti per eta, sesso e territorio."),
+      coverageItem("Percezione e vittimizzazione", "Sono fenomeni diversi dalle denunce e vanno letti con fonti campionarie dedicate.")
     ].join("");
   }
 
@@ -554,50 +600,80 @@
         type: "scatter",
         mode: "lines+markers",
         name: serie.name,
-        x: serie.points.map(function (point) { return point.year; }),
+        x: serie.points.map(function (point) { return yearLabel(point.year); }),
         y: transformSeriesValues(serie.points).map(function (point) { return point.value; }),
         line: { color: COLORS[index % COLORS.length], width: 3 },
         marker: { size: 7 },
         hovertemplate: "<b>%{fullData.name}</b><br>Anno: %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
       };
-    }), { yTitle: measureLabel(), legend: true });
+    }), { yTitle: measureLabel(), legend: true, yearAxis: true });
   }
 
   function renderCompositionChart() {
     var rows = selectedTerritoryRows(STATE.year).filter(function (row) {
       return row.indicator_group === "reported_crimes" && row.crime_code !== "TOT";
     });
-    var grouped = aggregateBy(rows, function (row) { return themeLabel(row._theme); });
-    var data = grouped.sort(descValue).slice(0, 12);
-    els.siCompositionTag.textContent = String(STATE.year);
+    if (STATE.compositionMode === "crimes" && STATE.theme !== "all") {
+      rows = rows.filter(function (row) { return row._theme === STATE.theme; });
+    }
+    var total = sum(rows, function (row) { return row.value; });
+    var grouped = aggregateBy(rows, function (row) {
+      return STATE.compositionMode === "crimes" ? crimeLabel(row) : themeLabel(row._theme);
+    });
+    var data = grouped.map(function (row) {
+      return {
+        key: row.key,
+        value: STATE.compositionMetric === "share" && total ? row.value / total * 100 : row.value,
+        rawValue: row.value,
+        share: total ? row.value / total * 100 : null
+      };
+    }).sort(descValue).slice(0, STATE.compositionMode === "crimes" ? 18 : 12).reverse();
+    els.siCompositionTag.textContent = String(STATE.year) + " - " + (STATE.compositionMode === "crimes" ? "reati" : "categorie");
     if (!data.length) return emptyChart("siCompositionChart", "Nessun dettaglio per composizione.");
     plot("siCompositionChart", [{
       type: "bar",
       orientation: "h",
       x: data.map(function (row) { return row.value; }),
       y: data.map(function (row) { return row.key; }),
+      customdata: data.map(function (row) { return [formatInteger(row.rawValue), formatPercent(row.share)]; }),
       marker: { color: data.map(function (_, index) { return COLORS[index % COLORS.length]; }) },
-      hovertemplate: "%{y}<br>Valore: %{x:,.0f}<extra></extra>"
-    }], { yTitle: "", xTitle: "Delitti denunciati", marginLeft: 170 });
+      hovertemplate: "%{y}<br>Valore: %{customdata[0]}<br>Quota: %{customdata[1]}<extra></extra>"
+    }], {
+      yTitle: "",
+      xTitle: STATE.compositionMetric === "share" ? "% del totale selezionato" : "Delitti denunciati",
+      marginLeft: STATE.compositionMode === "crimes" ? 220 : 170
+    });
   }
 
   function renderContributionChart() {
+    var comparison = normalizedComparisonYear();
+    if (comparison === null) {
+      els.siContributionTag.textContent = "confronto non disponibile";
+      return emptyChart("siContributionChart", "Scegli un anno finale successivo al primo anno disponibile.");
+    }
     var currentRows = selectedTerritoryRows(STATE.year).filter(nonTotalReported);
-    var prevRows = selectedTerritoryRows(previousYear()).filter(nonTotalReported);
+    var prevRows = selectedTerritoryRows(comparison).filter(nonTotalReported);
     var current = aggregateBy(currentRows, function (row) { return themeLabel(row._theme); });
     var previous = mapByKey(aggregateBy(prevRows, function (row) { return themeLabel(row._theme); }));
     var data = current.map(function (row) {
-      return { key: row.key, value: row.value - ((previous[row.key] || {}).value || 0) };
-    }).sort(function (a, b) { return Math.abs(b.value) - Math.abs(a.value); });
-    els.siContributionTag.textContent = previousYear() + "-" + STATE.year;
+      var base = (previous[row.key] || {}).value || 0;
+      return { key: row.key, value: row.value - base, current: row.value, base: base };
+    }).filter(function (row) {
+      if (STATE.contributionDirection === "increase") return row.value > 0;
+      if (STATE.contributionDirection === "decrease") return row.value < 0;
+      return row.value !== 0;
+    }).sort(function (a, b) { return Math.abs(b.value) - Math.abs(a.value); }).slice(0, 12).reverse();
+    els.siContributionTag.textContent = comparison + "-" + STATE.year + " - " + contributionDirectionLabel();
     if (!data.length) return emptyChart("siContributionChart", "Nessuna variazione calcolabile.");
     plot("siContributionChart", [{
       type: "bar",
-      x: data.map(function (row) { return row.key; }),
-      y: data.map(function (row) { return row.value; }),
+      orientation: "h",
+      x: data.map(function (row) { return row.value; }),
+      y: data.map(function (row) { return row.key; }),
+      customdata: data.map(function (row) { return [formatInteger(row.base), formatInteger(row.current)]; }),
       marker: { color: data.map(function (row) { return row.value >= 0 ? "#d96363" : "#5e9f65"; }) },
-      hovertemplate: "%{x}<br>Variazione: %{y:,.0f}<extra></extra>"
-    }], { yTitle: "Variazione assoluta", xTitle: "" });
+      hovertemplate: "%{y}<br>Anno confronto: %{customdata[0]}<br>Anno finale: %{customdata[1]}<br>Variazione: %{x:,.0f}<extra></extra>"
+    }], { xTitle: "Variazione assoluta " + comparison + "-" + STATE.year, marginLeft: 190 });
   }
 
   function renderRankingChart() {
@@ -691,13 +767,13 @@
         type: "scatter",
         mode: "lines+markers",
         name: crimeLabel({ crime_code: code }),
-        x: points.map(function (point) { return point.year; }),
+        x: points.map(function (point) { return yearLabel(point.year); }),
         y: transformSeriesValues(points).map(function (point) { return point.value; }),
         line: { color: COLORS[index % COLORS.length], width: 3 },
         marker: { size: 7 },
         hovertemplate: "<b>%{fullData.name}</b><br>Anno: %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
       };
-    }), { yTitle: measureLabel(), legend: true });
+    }), { yTitle: measureLabel(), legend: true, yearAxis: true });
   }
 
   function renderViolentChart() {
@@ -712,9 +788,9 @@
     els.siViolentTag.textContent = territoryScopeLabel();
     if (!rows.length) return emptyChart("siViolentChart", "Nessun dato per classificazione violenti/altri.");
     plot("siViolentChart", [
-      { type: "bar", name: "Reati violenti", x: yearsList, y: violent, marker: { color: "#d96363" } },
-      { type: "bar", name: "Altri reati", x: yearsList, y: other, marker: { color: "#4f8bc9" } }
-    ], { barmode: "stack", yTitle: "Delitti denunciati", legend: true });
+      { type: "bar", name: "Reati violenti", x: yearsList.map(yearLabel), y: violent, marker: { color: "#d96363" } },
+      { type: "bar", name: "Altri reati", x: yearsList.map(yearLabel), y: other, marker: { color: "#4f8bc9" } }
+    ], { barmode: "stack", yTitle: "Delitti denunciati", legend: true, yearAxis: true });
   }
 
   function renderCrimeChart() {
@@ -727,13 +803,13 @@
     plot("siCrimeChart", [{
       type: "scatter",
       mode: "lines+markers",
-      x: rows.map(function (row) { return row.year; }),
+      x: rows.map(function (row) { return yearLabel(row.year); }),
       y: rows.map(function (row) { return row.value; }),
       fill: "tozeroy",
       line: { color: "#ff5a1f", width: 3 },
       marker: { size: 8 },
       hovertemplate: "Anno: %{x}<br>Valore: %{y:,.0f}<extra></extra>"
-    }], { yTitle: "Delitti denunciati" });
+    }], { yTitle: "Delitti denunciati", yearAxis: true });
   }
 
   function renderPeopleChart() {
@@ -1148,6 +1224,15 @@
       delete layout.yaxis;
       layout.margin = { t: 8, r: 8, b: 8, l: 8 };
     }
+    if (options && options.yearAxis) {
+      var axisYears = years().map(yearLabel);
+      layout.xaxis.type = "category";
+      layout.xaxis.tickmode = "array";
+      layout.xaxis.tickvals = axisYears;
+      layout.xaxis.ticktext = axisYears;
+      layout.xaxis.categoryorder = "array";
+      layout.xaxis.categoryarray = axisYears;
+    }
     el.innerHTML = "";
     Plotly.newPlot(el, traces, layout, { responsive: true, displayModeBar: false });
   }
@@ -1173,8 +1258,8 @@
     }).join("") + "</tbody></table>";
   }
 
-  function coverageItem(label, ready, note) {
-    return '<article class="si-coverage-item" data-state="' + (ready ? "ready" : "missing") + '"><strong>' + escapeHtml(label) + ": " + (ready ? "disponibile" : "da integrare") + "</strong><span>" + escapeHtml(note) + "</span></article>";
+  function coverageItem(label, note) {
+    return '<article class="si-coverage-item"><strong>' + escapeHtml(label) + "</strong><span>" + escapeHtml(note) + "</span></article>";
   }
 
   function populateSelect(select, options, value) {
@@ -1221,6 +1306,24 @@
     return list.length ? list[list.length - 1] : null;
   }
 
+  function comparisonYearOptions() {
+    var list = years().filter(function (year) { return year < STATE.year; }).sort(function (a, b) { return b - a; });
+    if (!list.length) return [{ value: "", label: "Nessun anno precedente" }];
+    return list.map(optionFromValue);
+  }
+
+  function normalizedComparisonYear() {
+    var validYears = years().filter(function (year) { return year < STATE.year; }).sort(function (a, b) { return a - b; });
+    if (!validYears.length) {
+      STATE.comparisonYear = null;
+      return null;
+    }
+    if (!isFiniteNumber(STATE.comparisonYear) || validYears.indexOf(STATE.comparisonYear) < 0) {
+      STATE.comparisonYear = validYears[validYears.length - 1];
+    }
+    return STATE.comparisonYear;
+  }
+
   function yearRangeLabel() {
     return (STATE.meta.start_year || years()[0] || "n.d.") + "-" + (STATE.meta.end_year || latestYear() || "n.d.");
   }
@@ -1250,8 +1353,14 @@
     return "Delitti denunciati";
   }
 
+  function contributionDirectionLabel() {
+    if (STATE.contributionDirection === "increase") return "solo aumenti";
+    if (STATE.contributionDirection === "decrease") return "solo diminuzioni";
+    return "aumenti e diminuzioni";
+  }
+
   function crimeOption(code) {
-    return { value: code, label: crimeLabel({ crime_code: code }) + " (" + code + ")" };
+    return { value: code, label: crimeLabel({ crime_code: code }) };
   }
 
   function crimeLabel(row) {
@@ -1315,6 +1424,10 @@
 
   function optionFromValue(value) {
     return { value: value, label: String(value) };
+  }
+
+  function yearLabel(value) {
+    return String(value);
   }
 
   function codeLine(value) {

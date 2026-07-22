@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-7">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-8">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-7"></script>
+  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-8"></script>
 </head>
 <body>
   <header class="site-header">
@@ -160,19 +160,25 @@
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Vista<select data-si-control="compositionMode"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Misura<select data-si-control="compositionMetric"></select></label>
           </div>
           <div id="siCompositionChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> le categorie operative servono a orientarsi, non sono un indice sintetico di pericolosita. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> puoi leggere la composizione per categorie o per singoli reati; le quote sono calcolate sul totale del perimetro selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
-          <div class="si-panel-title"><h3>Cosa spiega l'aumento o la diminuzione</h3><span id="siContributionTag">variazione rispetto all'anno precedente</span></div>
+          <div class="si-panel-title"><h3>Cosa aumenta e cosa diminuisce</h3><span id="siContributionTag">confronto tra anni</span></div>
           <div class="si-chart-controls">
-            <label>Anno<select data-si-control="year"></select></label>
+            <label>Anno finale<select data-si-control="year"></select></label>
+            <label>Confronto con<select data-si-control="comparisonYear"></select></label>
+            <label>Direzione<select data-si-control="contributionDirection"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
           </div>
           <div id="siContributionChart" class="si-chart si-chart-compact"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> la barra mostra quali famiglie di reato pesano sulla variazione annua del territorio selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> scegli anno finale, anno di confronto e direzione per isolare aumenti o diminuzioni per categoria di reato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
