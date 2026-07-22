@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/demografia/dashboard.json?v=20260722-8",
-    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-8"
+    "../../data/demografia/dashboard.json?v=20260722-9",
+    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-9"
   ];
 
   var STATE = {
@@ -12,6 +12,7 @@
     kebabTerritory: "country:ITA",
     kebabCompare: "none",
     kebabMeasure: "absolute",
+    kebabScaleMode: "selection",
     kebabYear: null,
     kebabPlaying: false,
     kebabTimer: null,
@@ -27,6 +28,7 @@
     dependencyCompare: "country:ESP",
     regionalLevel: "province",
     regionalMetric: "live_births",
+    regionalRankSize: "top30",
     regionalYear: null,
     regionalSeriesLevel: "province",
     regionalFocus: null,
@@ -772,7 +774,7 @@
   function kebabPopulationLabel(value) {
     if (value === "native_born") return textFor("nati in Italia", "born in Italy");
     if (value === "foreign_born") return textFor("nati all'estero", "foreign-born");
-    if (value === "native_foreign_overlap") return textFor("nati in Italia e nati all'estero", "born in Italy and foreign-born");
+    if (value === "native_foreign_overlap") return textFor("sovrapposizione nati in Italia / nati all'estero", "overlap: born in Italy / foreign-born");
     return textFor("totale residenti", "total residents");
   }
 
@@ -790,7 +792,7 @@
       options.push(
         { value: "native_born", label: textFor("Nati in Italia", "Born in Italy") },
         { value: "foreign_born", label: textFor("Nati all'estero", "Foreign-born") },
-        { value: "native_foreign_overlap", label: textFor("Nati in Italia + nati all'estero", "Born in Italy + foreign-born") }
+        { value: "native_foreign_overlap", label: textFor("Sovrapposizione nati in Italia / nati all'estero", "Overlap: born in Italy / foreign-born") }
       );
     }
     return options;
@@ -810,6 +812,26 @@
     return [
       { value: "absolute", label: textFor("Milioni di persone", "Millions of people") },
       { value: "percent", label: textFor("% della popolazione selezionata", "% of selected population") }
+    ];
+  }
+
+  function kebabScaleOptions() {
+    return [
+      { value: "selection", label: textFor("Fissa sulla selezione", "Fixed on selection") },
+      { value: "common", label: textFor("Scala comune", "Common scale") },
+      { value: "fit", label: textFor("Adatta ai dati", "Fit to data") }
+    ];
+  }
+
+  function regionalRankSizeOptions() {
+    return [
+      { value: "top30", label: textFor("Prime 30", "Top 30") },
+      {
+        value: "all",
+        label: STATE.regionalLevel === "province"
+          ? textFor("Tutte le province", "All provinces")
+          : textFor("Tutte le regioni", "All regions")
+      }
     ];
   }
 
@@ -928,15 +950,48 @@
     return groups;
   }
 
-  function kebabAxisLimit(payload) {
-    var key = [STATE.kebabPopulation, STATE.kebabTerritory, STATE.kebabCompare, STATE.kebabMeasure].join("|");
-    if (STATE.kebabScaleCache[key]) return STATE.kebabScaleCache[key];
-    var maxValue = 0;
-    kebabYears(payload).forEach(function (year) {
-      kebabAxisRowsForYear(payload, year).forEach(function (rows) {
-        maxValue = Math.max(maxValue, kebabMaxForRows(rows));
+  function kebabCommonAxisMax(payload) {
+    var groups = {};
+    [payload.country_population_age_sex, payload.regional_population_age_sex].forEach(function (table) {
+      (table || []).forEach(function (row) {
+        if (row.sex !== "M" && row.sex !== "F") return;
+        if (!hasContinuousCountryScope(row)) return;
+        var territoryCode = row.geo_level === "country" ? row.iso3 : row.geo_code;
+        if (!territoryCode) return;
+        var key = [
+          row.geo_level,
+          territoryCode,
+          row.year,
+          row.status,
+          row.scenario,
+          row.unit
+        ].join("|");
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(row);
       });
     });
+    return Object.keys(groups).reduce(function (maximum, key) {
+      return Math.max(maximum, kebabMaxForRows(groups[key]));
+    }, 0);
+  }
+
+  function kebabAxisLimit(payload) {
+    var keyParts = [STATE.kebabPopulation, STATE.kebabMeasure, STATE.kebabScaleMode];
+    if (STATE.kebabScaleMode !== "common") keyParts.push(STATE.kebabTerritory, STATE.kebabCompare);
+    if (STATE.kebabScaleMode === "fit") keyParts.push(STATE.kebabYear);
+    var key = keyParts.join("|");
+    if (STATE.kebabScaleCache[key]) return STATE.kebabScaleCache[key];
+    var maxValue = 0;
+    if (STATE.kebabScaleMode === "common" && STATE.kebabPopulation === "total") {
+      maxValue = kebabCommonAxisMax(payload);
+    } else {
+      var years = STATE.kebabScaleMode === "fit" ? [STATE.kebabYear] : kebabYears(payload);
+      years.forEach(function (year) {
+        kebabAxisRowsForYear(payload, year).forEach(function (rows) {
+          maxValue = Math.max(maxValue, kebabMaxForRows(rows));
+        });
+      });
+    }
     var minimum = STATE.kebabMeasure === "percent" ? 1 : 0.1;
     var limit = Math.max(minimum, Math.ceil(maxValue * 12) / 10);
     STATE.kebabScaleCache[key] = limit;
@@ -1150,6 +1205,7 @@
     STATE.kebabTerritory = fillSelect("diKebabTerritory", kebabTerritoryOptions(payload, ageTerritories), STATE.kebabTerritory, function (value) { STATE.kebabTerritory = value; STATE.kebabCompare = "none"; STATE.kebabYear = null; stopKebabAnimation(); });
     STATE.kebabCompare = fillSelect("diKebabCompare", kebabCompareOptions(payload, ageTerritories), STATE.kebabCompare, function (value) { STATE.kebabCompare = value; STATE.kebabYear = null; stopKebabAnimation(); });
     STATE.kebabMeasure = fillSelect("diKebabMeasure", kebabMeasureOptions(), STATE.kebabMeasure, function (value) { STATE.kebabMeasure = value; stopKebabAnimation(); });
+    STATE.kebabScaleMode = fillSelect("diKebabScale", kebabScaleOptions(), STATE.kebabScaleMode, function (value) { STATE.kebabScaleMode = value; stopKebabAnimation(); });
     STATE.seriesTerritory = fillSelect("diSeriesTerritory", allTerritories, STATE.seriesTerritory, function (value) { STATE.seriesTerritory = value; });
     STATE.seriesCompare = fillSelect("diSeriesCompare", compareOptions(allTerritories), STATE.seriesCompare, function (value) { STATE.seriesCompare = value; });
     STATE.seriesMetric = fillSelect("diSeriesMetric", selectOptions("diSeriesMetric"), STATE.seriesMetric, function (value) { STATE.seriesMetric = value; });
@@ -1164,6 +1220,7 @@
     STATE.regionalLevel = fillSelect("diRegionalLevel", [{ value: "province", label: levelLabel("province") }, { value: "region", label: levelLabel("region") }], STATE.regionalLevel, function (value) { STATE.regionalLevel = value; STATE.regionalYear = null; });
     var rankMetrics = metricOptionsForLevel(STATE.regionalLevel);
     STATE.regionalMetric = fillSelect("diRegionalMetric", rankMetrics, STATE.regionalMetric, function (value) { STATE.regionalMetric = value; STATE.regionalYear = null; });
+    STATE.regionalRankSize = fillSelect("diRegionalRankSize", regionalRankSizeOptions(), STATE.regionalRankSize, function (value) { STATE.regionalRankSize = value; });
     STATE.regionalSeriesLevel = fillSelect("diRegionalSeriesLevel", [{ value: "province", label: levelLabel("province") }, { value: "region", label: levelLabel("region") }], STATE.regionalSeriesLevel, function (value) { STATE.regionalSeriesLevel = value; STATE.regionalFocus = null; STATE.regionalCompare = null; });
     var seriesTerritories = territorialOptions(payload, [STATE.regionalSeriesLevel]);
     STATE.regionalFocus = fillSelect("diRegionalFocus", seriesTerritories, STATE.regionalFocus, function (value) { STATE.regionalFocus = value; });
@@ -1350,11 +1407,14 @@
   function renderRegionalRankChart(payload) {
     renderRegionalControls(payload);
     var metric = METRICS[STATE.regionalMetric];
-    var rows = rowsForMetricLevel(payload, STATE.regionalMetric, STATE.regionalLevel).filter(function (row) {
+    var allRows = rowsForMetricLevel(payload, STATE.regionalMetric, STATE.regionalLevel).filter(function (row) {
       return Number(row.year) === Number(STATE.regionalYear) && toNumber(row.metric_value) !== null;
     }).sort(function (a, b) { return toNumber(a.metric_value) - toNumber(b.metric_value); });
+    var rows = STATE.regionalRankSize === "all" ? allRows : allRows.slice(Math.max(0, allRows.length - 30));
+    var chart = byId("diRegionalRankChart");
+    if (chart) chart.style.height = STATE.regionalRankSize === "all" ? Math.max(720, rows.length * 18 + 220) + "px" : "";
     var tag = byId("diRegionalRankTag");
-    if (tag) tag.textContent = levelLabel(STATE.regionalLevel) + " - " + metricLabel(STATE.regionalMetric) + ", " + STATE.regionalYear;
+    if (tag) tag.textContent = levelLabel(STATE.regionalLevel) + " - " + metricLabel(STATE.regionalMetric) + ", " + STATE.regionalYear + (STATE.regionalRankSize === "all" ? "" : " - top 30");
     plot("diRegionalRankChart", [{
       type: "bar",
       orientation: "h",

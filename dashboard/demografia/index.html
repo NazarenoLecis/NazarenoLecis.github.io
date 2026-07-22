@@ -96,7 +96,7 @@
               <option value="total">Totale residenti</option>
               <option value="native_born">Nati in Italia</option>
               <option value="foreign_born">Nati all'estero</option>
-              <option value="native_foreign_overlap">Nati in Italia + nati all'estero</option>
+              <option value="native_foreign_overlap">Sovrapposizione nati in Italia / nati all'estero</option>
             </select>
           </label>
           <label>Territorio
@@ -111,13 +111,20 @@
               <option value="percent">% della popolazione selezionata</option>
             </select>
           </label>
+          <label>Scala
+            <select id="diKebabScale">
+              <option value="selection">Fissa sulla selezione</option>
+              <option value="common">Scala comune</option>
+              <option value="fit">Adatta ai dati</option>
+            </select>
+          </label>
           <label>Anno
             <select id="diKebabYear"></select>
           </label>
           <button id="diKebabPlay" class="di-control-button" type="button" aria-pressed="false">Avvia evoluzione</button>
         </div>
         <div id="diKebabChart" class="di-chart di-chart-tall"></div>
-        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: nati all'estero misura i residenti nati fuori dal paese, non i soli cittadini stranieri; nati in Italia è calcolato sottraendo i nati all'estero dai residenti totali. La scala resta fissa durante l'evoluzione; in percentuale ogni distribuzione è normalizzata sulla popolazione selezionata.</p>
+        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: totale residenti mostra una sola distribuzione; la sovrapposizione nati in Italia / nati all'estero mostra due profili distinti sulla stessa scala. Nati all'estero misura i residenti nati fuori dal paese, non i soli cittadini stranieri; nati in Italia è calcolato sottraendo i nati all'estero dai residenti totali. Fissa sulla selezione mantiene la scala stabile tra gli anni della scelta corrente; Scala comune rende confrontabili paesi e regioni; Adatta ai dati ingrandisce l'anno visualizzato.</p>
       </article>
     </section>
 
@@ -207,8 +214,8 @@
       </div>
       <div class="di-stack">
         <article class="di-card di-chart-block">
-          <div class="di-card-title"><h3>Classifica territoriale</h3><span id="diRegionalRankTag">ultimo anno</span></div>
-          <p class="di-explain">Scegli livello, indicatore e anno. Le classifiche usano solo anni in cui la variabile è disponibile per il livello territoriale selezionato.</p>
+          <div class="di-card-title"><h3>Province e regioni per indicatore</h3><span id="diRegionalRankTag">ultimo anno</span></div>
+          <p class="di-explain">Scegli livello, indicatore, anno e ampiezza della graduatoria. La vista compatta mostra le prime 30 posizioni; la vista completa aumenta l'altezza del grafico per rendere leggibili tutte le province disponibili.</p>
           <div class="di-chart-controls">
             <label>Livello
               <select id="diRegionalLevel">
@@ -232,6 +239,12 @@
             </label>
             <label>Anno
               <select id="diRegionalYear"></select>
+            </label>
+            <label>Vista
+              <select id="diRegionalRankSize">
+                <option value="top30">Prime 30</option>
+                <option value="all">Tutte le province</option>
+              </select>
             </label>
           </div>
           <div id="diRegionalRankChart" class="di-chart di-chart-tall"></div>
