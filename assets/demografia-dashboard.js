@@ -454,6 +454,11 @@
     return isEnglish() ? metric.labelEn || metric.label : metric.label;
   }
 
+  function lowerFirst(value) {
+    var text = String(value || "");
+    return text ? text.charAt(0).toLocaleLowerCase(localeTag()) + text.slice(1) : text;
+  }
+
   function educationLabel(level) {
     return isEnglish() ? EDUCATION_LABELS_EN[level] || EDUCATION_LABELS[level] || level : EDUCATION_LABELS[level] || level;
   }
@@ -1428,6 +1433,8 @@
     var rows = STATE.regionalRankSize === "all" ? allRows : allRows.slice(Math.max(0, allRows.length - 30));
     var chart = byId("diRegionalRankChart");
     if (chart) chart.style.height = STATE.regionalRankSize === "all" ? Math.max(720, rows.length * 18 + 220) + "px" : "";
+    var title = byId("diRegionalRankTitle");
+    if (title) title.textContent = levelLabel(STATE.regionalLevel) + (isEnglish() ? " by " : " per ") + lowerFirst(metricLabel(STATE.regionalMetric));
     var tag = byId("diRegionalRankTag");
     if (tag) tag.textContent = levelLabel(STATE.regionalLevel) + " - " + metricLabel(STATE.regionalMetric) + ", " + STATE.regionalYear + (STATE.regionalRankSize === "all" ? "" : " - top 30");
     plot("diRegionalRankChart", [{

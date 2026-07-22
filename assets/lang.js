@@ -126,6 +126,7 @@
     "Indicatori territoriali": "Territorial indicators",
     "Confronto tra regioni NUTS2 e province NUTS3 su popolazione, nati, decessi, saldo naturale, natalità, fecondità e movimento demografico.": "Comparison between NUTS2 regions and NUTS3 provinces on population, births, deaths, natural change, birth rate, fertility and demographic movement.",
     "Province e regioni per indicatore": "Provinces and regions by indicator",
+    "Province per nati vivi": "Provinces by live births",
     "Scegli livello, indicatore, anno e ampiezza della graduatoria. La vista compatta mostra le prime 30 posizioni; la vista completa aumenta l'altezza del grafico per rendere leggibili tutte le province disponibili.": "Choose level, indicator, year and ranking size. The compact view shows the top 30 positions; the full view increases the chart height so every available province remains readable.",
     "Livello": "Level",
     "Province": "Provinces",
