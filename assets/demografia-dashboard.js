@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/demografia/dashboard.json?v=20260722-9",
-    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-9"
+    "../../data/demografia/dashboard.json?v=20260722-10",
+    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-10"
   ];
 
   var STATE = {
@@ -772,9 +772,9 @@
   }
 
   function kebabPopulationLabel(value) {
-    if (value === "native_born") return textFor("nati in Italia", "born in Italy");
+    if (value === "native_born") return textFor("nati nel paese", "born in the country");
     if (value === "foreign_born") return textFor("nati all'estero", "foreign-born");
-    if (value === "native_foreign_overlap") return textFor("sovrapposizione nati in Italia / nati all'estero", "overlap: born in Italy / foreign-born");
+    if (value === "native_foreign_overlap") return textFor("sovrapposizione nati nel paese / nati all'estero", "overlap: born in the country / foreign-born");
     return textFor("totale residenti", "total residents");
   }
 
@@ -786,20 +786,32 @@
     return { value: "country:ITA", label: countryName(payload, "ITA") };
   }
 
+  function birthplaceTerritoryOptions(payload) {
+    var available = {};
+    (payload.immigrant_population_age_sex || []).forEach(function (row) {
+      if (row.iso3) available[row.iso3] = true;
+    });
+    var options = countryTerritoryOptions(payload).filter(function (option) {
+      return available[territoryParts(option.value).code];
+    });
+    return options.filter(function (item) { return item.value === "country:ITA"; })
+      .concat(options.filter(function (item) { return item.value !== "country:ITA"; }));
+  }
+
   function kebabPopulationOptions(payload) {
     var options = [{ value: "total", label: textFor("Totale residenti", "Total residents") }];
     if ((payload.immigrant_population_age_sex || []).length) {
       options.push(
-        { value: "native_born", label: textFor("Nati in Italia", "Born in Italy") },
+        { value: "native_born", label: textFor("Nati nel paese", "Born in the country") },
         { value: "foreign_born", label: textFor("Nati all'estero", "Foreign-born") },
-        { value: "native_foreign_overlap", label: textFor("Sovrapposizione nati in Italia / nati all'estero", "Overlap: born in Italy / foreign-born") }
+        { value: "native_foreign_overlap", label: textFor("Sovrapposizione nati nel paese / nati all'estero", "Overlap: born in the country / foreign-born") }
       );
     }
     return options;
   }
 
   function kebabTerritoryOptions(payload, ageTerritories) {
-    if (kebabBirthplaceMode(STATE.kebabPopulation)) return [italyTerritoryOption(payload)];
+    if (kebabBirthplaceMode(STATE.kebabPopulation)) return birthplaceTerritoryOptions(payload);
     return ageTerritories;
   }
 
@@ -843,9 +855,11 @@
     return payload.population_age_sex || [];
   }
 
-  function foreignBornKebabRows(payload) {
+  function foreignBornKebabRows(payload, territory) {
+    var parts = territoryParts(territory || STATE.kebabTerritory);
+    if (parts.level !== "country") return [];
     return sortByYear((payload.immigrant_population_age_sex || []).filter(function (row) {
-      return row.iso3 === "ITA" && row.category === "FOR" && (row.sex === "M" || row.sex === "F");
+      return row.iso3 === parts.code && row.category === "FOR" && (row.sex === "M" || row.sex === "F");
     }));
   }
 
@@ -860,8 +874,8 @@
     return finestNonOverlappingAgeRows(rows);
   }
 
-  function foreignBornKebabRowsForYear(payload, year) {
-    return finestNonOverlappingAgeRows(foreignBornKebabRows(payload).filter(function (row) {
+  function foreignBornKebabRowsForYear(payload, year, territory) {
+    return finestNonOverlappingAgeRows(foreignBornKebabRows(payload, territory).filter(function (row) {
       return Number(row.year) === Number(year);
     }));
   }
@@ -886,9 +900,10 @@
     });
   }
 
-  function nativeBornKebabRowsForYear(payload, year) {
-    var foreignRows = foreignBornKebabRowsForYear(payload, year);
-    var totalRows = aggregateRowsToIntervals(totalKebabRowsForYear(payload, "country:ITA", year), foreignRows);
+  function nativeBornKebabRowsForYear(payload, year, territory) {
+    var selectedTerritory = territory || STATE.kebabTerritory;
+    var foreignRows = foreignBornKebabRowsForYear(payload, year, selectedTerritory);
+    var totalRows = aggregateRowsToIntervals(totalKebabRowsForYear(payload, selectedTerritory, year, true), foreignRows);
     var foreignByKey = {};
     foreignRows.forEach(function (row) { foreignByKey[intervalKey(row)] = toNumber(row.value) || 0; });
     return totalRows.map(function (row) {
@@ -901,8 +916,8 @@
 
   function kebabRowsForYear(payload, year, mode, territory, groupedCountry) {
     var population = mode || STATE.kebabPopulation;
-    if (population === "foreign_born") return foreignBornKebabRowsForYear(payload, year);
-    if (population === "native_born") return nativeBornKebabRowsForYear(payload, year);
+    if (population === "foreign_born") return foreignBornKebabRowsForYear(payload, year, territory || STATE.kebabTerritory);
+    if (population === "native_born") return nativeBornKebabRowsForYear(payload, year, territory || STATE.kebabTerritory);
     return totalKebabRowsForYear(payload, territory || STATE.kebabTerritory, year, groupedCountry);
   }
 
@@ -941,7 +956,7 @@
 
   function kebabAxisRowsForYear(payload, year) {
     if (STATE.kebabPopulation === "native_foreign_overlap") {
-      return [nativeBornKebabRowsForYear(payload, year), foreignBornKebabRowsForYear(payload, year)];
+      return [nativeBornKebabRowsForYear(payload, year, STATE.kebabTerritory), foreignBornKebabRowsForYear(payload, year, STATE.kebabTerritory)];
     }
     var groups = [kebabRowsForYear(payload, year, STATE.kebabPopulation, STATE.kebabTerritory, kebabGroupedCountryForComparison())];
     if (STATE.kebabPopulation === "total" && STATE.kebabCompare !== "none") {
@@ -1014,8 +1029,8 @@
 
   function kebabYears(payload) {
     if (kebabBirthplaceMode(STATE.kebabPopulation)) {
-      return unique(foreignBornKebabRows(payload).map(function (row) { return row.year; })).filter(function (year) {
-        return nativeBornKebabRowsForYear(payload, year).length && foreignBornKebabRowsForYear(payload, year).length;
+      return unique(foreignBornKebabRows(payload, STATE.kebabTerritory).map(function (row) { return row.year; })).filter(function (year) {
+        return nativeBornKebabRowsForYear(payload, year, STATE.kebabTerritory).length && foreignBornKebabRowsForYear(payload, year, STATE.kebabTerritory).length;
       }).sort(function (a, b) { return a - b; });
     }
     var years = totalKebabYearsForTerritory(payload, STATE.kebabTerritory);
@@ -1315,8 +1330,8 @@
     var traces = [];
     var primaryAges = [];
     if (STATE.kebabPopulation === "native_foreign_overlap") {
-      primaryAges = addKebabTracePair(traces, nativeBornKebabRowsForYear(payload, STATE.kebabYear), textFor("Nati in Italia", "Born in Italy"), false);
-      addKebabTracePair(traces, foreignBornKebabRowsForYear(payload, STATE.kebabYear), textFor("Nati all'estero", "Foreign-born"), true);
+      primaryAges = addKebabTracePair(traces, nativeBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory), textFor("Nati nel paese", "Born in the country"), false);
+      addKebabTracePair(traces, foreignBornKebabRowsForYear(payload, STATE.kebabYear, STATE.kebabTerritory), textFor("Nati all'estero", "Foreign-born"), true);
     } else {
       primaryAges = addKebabTracePair(
         traces,

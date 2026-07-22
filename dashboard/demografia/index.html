@@ -89,14 +89,14 @@
       </div>
       <article class="di-card di-chart-block">
         <div class="di-card-title"><h3>Popolazione per età e sesso</h3><span id="diKebabTag">Italia</span></div>
-        <p class="di-explain">Seleziona Italia, una regione o un paese UE. L'Italia può essere letta per residenti totali, nati in Italia, nati all'estero o sovrapposizione tra nati in Italia e nati all'estero; i confronti tra territori usano classi quinquennali quando serve allineare le età.</p>
+        <p class="di-explain">Seleziona Italia, una regione o un paese UE. I paesi UE disponibili possono essere letti per residenti totali, nati nel paese, nati all'estero o sovrapposizione tra nati nel paese e nati all'estero; per le regioni italiane la fonte disponibile mostra la popolazione totale per età e sesso.</p>
         <div class="di-chart-controls">
           <label>Popolazione
             <select id="diKebabPopulation">
               <option value="total">Totale residenti</option>
-              <option value="native_born">Nati in Italia</option>
+              <option value="native_born">Nati nel paese</option>
               <option value="foreign_born">Nati all'estero</option>
-              <option value="native_foreign_overlap">Sovrapposizione nati in Italia / nati all'estero</option>
+              <option value="native_foreign_overlap">Sovrapposizione nati nel paese / nati all'estero</option>
             </select>
           </label>
           <label>Territorio
@@ -124,7 +124,7 @@
           <button id="diKebabPlay" class="di-control-button" type="button" aria-pressed="false">Avvia evoluzione</button>
         </div>
         <div id="diKebabChart" class="di-chart di-chart-tall"></div>
-        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: totale residenti mostra una sola distribuzione; la sovrapposizione nati in Italia / nati all'estero mostra due profili distinti sulla stessa scala. Nati all'estero misura i residenti nati fuori dal paese, non i soli cittadini stranieri; nati in Italia è calcolato sottraendo i nati all'estero dai residenti totali. Fissa sulla selezione mantiene la scala stabile tra gli anni della scelta corrente; Scala comune rende confrontabili paesi e regioni; Adatta ai dati ingrandisce l'anno visualizzato.</p>
+        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: totale residenti mostra una sola distribuzione; la sovrapposizione nati nel paese / nati all'estero mostra due profili distinti sulla stessa scala. Nati all'estero misura i residenti nati fuori dal paese selezionato, non i soli cittadini stranieri; nati nel paese è calcolato sottraendo i nati all'estero dai residenti totali. Le regioni italiane sono disponibili per il totale residenti, ma non per questa scomposizione per paese di nascita in <code>migr_pop3ctb</code>. Fissa sulla selezione mantiene la scala stabile tra gli anni della scelta corrente; Scala comune rende confrontabili paesi e regioni; Adatta ai dati ingrandisce l'anno visualizzato.</p>
       </article>
     </section>
 
