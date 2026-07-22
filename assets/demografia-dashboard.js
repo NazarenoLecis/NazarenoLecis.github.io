@@ -132,6 +132,15 @@
     tertiary: "Terziario"
   };
 
+  var EDUCATION_ORDER = {
+    low_education: 10,
+    upper_secondary_post_secondary: 20,
+    upper_secondary_general: 30,
+    upper_secondary_vocational: 40,
+    tertiary: 50,
+    upper_secondary_or_more: 60
+  };
+
   var LEVEL_LABELS = {
     region: "Regioni",
     province: "Province"
@@ -966,14 +975,21 @@
       if (row.education_level === "upper_secondary_or_more") return false;
       if (hasSublevels && row.education_level === "upper_secondary_post_secondary") return false;
       return true;
-    }).sort(function (a, b) { return (toNumber(b.value) || 0) - (toNumber(a.value) || 0); });
+    }).sort(function (a, b) {
+      var orderA = EDUCATION_ORDER[a.education_level] || 999;
+      var orderB = EDUCATION_ORDER[b.education_level] || 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (toNumber(b.value) || 0) - (toNumber(a.value) || 0);
+    });
   }
 
   function renderEducationChart(payload) {
     fillEducationControls(payload);
     var primary = educationDisplayRows(educationRows(payload, STATE.educationCountry, STATE.educationAge, STATE.educationSex, STATE.educationYear));
     var compare = STATE.educationCompareCountry === "none" ? [] : educationDisplayRows(educationRows(payload, STATE.educationCompareCountry, STATE.educationAge, STATE.educationSex, STATE.educationYear));
-    var levels = unique(primary.concat(compare).map(function (row) { return row.education_level; }));
+    var levels = unique(primary.concat(compare).map(function (row) { return row.education_level; })).sort(function (a, b) {
+      return (EDUCATION_ORDER[a] || 999) - (EDUCATION_ORDER[b] || 999);
+    });
     var primaryMap = {};
     var compareMap = {};
     primary.forEach(function (row) { primaryMap[row.education_level] = row.value; });
