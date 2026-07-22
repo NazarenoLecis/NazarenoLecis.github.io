@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sicurezza in Italia | Nazareno Lecis</title>
+  <meta name="description" content="Dashboard sui reati denunciati in Italia: serie nazionali, regionali, provinciali e capoluogo, con filtri per reato e lettura delle controtendenze territoriali.">
+  <link rel="icon" href="../../assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="../../assets/base.css">
+  <link rel="stylesheet" href="../../assets/layout.css">
+  <link rel="stylesheet" href="../../assets/components.css">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-2">
+  <script defer src="../../assets/theme.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-2"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="../../index.html">
+        <span class="logo"></span>
+        <span>
+          <span class="brand-name">Nazareno Lecis</span>
+          <span class="brand-tag">Data &amp; Risk Analysis</span>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Navigazione principale">
+        <a href="../../index.html">Home</a>
+        <a href="../../articoli/index.html">Articoli</a>
+        <a class="active" href="../index.html">Dashboard</a>
+        <a href="../../media/index.html">Media</a>
+        <a href="../../about/index.html">Chi sono</a>
+        <a href="https://github.com/NazarenoLecis">GitHub</a>
+      </nav>
+      <span class="sun">&#9788;</span>
+    </div>
+  </header>
+
+  <main class="wrap si-dashboard">
+    <section class="si-head">
+      <div>
+        <span class="eyebrow">Sicurezza in Italia</span>
+        <h1>Reati denunciati, territori e trend</h1>
+        <p class="lead">Lettura granulare dei dati ISTAT disponibili nel pipeline: livelli nazionale, regionale, provinciale e capoluogo, filtri per reato e segnali di controtendenza rispetto al dato nazionale.</p>
+      </div>
+      <aside class="si-source-panel" aria-label="Fonte dati">
+        <span class="logo"></span>
+        <div>
+          <strong>Dataset pubblicato su Cloudflare R2</strong>
+          <span>La dashboard legge i JSON prodotti dal repo sicurezza e pubblicati dal data pipeline.</span>
+          <span><a href="https://data.nazarenolecis.com/sicurezza/manifest.json" target="_blank" rel="noopener">Manifest dati</a> · <a href="https://github.com/NazarenoLecis/sicurezza" target="_blank" rel="noopener">Repository sorgente</a></span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="si-workflow" aria-label="Percorso di lettura">
+      <div class="si-step"><span>1</span><h2>Perimetro</h2><p>Controlla anni, livelli territoriali e file caricati prima di interpretare i numeri.</p></div>
+      <div class="si-step"><span>2</span><h2>Territori</h2><p>Confronta regioni, province e capoluoghi usando lo stesso reato o il totale.</p></div>
+      <div class="si-step"><span>3</span><h2>Trend</h2><p>Individua reati e territori che si muovono in direzione diversa dal dato nazionale.</p></div>
+    </section>
+
+    <nav class="si-jump-nav" aria-label="Sezioni dashboard sicurezza">
+      <a href="#indicatori">Indicatori</a>
+      <a href="#filtri">Filtri</a>
+      <a href="#territori">Territori</a>
+      <a href="#controtendenze">Controtendenze</a>
+      <a href="#metodo">Metodo</a>
+    </nav>
+
+    <p id="siStatus" class="si-status">Caricamento dati sicurezza ...</p>
+    <p class="si-note"><strong>Perimetro attuale:</strong> reati denunciati 2020-2024. Le colonne su autori, vittime e cittadinanza sono gia previste nel tracciato JSON, ma restano vuote finche le relative basi dati non sono integrate nel pipeline.</p>
+
+    <section id="indicatori" class="si-section">
+      <div class="si-section-head">
+        <span class="eyebrow">Quadro rapido</span>
+        <div>
+          <h2>Stato del dataset</h2>
+          <p>Copertura, volume dati e ultimi segnali disponibili nei file pubblicati.</p>
+        </div>
+      </div>
+      <div id="siKpis" class="si-kpi-grid" aria-label="Indicatori principali sicurezza"></div>
+    </section>
+
+    <section id="filtri" class="si-section">
+      <div class="si-section-head">
+        <span class="eyebrow">Esplora</span>
+        <div>
+          <h2>Filtri principali</h2>
+          <p>Seleziona livello territoriale, area e reato. Le tabelle sotto si aggiornano sullo stesso perimetro.</p>
+        </div>
+      </div>
+      <div class="si-filter-panel">
+        <label>Livello
+          <select id="siLevel"></select>
+        </label>
+        <label>Regione
+          <select id="siRegion"></select>
+        </label>
+        <label>Provincia
+          <select id="siProvince"></select>
+        </label>
+        <label>Reato
+          <select id="siCrime"></select>
+        </label>
+        <label>Ricerca
+          <input id="siSearch" type="search" placeholder="Codice, reato o territorio">
+        </label>
+        <label>Ordina
+          <select id="siSort">
+            <option value="value">Valore 2024</option>
+            <option value="change">Variazione % annua</option>
+            <option value="name">Nome territorio</option>
+          </select>
+        </label>
+        <button id="siReset" class="si-reset" type="button">Reset</button>
+      </div>
+      <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
+    </section>
+
+    <section id="territori" class="si-section">
+      <div class="si-section-head">
+        <span class="eyebrow">Territori e reati</span>
+        <div>
+          <h2>Ranking e dettaglio</h2>
+          <p>Il ranking nazionale mostra i reati piu rilevanti; il dettaglio territoriale applica i filtri selezionati.</p>
+        </div>
+      </div>
+      <div class="si-grid-two">
+        <article class="si-panel">
+          <div class="si-panel-title">
+            <h3>Reati nel dato nazionale</h3>
+            <span id="siNationalTag">ultimo anno</span>
+          </div>
+          <div id="siNationalTable" class="si-table-wrap"></div>
+        </article>
+        <article class="si-panel">
+          <div class="si-panel-title">
+            <h3 id="siTerritoryTitle">Territori</h3>
+            <span id="siTerritoryTag">filtri correnti</span>
+          </div>
+          <div id="siTerritoryTable" class="si-table-wrap"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="controtendenze" class="si-section">
+      <div class="si-section-head">
+        <span class="eyebrow">Scostamenti</span>
+        <div>
+          <h2>Reati in controtendenza</h2>
+          <p>Territori in cui la variazione annua del reato ha segno opposto rispetto alla variazione nazionale.</p>
+        </div>
+      </div>
+      <article class="si-panel">
+        <div class="si-panel-title">
+          <h3>Controtendenze rispetto all'Italia</h3>
+          <span id="siCounterTag">filtri correnti</span>
+        </div>
+        <div id="siCounterTable" class="si-table-wrap"></div>
+      </article>
+    </section>
+
+    <section id="metodo" class="si-section">
+      <div class="si-section-head">
+        <span class="eyebrow">Metodo</span>
+        <div>
+          <h2>Cosa si puo leggere ora</h2>
+          <p>Il sito separa visualizzazione, pubblicazione dati e pipeline di estrazione. Ogni limite visibile qui dipende dai JSON pubblicati, non da logica nascosta nella dashboard.</p>
+        </div>
+      </div>
+      <div class="si-method-grid">
+        <article class="si-panel">
+          <h3>Dati disponibili</h3>
+          <p>Conteggi dei reati denunciati da fonte ISTAT, normalizzati in formato lungo e pubblicati come JSON. La granularita territoriale include Italia, regioni, province e codici capoluogo quando presenti nel dataset.</p>
+        </article>
+        <article class="si-panel">
+          <h3>Dati da integrare</h3>
+          <p>Autori, vittime, cittadinanza, sesso, eta e separazione piena tra reati violenti e altri reati richiedono basi dati o dizionari aggiuntivi. La dashboard evidenzia questi campi come non popolati finche il pipeline non li produce.</p>
+        </article>
+        <article class="si-panel">
+          <h3>Architettura</h3>
+          <p>Il repo sicurezza genera JSON, il repo data pipeline pubblica su Cloudflare R2, questo repo GitHub Pages legge i dati pubblici e costruisce l'interfaccia.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner social-links">
+      <a class="social-link" href="https://x.com/LecisNazareno" target="_blank" rel="noopener" aria-label="X"><svg><use href="../../assets/social-icons.svg#x"></use></svg><span>X</span></a>
+      <a class="social-link" href="https://www.instagram.com/nazarenolecis/" target="_blank" rel="noopener" aria-label="Instagram"><svg><use href="../../assets/social-icons.svg#instagram"></use></svg><span>Instagram</span></a>
+      <a class="social-link" href="https://www.linkedin.com/in/nazareno-lecis/" target="_blank" rel="noopener" aria-label="LinkedIn"><svg><use href="../../assets/social-icons.svg#linkedin"></use></svg><span>LinkedIn</span></a>
+      <a class="social-link" href="https://github.com/NazarenoLecis" target="_blank" rel="noopener" aria-label="GitHub"><svg><use href="../../assets/social-icons.svg#github"></use></svg><span>GitHub</span></a>
+    </div>
+  </footer>
+</body>
+</html>
