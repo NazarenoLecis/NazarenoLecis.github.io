@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/valore-aggiunto-imprese-dashboard.css?v=20260720-10">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-cartesian-2.35.2.min.js"></script>
-  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260721-1"></script>
+  <script defer src="../../assets/valore-aggiunto-imprese-dashboard.js?v=20260722-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -129,6 +129,14 @@
         <div id="vaiSizeChart" class="vai-chart"></div>
         <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a>. Elaborazione di Nazareno Lecis.</p>
         <div id="vaiSizeGuidance" class="vai-guidance-list" aria-live="polite"></div>
+      </article>
+      <details class="chart-filter-panel vai-section-gap" open><summary>Filtri confronto dimensione</summary><div id="vaiSizeCompareFilters" class="filter-grid"></div></details>
+      <article class="vai-card vai-chart-block">
+        <div class="vai-card-title"><h3 id="vaiSizeCompareTitle">Confronto paesi per classe dimensionale</h3><span id="vaiSizeCompareTag">paesi</span></div>
+        <p class="vai-card-note" id="vaiSizeCompareNote">Confronta piu paesi nello stesso anno e settore. L'asse X resta la classe dimensionale d'impresa, mentre ogni colore rappresenta un paese selezionato.</p>
+        <div id="vaiSizeCompareChart" class="vai-chart vai-chart-wide"></div>
+        <p class="vai-chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/sbs_sc_ovw/default/table?lang=en" target="_blank" rel="noopener">Eurostat Structural Business Statistics <code>sbs_sc_ovw</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table?lang=en" target="_blank" rel="noopener">PIL <code>nama_10_gdp</code></a>. Elaborazione di Nazareno Lecis.</p>
+        <div id="vaiSizeCompareGuidance" class="vai-guidance-list" aria-live="polite"></div>
       </article>
     </section>
 

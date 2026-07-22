@@ -1104,6 +1104,10 @@
     "Classi dimensionali": "Size classes",
     "imprese": "firms",
     "Qui le classi sono basate sulle persone occupate nell'impresa. Cambiando parametro cambia anche la lettura del grafico.": "Here classes are based on people employed in the firm. Changing parameter also changes how the chart should be read.",
+    "Filtri confronto dimensione": "Size comparison filters",
+    "Confronto paesi per classe dimensionale": "Country comparison by firm-size class",
+    "paesi": "countries",
+    "Confronta piu paesi nello stesso anno e settore. L'asse X resta la classe dimensionale d'impresa, mentre ogni colore rappresenta un paese selezionato.": "Compare multiple countries in the same year and sector. The X axis remains the firm-size class, while each colour represents one selected country.",
     "Focus micro-imprese": "Micro-firm focus",
     "Sotto i 10 dipendenti: 0, 1-4 e 5-9": "Below 10 employees: 0, 1-4 and 5-9",
     "Business Demography permette di aprire la classe sotto i 10 dipendenti. La vista descrive imprese attive, persone occupate e dipendenti: non contiene valore aggiunto e non sostituisce la classe SBS 0-9.": "Business Demography lets you open the below-10-employees class. The view describes active firms, people employed and employees: it does not contain value added and does not replace the SBS 0-9 class.",
@@ -1948,7 +1952,8 @@
     "Le classi dimensionali arrivano dalle statistiche strutturali d'impresa: sono classi di persone occupate nell'impresa e hanno un perimetro diverso dai conti nazionali.": "Size classes come from Structural Business Statistics: they are firm-level persons-employed classes and have a different scope from national accounts.",
     "Le classi dimensionali non sono una scomposizione dell'intera economia nazionale: descrivono il perimetro delle statistiche strutturali d'impresa e quindi vanno confrontate soprattutto dentro lo stesso settore e la stessa fonte.": "Size classes are not a breakdown of the whole national economy: they describe the Structural Business Statistics scope and should therefore mainly be compared within the same sector and source.",
     "Il valore aggiunto per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana e calcolata tra i settori visualizzati, non dentro ogni settore.": "Value added per employee uses national-accounts employees by NACE branch. The median is computed across displayed sectors, not within each sector.",
-    "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella.": "Value per person employed is computed only within the SBS scope, dividing value added by persons employed published in the same cell."
+    "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella.": "Value per person employed is computed only within the SBS scope, dividing value added by persons employed published in the same cell.",
+    "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella: e una produttivita apparente per testa e non corregge per le ore lavorate. Un indicatore per ora richiede di integrare nel payload le ore lavorate nello stesso perimetro.": "Value per person employed is computed only within the SBS scope, dividing value added by persons employed published in the same cell: it is apparent headcount productivity and does not adjust for hours worked. A per-hour indicator requires adding hours worked to the payload within the same scope."
   });
 
   Object.assign(text, {

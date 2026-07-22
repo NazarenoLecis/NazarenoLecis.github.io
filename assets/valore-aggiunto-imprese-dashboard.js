@@ -64,6 +64,7 @@
   var SBS_TOTAL_CODE = "SBS_TOTAL";
   var DEFAULT_SERIES_SECTORS = ["TOTAL", "C", "G", "H", "I", "J"];
   var DEFAULT_TREND_COUNTRIES = ["IT", "DE", "FR", "ES", "PL"];
+  var DEFAULT_SIZE_COMPARE_COUNTRIES = ["IT", "FR", "DE", "ES"];
   var CHART_SOURCE_NOTE = "Fonte: Eurostat. Elaborazione di Nazareno Lecis.";
   var COUNTRY_LABELS_IT = {
     AT: "Austria",
@@ -445,6 +446,10 @@
     sizeYear: null,
     sizeSector: "C",
     sizeMeasure: "enterprises",
+    sizeCompareCountries: DEFAULT_SIZE_COMPARE_COUNTRIES.slice(),
+    sizeCompareYear: null,
+    sizeCompareSector: SBS_TOTAL_CODE,
+    sizeCompareMeasure: "value_per_employed",
     microCountry: "IT",
     microYear: null,
     microSector: "C",
@@ -531,6 +536,11 @@
     var labels = isEnglish() ? SECTOR_LABELS_EN : SECTOR_LABELS_IT;
     var themeLabel = isEnglish() ? THEME_LABELS_EN[code] : theme && theme.label;
     return labels[code] || themeLabel || translateLabel(sourceLabel || fallback || code || "");
+  }
+
+  function sizeClassLabel(sizeClass) {
+    if (sizeClass === "TOTAL") return isEnglish() ? "Total" : "Totale";
+    return sizeClass || "";
   }
 
   function formatMoney(value) {
@@ -1477,8 +1487,20 @@
     }));
   }
 
-  function sizeChartConfig() {
-    if (state.sizeMeasure === "value_added") {
+  function sizeMeasureOptions() {
+    return [
+      { value: "enterprises", label: "Numero imprese" },
+      { value: "enterprise_share", label: "Quota imprese (%)" },
+      { value: "value_added", label: "Valore aggiunto" },
+      { value: "value_added_share", label: "Quota valore aggiunto (%)" },
+      { value: "value_gdp_share", label: "Valore aggiunto / PIL (%)" },
+      { value: "value_per_enterprise", label: "Valore aggiunto per impresa" },
+      { value: "value_per_employed", label: "Valore aggiunto per occupato" }
+    ];
+  }
+
+  function sizeConfigForMeasure(measure) {
+    if (measure === "value_added") {
       return {
         key: "firm_size_value_added",
         valueField: "value_million_eur",
@@ -1488,7 +1510,7 @@
         empty: "Valore aggiunto per dimensione non disponibile per questa selezione."
       };
     }
-    if (state.sizeMeasure === "value_added_share") {
+    if (measure === "value_added_share") {
       return {
         key: "firm_size_value_added",
         valueField: "value_million_eur",
@@ -1498,7 +1520,7 @@
         empty: "Quote del valore aggiunto per dimensione non disponibili per questa selezione."
       };
     }
-    if (state.sizeMeasure === "value_per_enterprise") {
+    if (measure === "value_per_enterprise") {
       return {
         key: "firm_size_value_added",
         valueField: "value_million_eur",
@@ -1508,7 +1530,7 @@
         empty: "Valore aggiunto per impresa non disponibile per questa selezione."
       };
     }
-    if (state.sizeMeasure === "value_gdp_share") {
+    if (measure === "value_gdp_share") {
       return {
         key: "firm_size_value_added",
         valueField: "value_million_eur",
@@ -1518,7 +1540,7 @@
         empty: "Rapporto al PIL per dimensione non disponibile per questa selezione."
       };
     }
-    if (state.sizeMeasure === "value_per_employed") {
+    if (measure === "value_per_employed") {
       return {
         key: "firm_size_value_added",
         valueField: "value_million_eur",
@@ -1528,7 +1550,7 @@
         empty: "Valore aggiunto per occupato non disponibile per questa selezione."
       };
     }
-    if (state.sizeMeasure === "enterprise_share") {
+    if (measure === "enterprise_share") {
       return {
         key: "firm_size_enterprises",
         valueField: "enterprises",
@@ -1546,6 +1568,10 @@
       yTitle: "Numero di imprese",
       empty: "Numero di imprese non disponibile per questa selezione."
     };
+  }
+
+  function sizeChartConfig() {
+    return sizeConfigForMeasure(state.sizeMeasure);
   }
 
   function sizeRows(key, valueField) {
@@ -1991,15 +2017,7 @@
       null
     );
     state.sizeYear = effectiveYear(availableRows.length ? availableRows : records(config.key), state.sizeYear);
-    makeSelect(container, "Parametro", state.sizeMeasure, [
-      { value: "enterprises", label: "Numero imprese" },
-      { value: "enterprise_share", label: "Quota imprese (%)" },
-      { value: "value_added", label: "Valore aggiunto" },
-      { value: "value_added_share", label: "Quota valore aggiunto (%)" },
-      { value: "value_gdp_share", label: "Valore aggiunto / PIL (%)" },
-      { value: "value_per_enterprise", label: "Valore aggiunto per impresa" },
-      { value: "value_per_employed", label: "Valore aggiunto per occupato" }
-    ], function (value) {
+    makeSelect(container, "Parametro", state.sizeMeasure, sizeMeasureOptions(), function (value) {
       state.sizeMeasure = value;
       renderSizeFilters();
       renderSizeChart();
@@ -2125,6 +2143,252 @@
       margin: { t: 18, r: 24, b: 82, l: 92 },
       yaxis: { title: config.yTitle, rangemode: "tozero" },
       xaxis: { title: "Classe di persone occupate" },
+      sourceNote: CHART_SOURCE_NOTE
+    });
+  }
+
+  function sizeCompareConfig() {
+    return sizeConfigForMeasure(state.sizeCompareMeasure);
+  }
+
+  function syncSizeCompareCountries() {
+    var options = countryOptions(false);
+    var codes = options.map(function (option) { return option.value; });
+    state.sizeCompareCountries = toArray(state.sizeCompareCountries).filter(function (code) {
+      return codes.indexOf(code) >= 0;
+    });
+    if (!state.sizeCompareCountries.length) {
+      state.sizeCompareCountries = DEFAULT_SIZE_COMPARE_COUNTRIES.filter(function (code) {
+        return codes.indexOf(code) >= 0;
+      });
+    }
+    return options;
+  }
+
+  function sizeCompareAvailableRows(config) {
+    var rows = [];
+    syncSizeCompareCountries();
+    state.sizeCompareCountries.forEach(function (country) {
+      rows = rows.concat(sizeSourceRows(
+        config.key,
+        config.valueField,
+        country,
+        state.sizeCompareSector,
+        null
+      ));
+    });
+    return rows;
+  }
+
+  function mapSizeValue(rows, field) {
+    var values = {};
+    rows.forEach(function (row) {
+      var value = number(row[field]);
+      if (value !== null) values[row.size_class] = value;
+    });
+    return values;
+  }
+
+  function sumSizeMap(values) {
+    return SIZE_ORDER.reduce(function (sum, sizeClass) {
+      return sum + (number(values[sizeClass]) || 0);
+    }, 0);
+  }
+
+  function sizeCompareRowsForCountry(country, config) {
+    var valueRows = sizeSourceRows(
+      "firm_size_value_added",
+      "value_million_eur",
+      country,
+      state.sizeCompareSector,
+      state.sizeCompareYear
+    );
+    var enterpriseRows = sizeSourceRows(
+      "firm_size_enterprises",
+      "enterprises",
+      country,
+      state.sizeCompareSector,
+      state.sizeCompareYear
+    );
+    var employmentRows = sizeSourceRows(
+      "firm_size_employment",
+      "persons_employed",
+      country,
+      state.sizeCompareSector,
+      state.sizeCompareYear
+    );
+    var valueByClass = mapSizeValue(valueRows, "value_million_eur");
+    var enterprisesByClass = mapSizeValue(enterpriseRows, "enterprises");
+    var employedByClass = mapSizeValue(employmentRows, "persons_employed");
+    var totalValue = sumSizeMap(valueByClass);
+    var totalEnterprises = sumSizeMap(enterprisesByClass);
+    var totalEmployed = sumSizeMap(employedByClass);
+    var gdp = gdpValue(country, state.sizeCompareYear);
+    var sourceRow = valueRows[0] || enterpriseRows[0] || employmentRows[0] || {};
+
+    return SIZE_ORDER.concat(["TOTAL"]).map(function (sizeClass) {
+      var value = sizeClass === "TOTAL" ? totalValue : number(valueByClass[sizeClass]);
+      var enterprises = sizeClass === "TOTAL" ? totalEnterprises : number(enterprisesByClass[sizeClass]);
+      var employed = sizeClass === "TOTAL" ? totalEmployed : number(employedByClass[sizeClass]);
+      var plotValue = null;
+      if (config.unit === "enterprises") plotValue = enterprises;
+      if (config.unit === "enterprise_share") plotValue = totalEnterprises ? enterprises / totalEnterprises * 100 : null;
+      if (config.unit === "value_added") plotValue = value;
+      if (config.unit === "value_added_share") plotValue = totalValue ? value / totalValue * 100 : null;
+      if (config.unit === "value_gdp_share") plotValue = gdp ? value / gdp * 100 : null;
+      if (config.unit === "value_per_enterprise") plotValue = enterprises ? value * 1000 / enterprises : null;
+      if (config.unit === "value_per_employed") plotValue = employed ? value * 1000 / employed : null;
+      return {
+        country_code: country,
+        country_name: sourceRow.country_name,
+        sector_code: state.sizeCompareSector,
+        size_class: sizeClass,
+        size_label: sizeClassLabel(sizeClass),
+        value_million_eur: value,
+        enterprises: enterprises,
+        persons_employed: employed,
+        gdp_share: gdp ? value / gdp * 100 : null,
+        plot_value: plotValue
+      };
+    }).filter(function (row) {
+      return number(row.plot_value) !== null;
+    });
+  }
+
+  function renderSizeCompareFilters() {
+    var container = byId("vaiSizeCompareFilters");
+    if (!container) return;
+    clear(container);
+    var config = sizeCompareConfig();
+    var countryOpts = syncSizeCompareCountries();
+    var availableRows = sizeCompareAvailableRows(config);
+    state.sizeCompareYear = effectiveYear(availableRows.length ? availableRows : records(config.key), state.sizeCompareYear);
+    makeSelect(container, "Parametro", state.sizeCompareMeasure, sizeMeasureOptions(), function (value) {
+      state.sizeCompareMeasure = value;
+      renderSizeCompareFilters();
+      renderSizeCompareChart();
+    });
+    makeMultiSelect(container, "Paesi nel grafico", state.sizeCompareCountries, countryOpts, function (values) {
+      state.sizeCompareCountries = values.length ? values : DEFAULT_SIZE_COMPARE_COUNTRIES.slice();
+      renderSizeCompareFilters();
+      renderSizeCompareChart();
+    });
+    makeSelect(container, "Settore imprese", state.sizeCompareSector, sbsSectorOptionsWithTotal(), function (value) {
+      state.sizeCompareSector = value;
+      renderSizeCompareFilters();
+      renderSizeCompareChart();
+    });
+    makeSelect(container, "Anno", state.sizeCompareYear, yearOptions(availableRows.length ? availableRows : records(config.key)), function (value) {
+      state.sizeCompareYear = Number(value);
+      renderSizeCompareChart();
+    });
+  }
+
+  function sizeCompareHoverTemplate(config) {
+    if (config.unit === "value_added") {
+      return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:,.1f} mln EUR<extra></extra>";
+    }
+    if (config.unit === "enterprise_share") {
+      return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:.1f}%<br>" + (isEnglish() ? "Enterprises" : "Imprese") + ": %{customdata[2]:,.0f}<extra></extra>";
+    }
+    if (config.unit === "value_gdp_share") {
+      return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:.2f}% " + (isEnglish() ? "of GDP" : "del PIL") + "<br>%{customdata[1]:,.1f} mln EUR<extra></extra>";
+    }
+    if (config.unit === "value_per_employed") {
+      return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:,.1f} " + (isEnglish() ? "thousand EUR per person employed" : "mila EUR per occupato") + "<br>" + (isEnglish() ? "Persons employed" : "Occupati") + ": %{customdata[3]:,.0f}<extra></extra>";
+    }
+    if (config.unit === "value_added_share") {
+      return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:.1f}% " + (isEnglish() ? "of value added" : "del valore aggiunto") + "<extra></extra>";
+    }
+    if (config.unit === "value_per_enterprise") {
+      return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:,.1f} " + (isEnglish() ? "thousand EUR per enterprise" : "mila EUR per impresa") + "<br>" + (isEnglish() ? "Enterprises" : "Imprese") + ": %{customdata[2]:,.0f}<extra></extra>";
+    }
+    return "<b>%{fullData.name}</b><br>%{customdata[0]}<br>%{y:,.0f} " + (isEnglish() ? "enterprises" : "imprese") + "<extra></extra>";
+  }
+
+  function renderSizeCompareChart() {
+    var title = byId("vaiSizeCompareTitle");
+    var tag = byId("vaiSizeCompareTag");
+    var note = byId("vaiSizeCompareNote");
+    if (!title) return;
+    var config = sizeCompareConfig();
+    var countries = state.sizeCompareCountries.slice();
+    var sizeClasses = SIZE_ORDER.concat(["TOTAL"]);
+    var sizeLabels = sizeClasses.map(sizeClassLabel);
+    var traces = countries.map(function (country, index) {
+      var rows = sizeCompareRowsForCountry(country, config);
+      var byClass = {};
+      rows.forEach(function (row) {
+        byClass[row.size_class] = row;
+      });
+      return {
+        type: "bar",
+        name: countryLabel(country),
+        x: sizeLabels,
+        y: sizeClasses.map(function (sizeClass) {
+          return byClass[sizeClass] ? byClass[sizeClass].plot_value : null;
+        }),
+        marker: { color: COLORS[index % COLORS.length] },
+        customdata: sizeClasses.map(function (sizeClass) {
+          var row = byClass[sizeClass] || {};
+          return [
+            sizeClassLabel(sizeClass),
+            row.value_million_eur,
+            row.enterprises,
+            row.persons_employed,
+            row.gdp_share
+          ];
+        }),
+        hovertemplate: sizeCompareHoverTemplate(config)
+      };
+    }).filter(function (trace) {
+      return trace.y.some(function (value) { return number(value) !== null; });
+    });
+    title.textContent = (isEnglish() ? "Country comparison by firm-size class" : "Confronto paesi per classe dimensionale") + " - " + sectorLabel(state.sizeCompareSector);
+    tag.textContent = countries.length + " " + (isEnglish() ? "countries" : "paesi") + " - " + text(state.sizeCompareYear);
+    note.textContent = isEnglish()
+      ? "The chart compares the selected countries in the same year and business sector. The X axis is the firm-size class; each colour is one selected country."
+      : "Il grafico confronta i paesi selezionati nello stesso anno e settore imprese. L'asse X e la classe dimensionale; ogni colore rappresenta un paese.";
+    renderGuidance("vaiSizeCompareGuidance", [
+      {
+        title: isEnglish() ? "Same cell" : "Stessa cella",
+        text: isEnglish()
+          ? "Country comparisons use the same SBS business sector, year and indicator, so differences are read across firm-size classes."
+          : "Il confronto usa lo stesso settore SBS, lo stesso anno e lo stesso indicatore, quindi le differenze si leggono tra classi dimensionali."
+      },
+      {
+        title: isEnglish() ? "Hours worked" : "Ore lavorate",
+        text: config.unit === "value_per_employed"
+          ? (isEnglish()
+            ? "Value per person employed is apparent labour productivity by headcount. It is not corrected for differences in hours worked; a per-hour indicator would require adding hours worked to the payload with the same country, sector, year and firm-size class."
+            : "Il valore per occupato e una produttivita apparente per testa. Non corregge per le differenze nelle ore lavorate; un indicatore per ora richiederebbe di integrare nel payload le ore lavorate con lo stesso paese, settore, anno e classe dimensionale.")
+          : (isEnglish()
+            ? "For cross-country productivity readings, prefer indicators with the same SBS perimeter and remember that headcount-based ratios do not adjust for hours worked."
+            : "Nei confronti di produttivita tra paesi usa indicatori nello stesso perimetro SBS e ricorda che i rapporti per testa non correggono le ore lavorate.")
+      },
+      {
+        title: isEnglish() ? "Computed total" : "Totale calcolato",
+        text: isEnglish()
+          ? "The Total bar is computed from the five published size classes available in the dashboard; it is not an additional source row."
+          : "La barra Totale e calcolata dalle cinque classi dimensionali pubblicate nella dashboard; non e una riga aggiuntiva della fonte."
+      },
+      {
+        title: isEnglish() ? "Selected countries" : "Paesi selezionati",
+        text: isEnglish()
+          ? "Use the multiple selector to add or remove countries without overloading the chart."
+          : "Usa il selettore multiplo per aggiungere o togliere paesi senza sovraccaricare il grafico."
+      }
+    ]);
+    if (!traces.length) {
+      showEmpty("vaiSizeCompareChart", translateLabel(config.empty));
+      return;
+    }
+    plot("vaiSizeCompareChart", traces, {
+      barmode: "group",
+      margin: { t: 18, r: 24, b: 92, l: 98 },
+      yaxis: { title: translateLabel(config.yTitle), rangemode: "tozero" },
+      xaxis: { title: isEnglish() ? "Firm-size class (persons employed)" : "Classe dimensionale (persone occupate)" },
+      legend: { orientation: "h", y: -0.18 },
       sourceNote: CHART_SOURCE_NOTE
     });
   }
@@ -2475,7 +2739,7 @@
       "Quando una vista cambia dataset, cambia anche il perimetro: conti nazionali, SBS e Business Demography non vanno sommati o confrontati come se fossero una sola tabella.",
       "I rapporti al PIL usano il PIL nominale Eurostat dello stesso paese e anno. Sono utili nei confronti tra paesi, ma non trasformano i valori in serie reali.",
       "Il valore aggiunto per dipendente usa i dipendenti dei conti nazionali per branca NACE. La mediana e calcolata tra i settori visualizzati, non dentro ogni settore.",
-      "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella.",
+      "Il valore per occupato e calcolato solo nel perimetro SBS, dividendo il valore aggiunto per le persone occupate pubblicate nella stessa cella: e una produttivita apparente per testa e non corregge per le ore lavorate. Un indicatore per ora richiede di integrare nel payload le ore lavorate nello stesso perimetro.",
       "Il dettaglio regionale usa le regioni NUTS pubblicate da Eurostat e settori piu aggregati; non tutte le combinazioni paese-settore-anno sono disponibili.",
       "Nei confronti europei puoi passare dai valori assoluti a quote sul PIL o sul valore aggiunto nazionale per ridurre l'effetto della scala del paese.",
       "L'indice base 100 confronta dinamiche relative, non livelli: due linee simili in base 100 possono corrispondere a valori assoluti molto distanti."
@@ -2498,6 +2762,8 @@
     renderEuropeChart();
     renderSizeFilters();
     renderSizeChart();
+    renderSizeCompareFilters();
+    renderSizeCompareChart();
     renderMicroFilters();
     renderMicroChart();
     renderRegionalFilters();
@@ -2514,6 +2780,7 @@
     state.sectorCountry = state.country;
     state.sectorYear = state.year;
     state.sizeYear = payload.meta.latest_enterprise_year || payload.meta.latest_size_year || state.year;
+    state.sizeCompareYear = payload.meta.latest_size_year || state.sizeYear;
     state.microYear = payload.meta.latest_micro_year || state.sizeYear;
     state.regionalYear = payload.meta.latest_regional_year || state.year;
     var status = byId("vaiStatus");
@@ -2535,7 +2802,7 @@
       .catch(function (error) {
         var status = byId("vaiStatus");
         if (status) status.textContent = "Non riesco a caricare i dati: " + error.message;
-        ["vaiSeriesChart", "vaiSectorChart", "vaiEuropeChart", "vaiSizeChart", "vaiMicroChart", "vaiRegionalChart"].forEach(function (id) {
+        ["vaiSeriesChart", "vaiSectorChart", "vaiEuropeChart", "vaiSizeChart", "vaiSizeCompareChart", "vaiMicroChart", "vaiRegionalChart"].forEach(function (id) {
           showEmpty(id, "Dati non disponibili.");
         });
       });
