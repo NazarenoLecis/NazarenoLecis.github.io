@@ -1,14 +1,18 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260722-5";
-  var PAYLOAD_GLOBAL = "SICUREZZA_DASHBOARD_PAYLOAD";
+  var VERSION = "20260722-6";
+  var PAYLOAD_GLOBALS = {
+    metadata: "SICUREZZA_DASHBOARD_METADATA",
+    reported: "SICUREZZA_REPORTED_CRIMES",
+    people: "SICUREZZA_PEOPLE"
+  };
   var DATA_BASES = [
     "https://data.nazarenolecis.com/sicurezza/"
   ];
 
   var COLORS = ["#ff5a1f", "#4f8bc9", "#3aa6a1", "#d4a348", "#d96363", "#8d7ad8", "#6ea66f", "#b36a4a"];
-  var LEVEL_LABELS = { national: "Italia", regional: "Regioni", provincial: "Province", capital: "Capoluoghi" };
+  var LEVEL_LABELS = { national: "Italia", regional: "Regioni", provincial: "Province", capital: "Comuni capoluogo" };
   var ROLE_LABELS = { offender: "Autori / denunciati", victim: "Vittime", unknown: "Ruolo non classificato" };
   var CITIZENSHIP_LABELS = {
     totale_cittadinanza: "Totale cittadinanza",
@@ -102,7 +106,9 @@
     measure: "absolute",
     role: "all",
     citizenship: "all",
-    search: ""
+    counterDirection: "all",
+    search: "",
+    peopleLoaded: false
   };
 
   var els = {};
@@ -113,11 +119,12 @@
 
   function init() {
     [
-      "siStatus", "siYear", "siLevel", "siRegion", "siProvince", "siTerritory", "siTheme", "siCrime",
-      "siMeasure", "siRole", "siCitizenship", "siSearch", "siReset", "siKpis", "siCoverage",
+      "siStatus", "siTopRecap", "siYear", "siLevel", "siRegion", "siProvince", "siTerritory", "siTheme", "siCrime",
+      "siMeasure", "siRole", "siCitizenship", "siCounterDirection", "siSearch", "siReset", "siKpis", "siCoverage",
       "siTrendTag", "siCompositionTag", "siContributionTag", "siRankingTag", "siScatterTag",
-      "siTreemapTag", "siTableTag", "siViolentTag", "siCrimeTag", "siPeopleTag",
-      "siDemographyTag", "siCounterTag", "siTerritoryTable", "siCounterTable"
+      "siTreemapTag", "siTableTag", "siPropertyTag", "siViolentTag", "siPersonFocusTag", "siCrimeTag", "siPeopleTag",
+      "siDemographyTag", "siCounterTag", "siTerritoryTable", "siCounterTable", "siPeopleNotice",
+      "siMethodNotes", "siSourceList", "siPlannedSourceList", "siPropertyFocusChart", "siPersonFocusChart"
     ].forEach(function (id) {
       els[id] = document.getElementById(id);
     });
@@ -150,6 +157,7 @@
     onChange(els.siMeasure, function () { STATE.measure = els.siMeasure.value; renderAll(); });
     onChange(els.siRole, function () { STATE.role = els.siRole.value; renderAll(); });
     onChange(els.siCitizenship, function () { STATE.citizenship = els.siCitizenship.value; renderAll(); });
+    onChange(els.siCounterDirection, function () { STATE.counterDirection = els.siCounterDirection.value; renderAll(); });
     els.siSearch.addEventListener("input", function () { STATE.search = els.siSearch.value.trim().toLowerCase(); renderTables(); });
     els.siReset.addEventListener("click", function () {
       STATE.year = latestYear();
@@ -162,45 +170,68 @@
       STATE.measure = "absolute";
       STATE.role = "all";
       STATE.citizenship = "all";
+      STATE.counterDirection = "all";
       STATE.search = "";
       renderAll();
     });
   }
 
   function loadData() {
-    setStatus("Caricamento payload dashboard ...");
-    loadPayload().then(function (payload) {
-      STATE.meta = payload.meta || {};
-      STATE.records = (payload.records || []).map(normalizeRecord);
+    setStatus("Caricamento metadati e reati denunciati ...");
+    Promise.all([
+      loadJavascriptPayload("dashboard_metadata.js", PAYLOAD_GLOBALS.metadata),
+      loadJavascriptPayload("dashboard_reported_crimes.js", PAYLOAD_GLOBALS.reported)
+    ]).then(function (payloads) {
+      STATE.meta = (payloads[0] && payloads[0].meta) || (payloads[1] && payloads[1].meta) || {};
+      STATE.records = decodeColumnPayload(payloads[1], "reported_crimes");
       STATE.year = latestYear();
       populateStaticFilters();
+      renderMetaBlocks();
       renderAll();
-      setStatus("Dati caricati: " + formatInteger(STATE.records.length) + " righe, anni " + yearRangeLabel() + ".");
+      setStatus("Dati reati caricati: " + formatInteger(reportedRows().length) + " righe, anni " + yearRangeLabel() + ". Profili persone in caricamento...");
+      loadPeopleData();
     }).catch(function (error) {
       setStatus("Errore nel caricamento dati: " + error.message, "error");
       renderError();
     });
   }
 
-  function loadPayload() {
-    return loadJavascriptPayload("dashboard_payload.js");
+  function loadPeopleData() {
+    loadJavascriptPayload("dashboard_people.js", PAYLOAD_GLOBALS.people).then(function (payload) {
+      var people = decodeColumnPayload(payload, "people");
+      STATE.records = reportedRows().concat(people);
+      STATE.peopleLoaded = true;
+      populatePeopleFilters();
+      renderCoverage();
+      renderPeopleNotice();
+      renderPeopleChart();
+      renderDemographyChart();
+      setStatus("Dati caricati: " + formatInteger(reportedRows().length) + " righe reati e " + formatInteger(peopleRows().length) + " righe persone, anni " + yearRangeLabel() + ".");
+    }).catch(function () {
+      STATE.peopleLoaded = false;
+      renderCoverage();
+      renderPeopleNotice();
+      emptyChart("siPeopleChart", "Dati persone non disponibili in questo momento.");
+      emptyChart("siDemographyChart", "Dati persone non disponibili in questo momento.");
+      setStatus("Dati reati caricati: " + formatInteger(reportedRows().length) + " righe, anni " + yearRangeLabel() + ". Profili persone non disponibili.");
+    });
   }
 
-  function loadJavascriptPayload(fileName) {
+  function loadJavascriptPayload(fileName, globalName) {
     var index = 0;
     function tryNext() {
       if (index >= DATA_BASES.length) return Promise.reject(new Error("payload non disponibile: " + fileName));
       var url = DATA_BASES[index] + fileName + "?v=" + VERSION;
       index += 1;
-      window[PAYLOAD_GLOBAL] = null;
+      window[globalName] = null;
       return new Promise(function (resolve, reject) {
         var script = document.createElement("script");
         script.async = true;
         script.src = url;
         script.onload = function () {
           script.remove();
-          if (window[PAYLOAD_GLOBAL] && window[PAYLOAD_GLOBAL].records) {
-            resolve(window[PAYLOAD_GLOBAL]);
+          if (window[globalName]) {
+            resolve(window[globalName]);
             return;
           }
           reject(new Error("payload JavaScript senza dati"));
@@ -213,6 +244,19 @@
       }).catch(tryNext);
     }
     return tryNext();
+  }
+
+  function decodeColumnPayload(payload, groupName) {
+    if (!payload) return [];
+    if (payload.records) return payload.records.map(normalizeRecord);
+    var columns = payload.columns || [];
+    return (payload.rows || []).map(function (values) {
+      var row = { indicator_group: groupName || payload.indicator_group || "" };
+      columns.forEach(function (column, index) {
+        row[column] = values[index];
+      });
+      return normalizeRecord(row);
+    });
   }
 
   function normalizeRecord(row) {
@@ -256,10 +300,76 @@
 
   function renderAll() {
     refreshDependentFilters();
+    renderTopRecap();
     renderKpis();
     renderCoverage();
+    renderPeopleNotice();
     renderCharts();
     renderTables();
+  }
+
+  function renderMetaBlocks() {
+    renderTopRecap();
+    renderMethodNotes();
+    renderSources();
+  }
+
+  function renderTopRecap() {
+    if (!els.siTopRecap) return;
+    var latest = latestYear();
+    var total = aggregateNationalForCrime("TOT", latest);
+    var counts = STATE.meta.territory_counts || {};
+    els.siTopRecap.innerHTML = [
+      "Ultimo anno: <strong>" + escapeHtml(String(latest || "n.d.")) + "</strong>.",
+      "Italia: <strong>" + formatInteger(total) + "</strong> delitti denunciati.",
+      "Copertura: " + formatInteger(counts.regional || 0) + " regioni, " + formatInteger(counts.provincial || 0) + " province, " + formatInteger(counts.capital || 0) + " comuni capoluogo."
+    ].join(" ");
+  }
+
+  function renderMethodNotes() {
+    if (!els.siMethodNotes) return;
+    var notes = STATE.meta.notes || [];
+    if (!notes.length) {
+      notes = [
+        "I conteggi sono delitti denunciati, non tutti i reati effettivamente commessi.",
+        "Le dimensioni persone richiedono fonti e denominatori dedicati per letture corrette."
+      ];
+    }
+    els.siMethodNotes.innerHTML = notes.map(function (note, index) {
+      return '<article class="si-panel"><h3>Nota ' + String(index + 1) + '</h3><p>' + escapeHtml(note) + "</p></article>";
+    }).join("");
+  }
+
+  function renderSources() {
+    renderSourceList(els.siSourceList, "Fonti usate ora", STATE.meta.sources || []);
+    renderSourceList(els.siPlannedSourceList, "Fonti da integrare per percezione e vittimizzazione", STATE.meta.planned_sources || []);
+  }
+
+  function renderSourceList(target, title, sources) {
+    if (!target) return;
+    if (!sources.length) {
+      target.innerHTML = emptyMessage("Fonti non disponibili nei metadati caricati.");
+      return;
+    }
+    target.innerHTML = '<article class="si-panel"><h3>' + escapeHtml(title) + '</h3><ul>' + sources.map(function (source) {
+      return '<li><a href="' + escapeHtml(source.url || "#") + '" target="_blank" rel="noopener">' + escapeHtml(source.label || "Fonte") + '</a><span>' + escapeHtml(source.role || "") + '</span></li>';
+    }).join("") + "</ul></article>";
+  }
+
+  function renderPeopleNotice() {
+    if (!els.siPeopleNotice) return;
+    var people = peopleRows();
+    if (!STATE.peopleLoaded && !people.length) {
+      els.siPeopleNotice.innerHTML = "<strong>Copertura persone:</strong> caricamento in corso. I grafici principali sui reati sono gia disponibili.";
+      return;
+    }
+    if (!people.length) {
+      els.siPeopleNotice.innerHTML = "<strong>Copertura persone:</strong> non disponibile nei payload correnti.";
+      return;
+    }
+    var levels = unique(people.map(function (row) { return row.territory_level; })).filter(Boolean);
+    var scope = levels.length === 1 && levels[0] === "national" ? "Italia" : levels.map(function (level) { return LEVEL_LABELS[level] || level; }).join(", ");
+    els.siPeopleNotice.innerHTML = "<strong>Copertura persone:</strong> " + escapeHtml(scope) + ". I conteggi per cittadinanza non sono tassi di delittuosita: per rispondere alla domanda immigrati/non immigrati servono denominatori coerenti per cittadinanza, eta, sesso e territorio.";
   }
 
   function refreshDependentFilters() {
@@ -288,6 +398,7 @@
       STATE.crime = STATE.theme === "all" ? "TOT" : "all";
     }
     populateSelect(els.siCrime, crimeOptions, STATE.crime);
+    if (els.siCounterDirection) els.siCounterDirection.value = STATE.counterDirection;
 
     els.siRegion.disabled = STATE.level === "national";
     els.siProvince.disabled = STATE.level === "national" || STATE.level === "regional";
@@ -313,19 +424,20 @@
       '<article class="si-kpi">',
       "<span>" + escapeHtml(title) + "</span>",
       "<strong>" + formatInteger(current) + "</strong>",
-      "<small>" + escapeHtml(note) + " · " + changeText(change) + "</small>",
+      "<small>" + escapeHtml(note) + " - " + changeText(change) + "</small>",
       "</article>"
     ].join("");
   }
 
   function renderCoverage() {
-    var dimensions = STATE.meta.available_dimensions || {};
     var people = peopleRows();
     els.siCoverage.innerHTML = [
-      coverageItem("Delitti denunciati", true, "Serie per anno, territorio e reato."),
-      coverageItem("Reati violenti/altri", Boolean(dimensions.violent_crime), "Classificazione operativa dai codici reato."),
-      coverageItem("Autori e vittime", people.length > 0, people.length ? "Dataflow persone presente nel payload." : "In attesa dei dataflow persone nel pipeline."),
-      coverageItem("Cittadinanza", unique(people.map(function (row) { return row.citizenship_group; })).length > 0, "Italiani/stranieri quando la fonte lo consente.")
+      coverageItem("Delitti denunciati", true, "Serie per anno, reato e territorio fino ai comuni capoluogo."),
+      coverageItem("Benchmark Italia", true, "Il confronto nazionale resta sempre disponibile nei grafici principali."),
+      coverageItem("Tassi", reportedRows().some(function (row) { return isFiniteNumber(row.value_rate_per_100k); }), "Disponibili dove la popolazione e stata agganciata correttamente."),
+      coverageItem("Autori e vittime", people.length > 0, people.length ? "Payload persone caricato; oggi soprattutto nazionale." : "Caricamento o integrazione in corso."),
+      coverageItem("Cittadinanza", unique(people.map(function (row) { return row.citizenship_group; })).length > 0, "Italiani/stranieri solo come conteggi registrati, non come tassi."),
+      coverageItem("Percezione/vittimizzazione", false, "Sezione metodologica pronta; dataset campionari da integrare.")
     ].join("");
   }
 
@@ -336,7 +448,9 @@
     renderRankingChart();
     renderScatterChart();
     renderTreemapChart();
+    renderPropertyFocusChart();
     renderViolentChart();
+    renderPersonFocusChart();
     renderCrimeChart();
     renderPeopleChart();
     renderDemographyChart();
@@ -400,7 +514,7 @@
 
   function renderRankingChart() {
     var rows = territoryMetricRows().sort(descMetric).slice(0, 25).reverse();
-    els.siRankingTag.textContent = LEVEL_LABELS[STATE.level] + " · " + metricScopeLabel();
+    els.siRankingTag.textContent = LEVEL_LABELS[STATE.level] + " - " + metricScopeLabel();
     if (!rows.length) return emptyChart("siRankingChart", "Nessun territorio nel perimetro selezionato.");
     plot("siRankingChart", [{
       type: "bar",
@@ -433,7 +547,7 @@
 
   function renderTreemapChart() {
     var rows = territoryMetricRows().filter(function (row) { return row.territory_level !== "national"; });
-    els.siTreemapTag.textContent = LEVEL_LABELS[STATE.level] + " · " + String(STATE.year);
+    els.siTreemapTag.textContent = LEVEL_LABELS[STATE.level] + " - " + String(STATE.year);
     if (!rows.length) return emptyChart("siTreemapChart", "Treemap disponibile per livelli territoriali locali.");
     var labels = ["Italia"];
     var parents = [""];
@@ -460,6 +574,54 @@
       marker: { colorscale: "Oranges" },
       hovertemplate: "<b>%{label}</b><br>Valore: %{value:,.0f}<extra></extra>"
     }], { noAxes: true });
+  }
+
+  function renderPropertyFocusChart() {
+    renderThemeFocusChart(
+      "siPropertyFocusChart",
+      els.siPropertyTag,
+      ["property", "predatory"],
+      "Principali reati patrimoniali"
+    );
+  }
+
+  function renderPersonFocusChart() {
+    renderThemeFocusChart(
+      "siPersonFocusChart",
+      els.siPersonFocusTag,
+      ["violent_person"],
+      "Principali reati contro la persona"
+    );
+  }
+
+  function renderThemeFocusChart(chartId, tagEl, themeKeys, emptyLabel) {
+    var rows = selectedTerritoryRows(null).filter(function (row) {
+      return row.indicator_group === "reported_crimes" && row.crime_code !== "TOT" && themeKeys.indexOf(row._theme) >= 0;
+    });
+    if (tagEl) tagEl.textContent = territoryScopeLabel();
+    if (!rows.length) return emptyChart(chartId, "Nessun dato disponibile per " + emptyLabel.toLowerCase() + " nel perimetro selezionato.");
+    var topCodes = aggregateBy(rows.filter(function (row) { return row.year === STATE.year; }), function (row) {
+      return row.crime_code;
+    }).sort(descValue).slice(0, 6).map(function (row) { return row.key; });
+    if (!topCodes.length) return emptyChart(chartId, "Nessun reato selezionabile per questo focus.");
+    plot(chartId, topCodes.map(function (code, index) {
+      var points = years().map(function (year) {
+        return {
+          year: year,
+          value: sum(rows.filter(function (row) { return row.year === year && row.crime_code === code; }), function (row) { return valueForMeasureBase(row); })
+        };
+      });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: crimeLabel({ crime_code: code }),
+        x: points.map(function (point) { return point.year; }),
+        y: transformSeriesValues(points).map(function (point) { return point.value; }),
+        line: { color: COLORS[index % COLORS.length], width: 3 },
+        marker: { size: 7 },
+        hovertemplate: "<b>%{fullData.name}</b><br>Anno: %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
+      };
+    }), { yTitle: measureLabel(), legend: true });
   }
 
   function renderViolentChart() {
@@ -503,7 +665,7 @@
     els.siPeopleTag.textContent = rows.length ? "autori/vittime" : "da integrare";
     if (!rows.length) return emptyChart("siPeopleChart", "I dati autori/vittime non sono ancora presenti nel payload selezionato.");
     var grouped = aggregateBy(rows, function (row) {
-      return (ROLE_LABELS[row.person_role] || labelize(row.person_role || "ruolo n.d.")) + " · " + (CITIZENSHIP_LABELS[row.citizenship_group] || labelize(row.citizenship_group || "cittadinanza n.d."));
+      return (ROLE_LABELS[row.person_role] || labelize(row.person_role || "ruolo n.d.")) + " - " + (CITIZENSHIP_LABELS[row.citizenship_group] || labelize(row.citizenship_group || "cittadinanza n.d."));
     }).sort(descValue).slice(0, 18).reverse();
     plot("siPeopleChart", [{
       type: "bar",
@@ -520,7 +682,7 @@
     els.siDemographyTag.textContent = rows.length ? "sesso ed eta" : "da integrare";
     if (!rows.length) return emptyChart("siDemographyChart", "Sesso ed eta non sono disponibili per il perimetro selezionato.");
     var grouped = aggregateBy(rows, function (row) {
-      return sexLabel(row.sex) + " · " + ageLabel(row.age_group);
+      return sexLabel(row.sex) + " - " + ageLabel(row.age_group);
     }).sort(descValue).slice(0, 20).reverse();
     plot("siDemographyChart", [{
       type: "bar",
@@ -536,7 +698,7 @@
     var rows = counterRows().sort(function (a, b) {
       return Math.abs(b.change_pct_yoy || 0) - Math.abs(a.change_pct_yoy || 0);
     }).slice(0, 20).reverse();
-    els.siCounterTag.textContent = STATE.year + " · " + metricScopeLabel();
+    els.siCounterTag.textContent = STATE.year + " - " + counterDirectionLabel();
     if (!rows.length) {
       emptyChart("siCounterChart", "Nessuna controtendenza nel perimetro selezionato.");
       els.siCounterTable.innerHTML = emptyMessage("Nessuna controtendenza nel perimetro selezionato.");
@@ -546,7 +708,7 @@
       type: "bar",
       orientation: "h",
       x: rows.map(function (row) { return row.change_pct_yoy; }),
-      y: rows.map(function (row) { return territoryLabel(row) + " · " + crimeLabel(row); }),
+      y: rows.map(function (row) { return territoryLabel(row) + " - " + crimeLabel(row); }),
       marker: { color: rows.map(function (row) { return row.change_pct_yoy >= 0 ? "#d96363" : "#5e9f65"; }) },
       hovertemplate: "%{y}<br>Territorio: %{x:.1f}%<extra></extra>"
     }], { xTitle: "Variazione % annua", marginLeft: 220 });
@@ -631,9 +793,12 @@
       }
       return uniqueEntities(entities);
     }
-    territoryMetricRows().sort(descMetric).slice(0, STATE.level === "national" ? 1 : 5).forEach(function (row) {
-      if (row.territory_code !== "IT") entities.push({ level: row.territory_level, code: row.territory_code, label: territoryLabel(row) });
-    });
+    if (STATE.region !== "all" || STATE.province !== "all") {
+      var filtered = territoryMetricRows().sort(descMetric)[0];
+      if (filtered && filtered.territory_code !== "IT") {
+        entities.push({ level: filtered.territory_level, code: filtered.territory_code, label: territoryLabel(filtered) });
+      }
+    }
     return uniqueEntities(entities);
   }
 
@@ -674,16 +839,18 @@
   }
 
   function peopleSelectionRows() {
-    var rows = peopleRows()
+    var base = peopleRows()
       .filter(function (row) { return row.year === STATE.year; })
-      .filter(peopleAreaFilter)
-      .filter(peopleCrimeFilter)
       .filter(function (row) { return STATE.role === "all" || row.person_role === STATE.role; })
       .filter(function (row) {
         if (STATE.citizenship !== "all") return row.citizenship_group === STATE.citizenship;
         return !hasDetailedCitizenship() || row.citizenship_group !== "totale_cittadinanza";
       });
-    return rows;
+    var local = base.filter(peopleAreaFilter).filter(peopleCrimeFilter);
+    if (local.length) return local;
+    var national = base.filter(function (row) { return row.territory_level === "national"; }).filter(peopleCrimeFilter);
+    if (national.length) return national;
+    return base.filter(function (row) { return row.territory_level === "national"; });
   }
 
   function counterRows() {
@@ -693,12 +860,32 @@
       .filter(metricCrimeFilter)
       .filter(function (row) { return row.territory_level === STATE.level; })
       .filter(function (row) { return STATE.territory === "all" || row.territory_code === STATE.territory; })
+      .filter(function (row) { return STATE.counterDirection === "all" || counterDirection(row) === STATE.counterDirection; })
       .sort(function (a, b) { return Math.abs(b.change_pct_yoy || 0) - Math.abs(a.change_pct_yoy || 0); });
+  }
+
+  function counterDirection(row) {
+    if ((row.change_pct_yoy || 0) > 0 && (row.national_change_pct_yoy || 0) < 0) return "worse";
+    if ((row.change_pct_yoy || 0) < 0 && (row.national_change_pct_yoy || 0) > 0) return "better";
+    return "other";
+  }
+
+  function counterDirectionLabel() {
+    if (STATE.counterDirection === "worse") return "peggiora mentre Italia migliora";
+    if (STATE.counterDirection === "better") return "migliora mentre Italia peggiora";
+    return "tutte le controtendenze";
   }
 
   function aggregateSelectionForCrime(code, year) {
     if (!year) return null;
     return sum(selectedTerritoryRows(year).filter(function (row) { return row.crime_code === code; }), function (row) { return row.value; });
+  }
+
+  function aggregateNationalForCrime(code, year) {
+    if (!year) return null;
+    return sum(reportedRows().filter(function (row) {
+      return row.year === year && row.territory_level === "national" && row.crime_code === code;
+    }), function (row) { return row.value; });
   }
 
   function metricCrimeFilter(row) {
@@ -793,7 +980,9 @@
     if (STATE.measure === "yoy") {
       return points.map(function (point) {
         var firstRow = point.raw && point.raw[0];
-        return { year: point.year, value: firstRow ? firstRow.change_pct_yoy : null };
+        if (firstRow) return { year: point.year, value: firstRow.change_pct_yoy };
+        var previous = values.find(function (item) { return item.year === point.year - 1; });
+        return { year: point.year, value: previous ? percentChange(point.value, previous.value) : null };
       });
     }
     return values;
@@ -844,6 +1033,7 @@
       el.innerHTML = '<div class="si-chart-empty">Libreria grafici non caricata.</div>';
       return;
     }
+    el.innerHTML = "";
     var theme = currentTheme();
     var layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
@@ -871,7 +1061,7 @@
   }
 
   function renderError() {
-    ["siTrendChart", "siCompositionChart", "siContributionChart", "siRankingChart", "siScatterChart", "siTreemapChart", "siViolentChart", "siCrimeChart", "siPeopleChart", "siDemographyChart", "siCounterChart"].forEach(function (id) {
+    ["siTrendChart", "siCompositionChart", "siContributionChart", "siRankingChart", "siScatterChart", "siTreemapChart", "siPropertyFocusChart", "siViolentChart", "siPersonFocusChart", "siCrimeChart", "siPeopleChart", "siDemographyChart", "siCounterChart"].forEach(function (id) {
       emptyChart(id, "Dati non caricati.");
     });
   }
@@ -990,7 +1180,7 @@
 
   function territoryContext(row) {
     if (!row) return "";
-    return [row.region, row.province && row.territory_level === "capital" ? "Provincia " + row.province : "", row.territory_code].filter(Boolean).join(" · ");
+    return [row.region, row.province && row.territory_level === "capital" ? "Provincia " + row.province : "", row.territory_code].filter(Boolean).join(" - ");
   }
 
   function sexLabel(value) {
