@@ -375,8 +375,8 @@
       </div>
       <div class="di-stack">
         <article class="di-card di-chart-block">
-          <div class="di-card-title"><h3>Classifica paesi UE</h3><span id="diEuropeRankTag">UE27</span></div>
-          <p class="di-explain">Scegli indicatore e anno. L'Italia è evidenziata rispetto agli altri paesi UE disponibili nel payload.</p>
+          <div class="di-card-title"><h3 id="diEuropeRankTitle">Classifica paesi UE</h3><span id="diEuropeRankTag">UE27</span></div>
+          <p class="di-explain" id="diEuropeRankExplain">Scegli indicatore e anno. L'Italia ? evidenziata rispetto agli altri paesi UE disponibili.</p>
           <div class="di-chart-controls">
             <label>Indicatore
               <select id="diEuropeMetric">
@@ -396,11 +396,11 @@
             </label>
           </div>
           <div id="diEuropeRankChart" class="di-chart di-chart-tall"></div>
-          <p class="di-chart-credit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la classifica usa solo i paesi con valore disponibile nell'anno selezionato; l'Italia è evidenziata in arancione.</p>
+          <p class="di-chart-credit" id="diEuropeRankCredit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la classifica usa solo i paesi con valore disponibile nell'anno selezionato; l'Italia ? evidenziata in arancione.</p>
         </article>
         <article class="di-card di-chart-block">
-          <div class="di-card-title"><h3>Italia, UE mediana e paese scelto</h3><span id="diEuropeSeriesTag">serie storica</span></div>
-          <p class="di-explain">La mediana UE è calcolata anno per anno sui paesi disponibili. Il paese scelto permette un confronto diretto con l'Italia.</p>
+          <div class="di-card-title"><h3 id="diEuropeSeriesTitle">Italia, UE mediana e paese scelto</h3><span id="diEuropeSeriesTag">serie storica</span></div>
+          <p class="di-explain" id="diEuropeSeriesExplain">La mediana UE ? calcolata anno per anno sui paesi disponibili. Il paese scelto permette un confronto diretto con l'Italia.</p>
           <div class="di-chart-controls">
             <label>Paese confronto
               <select id="diEuropeCountry"></select>
@@ -420,7 +420,7 @@
             </label>
           </div>
           <div id="diEuropeSeriesChart" class="di-chart"></div>
-          <p class="di-chart-credit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la mediana UE è calcolata anno per anno sui paesi disponibili e non è ponderata per popolazione; il paese precaricato è la Spagna.</p>
+          <p class="di-chart-credit" id="diEuropeSeriesCredit">Fonte dati: Eurostat, paesi UE27 nei dataset demografici e di istruzione linkati in questa pagina. Elaborazione: Nazareno Lecis. Nota: la mediana UE ? calcolata anno per anno sui paesi disponibili e non ? ponderata per popolazione; il paese precaricato ? la Spagna.</p>
         </article>
       </div>
     </section>

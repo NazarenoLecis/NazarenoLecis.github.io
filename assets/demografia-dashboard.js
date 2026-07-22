@@ -83,6 +83,72 @@
     tertiary_25_64: { label: "Laurea 25-64", axis: "% popolazione 25-64", suffix: "%" }
   };
 
+  var EUROPE_METRIC_COPY = {
+    share_65_plus: {
+      rankTitle: "Paesi UE per quota 65+",
+      seriesTitle: "Quota 65+ nel confronto UE",
+      explain: "Quota della popolazione residente con almeno 65 anni. Misura il peso relativo dell'invecchiamento, non il numero assoluto di anziani.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
+      note: "La classifica usa la quota 65+ sul totale della popolazione del paese; gli anni futuri usano le proiezioni disponibili."
+    },
+    median_age: {
+      rankTitle: "Paesi UE per età mediana",
+      seriesTitle: "Età mediana nel confronto UE",
+      explain: "Età che divide la popolazione in due metà uguali: metà dei residenti è più giovane e metà è più anziana.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
+      note: "La mediana è calcolata dalla distribuzione per età; è diversa dall'età media perché guarda il punto centrale della popolazione."
+    },
+    dependency_old: {
+      rankTitle: "Paesi UE per dipendenza degli anziani",
+      seriesTitle: "Dipendenza degli anziani nel confronto UE",
+      explain: "Rapporto tra popolazione 65+ e popolazione 15-64. Serve a leggere la pressione demografica potenziale sulle età attive.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>.',
+      note: "Il valore indica persone 65+ ogni 100 residenti 15-64; non è un tasso di occupazione o contribuzione."
+    },
+    live_births: {
+      rankTitle: "Paesi UE per numero di nati vivi",
+      seriesTitle: "Nati vivi nel confronto UE",
+      explain: "Numero annuo di nati vivi. È una misura assoluta: i paesi più popolosi tendono naturalmente ad avere valori più alti.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>.',
+      note: "È una misura assoluta: la classifica è in migliaia di persone e non corregge per la dimensione della popolazione; per confrontare intensità usare il tasso di natalità."
+    },
+    deaths: {
+      rankTitle: "Paesi UE per numero di decessi",
+      seriesTitle: "Decessi nel confronto UE",
+      explain: "Numero annuo di decessi. È una misura assoluta e dipende sia dalla popolazione totale sia dalla struttura per età.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>.',
+      note: "È una misura assoluta: la classifica è in migliaia di persone; paesi grandi o più anziani possono avere più decessi anche a parità di condizioni sanitarie."
+    },
+    natural_change: {
+      rankTitle: "Paesi UE per saldo naturale",
+      seriesTitle: "Saldo naturale nel confronto UE",
+      explain: "Differenza tra nati vivi e decessi. Valori negativi indicano che i decessi superano le nascite.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>.',
+      note: "La classifica è in migliaia di persone; il saldo naturale non include immigrazione, emigrazione o aggiustamenti statistici."
+    },
+    total_fertility_rate: {
+      rankTitle: "Paesi UE per fecondità totale",
+      seriesTitle: "Fecondità totale nel confronto UE",
+      explain: "Numero medio di figli per donna, calcolato come indicatore sintetico di fecondità nell'anno selezionato.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>.',
+      note: "La misura è figli per donna; non è un conteggio di nascite e non dipende direttamente dalla dimensione del paese."
+    },
+    balance_gbirthrt: {
+      rankTitle: "Paesi UE per tasso di natalità",
+      seriesTitle: "Tasso di natalità nel confronto UE",
+      explain: "Nati vivi per 1.000 abitanti. Permette di confrontare paesi con popolazioni di dimensione diversa.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>.',
+      note: "Il tasso di natalità dipende sia dai comportamenti riproduttivi sia dalla struttura per età della popolazione."
+    },
+    tertiary_25_64: {
+      rankTitle: "Paesi UE per istruzione terziaria 25-64",
+      seriesTitle: "Istruzione terziaria 25-64 nel confronto UE",
+      explain: "Quota di residenti 25-64 con titolo terziario. La misura è una percentuale della fascia d'età selezionata.",
+      source: 'Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>.',
+      note: "Laurea 25-64 indica ISCED 5-8 nella fascia 25-64; è una quota percentuale, non un numero assoluto di laureati."
+    }
+  };
+
   var REGIONAL_METRICS = [
     "population_total",
     "live_births",
@@ -243,6 +309,31 @@
   function metricAxis(metricName) {
     var metric = METRICS[metricName] || {};
     return metric.axisScaled || metric.axis || "";
+  }
+
+  function europeMetricCopy(metricName) {
+    var metric = METRICS[metricName] || { label: "Indicatore" };
+    return EUROPE_METRIC_COPY[metricName] || {
+      rankTitle: "Paesi UE per " + metric.label.toLowerCase(),
+      seriesTitle: metric.label + " nel confronto UE",
+      explain: "Confronto armonizzato tra paesi UE disponibili per la misura selezionata.",
+      source: "Fonte dati: Eurostat, paesi UE27 nei dataset linkati in questa pagina.",
+      note: "La vista usa solo paesi e anni con valore disponibile per l'indicatore selezionato."
+    };
+  }
+
+  function setHtml(id, value) {
+    var node = byId(id);
+    if (node) node.innerHTML = value;
+  }
+
+  function setText(id, value) {
+    var node = byId(id);
+    if (node) node.textContent = value;
+  }
+
+  function europeCredit(copy, extraNote) {
+    return copy.source + " Elaborazione: Nazareno Lecis. Nota: " + copy.note + " " + extraNote;
   }
 
   function sexLabel(value) {
@@ -1042,9 +1133,13 @@
   function renderEuropeRankChart(payload) {
     renderEuropeControls(payload);
     var metric = METRICS[STATE.europeMetric];
+    var copy = europeMetricCopy(STATE.europeMetric);
     var rows = rowsForMetricLevel(payload, STATE.europeMetric, "country").filter(function (row) {
       return Number(row.year) === Number(STATE.europeYear) && toNumber(row.metric_value) !== null;
     }).sort(function (a, b) { return toNumber(a.metric_value) - toNumber(b.metric_value); });
+    setText("diEuropeRankTitle", copy.rankTitle);
+    setText("diEuropeRankExplain", copy.explain);
+    setHtml("diEuropeRankCredit", europeCredit(copy, "La classifica usa solo i paesi con valore disponibile nell'anno selezionato; l'Italia è evidenziata in arancione."));
     var tag = byId("diEuropeRankTag");
     if (tag) tag.textContent = metric.label + ", " + STATE.europeYear;
     plot("diEuropeRankChart", [{
@@ -1059,11 +1154,15 @@
 
   function renderEuropeSeriesChart(payload) {
     var metric = METRICS[STATE.europeSeriesMetric];
+    var copy = europeMetricCopy(STATE.europeSeriesMetric);
     var allRows = rowsForMetricLevel(payload, STATE.europeSeriesMetric, "country").filter(function (row) { return toNumber(row.metric_value) !== null; });
     var years = unique(allRows.map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
     var euMedian = years.map(function (year) {
       return { year: year, value: median(allRows.filter(function (row) { return Number(row.year) === Number(year); }).map(function (row) { return row.metric_value; })) };
     });
+    setText("diEuropeSeriesTitle", copy.seriesTitle);
+    setText("diEuropeSeriesExplain", copy.explain + " La linea grigia mostra la mediana annuale dei paesi UE disponibili.");
+    setHtml("diEuropeSeriesCredit", europeCredit(copy, "La mediana UE è calcolata anno per anno sui paesi disponibili e non è ponderata per popolazione; il paese precaricato è la Spagna."));
     var tag = byId("diEuropeSeriesTag");
     if (tag) tag.textContent = "Italia, mediana UE e " + countryName(payload, STATE.europeCountry);
     plot("diEuropeSeriesChart", [
