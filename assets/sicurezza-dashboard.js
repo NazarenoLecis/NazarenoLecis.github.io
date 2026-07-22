@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260722-4";
+  var VERSION = "20260722-5";
   var PAYLOAD_GLOBAL = "SICUREZZA_DASHBOARD_PAYLOAD";
   var DATA_BASES = [
     "https://data.nazarenolecis.com/sicurezza/"
