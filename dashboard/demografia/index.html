@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260722-1">
+  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260722-2">
   <link rel="preload" href="../../data/demografia/dashboard.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/demografia-dashboard.js?v=20260722-1"></script>
+  <script defer src="../../assets/demografia-dashboard.js?v=20260722-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -47,7 +47,7 @@
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Eurostat, World Bank e fonti statistiche ufficiali</strong>
+          <strong>Eurostat e fonti statistiche ufficiali</strong>
           <span>Dati normalizzati dalla pipeline demografica pubblica e preparati in un payload statico.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">Repository demografia</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
@@ -64,8 +64,10 @@
       <a href="#indicatori">Indicatori</a>
       <a href="#kebab">Kebab</a>
       <a href="#serie">Serie</a>
+      <a href="#regioni">Regioni</a>
       <a href="#flussi">Flussi</a>
       <a href="#istruzione">Istruzione</a>
+      <a href="#europa">Europa</a>
       <a href="#metodo">Metodo</a>
     </nav>
 
@@ -87,7 +89,11 @@
       </div>
       <article class="di-card di-chart-block">
         <div class="di-card-title"><h3>Popolazione per eta' e sesso</h3><span id="diKebabTag">Italia</span></div>
+        <p class="di-explain">Seleziona Italia o una regione. Per l'Italia la distribuzione usa eta' singole; per le regioni Eurostat pubblica classi quinquennali, quindi la forma e' meno fine ma resta confrontabile tra territori.</p>
         <div class="di-chart-controls">
+          <label>Territorio
+            <select id="diKebabTerritory"></select>
+          </label>
           <label>Anno
             <select id="diKebabYear"></select>
           </label>
@@ -105,23 +111,101 @@
       <div class="di-stack">
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Popolazione osservata e proiettata</h3><span>milioni di residenti</span></div>
+          <p class="di-explain">La serie consente di cambiare territorio e indicatore. Le regioni arrivano fino all'ultimo anno osservato; le proiezioni sono disponibili a livello nazionale e paese UE.</p>
+          <div class="di-chart-controls">
+            <label>Territorio
+              <select id="diSeriesTerritory"></select>
+            </label>
+            <label>Indicatore
+              <select id="diSeriesMetric">
+                <option value="population_total">Popolazione totale</option>
+                <option value="share_0_14">Quota 0-14</option>
+                <option value="share_15_64">Quota 15-64</option>
+                <option value="share_65_plus">Quota 65+</option>
+                <option value="share_80_plus">Quota 80+</option>
+                <option value="median_age">Eta' mediana</option>
+                <option value="dependency_old">Dipendenza anziani</option>
+              </select>
+            </label>
+          </div>
           <div id="diPopulationChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: Eurostat <code>demo_pjan</code> e <code>proj_23np</code>. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Quote per grandi classi di eta'</h3><span>percentuale popolazione</span></div>
+          <p class="di-explain">Questo grafico separa le classi 0-14, 15-64, 65+ e 80+. Serve per vedere se il cambiamento e' trainato dai giovani, dall'eta' attiva o dalle eta' anziane.</p>
+          <div class="di-chart-controls">
+            <label>Territorio
+              <select id="diAgeSharesTerritory"></select>
+            </label>
+          </div>
           <div id="diAgeSharesChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: Eurostat. Classi 0-14, 15-64, 65+ e 80+. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Eta' media, mediana e quantili</h3><span>anni</span></div>
+          <p class="di-explain">La media sintetizza tutta la distribuzione; mediana e quantili mostrano dove si collocano il centro e le code. Una mediana crescente indica che almeno meta' della popolazione si sposta verso eta' piu' alte.</p>
           <div id="diAgeDistributionChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: elaborazione sulla distribuzione per eta'. Quantili P10, P25, mediana, P75 e P90.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Dipendenza anziani</h3><span>65+ ogni 100 persone 15-64</span></div>
+          <p class="di-explain">Il tasso di dipendenza anziani non misura il lavoro effettivo, ma il rapporto demografico tra popolazione 65+ e popolazione in eta' convenzionalmente attiva.</p>
           <div id="diDependencyChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: Eurostat. Indicatore calcolato come popolazione 65+ / popolazione 15-64.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="regioni" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Territorio</span>
+        <div><h2>Indicatori regionali</h2><p>Confronto tra regioni italiane NUTS2 su struttura per eta', popolazione, natalita', fecondita' e movimento demografico.</p></div>
+      </div>
+      <div class="di-stack">
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3>Classifica regionale</h3><span id="diRegionalRankTag">ultimo anno</span></div>
+          <p class="di-explain">Scegli indicatore e anno. Le classifiche usano solo anni in cui la variabile e' disponibile per le regioni Eurostat.</p>
+          <div class="di-chart-controls">
+            <label>Indicatore
+              <select id="diRegionalMetric">
+                <option value="population_total">Popolazione totale</option>
+                <option value="share_65_plus">Quota 65+</option>
+                <option value="median_age">Eta' mediana</option>
+                <option value="dependency_old">Dipendenza anziani</option>
+                <option value="total_fertility_rate">Fecondita'</option>
+                <option value="balance_gbirthrt">Natalita'</option>
+                <option value="net_migration_adjustment">Saldo migratorio</option>
+              </select>
+            </label>
+            <label>Anno
+              <select id="diRegionalYear"></select>
+            </label>
+          </div>
+          <div id="diRegionalRankChart" class="di-chart di-chart-tall"></div>
+          <p class="di-chart-credit">Fonte: Eurostat <code>demo_r_pjangroup</code>, <code>demo_r_gind3</code> e <code>demo_r_find3</code>. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3>Serie regionale</h3><span id="diRegionalSeriesTag">territorio selezionato</span></div>
+          <p class="di-explain">La serie mostra l'indicatore scelto per una regione. E' utile per distinguere livelli strutturali da cambiamenti recenti.</p>
+          <div class="di-chart-controls">
+            <label>Regione
+              <select id="diRegionalFocus"></select>
+            </label>
+            <label>Indicatore
+              <select id="diRegionalSeriesMetric">
+                <option value="population_total">Popolazione totale</option>
+                <option value="share_65_plus">Quota 65+</option>
+                <option value="median_age">Eta' mediana</option>
+                <option value="dependency_old">Dipendenza anziani</option>
+                <option value="total_fertility_rate">Fecondita'</option>
+                <option value="balance_gbirthrt">Natalita'</option>
+                <option value="net_migration_adjustment">Saldo migratorio</option>
+              </select>
+            </label>
+          </div>
+          <div id="diRegionalSeriesChart" class="di-chart"></div>
+          <p class="di-chart-credit">Fonte: Eurostat regionale. Le serie di fecondita' e bilancio possono avere coperture leggermente diverse dalla popolazione per eta'.</p>
         </article>
       </div>
     </section>
@@ -131,14 +215,16 @@
         <span class="eyebrow">Movimento demografico</span>
         <div><h2>Natalita', fecondita' e migrazioni</h2><p>Le serie mettono insieme componenti naturali e migratorie: nascite, decessi, fecondita', immigrazione, emigrazione stimata e saldo.</p></div>
       </div>
-      <div class="di-grid-2">
+      <div class="di-stack">
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Natalita' e fecondita'</h3><span>nati per 1.000 e figli per donna</span></div>
+          <p class="di-explain">Fecondita' e natalita' non sono la stessa cosa: la prima misura figli per donna, la seconda nati per 1.000 abitanti e risente anche della struttura per eta'.</p>
           <div id="diFertilityChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: Eurostat <code>demo_frate</code> e indicatori di bilancio demografico. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Migrazioni e saldo</h3><span>persone</span></div>
+          <p class="di-explain">Il saldo migratorio con aggiustamento statistico e' letto insieme all'immigrazione. L'emigrazione stimata nel grafico serve solo a rendere visibile la scomposizione del saldo.</p>
           <div id="diMigrationChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: Eurostat, bilancio demografico. L'emigrazione e' derivata da immigrazione e saldo migratorio con aggiustamento.</p>
         </article>
@@ -150,16 +236,97 @@
         <span class="eyebrow">Capitale umano</span>
         <div><h2>Titoli di studio nella popolazione adulta</h2><p>Distribuzione per livello di istruzione nella fascia 25-64 e andamento della quota con titolo terziario.</p></div>
       </div>
-      <div class="di-grid-2">
+      <div class="di-stack">
         <article class="di-card di-chart-block">
           <div class="di-card-title"><h3>Distribuzione titoli di studio</h3><span id="diEducationTag">25-64</span></div>
+          <p class="di-explain">Scegli paese, fascia di eta', sesso e anno. Le voci generali e sottocategorie ISCED sono entrambe disponibili, quindi alcune opzioni sono aggregati e altre sono scomposizioni.</p>
+          <div class="di-chart-controls">
+            <label>Paese
+              <select id="diEducationCountry"></select>
+            </label>
+            <label>Eta'
+              <select id="diEducationAge"></select>
+            </label>
+            <label>Sesso
+              <select id="diEducationSex"></select>
+            </label>
+            <label>Anno
+              <select id="diEducationYear"></select>
+            </label>
+          </div>
           <div id="diEducationChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: Eurostat <code>edat_lfse_03</code>. Quote percentuali sulla popolazione 25-64.</p>
         </article>
         <article class="di-card di-chart-block">
-          <div class="di-card-title"><h3>Laureati per sesso</h3><span>quota 25-64</span></div>
+          <div class="di-card-title"><h3>Istruzione e popolazione totale</h3><span>quota e popolazione</span></div>
+          <p class="di-explain">Questo grafico mette accanto la quota del livello di istruzione selezionato e la popolazione totale del paese. Aiuta a distinguere variazioni percentuali da cambiamenti della base demografica.</p>
+          <div class="di-chart-controls">
+            <label>Paese
+              <select id="diTertiaryCountry"></select>
+            </label>
+            <label>Eta'
+              <select id="diTertiaryAge"></select>
+            </label>
+            <label>Sesso
+              <select id="diTertiarySex"></select>
+            </label>
+            <label>Livello
+              <select id="diTertiaryLevel"></select>
+            </label>
+          </div>
           <div id="diTertiaryChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte: Eurostat <code>edat_lfse_03</code>. Elaborazione di Nazareno Lecis.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="europa" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Confronto europeo</span>
+        <div><h2>Italia nel contesto UE</h2><p>Confronti armonizzati tra paesi UE su struttura per eta', fecondita', natalita', migrazione e istruzione.</p></div>
+      </div>
+      <div class="di-stack">
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3>Classifica paesi UE</h3><span id="diEuropeRankTag">UE27</span></div>
+          <p class="di-explain">Scegli indicatore e anno. L'Italia e' evidenziata rispetto agli altri paesi UE disponibili nel payload.</p>
+          <div class="di-chart-controls">
+            <label>Indicatore
+              <select id="diEuropeMetric">
+                <option value="share_65_plus">Quota 65+</option>
+                <option value="median_age">Eta' mediana</option>
+                <option value="dependency_old">Dipendenza anziani</option>
+                <option value="total_fertility_rate">Fecondita'</option>
+                <option value="balance_gbirthrt">Natalita'</option>
+                <option value="tertiary_25_64">Laurea 25-64</option>
+              </select>
+            </label>
+            <label>Anno
+              <select id="diEuropeYear"></select>
+            </label>
+          </div>
+          <div id="diEuropeRankChart" class="di-chart di-chart-tall"></div>
+          <p class="di-chart-credit">Fonte: Eurostat, paesi UE27. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3>Italia, UE mediana e paese scelto</h3><span id="diEuropeSeriesTag">serie storica</span></div>
+          <p class="di-explain">La mediana UE e' calcolata anno per anno sui paesi disponibili. Il paese scelto permette un confronto diretto con l'Italia.</p>
+          <div class="di-chart-controls">
+            <label>Paese confronto
+              <select id="diEuropeCountry"></select>
+            </label>
+            <label>Indicatore
+              <select id="diEuropeSeriesMetric">
+                <option value="share_65_plus">Quota 65+</option>
+                <option value="median_age">Eta' mediana</option>
+                <option value="dependency_old">Dipendenza anziani</option>
+                <option value="total_fertility_rate">Fecondita'</option>
+                <option value="balance_gbirthrt">Natalita'</option>
+                <option value="tertiary_25_64">Laurea 25-64</option>
+              </select>
+            </label>
+          </div>
+          <div id="diEuropeSeriesChart" class="di-chart"></div>
+          <p class="di-chart-credit">Fonte: Eurostat. La mediana UE non e' una media ponderata per popolazione.</p>
         </article>
       </div>
     </section>
@@ -182,8 +349,9 @@
         </div>
         <div>
           <h3>Fonti</h3>
-          <p>Eurostat: popolazione per eta' e sesso, proiezioni EUROPOP2023, indicatori di fecondita', bilancio demografico, migrazioni e titoli di studio.</p>
-          <p>World Bank e altre fonti ufficiali sono integrate nel repository dati per confronti e controlli di coerenza.</p>
+          <p>Eurostat: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>.</p>
+          <p>Eurostat regionale: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_pjangroup/default/table" target="_blank" rel="noopener"><code>demo_r_pjangroup</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_find3/default/table" target="_blank" rel="noopener"><code>demo_r_find3</code></a>.</p>
+          <p>Dati e trasformazioni sono pubblicati nel <a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">repository demografia</a> e nel payload statico della dashboard.</p>
           <p>Elaborazione di Nazareno Lecis.</p>
         </div>
       </div>

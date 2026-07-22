@@ -292,6 +292,14 @@
   text-transform: uppercase;
 }
 
+.di-explain {
+  max-width: 980px;
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: .96rem;
+  line-height: 1.5;
+}
+
 .di-chart-controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 220px));
