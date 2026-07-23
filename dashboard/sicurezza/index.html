@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-9.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260723-10.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -145,6 +145,7 @@
           <div class="si-chart-controls">
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Confronta con<select data-si-control="compareTerritory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
@@ -160,6 +161,7 @@
             <label>Anno<select data-si-control="year"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Vista<select data-si-control="compositionMode"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
@@ -178,6 +180,7 @@
             <label>Soglia %<select data-si-control="contributionThreshold"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
@@ -204,6 +207,7 @@
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
             <label>Provincia<select data-si-control="province"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
             <label>Misura<select data-si-control="measure"></select></label>
@@ -216,8 +220,12 @@
           <div class="si-chart-controls">
             <label>Anno<select data-si-control="year"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siScatterChart" class="si-chart"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> il grafico separa livello del fenomeno e direzione del trend. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
@@ -228,6 +236,8 @@
             <label>Anno<select data-si-control="year"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
             <label>Misura<select data-si-control="measure"></select></label>
@@ -254,6 +264,8 @@
         <div class="si-panel-title"><h3>Principali reati patrimoniali</h3><span id="siPropertyTag">Italia e territorio</span></div>
         <div class="si-chart-controls">
           <label>Livello<select data-si-control="level"></select></label>
+          <label>Regione<select data-si-control="region"></select></label>
+          <label>Provincia<select data-si-control="province"></select></label>
           <label>Territorio<select data-si-control="territory"></select></label>
           <label>Categoria<select data-si-control="theme"></select></label>
           <label>Reato<select data-si-control="crime"></select></label>
@@ -277,6 +289,8 @@
           <div class="si-panel-title"><h3>Violenti vs altri reati</h3><span id="siViolentTag">classificazione operativa</span></div>
           <div class="si-chart-controls">
             <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
@@ -289,6 +303,8 @@
           <div class="si-panel-title"><h3>Principali reati contro la persona</h3><span id="siPersonFocusTag">Italia e territorio</span></div>
           <div class="si-chart-controls">
             <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
@@ -303,6 +319,8 @@
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Misura<select data-si-control="measure"></select></label>
           </div>
@@ -328,6 +346,7 @@
             <label>Tipo<select data-si-control="homicideType"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Confronta con<select data-si-control="compareTerritory"></select></label>
             <label>Misura<select data-si-control="measure"></select></label>
@@ -363,7 +382,7 @@
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siHomicidePeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Le quote sono calcolate sul grafico selezionato; i tassi rapportano i conteggi alla popolazione residente totale del territorio e anno selezionati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Le quote sono calcolate sul grafico selezionato; il payload persone caricato ora e nazionale, quindi i tassi rapportano i conteggi alla popolazione residente totale italiana dell'anno selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -373,7 +392,7 @@
         <span class="eyebrow">Autori, vittime e cittadinanza</span>
         <div>
           <h2>Chi commette i reati e chi sono le vittime</h2>
-          <p>Qui si distinguono autori registrati e vittime registrate. Il dettaglio caricato ora e nazionale; i livelli territoriali verranno mostrati quando saranno scaricati e validati.</p>
+          <p>Qui si distinguono autori registrati e vittime registrate. Il dettaglio caricato ora e nazionale; i livelli territoriali verranno mostrati quando saranno disponibili nel payload persone.</p>
         </div>
       </div>
       <p id="siPeopleNotice" class="si-note">Caricamento dei dati persone...</p>
@@ -389,7 +408,7 @@
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siPeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Puoi leggere conteggi, quote del grafico o tassi sulla popolazione residente totale. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Il payload persone caricato ora e nazionale; puoi leggere conteggi, quote del grafico o tassi sulla popolazione residente totale italiana. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Identikit per sesso ed eta</h3><span id="siDemographyTag">quando disponibile</span></div>
@@ -402,7 +421,7 @@
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siDemographyChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> identikit registrato nei dataflow disponibili, oggi soprattutto nazionale. I tassi rapportano il conteggio mostrato alla popolazione residente totale del territorio e anno selezionati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> identikit registrato nei dataflow disponibili, oggi nazionale nel payload caricato. I tassi rapportano il conteggio mostrato alla popolazione residente totale italiana dell'anno selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -420,6 +439,9 @@
         <div class="si-chart-controls">
           <label>Anno<select data-si-control="year"></select></label>
           <label>Livello<select data-si-control="level"></select></label>
+          <label>Regione<select data-si-control="region"></select></label>
+          <label>Provincia<select data-si-control="province"></select></label>
+          <label>Territorio<select data-si-control="territory"></select></label>
           <label>Categoria<select data-si-control="theme"></select></label>
           <label>Reato<select data-si-control="crime"></select></label>
           <label>Scostamenti<select data-si-control="counterDirection"></select></label>

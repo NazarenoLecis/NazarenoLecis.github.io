@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260723-9";
+  var VERSION = "20260723-10";
   var PAYLOAD_GLOBALS = {
     metadata: "SICUREZZA_DASHBOARD_METADATA",
     reported: "SICUREZZA_REPORTED_CRIMES",
@@ -748,7 +748,8 @@
     }
     var levels = unique(people.map(function (row) { return row.territory_level; })).filter(Boolean);
     var scope = levels.length === 1 && levels[0] === "national" ? "Italia" : levels.map(function (level) { return LEVEL_LABELS[level] || level; }).join(", ");
-    els.siPeopleNotice.innerHTML = "<strong>Copertura persone:</strong> " + escapeHtml(scope) + ". I grafici separano sempre autori e vittime. Il filtro Misura permette conteggi, quote e tassi calcolati sulla popolazione residente totale del territorio e anno selezionati.";
+    var territoryNote = levels.length === 1 && levels[0] === "national" ? " Il payload persone caricato ora e nazionale: i filtri territoriali agiscono sui grafici dei reati denunciati, non su autori/vittime e identikit." : "";
+    els.siPeopleNotice.innerHTML = "<strong>Copertura persone:</strong> " + escapeHtml(scope) + "." + territoryNote + " I grafici separano sempre autori e vittime. Il filtro Misura permette conteggi, quote e tassi calcolati sulla popolazione residente totale.";
   }
 
   function refreshDependentFilters() {
@@ -968,22 +969,29 @@
   }
 
   function renderScatterChart() {
-    var rows = territoryMetricRows().filter(function (row) { return isFiniteNumber(row.change_pct_yoy); });
-    els.siScatterTag.textContent = "valore vs variazione";
+    if (STATE.measure === "index" || STATE.measure === "moving_average" || STATE.measure === "yoy") {
+      els.siScatterTag.textContent = LEVEL_LABELS[STATE.level] + " - " + metricScopeLabel();
+      return emptyChart("siScatterChart", "Questo grafico confronta il livello del fenomeno con la variazione annua: scegli valori assoluti o tassi per l'asse orizzontale.");
+    }
+    var rows = territoryMetricRows().map(function (row) {
+      row._plotValue = metricValueForRow(row);
+      return row;
+    }).filter(function (row) { return isFiniteNumber(row.change_pct_yoy) && isFiniteNumber(row._plotValue); });
+    els.siScatterTag.textContent = LEVEL_LABELS[STATE.level] + " - " + metricScopeLabel() + " - " + measureLabel();
     if (!rows.length) return emptyChart("siScatterChart", "Servono almeno due anni per calcolare la variazione.");
     plot("siScatterChart", [{
       type: "scatter",
       mode: "markers",
-      x: rows.map(function (row) { return row.value; }),
+      x: rows.map(function (row) { return row._plotValue; }),
       y: rows.map(function (row) { return row.change_pct_yoy; }),
       text: rows.map(territoryLabel),
       marker: {
-        size: rows.map(function (row) { return Math.max(7, Math.min(24, Math.sqrt(Math.max(row.value, 0)) / 20)); }),
+        size: rows.map(function (row) { return Math.max(7, Math.min(24, Math.sqrt(Math.max(row._plotValue, 0)) / 20)); }),
         color: rows.map(function (row) { return row.change_pct_yoy >= 0 ? "#d96363" : "#5e9f65"; }),
         opacity: .78
       },
-      hovertemplate: "<b>%{text}</b><br>Valore: %{x:,.0f}<br>Var. annua: %{y:.1f}%<extra></extra>"
-    }], { xTitle: "Delitti denunciati", yTitle: "Variazione % annua" });
+      hovertemplate: "<b>%{text}</b><br>" + measureLabel() + ": %{x:,.2f}<br>Var. annua: %{y:.1f}%<extra></extra>"
+    }], { xTitle: measureLabel(), yTitle: "Variazione % annua" });
   }
 
   function renderTreemapChart() {
