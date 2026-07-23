@@ -431,7 +431,9 @@
 
 .si-table-wrap {
   overflow-x: auto;
+  max-width: 100%;
   scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .si-chart-block {
@@ -514,9 +516,9 @@
 
 .si-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 760px;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .si-table button {
@@ -534,6 +536,7 @@
   border-bottom: 1px solid var(--line);
   text-align: left;
   vertical-align: middle;
+  overflow-wrap: break-word;
 }
 
 .si-table th {
@@ -550,12 +553,20 @@
 }
 
 .si-table .si-number {
+  width: 1%;
+  min-width: 108px;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .si-table .si-name {
-  width: 42%;
+  min-width: 150px;
+}
+
+.si-table th:first-child,
+.si-table td:first-child {
+  min-width: 190px;
 }
 
 .si-table .si-code {
@@ -757,7 +768,16 @@
   }
 
   .si-table {
-    min-width: 560px;
+    min-width: 740px;
+  }
+
+  .si-table th,
+  .si-table td {
+    padding: 10px 8px;
+  }
+
+  .si-table .si-number {
+    min-width: 100px;
   }
 
   .si-chart {
