@@ -444,6 +444,14 @@
   min-height: 420px;
 }
 
+.si-chart-dynamic-title {
+  margin: .95rem 0 .25rem;
+  color: var(--text);
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .si-chart-compact {
   min-height: 280px;
 }

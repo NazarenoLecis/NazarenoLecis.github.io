@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260723-10";
+  var VERSION = "20260723-11";
   var PAYLOAD_GLOBALS = {
     metadata: "SICUREZZA_DASHBOARD_METADATA",
     reported: "SICUREZZA_REPORTED_CRIMES",
@@ -125,6 +125,8 @@
     { value: "moving_average", label: "Media mobile triennale" },
     { value: "yoy", label: "Variazione % annua" }
   ];
+  var POINT_MEASURE_VALUES = ["absolute", "rate", "rate_1000"];
+  var CROSS_SECTION_MEASURE_VALUES = ["absolute", "rate", "rate_1000", "yoy"];
   var PEOPLE_MEASURE_OPTIONS = [
     { value: "absolute", label: "Valori assoluti" },
     { value: "share", label: "Quota % del grafico" },
@@ -671,6 +673,7 @@
 
   function renderAll() {
     populateStaticFilters();
+    syncControlVisibility();
     var missing = missingReportedLevelsForCurrentView();
     if (missing.length) {
       renderDeferredLevelLoading(missing);
@@ -680,6 +683,7 @@
       return;
     }
     refreshDependentFilters();
+    syncControlVisibility();
     renderTopRecap();
     renderCoverage();
     renderPeopleNotice();
@@ -789,6 +793,7 @@
     setControlDisabled("region", STATE.level === "national");
     setControlDisabled("province", STATE.level === "national" || STATE.level === "regional");
     setControlDisabled("compareTerritory", STATE.level === "national" || territoryOptions.length < 2);
+    syncControlVisibility();
   }
 
   function populateComparisonYearFilters() {
@@ -832,24 +837,27 @@
     var chart = document.getElementById(id);
     if (chart) delete chart.dataset.deferred;
     if (missingReportedLevelsForCurrentView().length) return;
-    if (id === "siTrendChart") return renderTrendChart();
-    if (id === "siCompositionChart") return renderCompositionChart();
-    if (id === "siContributionChart") return renderContributionChart();
-    if (id === "siRankingChart") return renderRankingChart();
-    if (id === "siScatterChart") return renderScatterChart();
-    if (id === "siTreemapChart") return renderTreemapChart();
-    if (id === "siPropertyFocusChart") return renderPropertyFocusChart();
-    if (id === "siViolentChart") return renderViolentChart();
-    if (id === "siPersonFocusChart") return renderPersonFocusChart();
-    if (id === "siCrimeChart") return renderCrimeChart();
-    if (id === "siHomicideTrendChart") return renderHomicideTrendChart();
-    if (id === "siHomicideStructureChart") return renderHomicideStructureChart();
-    if (id === "siHomicidePeopleChart") return renderHomicidePeopleChart();
-    if (id === "siPeopleChart") return renderPeopleChart();
-    if (id === "siDemographyChart") return renderDemographyChart();
-    if (id === "siCounterChart") return renderCounterChart();
-    if (id === "siPerceptionChart") return renderSurveyChart("siPerceptionChart", "siPerceptionTag", SURVEY_PERCEPTION, "Percezione della sicurezza", "surveyPerceptionIndicator");
-    if (id === "siVictimizationChart") return renderSurveyChart("siVictimizationChart", "siVictimizationTag", SURVEY_VICTIMIZATION, "Vittimizzazione dichiarata", "surveyVictimizationIndicator");
+    return withChartMeasure(id, function () {
+      updateChartNarrative(id);
+      if (id === "siTrendChart") return renderTrendChart();
+      if (id === "siCompositionChart") return renderCompositionChart();
+      if (id === "siContributionChart") return renderContributionChart();
+      if (id === "siRankingChart") return renderRankingChart();
+      if (id === "siScatterChart") return renderScatterChart();
+      if (id === "siTreemapChart") return renderTreemapChart();
+      if (id === "siPropertyFocusChart") return renderPropertyFocusChart();
+      if (id === "siViolentChart") return renderViolentChart();
+      if (id === "siPersonFocusChart") return renderPersonFocusChart();
+      if (id === "siCrimeChart") return renderCrimeChart();
+      if (id === "siHomicideTrendChart") return renderHomicideTrendChart();
+      if (id === "siHomicideStructureChart") return renderHomicideStructureChart();
+      if (id === "siHomicidePeopleChart") return renderHomicidePeopleChart();
+      if (id === "siPeopleChart") return renderPeopleChart();
+      if (id === "siDemographyChart") return renderDemographyChart();
+      if (id === "siCounterChart") return renderCounterChart();
+      if (id === "siPerceptionChart") return renderSurveyChart("siPerceptionChart", "siPerceptionTag", SURVEY_PERCEPTION, "Percezione della sicurezza", "surveyPerceptionIndicator");
+      if (id === "siVictimizationChart") return renderSurveyChart("siVictimizationChart", "siVictimizationTag", SURVEY_VICTIMIZATION, "Vittimizzazione dichiarata", "surveyVictimizationIndicator");
+    });
   }
 
   function renderTrendChart() {
@@ -2141,6 +2149,183 @@
     if (el) el.innerHTML = '<div class="si-chart-empty">' + escapeHtml(message) + "</div>";
   }
 
+  function updateChartNarrative(id) {
+    var chart = document.getElementById(id);
+    if (!chart) return;
+    var block = chart.closest(".si-chart-block");
+    if (!block) return;
+    var narrative = chartNarrative(id);
+    var title = block.querySelector(".si-chart-dynamic-title");
+    if (!title) {
+      title = document.createElement("p");
+      title.className = "si-chart-dynamic-title";
+      block.insertBefore(title, chart);
+    }
+    title.textContent = narrative.title;
+    var credit = block.querySelector(".si-chart-credit");
+    if (credit) {
+      credit.innerHTML = "<strong>Nota:</strong> " + escapeHtml(narrative.note) + " Fonte: ISTAT. Elaborazione di Nazareno Lecis.";
+    }
+  }
+
+  function chartNarrative(id) {
+    var scope = territoryContextLabel();
+    var metric = metricScopeLabel();
+    var measure = measureLabel();
+    if (id === "siTrendChart") {
+      return {
+        title: "Serie storica: " + metric + " - " + scope + " - " + measure,
+        note: measureNote() + " L'Italia resta il benchmark quando selezioni un territorio o un confronto."
+      };
+    }
+    if (id === "siCompositionChart") {
+      return {
+        title: "Composizione dei reati nel " + STATE.year + " - " + scope,
+        note: "Mostra il peso di categorie o singoli reati nel perimetro selezionato; la quota percentuale e calcolata sul totale visualizzato."
+      };
+    }
+    if (id === "siContributionChart") {
+      return {
+        title: "Variazioni " + normalizedComparisonYear() + "-" + STATE.year + ": " + metric + " - " + scope,
+        note: "Include i reati che superano la soglia scelta e rispetta il filtro direzione; usa la variazione percentuale rispetto all'anno di confronto."
+      };
+    }
+    if (id === "siRankingChart") {
+      return {
+        title: "Ranking territoriale nel " + STATE.year + ": " + metric + " - " + measure,
+        note: measureNote() + " Il ranking ordina i territori del livello selezionato e rispetta i filtri geografici attivi."
+      };
+    }
+    if (id === "siScatterChart") {
+      return {
+        title: "Valore e variazione annua nel " + STATE.year + ": " + metric + " - " + scope,
+        note: "L'asse orizzontale mostra " + measure.toLowerCase() + "; l'asse verticale mostra la variazione percentuale annua."
+      };
+    }
+    if (id === "siTreemapChart") {
+      return {
+        title: "Distribuzione territoriale nel " + STATE.year + ": " + metric + " - " + measure,
+        note: measureNote() + " Mostra i territori con valore piu alto nel perimetro geografico selezionato."
+      };
+    }
+    if (id === "siPropertyFocusChart") {
+      return {
+        title: "Reati patrimoniali: serie storica - " + scope + " - " + measure,
+        note: measureNote() + " Il focus usa solo le voci classificate come patrimonio o reati predatori."
+      };
+    }
+    if (id === "siViolentChart") {
+      return {
+        title: "Reati violenti e altri reati: serie storica - " + scope + " - " + measure,
+        note: measureNote() + " La separazione e operativa sui codici reato e non sostituisce una classificazione giuridica esaustiva."
+      };
+    }
+    if (id === "siPersonFocusChart") {
+      return {
+        title: "Reati contro la persona: serie storica - " + scope + " - " + measure,
+        note: measureNote() + " Il focus confronta le principali voci contro la persona disponibili nel perimetro selezionato."
+      };
+    }
+    if (id === "siCrimeChart") {
+      return {
+        title: "Scheda reato: " + (STATE.crime === "all" ? topCrimeLabelForNarrative() : metric) + " - " + scope + " - " + measure,
+        note: measureNote() + " La serie usa il reato specifico selezionato; se il filtro e su tutti, viene mostrata la voce piu rilevante nel perimetro."
+      };
+    }
+    if (id === "siHomicideTrendChart") {
+      return {
+        title: "Omicidi: serie storica " + homicideTypeLabel() + " - " + scope + " - " + measure,
+        note: measureNote() + " La serie confronta l'Italia con il territorio selezionato o con il secondo territorio scelto."
+      };
+    }
+    if (id === "siHomicideStructureChart") {
+      if (STATE.homicideStructureView === "territories") {
+        return {
+          title: "Omicidi: ranking territoriale " + homicideTypeLabel() + " nel " + STATE.year + " - " + measure,
+          note: measureNote() + " In vista ranking il filtro Territorio non viene mostrato per mantenere il confronto tra territori."
+        };
+      }
+      return {
+        title: "Omicidi: suddivisione per tipo nel " + STATE.year + " - " + scope + " - " + measure,
+        note: measureNote() + " In vista suddivisione vengono mostrate le voci omicidio disponibili nel territorio selezionato; non sono sommate automaticamente."
+      };
+    }
+    if (id === "siHomicidePeopleChart") {
+      return {
+        title: "Omicidi: " + roleLabel(STATE.role) + " per " + homicidePeopleBreakdownLabel() + " - " + homicideTypeLabel(),
+        note: peopleMeasureNote() + " Il payload autori/vittime caricato ora e nazionale."
+      };
+    }
+    if (id === "siPeopleChart") {
+      return {
+        title: roleLabel(STATE.role) + " per cittadinanza e reato - " + peopleMeasureLabel(),
+        note: peopleMeasureNote() + " Autori e vittime restano separati dal filtro Ruolo; il payload persone caricato ora e nazionale."
+      };
+    }
+    if (id === "siDemographyChart") {
+      return {
+        title: "Identikit " + roleLabel(STATE.role).toLowerCase() + ": sesso ed eta - " + peopleMeasureLabel(),
+        note: peopleMeasureNote() + " Il dettaglio per sesso ed eta dipende dalle dimensioni disponibili nel payload persone."
+      };
+    }
+    if (id === "siCounterChart") {
+      return {
+        title: "Controtendenze nel " + STATE.year + ": " + metric + " - " + scope,
+        note: "Mostra territori e reati che si muovono in direzione opposta rispetto all'Italia, secondo il filtro Scostamenti selezionato."
+      };
+    }
+    if (id === "siPerceptionChart") {
+      return {
+        title: "Percezione della sicurezza: indagine campionaria",
+        note: "Quote di persone o famiglie nelle indagini campionarie; misura fenomeni diversi dalle denunce registrate."
+      };
+    }
+    if (id === "siVictimizationChart") {
+      return {
+        title: "Vittimizzazione dichiarata: indagine campionaria",
+        note: "Quote di persone o famiglie che dichiarano di aver subito reati; include anche fenomeni non denunciati."
+      };
+    }
+    return { title: metric + " - " + scope, note: measureNote() };
+  }
+
+  function measureNote() {
+    if (STATE.measure === "rate") return "Tasso per 100.000 abitanti: valore rapportato alla popolazione residente del territorio e anno selezionati.";
+    if (STATE.measure === "rate_1000") return "Tasso per 1.000 abitanti: valore rapportato alla popolazione residente del territorio e anno selezionati.";
+    if (STATE.measure === "index") return "Indice con primo anno uguale a 100: evidenzia la dinamica relativa della serie, non il volume assoluto.";
+    if (STATE.measure === "moving_average") return "Media mobile triennale: attenua oscillazioni annuali e va letta come andamento smussato.";
+    if (STATE.measure === "yoy") return "Variazione percentuale annua: confronto con l'anno precedente nello stesso perimetro.";
+    return "Valori assoluti: conteggio dei delitti denunciati nel perimetro selezionato.";
+  }
+
+  function peopleMeasureNote() {
+    if (STATE.peopleMeasure === "share") return "Quota percentuale: peso della categoria sul totale visualizzato nel grafico.";
+    if (STATE.peopleMeasure === "rate") return "Tasso per 100.000 abitanti: conteggio rapportato alla popolazione residente totale dell'anno selezionato.";
+    if (STATE.peopleMeasure === "rate_1000") return "Tasso per 1.000 abitanti: conteggio rapportato alla popolazione residente totale dell'anno selezionato.";
+    return "Valori assoluti: conteggi di autori/denunciati o vittime registrati nella fonte disponibile.";
+  }
+
+  function territoryContextLabel() {
+    if (STATE.level === "national") return "Italia";
+    if (STATE.territory !== "all") return territoryScopeLabel();
+    var label = LEVEL_LABELS[STATE.level] || STATE.level;
+    if (STATE.province !== "all") return label + " - " + territoryShort(STATE.province);
+    if (STATE.region !== "all") return label + " - " + STATE.region;
+    return label;
+  }
+
+  function topCrimeLabelForNarrative() {
+    return crimeLabel({ crime_code: topCrimeCodeForSelection() });
+  }
+
+  function homicidePeopleBreakdownLabel() {
+    if (STATE.homicidePeopleBreakdown === "citizenship") return "cittadinanza";
+    if (STATE.homicidePeopleBreakdown === "sex") return "sesso";
+    if (STATE.homicidePeopleBreakdown === "age") return "eta";
+    if (STATE.homicidePeopleBreakdown === "crime") return "tipo di omicidio";
+    return "sesso ed eta";
+  }
+
   function renderError() {
     CHART_IDS.forEach(function (id) {
       emptyChart(id, "Dati non caricati.");
@@ -2171,7 +2356,8 @@
 
   function populateControlGroup(name, options, value) {
     controlsFor(name).forEach(function (select) {
-      populateSelect(select, options, value);
+      var scopedOptions = controlOptionsForSelect(name, select, options);
+      populateSelect(select, scopedOptions, controlValueForSelect(name, select, value, scopedOptions));
     });
   }
 
@@ -2186,6 +2372,67 @@
     var mainId = MAIN_CONTROL_BY_NAME[name];
     if (mainId && els[mainId]) controls.unshift(els[mainId]);
     return controls.filter(Boolean);
+  }
+
+  function controlOptionsForSelect(name, select, options) {
+    if (name === "measure") return measureOptionsForChart(chartIdForControl(select));
+    return options;
+  }
+
+  function controlValueForSelect(name, select, value, options) {
+    if (name === "measure") return effectiveMeasureForChart(chartIdForControl(select), value);
+    return value;
+  }
+
+  function withChartMeasure(chartId, fn) {
+    var original = STATE.measure;
+    STATE.measure = effectiveMeasureForChart(chartId, STATE.measure);
+    try {
+      return fn();
+    } finally {
+      STATE.measure = original;
+    }
+  }
+
+  function effectiveMeasureForChart(chartId, value) {
+    var options = measureOptionsForChart(chartId);
+    var selected = String(value || STATE.measure || "");
+    if (options.some(function (option) { return option.value === selected; })) return selected;
+    return options[0] ? options[0].value : "absolute";
+  }
+
+  function measureOptionsForChart(chartId) {
+    var values = null;
+    if (chartId === "siScatterChart") values = POINT_MEASURE_VALUES;
+    if (chartId === "siRankingChart" || chartId === "siTreemapChart" || chartId === "siHomicideStructureChart") values = CROSS_SECTION_MEASURE_VALUES;
+    if (!values) return MEASURE_OPTIONS;
+    return MEASURE_OPTIONS.filter(function (option) { return values.indexOf(option.value) >= 0; });
+  }
+
+  function syncControlVisibility() {
+    document.querySelectorAll("[data-si-control]").forEach(function (select) {
+      var label = select.closest("label");
+      if (!label) return;
+      var name = select.getAttribute("data-si-control");
+      var chartId = chartIdForControl(select);
+      var hidden = false;
+      if (name === "region") hidden = STATE.level === "national";
+      if (name === "province") hidden = STATE.level !== "capital";
+      if (name === "territory" || name === "compareTerritory") hidden = STATE.level === "national";
+      if (chartId === "siHomicideStructureChart" && name === "homicideType") {
+        hidden = STATE.homicideStructureView !== "territories";
+      }
+      if (chartId === "siHomicideStructureChart" && name === "territory" && STATE.homicideStructureView === "territories") {
+        hidden = true;
+      }
+      label.hidden = hidden;
+    });
+  }
+
+  function chartIdForControl(select) {
+    var block = select && select.closest ? select.closest(".si-chart-block") : null;
+    var chart = block ? block.querySelector(".si-chart") : null;
+    return chart ? chart.id : "global";
   }
 
   function onChange(el, fn) {
