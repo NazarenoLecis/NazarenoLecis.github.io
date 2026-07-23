@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260723-8";
+  var VERSION = "20260723-9";
   var PAYLOAD_GLOBALS = {
     metadata: "SICUREZZA_DASHBOARD_METADATA",
     reported: "SICUREZZA_REPORTED_CRIMES",
@@ -1071,7 +1071,7 @@
     });
     els.siViolentTag.textContent = territoryScopeLabel() + " - " + metricScopeLabel() + " - " + measureLabel();
     if (!rows.length) return emptyChart("siViolentChart", "Nessun dato per classificazione violenti/altri.");
-    if (!violentPoints.concat(otherPoints).some(function (point) { return isFiniteNumber(point.value); })) return emptyChart("siViolentChart", "La misura selezionata non e disponibile per questo perimetro.");
+    if (!violentPoints.concat(otherPoints).some(function (point) { return isFiniteNumber(point.value); })) return emptyChart("siViolentChart", measureUnavailableMessage("questo perimetro"));
     plot("siViolentChart", [
       { type: "bar", name: "Reati violenti", x: yearsList.map(yearLabel), y: transformSeriesValues(violentPoints).map(function (point) { return point.value; }), marker: { color: "#d96363" } },
       { type: "bar", name: "Altri reati", x: yearsList.map(yearLabel), y: transformSeriesValues(otherPoints).map(function (point) { return point.value; }), marker: { color: "#4f8bc9" } }
@@ -1093,7 +1093,7 @@
     var points = rows.map(function (row) {
       return { year: row.year, value: valueForMeasureBase(row), raw: [row] };
     });
-    if (!points.some(function (point) { return isFiniteNumber(point.value); })) return emptyChart("siCrimeChart", "La misura selezionata non e disponibile per questo reato.");
+    if (!points.some(function (point) { return isFiniteNumber(point.value); })) return emptyChart("siCrimeChart", measureUnavailableMessage("questo reato"));
     plot("siCrimeChart", [{
       type: "scatter",
       mode: "lines+markers",
@@ -1248,7 +1248,7 @@
 
   function renderPeopleChart() {
     var rows = peopleSelectionRows();
-    els.siPeopleTag.textContent = rows.length ? roleLabel(STATE.role) + " - " + peopleBreakdownLabel() + " - " + peopleMeasureLabel() : "non disponibile";
+    els.siPeopleTag.textContent = rows.length ? roleLabel(STATE.role) + " - " + peopleBreakdownLabel() + " - " + peopleMeasureLabel() : "nessun dato";
     if (!rows.length) return emptyChart("siPeopleChart", "I dati autori/vittime non sono ancora presenti nel payload selezionato.");
     var grouped = peopleMetricGroups(rows, function (row) {
       return peopleBreakdownKey(row);
@@ -1274,8 +1274,8 @@
 
   function renderDemographyChart() {
     var rows = peopleSelectionRows().filter(function (row) { return row.age_group || row.sex; });
-    els.siDemographyTag.textContent = rows.length ? roleLabel(STATE.role) + " - sesso ed eta - " + peopleMeasureLabel() : "non disponibile";
-    if (!rows.length) return emptyChart("siDemographyChart", "Sesso ed eta non sono disponibili per il perimetro selezionato.");
+    els.siDemographyTag.textContent = rows.length ? roleLabel(STATE.role) + " - sesso ed eta - " + peopleMeasureLabel() : "nessun dato";
+    if (!rows.length) return emptyChart("siDemographyChart", "Sesso ed eta non risultano nel perimetro selezionato.");
     var grouped = peopleMetricGroups(rows, function (row) {
       return sexLabel(row.sex) + " - " + ageLabel(row.age_group);
     }).sort(descValue).slice(0, 20).reverse();
@@ -1415,6 +1415,13 @@
     return "Nessun dato autori/vittime per i filtri selezionati.";
   }
 
+  function measureUnavailableMessage(scope) {
+    if (STATE.measure === "rate" || STATE.measure === "rate_1000") {
+      return "Non riesco a calcolare il tasso per " + scope + " perche manca la popolazione del territorio e anno corrispondenti.";
+    }
+    return "La misura selezionata non e calcolabile per " + scope + ".";
+  }
+
   function renderCounterChart() {
     var rows = counterRows().sort(function (a, b) {
       return Math.abs(b.change_pct_yoy || 0) - Math.abs(a.change_pct_yoy || 0);
@@ -1479,7 +1486,7 @@
     ], rows.map(function (row) {
       return [
         territoryLabel(row) + codeLine(territoryContext(row)),
-        crimeLabel(row) + codeLine(row.crime_code),
+        crimeLabel(row),
         formatInteger(row.value),
         formatPercent(row.change_pct_yoy),
         formatPercent(row.national_change_pct_yoy)
@@ -1899,10 +1906,10 @@
   }
 
   function sumMetricRows(rows) {
-    var values = rows.map(valueForMeasureBase);
     if (STATE.measure === "rate" || STATE.measure === "rate_1000") {
-      if (!values.length || values.some(function (value) { return !isFiniteNumber(value); })) return null;
+      return metricValueForGroupedRows(rows, sumNumbers(rows.map(function (row) { return row.value; })));
     }
+    var values = rows.map(valueForMeasureBase);
     var finiteValues = values.filter(isFiniteNumber);
     return finiteValues.length ? sumNumbers(finiteValues) : null;
   }
@@ -2232,7 +2239,7 @@
   }
 
   function metricScopeLabelForRow(row) {
-    if (STATE.crime !== "all") return crimeLabel(row) + codeLine(row.crime_code);
+    if (STATE.crime !== "all") return crimeLabel(row);
     if (STATE.theme !== "all") return themeLabel(row._theme);
     return crimeLabel(row);
   }

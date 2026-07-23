@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260723-2";
+  var VERSION = "20260723-9";
   var PAYLOAD_GLOBALS = {
     metadata: "SICUREZZA_DASHBOARD_METADATA",
     reported: "SICUREZZA_REPORTED_CRIMES",
@@ -9,11 +9,13 @@
     reportedRegional: "SICUREZZA_REPORTED_CRIMES_REGIONAL",
     reportedProvincial: "SICUREZZA_REPORTED_CRIMES_PROVINCIAL",
     reportedCapital: "SICUREZZA_REPORTED_CRIMES_CAPITAL",
-    people: "SICUREZZA_PEOPLE"
+    people: "SICUREZZA_PEOPLE",
+    population: "SICUREZZA_POPULATION"
   };
   var DATA_BASES = [
     "https://data.nazarenolecis.com/sicurezza/"
   ];
+  var POPULATION_DATA_BASES = DATA_BASES;
 
   var COLORS = ["#ff5a1f", "#4f8bc9", "#3aa6a1", "#d4a348", "#d96363", "#8d7ad8", "#6ea66f", "#b36a4a"];
   var LEVEL_LABELS = { national: "Italia", regional: "Regioni", provincial: "Province", capital: "Comuni capoluogo" };
@@ -117,10 +119,17 @@
   var VIOLENT_CODES = new Set(CRIME_THEMES.violent_person.codes.concat(["ROBBER", "BANKROB", "POSTROB", "SHOPROB", "STREETROB", "HOUSEROB", "EXTORT"]));
   var MEASURE_OPTIONS = [
     { value: "absolute", label: "Valori assoluti" },
-    { value: "rate", label: "Tassi per 100.000" },
+    { value: "rate", label: "Tassi per 100.000 abitanti" },
+    { value: "rate_1000", label: "Tassi per 1.000 abitanti" },
     { value: "index", label: "Indice primo anno = 100" },
     { value: "moving_average", label: "Media mobile triennale" },
     { value: "yoy", label: "Variazione % annua" }
+  ];
+  var PEOPLE_MEASURE_OPTIONS = [
+    { value: "absolute", label: "Valori assoluti" },
+    { value: "share", label: "Quota % del grafico" },
+    { value: "rate", label: "Tasso per 100.000 abitanti" },
+    { value: "rate_1000", label: "Tasso per 1.000 abitanti" }
   ];
   var COUNTER_OPTIONS = [
     { value: "all", label: "Tutte le controtendenze" },
@@ -147,6 +156,43 @@
     { value: "20", label: "Almeno 20%" },
     { value: "50", label: "Almeno 50%" }
   ];
+  var HOMICIDE_CODES = ["INTENHOM", "UNINTHOM", "MANSHOM", "ROADHOM", "ATTEMPHOM", "MAFIAHOM", "ROBBHOM", "INFANTHOM", "MASSMURD", "TERRORHOM"];
+  var HOMICIDE_MAIN_CODES = ["INTENHOM", "UNINTHOM", "MANSHOM"];
+  var HOMICIDE_SHORT_LABELS = {
+    INTENHOM: "Volontari",
+    UNINTHOM: "Colposi",
+    MANSHOM: "Preterintenzionali",
+    ROADHOM: "Stradali",
+    ATTEMPHOM: "Tentati",
+    MAFIAHOM: "Tipo mafioso",
+    ROBBHOM: "Per rapina",
+    INFANTHOM: "Infanticidi",
+    MASSMURD: "Stragi",
+    TERRORHOM: "Finalita terroristica"
+  };
+  var HOMICIDE_OPTIONS = [
+    { value: "INTENHOM", label: "Omicidi volontari", codes: ["INTENHOM"] },
+    { value: "UNINTHOM", label: "Omicidi colposi (aggregato)", codes: ["UNINTHOM"] },
+    { value: "ROADHOM", label: "Omicidi stradali (voce specifica)", codes: ["ROADHOM"] },
+    { value: "MANSHOM", label: "Omicidi preterintenzionali", codes: ["MANSHOM"] },
+    { value: "ATTEMPHOM", label: "Tentati omicidi", codes: ["ATTEMPHOM"] },
+    { value: "MAFIAHOM", label: "Omicidi di tipo mafioso", codes: ["MAFIAHOM"] },
+    { value: "ROBBHOM", label: "Omicidi per rapina", codes: ["ROBBHOM"] },
+    { value: "INFANTHOM", label: "Infanticidi", codes: ["INFANTHOM"] },
+    { value: "MASSMURD", label: "Stragi", codes: ["MASSMURD"] },
+    { value: "TERRORHOM", label: "Omicidi con finalita terroristica", codes: ["TERRORHOM"] }
+  ];
+  var HOMICIDE_STRUCTURE_VIEW_OPTIONS = [
+    { value: "breakdown", label: "Suddivisione per tipo" },
+    { value: "territories", label: "Ranking territoriale" }
+  ];
+  var HOMICIDE_PEOPLE_BREAKDOWN_OPTIONS = [
+    { value: "citizenship", label: "Cittadinanza" },
+    { value: "sex", label: "Sesso" },
+    { value: "age", label: "Eta" },
+    { value: "sex_age", label: "Sesso ed eta" },
+    { value: "crime", label: "Tipo di omicidio" }
+  ];
   var SURVEY_PERCEPTION = [
     { indicator: "Si sente sicuro uscendo al buio", period: "2015-2016", value: 60.6 },
     { indicator: "Si sente sicuro uscendo al buio", period: "2022-2023", value: 76.0 },
@@ -168,12 +214,14 @@
   var CHART_IDS = [
     "siTrendChart", "siCompositionChart", "siContributionChart", "siRankingChart", "siScatterChart",
     "siTreemapChart", "siPropertyFocusChart", "siViolentChart", "siPersonFocusChart", "siCrimeChart",
+    "siHomicideTrendChart", "siHomicideStructureChart", "siHomicidePeopleChart",
     "siPeopleChart", "siDemographyChart", "siCounterChart", "siPerceptionChart", "siVictimizationChart"
   ];
 
   var STATE = {
     meta: {},
     records: [],
+    populationRecords: [],
     year: null,
     level: "regional",
     region: "all",
@@ -183,6 +231,7 @@
     theme: "all",
     crime: "TOT",
     measure: "absolute",
+    peopleMeasure: "absolute",
     role: "offender",
     citizenship: "totale_cittadinanza",
     counterDirection: "all",
@@ -191,7 +240,15 @@
     comparisonYear: null,
     contributionDirection: "all",
     contributionThreshold: 5,
+    surveyPerceptionIndicator: "all",
+    surveyVictimizationIndicator: "all",
+    homicideType: "INTENHOM",
+    homicideStructureView: "breakdown",
+    homicidePeopleBreakdown: "sex_age",
+    homicideSex: "all",
+    homicideAgeGroup: "all",
     search: "",
+    populationLoaded: false,
     peopleLoaded: false,
     fullReportedLoaded: false,
     loadedReportedLevels: {},
@@ -222,11 +279,12 @@
   function init() {
     [
       "siStatus", "siTopRecap", "siYear", "siLevel", "siRegion", "siProvince", "siTerritory", "siTheme", "siCrime",
-      "siMeasure", "siRole", "siCitizenship", "siCounterDirection", "siSearch", "siReset", "siKpis", "siCoverage",
+      "siMeasure", "siRole", "siCitizenship", "siCounterDirection", "siSearch", "siReset", "siCoverage",
       "siTrendTag", "siCompositionTag", "siContributionTag", "siRankingTag", "siScatterTag",
       "siTreemapTag", "siTableTag", "siPropertyTag", "siViolentTag", "siPersonFocusTag", "siCrimeTag", "siPeopleTag",
       "siDemographyTag", "siCounterTag", "siTerritoryTable", "siCounterTable", "siPeopleNotice",
       "siMethodNotes", "siSourceList", "siPlannedSourceList", "siPropertyFocusChart", "siPersonFocusChart",
+      "siHomicideTrendTag", "siHomicideStructureTag", "siHomicidePeopleTag",
       "siPerceptionTag", "siVictimizationTag"
     ].forEach(function (id) {
       els[id] = document.getElementById(id);
@@ -265,6 +323,7 @@
       STATE.theme = "all";
       STATE.crime = "TOT";
       STATE.measure = "absolute";
+      STATE.peopleMeasure = "absolute";
       STATE.role = "offender";
       STATE.citizenship = "totale_cittadinanza";
       STATE.counterDirection = "all";
@@ -273,6 +332,13 @@
       STATE.comparisonYear = null;
       STATE.contributionDirection = "all";
       STATE.contributionThreshold = 5;
+      STATE.surveyPerceptionIndicator = "all";
+      STATE.surveyVictimizationIndicator = "all";
+      STATE.homicideType = "INTENHOM";
+      STATE.homicideStructureView = "breakdown";
+      STATE.homicidePeopleBreakdown = "sex_age";
+      STATE.homicideSex = "all";
+      STATE.homicideAgeGroup = "all";
       STATE.search = "";
       if (els.siSearch) els.siSearch.value = "";
       renderAll();
@@ -360,6 +426,7 @@
     }
     if (name === "crime") STATE.crime = value;
     if (name === "measure") STATE.measure = value;
+    if (name === "peopleMeasure") STATE.peopleMeasure = value;
     if (name === "role") STATE.role = value;
     if (name === "citizenship") STATE.citizenship = value;
     if (name === "counterDirection") STATE.counterDirection = value;
@@ -368,6 +435,13 @@
     if (name === "comparisonYear") STATE.comparisonYear = numberOrNull(value);
     if (name === "contributionDirection") STATE.contributionDirection = value;
     if (name === "contributionThreshold") STATE.contributionThreshold = numberOrNull(value);
+    if (name === "surveyPerceptionIndicator") STATE.surveyPerceptionIndicator = value;
+    if (name === "surveyVictimizationIndicator") STATE.surveyVictimizationIndicator = value;
+    if (name === "homicideType") STATE.homicideType = value;
+    if (name === "homicideStructureView") STATE.homicideStructureView = value;
+    if (name === "homicidePeopleBreakdown") STATE.homicidePeopleBreakdown = value;
+    if (name === "homicideSex") STATE.homicideSex = value;
+    if (name === "homicideAgeGroup") STATE.homicideAgeGroup = value;
     renderAll();
   }
 
@@ -379,7 +453,7 @@
       renderMetaBlocks();
       populateStaticFilters();
       setStatus("Caricamento dati nazionali e regionali ...");
-      return ensureReportedLevels(["national", "regional"]);
+      return Promise.all([ensureReportedLevels(["national", "regional"]), loadPopulationData()]);
     }).then(function () {
       renderAll();
       setStatus("Dati reati caricati: " + formatInteger(reportedRows().length) + " righe iniziali, anni " + yearRangeLabel() + ". Province e capoluoghi si caricano quando selezionati; profili persone in caricamento...");
@@ -406,15 +480,29 @@
       renderPeopleNotice();
       emptyChart("siPeopleChart", "Dati persone non disponibili in questo momento.");
       emptyChart("siDemographyChart", "Dati persone non disponibili in questo momento.");
+      emptyChart("siHomicidePeopleChart", "Dati autori/vittime non disponibili in questo momento.");
       setStatus("Dati reati caricati: " + formatInteger(reportedRows().length) + " righe, anni " + yearRangeLabel() + ". Profili persone non disponibili.");
     });
   }
 
-  function loadJavascriptPayload(fileName, globalName) {
+  function loadPopulationData() {
+    return loadJavascriptPayload("dashboard_population.js", PAYLOAD_GLOBALS.population, POPULATION_DATA_BASES).then(function (payload) {
+      STATE.populationRecords = decodeColumnPayload(payload, "population");
+      STATE.populationLoaded = true;
+      return true;
+    }).catch(function () {
+      STATE.populationRecords = [];
+      STATE.populationLoaded = false;
+      return true;
+    });
+  }
+
+  function loadJavascriptPayload(fileName, globalName, bases) {
     var index = 0;
+    var sourceBases = bases || DATA_BASES;
     function tryNext() {
-      if (index >= DATA_BASES.length) return Promise.reject(new Error("payload non disponibile: " + fileName));
-      var url = DATA_BASES[index] + fileName + "?v=" + VERSION;
+      if (index >= sourceBases.length) return Promise.reject(new Error("payload non disponibile: " + fileName));
+      var url = sourceBases[index] + fileName + "?v=" + VERSION;
       index += 1;
       window[globalName] = null;
       return new Promise(function (resolve, reject) {
@@ -515,6 +603,7 @@
   function normalizeRecord(row) {
     row.year = numberOrNull(row.year);
     row.value = numberOrNull(row.value);
+    row.population = numberOrNull(row.population);
     row.value_rate_per_100k = numberOrNull(row.value_rate_per_100k);
     row.change_abs_yoy = numberOrNull(row.change_abs_yoy);
     row.change_pct_yoy = numberOrNull(row.change_pct_yoy);
@@ -535,11 +624,25 @@
       return { value: key, label: CRIME_THEMES[key].label };
     }), STATE.theme);
     populateControlGroup("measure", MEASURE_OPTIONS, STATE.measure);
+    populateControlGroup("peopleMeasure", PEOPLE_MEASURE_OPTIONS, STATE.peopleMeasure);
     populateControlGroup("counterDirection", COUNTER_OPTIONS, STATE.counterDirection);
     populateControlGroup("compositionMode", COMPOSITION_MODE_OPTIONS, STATE.compositionMode);
     populateControlGroup("compositionMetric", COMPOSITION_METRIC_OPTIONS, STATE.compositionMetric);
     populateControlGroup("contributionDirection", CONTRIBUTION_DIRECTION_OPTIONS, STATE.contributionDirection);
     populateControlGroup("contributionThreshold", CONTRIBUTION_THRESHOLD_OPTIONS, String(STATE.contributionThreshold));
+    populateControlGroup("surveyPerceptionIndicator", surveyIndicatorOptions(SURVEY_PERCEPTION), STATE.surveyPerceptionIndicator);
+    populateControlGroup("surveyVictimizationIndicator", surveyIndicatorOptions(SURVEY_VICTIMIZATION), STATE.surveyVictimizationIndicator);
+    populateControlGroup("homicideType", HOMICIDE_OPTIONS.map(function (option) {
+      return { value: option.value, label: option.label };
+    }), STATE.homicideType);
+    populateControlGroup("homicideStructureView", HOMICIDE_STRUCTURE_VIEW_OPTIONS, STATE.homicideStructureView);
+    populateControlGroup("homicidePeopleBreakdown", HOMICIDE_PEOPLE_BREAKDOWN_OPTIONS, STATE.homicidePeopleBreakdown);
+    var homicideSex = homicideSexOptions();
+    var homicideAge = homicideAgeOptions();
+    if (!homicideSex.some(function (option) { return option.value === STATE.homicideSex; })) STATE.homicideSex = "all";
+    if (!homicideAge.some(function (option) { return option.value === STATE.homicideAgeGroup; })) STATE.homicideAgeGroup = "all";
+    populateControlGroup("homicideSex", homicideSex, STATE.homicideSex);
+    populateControlGroup("homicideAgeGroup", homicideAge, STATE.homicideAgeGroup);
     populatePeopleFilters();
   }
 
@@ -578,7 +681,6 @@
     }
     refreshDependentFilters();
     renderTopRecap();
-    renderKpis();
     renderCoverage();
     renderPeopleNotice();
     renderCharts();
@@ -646,7 +748,7 @@
     }
     var levels = unique(people.map(function (row) { return row.territory_level; })).filter(Boolean);
     var scope = levels.length === 1 && levels[0] === "national" ? "Italia" : levels.map(function (level) { return LEVEL_LABELS[level] || level; }).join(", ");
-    els.siPeopleNotice.innerHTML = "<strong>Copertura persone:</strong> " + escapeHtml(scope) + ". I grafici separano sempre autori e vittime. I conteggi per cittadinanza non sono tassi di delittuosita: per rispondere alla domanda immigrati/non immigrati servono denominatori coerenti per cittadinanza, eta, sesso e territorio.";
+    els.siPeopleNotice.innerHTML = "<strong>Copertura persone:</strong> " + escapeHtml(scope) + ". I grafici separano sempre autori e vittime. Il filtro Misura permette conteggi, quote e tassi calcolati sulla popolazione residente totale del territorio e anno selezionati.";
   }
 
   function refreshDependentFilters() {
@@ -695,37 +797,12 @@
     setControlDisabled("comparisonYear", selected === null);
   }
 
-  function renderKpis() {
-    var cards = [
-      metricCard("Delitti denunciati", "TOT", "Totale delitti registrati"),
-      metricCard("Omicidi volontari", "INTENHOM", "Eventi rari: leggere anche serie pluriennale"),
-      metricCard("Furti in abitazione", "BURGTHEF", "Indicatore patrimoniale"),
-      metricCard("Borseggi", "PICKTHEF", "Reati predatori nello spazio pubblico"),
-      metricCard("Rapine", "ROBBER", "Rapine totali"),
-      metricCard("Truffe digitali", "SWINCYB", "Truffe e frodi informatiche")
-    ];
-    els.siKpis.innerHTML = cards.join("");
-  }
-
-  function metricCard(title, code, note) {
-    var current = aggregateSelectionForCrime(code, STATE.year);
-    var previous = aggregateSelectionForCrime(code, previousYear());
-    var change = percentChange(current, previous);
-    return [
-      '<article class="si-kpi">',
-      "<span>" + escapeHtml(title) + "</span>",
-      "<strong>" + formatInteger(current) + "</strong>",
-      "<small>" + escapeHtml(note) + " - " + changeText(change) + "</small>",
-      "</article>"
-    ].join("");
-  }
-
   function renderCoverage() {
     els.siCoverage.innerHTML = [
       coverageItem("Denunce registrate", "Serie per anno, reato e territorio fino ai comuni capoluogo."),
       coverageItem("Benchmark Italia", "Il confronto nazionale resta disponibile nelle serie principali quando scegli un territorio."),
       coverageItem("Tassi per 100.000", "Usali per confrontare territori; i valori assoluti descrivono il volume registrato."),
-      coverageItem("Autori e vittime", "Sono conteggi di persone registrate nelle fonti disponibili, non tassi di propensione."),
+      coverageItem("Autori e vittime", "Sono persone registrate nelle fonti disponibili; quote e tassi su popolazione residente dipendono dalla misura scelta."),
       coverageItem("Cittadinanza", "Italiani e stranieri vanno confrontati solo con denominatori coerenti per eta, sesso e territorio."),
       coverageItem("Percezione e vittimizzazione", "Sono fenomeni diversi dalle denunce e vanno letti con fonti campionarie dedicate.")
     ].join("");
@@ -764,11 +841,14 @@
     if (id === "siViolentChart") return renderViolentChart();
     if (id === "siPersonFocusChart") return renderPersonFocusChart();
     if (id === "siCrimeChart") return renderCrimeChart();
+    if (id === "siHomicideTrendChart") return renderHomicideTrendChart();
+    if (id === "siHomicideStructureChart") return renderHomicideStructureChart();
+    if (id === "siHomicidePeopleChart") return renderHomicidePeopleChart();
     if (id === "siPeopleChart") return renderPeopleChart();
     if (id === "siDemographyChart") return renderDemographyChart();
     if (id === "siCounterChart") return renderCounterChart();
-    if (id === "siPerceptionChart") return renderSurveyChart("siPerceptionChart", "siPerceptionTag", SURVEY_PERCEPTION, "Percezione della sicurezza");
-    if (id === "siVictimizationChart") return renderSurveyChart("siVictimizationChart", "siVictimizationTag", SURVEY_VICTIMIZATION, "Vittimizzazione dichiarata");
+    if (id === "siPerceptionChart") return renderSurveyChart("siPerceptionChart", "siPerceptionTag", SURVEY_PERCEPTION, "Percezione della sicurezza", "surveyPerceptionIndicator");
+    if (id === "siVictimizationChart") return renderSurveyChart("siVictimizationChart", "siVictimizationTag", SURVEY_VICTIMIZATION, "Vittimizzazione dichiarata", "surveyVictimizationIndicator");
   }
 
   function renderTrendChart() {
@@ -790,12 +870,7 @@
   }
 
   function renderCompositionChart() {
-    var rows = selectedTerritoryRows(STATE.year).filter(function (row) {
-      return row.indicator_group === "reported_crimes" && row.crime_code !== "TOT";
-    });
-    if (STATE.compositionMode === "crimes" && STATE.theme !== "all") {
-      rows = rows.filter(function (row) { return row._theme === STATE.theme; });
-    }
+    var rows = selectedTerritoryRows(STATE.year).filter(selectedNonTotalCrimeFilter);
     var total = sum(rows, function (row) { return row.value; });
     var grouped = aggregateBy(rows, function (row) {
       return STATE.compositionMode === "crimes" ? crimeLabel(row) : themeLabel(row._theme);
@@ -808,7 +883,7 @@
         share: total ? row.value / total * 100 : null
       };
     }).sort(descValue).slice(0, STATE.compositionMode === "crimes" ? 18 : 12).reverse();
-    els.siCompositionTag.textContent = String(STATE.year) + " - " + (STATE.compositionMode === "crimes" ? "reati" : "categorie");
+    els.siCompositionTag.textContent = String(STATE.year) + " - " + (STATE.compositionMode === "crimes" ? "reati" : "categorie") + " - " + metricScopeLabel();
     if (!data.length) return emptyChart("siCompositionChart", "Nessun dettaglio per composizione.");
     plot("siCompositionChart", [{
       type: "bar",
@@ -956,10 +1031,10 @@
   }
 
   function renderThemeFocusChart(chartId, tagEl, themeKeys, emptyLabel) {
-    var rows = selectedTerritoryRows(null).filter(function (row) {
-      return row.indicator_group === "reported_crimes" && row.crime_code !== "TOT" && themeKeys.indexOf(row._theme) >= 0;
-    });
-    if (tagEl) tagEl.textContent = territoryScopeLabel();
+    var rows = selectedTerritoryRows(null)
+      .filter(selectedNonTotalCrimeFilter)
+      .filter(function (row) { return themeKeys.indexOf(row._theme) >= 0; });
+    if (tagEl) tagEl.textContent = territoryScopeLabel() + " - " + metricScopeLabel();
     if (!rows.length) return emptyChart(chartId, "Nessun dato disponibile per " + emptyLabel.toLowerCase() + " nel perimetro selezionato.");
     var topCodes = aggregateBy(rows.filter(function (row) { return row.year === STATE.year; }), function (row) {
       return row.crime_code;
@@ -969,7 +1044,7 @@
       var points = years().map(function (year) {
         return {
           year: year,
-          value: sum(rows.filter(function (row) { return row.year === year && row.crime_code === code; }), function (row) { return valueForMeasureBase(row); })
+          value: sumMetricRows(rows.filter(function (row) { return row.year === year && row.crime_code === code; }))
         };
       });
       return {
@@ -986,20 +1061,26 @@
   }
 
   function renderViolentChart() {
-    var rows = selectedTerritoryRows(null).filter(nonTotalReported);
+    var rows = selectedTerritoryRows(null).filter(selectedNonTotalCrimeFilter);
     var yearsList = years();
-    var violent = yearsList.map(function (year) {
-      return sum(rows.filter(function (row) { return row.year === year && row._violent; }), function (row) { return row.value; });
+    var violentPoints = yearsList.map(function (year) {
+      return { year: year, value: sumMetricRows(rows.filter(function (row) { return row.year === year && row._violent; })) };
     });
-    var other = yearsList.map(function (year) {
-      return sum(rows.filter(function (row) { return row.year === year && !row._violent; }), function (row) { return row.value; });
+    var otherPoints = yearsList.map(function (year) {
+      return { year: year, value: sumMetricRows(rows.filter(function (row) { return row.year === year && !row._violent; })) };
     });
-    els.siViolentTag.textContent = territoryScopeLabel();
+    els.siViolentTag.textContent = territoryScopeLabel() + " - " + metricScopeLabel() + " - " + measureLabel();
     if (!rows.length) return emptyChart("siViolentChart", "Nessun dato per classificazione violenti/altri.");
+    if (!violentPoints.concat(otherPoints).some(function (point) { return isFiniteNumber(point.value); })) return emptyChart("siViolentChart", measureUnavailableMessage("questo perimetro"));
     plot("siViolentChart", [
-      { type: "bar", name: "Reati violenti", x: yearsList.map(yearLabel), y: violent, marker: { color: "#d96363" } },
-      { type: "bar", name: "Altri reati", x: yearsList.map(yearLabel), y: other, marker: { color: "#4f8bc9" } }
-    ], { barmode: "stack", yTitle: "Delitti denunciati", legend: true, yearAxis: true });
+      { type: "bar", name: "Reati violenti", x: yearsList.map(yearLabel), y: transformSeriesValues(violentPoints).map(function (point) { return point.value; }), marker: { color: "#d96363" } },
+      { type: "bar", name: "Altri reati", x: yearsList.map(yearLabel), y: transformSeriesValues(otherPoints).map(function (point) { return point.value; }), marker: { color: "#4f8bc9" } }
+    ], {
+      barmode: (STATE.measure === "index" || STATE.measure === "yoy") ? "group" : "stack",
+      yTitle: measureLabel(),
+      legend: true,
+      yearAxis: true
+    });
   }
 
   function renderCrimeChart() {
@@ -1007,57 +1088,221 @@
     var rows = selectedTerritoryRows(null).filter(function (row) {
       return row.indicator_group === "reported_crimes" && row.crime_code === selected;
     }).sort(sortYear);
-    els.siCrimeTag.textContent = crimeLabel({ crime_code: selected });
+    els.siCrimeTag.textContent = crimeLabel({ crime_code: selected }) + " - " + measureLabel();
     if (!rows.length) return emptyChart("siCrimeChart", "Seleziona un reato specifico per vedere la scheda.");
+    var points = rows.map(function (row) {
+      return { year: row.year, value: valueForMeasureBase(row), raw: [row] };
+    });
+    if (!points.some(function (point) { return isFiniteNumber(point.value); })) return emptyChart("siCrimeChart", measureUnavailableMessage("questo reato"));
     plot("siCrimeChart", [{
       type: "scatter",
       mode: "lines+markers",
-      x: rows.map(function (row) { return yearLabel(row.year); }),
-      y: rows.map(function (row) { return row.value; }),
+      x: points.map(function (point) { return yearLabel(point.year); }),
+      y: transformSeriesValues(points).map(function (point) { return point.value; }),
       fill: "tozeroy",
       line: { color: "#ff5a1f", width: 3 },
       marker: { size: 8 },
-      hovertemplate: "Anno: %{x}<br>Valore: %{y:,.0f}<extra></extra>"
-    }], { yTitle: "Delitti denunciati", yearAxis: true });
+      hovertemplate: "Anno: %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
+    }], { yTitle: measureLabel(), yearAxis: true });
+  }
+
+  function renderHomicideTrendChart() {
+    var codes = homicideSelectedCodes();
+    var entities = homicideSeriesEntities();
+    if (els.siHomicideTrendTag) els.siHomicideTrendTag.textContent = homicideTypeLabel() + " - " + measureLabel();
+    plot("siHomicideTrendChart", entities.map(function (entity, index) {
+      var points = years().map(function (year) {
+        var rows = reportedRows().filter(function (row) {
+          return row.year === year && row.territory_level === entity.level && row.territory_code === entity.code && codes.indexOf(row.crime_code) >= 0;
+        });
+        return {
+          year: year,
+          value: sumMetricRows(rows),
+          raw: rows
+        };
+      });
+      return {
+        type: "scatter",
+        mode: "lines+markers",
+        name: entity.label,
+        x: points.map(function (point) { return yearLabel(point.year); }),
+        y: transformSeriesValues(points).map(function (point) { return point.value; }),
+        line: { color: COLORS[index % COLORS.length], width: 3 },
+        marker: { size: 7 },
+        hovertemplate: "<b>%{fullData.name}</b><br>Anno: %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
+      };
+    }), { yTitle: measureLabel(), legend: true, yearAxis: true });
+  }
+
+  function renderHomicideStructureChart() {
+    if (STATE.homicideStructureView === "territories") return renderHomicideTerritoryView();
+    return renderHomicideBreakdownView();
+  }
+
+  function renderHomicideBreakdownView() {
+    if (STATE.measure === "index" || STATE.measure === "moving_average") {
+      return emptyChart("siHomicideStructureChart", "Questa vista usa valori assoluti, tassi o variazione % annua. Indice e media mobile restano nella serie storica.");
+    }
+    var rows = selectedTerritoryRows(STATE.year).filter(function (row) {
+      return row.indicator_group === "reported_crimes" && HOMICIDE_CODES.indexOf(row.crime_code) >= 0;
+    });
+    var previous = previousYear();
+    var previousRows = isFiniteNumber(previous) ? selectedTerritoryRows(previous).filter(function (row) {
+      return row.indicator_group === "reported_crimes" && HOMICIDE_CODES.indexOf(row.crime_code) >= 0;
+    }) : [];
+    var previousMap = mapByKey(aggregateBy(previousRows, function (row) { return row.crime_code; }));
+    if (els.siHomicideStructureTag) els.siHomicideStructureTag.textContent = String(STATE.year) + " - " + territoryScopeLabel();
+    if (!rows.length) return emptyChart("siHomicideStructureChart", "Nessun codice omicidio nel perimetro selezionato.");
+    var grouped = aggregateBy(rows, function (row) { return row.crime_code; }).map(function (row) {
+      var code = row.key;
+      var previous = previousMap[code] ? previousMap[code].value : null;
+      var change = percentChange(row.value, previous);
+      var metricValue = STATE.measure === "yoy" ? change : metricValueForGroupedRows(row.rows, row.value);
+      return {
+        key: homicideShortLabel(code),
+        fullLabel: crimeLabel({ crime_code: code }),
+        code: code,
+        kind: homicideCodeKind(code),
+        rawValue: row.value,
+        change_pct_yoy: change,
+        value: metricValue
+      };
+    }).filter(function (row) {
+      return isFiniteNumber(row.value);
+    }).sort(descValue).reverse();
+    var yLabels = grouped.map(function (row) { return row.key; });
+    if (!grouped.length) return emptyChart("siHomicideStructureChart", "Nessuna variazione annua calcolabile per il perimetro selezionato.");
+    plot("siHomicideStructureChart", [{
+      type: "bar",
+      orientation: "h",
+      x: grouped.map(function (row) { return row.value; }),
+      y: yLabels,
+      customdata: grouped.map(function (row) { return [row.fullLabel, row.code, row.kind, formatInteger(row.rawValue), formatPercent(row.change_pct_yoy)]; }),
+      marker: { color: grouped.map(function (row) {
+        if (STATE.measure === "yoy") return row.value >= 0 ? "#d96363" : "#5e9f65";
+        if (row.code === "ATTEMPHOM") return "#8d7ad8";
+        if (HOMICIDE_MAIN_CODES.indexOf(row.code) >= 0) return "#d96363";
+        return "#d4a348";
+      }) },
+      hovertemplate: "<b>%{customdata[0]}</b><br>Codice: %{customdata[1]}<br>Tipo: %{customdata[2]}<br>Valore: %{customdata[3]}<br>Var. annua: %{customdata[4]}<extra></extra>"
+    }], {
+      xTitle: measureLabel(),
+      marginLeft: marginForYLabels(yLabels, 220, 320),
+      height: barChartHeight(grouped.length),
+      yTickVals: yLabels,
+      yTickText: yLabels
+    });
+  }
+
+  function renderHomicideTerritoryView() {
+    if (STATE.measure === "index" || STATE.measure === "moving_average") {
+      return emptyChart("siHomicideStructureChart", "Questa vista usa valori assoluti, tassi o variazione % annua. Indice e media mobile restano nella serie storica.");
+    }
+    var rows = homicideTerritoryRows().sort(function (a, b) {
+      return (homicideTerritoryMetric(b) || 0) - (homicideTerritoryMetric(a) || 0);
+    }).slice(0, 25).reverse();
+    if (els.siHomicideStructureTag) els.siHomicideStructureTag.textContent = LEVEL_LABELS[STATE.level] + " - " + homicideTypeLabel();
+    if (!rows.length) return emptyChart("siHomicideStructureChart", "Nessun territorio nel perimetro selezionato.");
+    var yLabels = rows.map(function (row) { return territoryLabel(row); });
+    plot("siHomicideStructureChart", [{
+      type: "bar",
+      orientation: "h",
+      x: rows.map(homicideTerritoryMetric),
+      y: yLabels,
+      customdata: rows.map(function (row) { return [formatPercent(row.change_pct_yoy), territoryContext(row)]; }),
+      marker: { color: rows.map(function (row) { return row.change_pct_yoy >= 0 ? "#d96363" : "#5e9f65"; }) },
+      hovertemplate: "<b>%{y}</b><br>" + measureLabel() + ": %{x:,.2f}<br>Var. annua: %{customdata[0]}<br>%{customdata[1]}<extra></extra>"
+    }], {
+      xTitle: measureLabel(),
+      marginLeft: marginForYLabels(yLabels, 180, 300),
+      height: barChartHeight(rows.length),
+      yTickVals: yLabels,
+      yTickText: yLabels
+    });
+  }
+
+  function renderHomicidePeopleChart() {
+    var rows = homicidePeopleRows();
+    if (els.siHomicidePeopleTag) els.siHomicidePeopleTag.textContent = roleLabel(STATE.role) + " - Italia - " + homicideTypeLabel() + " - " + peopleMeasureLabel();
+    if (!STATE.peopleLoaded && !peopleRows().length) return emptyChart("siHomicidePeopleChart", "Dati autori/vittime in caricamento.");
+    if (!rows.length) return emptyChart("siHomicidePeopleChart", "Nessun dato autori/vittime per i filtri selezionati.");
+    var grouped = peopleMetricGroups(rows, homicidePeopleBreakdownKey).sort(descValue).slice(0, 24).reverse();
+    if (!grouped.length) return emptyChart("siHomicidePeopleChart", peopleRateUnavailableMessage());
+    var yLabels = grouped.map(function (row) { return row.key; });
+    plot("siHomicidePeopleChart", [{
+      type: "bar",
+      orientation: "h",
+      x: grouped.map(function (row) { return row.value; }),
+      y: yLabels,
+      customdata: grouped.map(function (row) { return [formatInteger(row.rawValue)]; }),
+      marker: { color: grouped.map(function (_, index) { return COLORS[index % COLORS.length]; }) },
+      hovertemplate: peopleHoverTemplate()
+    }], {
+      xTitle: peopleValueAxisLabel(),
+      marginLeft: marginForYLabels(yLabels, 190, 340),
+      height: barChartHeight(grouped.length),
+      yTickVals: yLabels,
+      yTickText: yLabels
+    });
   }
 
   function renderPeopleChart() {
     var rows = peopleSelectionRows();
-    els.siPeopleTag.textContent = rows.length ? roleLabel(STATE.role) + " - " + peopleBreakdownLabel() : "non disponibile";
+    els.siPeopleTag.textContent = rows.length ? roleLabel(STATE.role) + " - " + peopleBreakdownLabel() + " - " + peopleMeasureLabel() : "nessun dato";
     if (!rows.length) return emptyChart("siPeopleChart", "I dati autori/vittime non sono ancora presenti nel payload selezionato.");
-    var grouped = aggregateBy(rows, function (row) {
+    var grouped = peopleMetricGroups(rows, function (row) {
       return peopleBreakdownKey(row);
     }).sort(descValue).slice(0, 24).reverse();
+    if (!grouped.length) return emptyChart("siPeopleChart", peopleRateUnavailableMessage());
+    var yLabels = grouped.map(function (row) { return row.key; });
     plot("siPeopleChart", [{
       type: "bar",
       orientation: "h",
       x: grouped.map(function (row) { return row.value; }),
-      y: grouped.map(function (row) { return row.key; }),
+      y: yLabels,
+      customdata: grouped.map(function (row) { return [formatInteger(row.rawValue)]; }),
       marker: { color: grouped.map(function (row, index) { return COLORS[index % COLORS.length]; }) },
-      hovertemplate: "%{y}<br>Valore: %{x:,.0f}<extra></extra>"
-    }], { xTitle: roleValueAxisLabel(), marginLeft: 260 });
+      hovertemplate: peopleHoverTemplate()
+    }], {
+      xTitle: peopleValueAxisLabel(),
+      marginLeft: marginForYLabels(yLabels, 210, 340),
+      height: barChartHeight(grouped.length),
+      yTickVals: yLabels,
+      yTickText: yLabels
+    });
   }
 
   function renderDemographyChart() {
     var rows = peopleSelectionRows().filter(function (row) { return row.age_group || row.sex; });
-    els.siDemographyTag.textContent = rows.length ? roleLabel(STATE.role) + " - sesso ed eta" : "non disponibile";
-    if (!rows.length) return emptyChart("siDemographyChart", "Sesso ed eta non sono disponibili per il perimetro selezionato.");
-    var grouped = aggregateBy(rows, function (row) {
+    els.siDemographyTag.textContent = rows.length ? roleLabel(STATE.role) + " - sesso ed eta - " + peopleMeasureLabel() : "nessun dato";
+    if (!rows.length) return emptyChart("siDemographyChart", "Sesso ed eta non risultano nel perimetro selezionato.");
+    var grouped = peopleMetricGroups(rows, function (row) {
       return sexLabel(row.sex) + " - " + ageLabel(row.age_group);
     }).sort(descValue).slice(0, 20).reverse();
+    if (!grouped.length) return emptyChart("siDemographyChart", peopleRateUnavailableMessage());
+    var yLabels = grouped.map(function (row) { return row.key; });
     plot("siDemographyChart", [{
       type: "bar",
       orientation: "h",
       x: grouped.map(function (row) { return row.value; }),
-      y: grouped.map(function (row) { return row.key; }),
+      y: yLabels,
+      customdata: grouped.map(function (row) { return [formatInteger(row.rawValue)]; }),
       marker: { color: "#d4a348" },
-      hovertemplate: "%{y}<br>Valore: %{x:,.0f}<extra></extra>"
-    }], { xTitle: "Persone", marginLeft: 170 });
+      hovertemplate: peopleHoverTemplate()
+    }], {
+      xTitle: peopleValueAxisLabel(),
+      marginLeft: marginForYLabels(yLabels, 170, 340),
+      height: barChartHeight(grouped.length),
+      yTickVals: yLabels,
+      yTickText: yLabels
+    });
   }
 
-  function renderSurveyChart(chartId, tagId, rows, title) {
+  function renderSurveyChart(chartId, tagId, rows, title, stateKey) {
     var tag = els[tagId];
-    if (tag) tag.textContent = "ISTAT 2015-2016 vs 2022-2023";
+    var selectedIndicator = STATE[stateKey] || "all";
+    if (selectedIndicator !== "all") rows = rows.filter(function (row) { return row.indicator === selectedIndicator; });
+    if (tag) tag.textContent = selectedIndicator === "all" ? "ISTAT 2015-2016 vs 2022-2023" : selectedIndicator;
     var indicators = unique(rows.map(function (row) { return row.indicator; }));
     var periods = unique(rows.map(function (row) { return row.period; })).sort();
     if (!rows.length) return emptyChart(chartId, "Dati campionari non disponibili.");
@@ -1074,7 +1319,16 @@
         marker: { color: COLORS[index % COLORS.length] },
         hovertemplate: "%{y}<br>" + period + ": %{x:.1f}%<extra></extra>"
       };
-    }), { xTitle: "% popolazione/famiglie di riferimento", yTitle: "", legend: true, marginLeft: 230, barmode: "group" });
+    }), {
+      xTitle: "% popolazione/famiglie di riferimento",
+      yTitle: "",
+      legend: true,
+      marginLeft: marginForYLabels(indicators, 230, 320),
+      barmode: "group",
+      height: Math.max(250, indicators.length * 48 + 110),
+      yTickVals: indicators,
+      yTickText: indicators
+    });
   }
 
   function peopleBreakdownKey(row) {
@@ -1105,6 +1359,67 @@
     if (STATE.role === "victim") return "Vittime registrate";
     if (STATE.role === "offender") return "Autori / denunciati registrati";
     return "Persone registrate";
+  }
+
+  function peopleMeasureLabel() {
+    if (STATE.peopleMeasure === "share") return "Quota % del grafico";
+    if (STATE.peopleMeasure === "rate") return "Tasso per 100.000 abitanti";
+    if (STATE.peopleMeasure === "rate_1000") return "Tasso per 1.000 abitanti";
+    return "Valori assoluti";
+  }
+
+  function peopleValueAxisLabel() {
+    return STATE.peopleMeasure === "absolute" ? roleValueAxisLabel() : peopleMeasureLabel();
+  }
+
+  function peopleMetricGroups(rows, keyFn) {
+    var grouped = aggregateBy(rows, keyFn);
+    var total = sum(grouped, function (row) { return row.value; });
+    return grouped.map(function (group) {
+      return {
+        key: group.key,
+        value: peopleMetricValueForGroup(group, total),
+        rawValue: group.value,
+        rows: group.rows
+      };
+    }).filter(function (group) {
+      return isFiniteNumber(group.value);
+    });
+  }
+
+  function peopleMetricValueForGroup(group, total) {
+    if (STATE.peopleMeasure === "share") return total ? group.value / total * 100 : null;
+    if (STATE.peopleMeasure === "rate" || STATE.peopleMeasure === "rate_1000") {
+      var rows = group.rows || [];
+      var population = populationForRows(rows);
+      if (!isFiniteNumber(population) || population <= 0) return null;
+      return group.value / population * (STATE.peopleMeasure === "rate_1000" ? 1000 : 100000);
+    }
+    return group.value;
+  }
+
+  function peopleHoverTemplate() {
+    if (STATE.peopleMeasure === "share") {
+      return "%{y}<br>Quota: %{x:.1f}%<br>Valore assoluto: %{customdata[0]}<extra></extra>";
+    }
+    if (STATE.peopleMeasure === "rate" || STATE.peopleMeasure === "rate_1000") {
+      return "%{y}<br>" + peopleMeasureLabel() + ": %{x:,.2f}<br>Valore assoluto: %{customdata[0]}<extra></extra>";
+    }
+    return "%{y}<br>Valore: %{x:,.0f}<extra></extra>";
+  }
+
+  function peopleRateUnavailableMessage() {
+    if (STATE.peopleMeasure === "rate" || STATE.peopleMeasure === "rate_1000") {
+      return "Non riesco a calcolare il tasso per i filtri selezionati perche manca la popolazione del territorio e anno corrispondenti. Usa valori assoluti o quota %.";
+    }
+    return "Nessun dato autori/vittime per i filtri selezionati.";
+  }
+
+  function measureUnavailableMessage(scope) {
+    if (STATE.measure === "rate" || STATE.measure === "rate_1000") {
+      return "Non riesco a calcolare il tasso per " + scope + " perche manca la popolazione del territorio e anno corrispondenti.";
+    }
+    return "La misura selezionata non e calcolabile per " + scope + ".";
   }
 
   function renderCounterChart() {
@@ -1171,7 +1486,7 @@
     ], rows.map(function (row) {
       return [
         territoryLabel(row) + codeLine(territoryContext(row)),
-        crimeLabel(row) + codeLine(row.crime_code),
+        crimeLabel(row),
         formatInteger(row.value),
         formatPercent(row.change_pct_yoy),
         formatPercent(row.national_change_pct_yoy)
@@ -1187,7 +1502,7 @@
         var rows = base.filter(function (row) {
           return row.year === year && row.territory_level === entity.level && row.territory_code === entity.code;
         });
-        return { year: year, value: sum(rows, function (row) { return valueForMeasureBase(row); }), raw: rows };
+        return { year: year, value: sumMetricRows(rows), raw: rows };
       });
       return { name: entity.label, points: points };
     }).filter(function (serie) {
@@ -1240,6 +1555,7 @@
         crime_code: row.crime_code,
         _theme: row._theme,
         value: 0,
+        population: populationForRecord(row),
         value_rate_per_100k: row.value_rate_per_100k,
         change_pct_yoy: row.change_pct_yoy,
         national_change_pct_yoy: row.national_change_pct_yoy
@@ -1274,6 +1590,157 @@
     return base.filter(function (row) { return row.territory_level === "national"; });
   }
 
+  function homicideSelectedOption() {
+    return HOMICIDE_OPTIONS.find(function (option) { return option.value === STATE.homicideType; }) || HOMICIDE_OPTIONS[0];
+  }
+
+  function homicideSelectedCodes() {
+    return homicideSelectedOption().codes.slice();
+  }
+
+  function homicideTypeLabel() {
+    return homicideSelectedOption().label;
+  }
+
+  function homicideShortLabel(code) {
+    code = String(code || "").toUpperCase();
+    return HOMICIDE_SHORT_LABELS[code] || crimeLabel({ crime_code: code });
+  }
+
+  function homicideCodeKind(code) {
+    if (code === "ATTEMPHOM") return "tentato, non consumato";
+    if (code === "ROADHOM") return "voce specifica: puo non essere sommabile agli aggregati";
+    if (HOMICIDE_MAIN_CODES.indexOf(code) >= 0) return "aggregato principale";
+    return "dettaglio o sottocategoria: non sommare automaticamente agli aggregati";
+  }
+
+  function homicideSeriesEntities() {
+    var codes = homicideSelectedCodes();
+    var entities = [{ level: "national", code: "IT", label: "Italia" }];
+    var rows = reportedRows().filter(function (row) {
+      return row.year === STATE.year && row.territory_level === STATE.level && codes.indexOf(row.crime_code) >= 0 && areaFilter(row);
+    });
+    if (STATE.territory !== "all") {
+      var selected = rows.find(function (row) { return row.territory_code === STATE.territory; });
+      if (selected && selected.territory_code !== "IT") entities.push({ level: selected.territory_level, code: selected.territory_code, label: territoryLabel(selected) });
+    }
+    if (STATE.compareTerritory !== "all") {
+      var compared = rows.find(function (row) { return row.territory_code === STATE.compareTerritory; });
+      if (compared && compared.territory_code !== "IT") entities.push({ level: compared.territory_level, code: compared.territory_code, label: territoryLabel(compared) });
+    }
+    if (STATE.territory === "all" && STATE.compareTerritory === "all" && STATE.level !== "national" && (STATE.region !== "all" || STATE.province !== "all")) {
+      var top = homicideTerritoryRows().sort(function (a, b) {
+        return (homicideTerritoryMetric(b) || 0) - (homicideTerritoryMetric(a) || 0);
+      })[0];
+      if (top && top.territory_code !== "IT") entities.push({ level: top.territory_level, code: top.territory_code, label: territoryLabel(top) });
+    }
+    return uniqueEntities(entities);
+  }
+
+  function homicideTerritoryRows() {
+    var codes = homicideSelectedCodes();
+    var current = reportedRows().filter(function (row) {
+      return row.year === STATE.year && row.territory_level === STATE.level && codes.indexOf(row.crime_code) >= 0 && areaFilter(row) && (STATE.territory === "all" || row.territory_code === STATE.territory);
+    });
+    var previous = reportedRows().filter(function (row) {
+      return row.year === previousYear() && row.territory_level === STATE.level && codes.indexOf(row.crime_code) >= 0 && areaFilter(row) && (STATE.territory === "all" || row.territory_code === STATE.territory);
+    });
+    var previousMap = {};
+    aggregateHomicideTerritories(previous).forEach(function (row) {
+      previousMap[row.territory_level + "||" + row.territory_code] = row.value;
+    });
+    return aggregateHomicideTerritories(current).map(function (row) {
+      row.change_pct_yoy = percentChange(row.value, previousMap[row.territory_level + "||" + row.territory_code]);
+      return row;
+    });
+  }
+
+  function aggregateHomicideTerritories(rows) {
+    return aggregateRows(rows, ["territory_level", "territory_code"], function (row) {
+      return {
+        territory_level: row.territory_level,
+        territory_code: row.territory_code,
+        territory_name: row.territory_name,
+        region: row.region,
+        province: row.province,
+        capital: row.capital,
+        crime_code: row.crime_code,
+        _theme: row._theme,
+        value: 0,
+        population: populationForRecord(row),
+        value_rate_per_100k: row.value_rate_per_100k
+      };
+    });
+  }
+
+  function homicideTerritoryMetric(row) {
+    if (STATE.measure === "yoy") return row.change_pct_yoy;
+    return metricValueForRow(row);
+  }
+
+  function homicidePeopleRows() {
+    var codes = homicideSelectedCodes();
+    var rows = peopleRows().filter(function (row) {
+      return row.year === STATE.year && row.territory_level === "national" && codes.indexOf(row.crime_code) >= 0 && (STATE.role === "all" || row.person_role === STATE.role);
+    });
+    if (STATE.homicidePeopleBreakdown === "citizenship") {
+      if (STATE.citizenship !== "totale_cittadinanza") {
+        rows = rows.filter(function (row) { return normalizedCitizenshipGroup(row) === STATE.citizenship; });
+      }
+    } else {
+      rows = rows.filter(function (row) { return normalizedCitizenshipGroup(row) === STATE.citizenship; });
+    }
+
+    var detailedRows = rows.filter(function (row) {
+      if (STATE.homicideSex !== "all" && String(row.sex) !== String(STATE.homicideSex)) return false;
+      if (STATE.homicideAgeGroup !== "all" && String(row.age_group) !== String(STATE.homicideAgeGroup)) return false;
+      return !isTotalSex(row.sex) && !isTotalAgeGroup(row.age_group);
+    });
+    if (detailedRows.length) return detailedRows;
+
+    return rows.filter(function (row) {
+      var sexMatches = STATE.homicideSex === "all" ? isTotalSex(row.sex) : String(row.sex) === String(STATE.homicideSex);
+      var ageMatches = STATE.homicideAgeGroup === "all" ? isTotalAgeGroup(row.age_group) : String(row.age_group) === String(STATE.homicideAgeGroup);
+      return sexMatches && ageMatches;
+    });
+  }
+
+  function homicidePeopleBreakdownKey(row) {
+    if (STATE.homicidePeopleBreakdown === "citizenship") return CITIZENSHIP_LABELS[normalizedCitizenshipGroup(row)] || labelize(normalizedCitizenshipGroup(row));
+    if (STATE.homicidePeopleBreakdown === "sex") return sexLabel(row.sex);
+    if (STATE.homicidePeopleBreakdown === "age") return ageLabel(row.age_group);
+    if (STATE.homicidePeopleBreakdown === "crime") return crimeLabel(row);
+    return sexLabel(row.sex) + " - " + ageLabel(row.age_group);
+  }
+
+  function homicideSexOptions() {
+    var values = unique(peopleRows().filter(function (row) {
+      return HOMICIDE_CODES.indexOf(row.crime_code) >= 0 && !isTotalSex(row.sex);
+    }).map(function (row) { return String(row.sex); })).sort(sortItalian);
+    return [{ value: "all", label: "Tutti" }].concat(values.map(function (value) {
+      return { value: value, label: sexLabel(value) };
+    }));
+  }
+
+  function homicideAgeOptions() {
+    var values = unique(peopleRows().filter(function (row) {
+      return HOMICIDE_CODES.indexOf(row.crime_code) >= 0 && !isTotalAgeGroup(row.age_group);
+    }).map(function (row) { return String(row.age_group); })).sort(sortItalian);
+    return [{ value: "all", label: "Tutte le eta" }].concat(values.map(function (value) {
+      return { value: value, label: ageLabel(value) };
+    }));
+  }
+
+  function isTotalSex(value) {
+    value = String(value || "").toUpperCase();
+    return value === "" || value === "9" || value === "T" || value === "TOTAL";
+  }
+
+  function isTotalAgeGroup(value) {
+    value = String(value || "").toUpperCase();
+    return value === "" || value === "TOTAL" || value === "Y_TOTAL" || value === "9" || value === "T";
+  }
+
   function counterRows() {
     return reportedRows()
       .filter(function (row) { return row.year === STATE.year && row.is_countertrend_vs_national === true; })
@@ -1297,11 +1764,6 @@
     return "tutte le controtendenze";
   }
 
-  function aggregateSelectionForCrime(code, year) {
-    if (!year) return null;
-    return sum(selectedTerritoryRows(year).filter(function (row) { return row.crime_code === code; }), function (row) { return row.value; });
-  }
-
   function aggregateNationalForCrime(code, year) {
     if (!year) return null;
     return sum(reportedRows().filter(function (row) {
@@ -1316,10 +1778,7 @@
   }
 
   function contributionCrimeFilter(row) {
-    if (!nonTotalReported(row)) return false;
-    if (STATE.theme !== "all" && row._theme !== STATE.theme) return false;
-    if (STATE.crime !== "all" && STATE.crime !== "TOT") return row.crime_code === STATE.crime;
-    return true;
+    return selectedNonTotalCrimeFilter(row);
   }
 
   function peopleCrimeFilter(row) {
@@ -1330,6 +1789,13 @@
 
   function nonTotalReported(row) {
     return row.indicator_group === "reported_crimes" && row.crime_code !== "TOT";
+  }
+
+  function selectedNonTotalCrimeFilter(row) {
+    if (!nonTotalReported(row)) return false;
+    if (STATE.crime !== "all" && STATE.crime !== "TOT") return row.crime_code === STATE.crime;
+    if (STATE.theme !== "all") return row._theme === STATE.theme;
+    return true;
   }
 
   function areaFilter(row) {
@@ -1357,6 +1823,10 @@
 
   function peopleRows() {
     return STATE.records.filter(function (row) { return row.indicator_group === "people"; });
+  }
+
+  function populationRows() {
+    return STATE.populationRecords || [];
   }
 
   function normalizedCitizenshipGroup(row) {
@@ -1430,24 +1900,143 @@
   }
 
   function valueForMeasureBase(row) {
-    if (STATE.measure === "rate") return isFiniteNumber(row.value_rate_per_100k) ? row.value_rate_per_100k : null;
+    if (STATE.measure === "rate") return rateValueForRow(row, 100000);
+    if (STATE.measure === "rate_1000") return rateValueForRow(row, 1000);
     return row.value;
   }
 
+  function sumMetricRows(rows) {
+    if (STATE.measure === "rate" || STATE.measure === "rate_1000") {
+      return metricValueForGroupedRows(rows, sumNumbers(rows.map(function (row) { return row.value; })));
+    }
+    var values = rows.map(valueForMeasureBase);
+    var finiteValues = values.filter(isFiniteNumber);
+    return finiteValues.length ? sumNumbers(finiteValues) : null;
+  }
+
+  function metricValueForGroupedRows(rows, value) {
+    if (STATE.measure === "rate" || STATE.measure === "rate_1000") {
+      var population = populationForRows(rows);
+      if (!isFiniteNumber(population) || population <= 0 || !isFiniteNumber(value)) return null;
+      return Number(value) / Number(population) * (STATE.measure === "rate_1000" ? 1000 : 100000);
+    }
+    return value;
+  }
+
   function metricValueForRow(row) {
-    if (STATE.measure === "rate" && isFiniteNumber(row.value_rate_per_100k)) return row.value_rate_per_100k;
+    if (STATE.measure === "rate") return rateValueForRow(row, 100000);
+    if (STATE.measure === "rate_1000") return rateValueForRow(row, 1000);
     if (STATE.measure === "yoy") return row.change_pct_yoy;
     return row.value;
+  }
+
+  function rateValueForRow(row, per) {
+    var population = populationForRecord(row);
+    if (isFiniteNumber(population) && population > 0 && isFiniteNumber(row.value)) {
+      return Number(row.value) / Number(population) * per;
+    }
+    if (per === 100000 && isFiniteNumber(row.value_rate_per_100k)) return row.value_rate_per_100k;
+    if (per === 1000 && isFiniteNumber(row.value_rate_per_100k)) return row.value_rate_per_100k / 100;
+    return null;
+  }
+
+  function populationForRows(rows) {
+    var expected = {};
+    var populations = {};
+    (rows || []).forEach(function (row) {
+      var key = populationKey(row);
+      if (!key) return;
+      expected[key] = true;
+      var population = populationForRecord(row);
+      if (isFiniteNumber(population) && population > 0) populations[key] = Number(population);
+    });
+    var keys = Object.keys(expected);
+    if (!keys.length || keys.some(function (key) { return !isFiniteNumber(populations[key]); })) return null;
+    return sumNumbers(keys.map(function (key) { return populations[key]; }));
+  }
+
+  function populationForRecord(row) {
+    if (!row) return null;
+    if (isFiniteNumber(row.population) && row.population > 0) return Number(row.population);
+    var inferred = populationFromRate(row);
+    if (isFiniteNumber(inferred) && inferred > 0) return inferred;
+    var key = populationKeyParts(row);
+    if (!key) return null;
+    var loaded = populationFromLoadedRows(row, key);
+    if (isFiniteNumber(loaded) && loaded > 0) return loaded;
+    return populationFromReportedRows(key.year, key.level, key.code);
+  }
+
+  function populationFromLoadedRows(sourceRow, key) {
+    var sourceName = String(sourceRow.territory_name || sourceRow.region || sourceRow.province || sourceRow.capital || "").trim();
+    var candidates = populationRows().filter(function (row) {
+      if (row.year !== key.year || row.territory_level !== key.level) return false;
+      if (row.territory_code === key.code) return true;
+      if (sourceName && row.territory_name === sourceName) return true;
+      if (sourceRow.region && row.region === sourceRow.region) return true;
+      if (sourceRow.province && row.province === sourceRow.province) return true;
+      if (sourceRow.capital && row.capital === sourceRow.capital) return true;
+      return false;
+    });
+    return candidates.length ? candidates[0].population : null;
+  }
+
+  function populationFromReportedRows(year, level, code) {
+    var candidates = reportedRows().filter(function (row) {
+      return row.year === year && row.territory_level === level && row.territory_code === code && row.crime_code === "TOT";
+    });
+    if (!candidates.length) {
+      candidates = reportedRows().filter(function (row) {
+        return row.year === year && row.territory_level === level && row.territory_code === code;
+      });
+    }
+    for (var i = 0; i < candidates.length; i += 1) {
+      var population = populationFromRate(candidates[i]);
+      if (isFiniteNumber(population) && population > 0) return population;
+    }
+    return null;
+  }
+
+  function populationFromRate(row) {
+    if (!row || !isFiniteNumber(row.value) || !isFiniteNumber(row.value_rate_per_100k) || Number(row.value_rate_per_100k) <= 0) return null;
+    return Number(row.value) / Number(row.value_rate_per_100k) * 100000;
+  }
+
+  function populationKey(row) {
+    var parts = populationKeyParts(row);
+    return parts ? [parts.year, parts.level, parts.code].join("||") : "";
+  }
+
+  function populationKeyParts(row) {
+    if (!row || !isFiniteNumber(row.year)) return null;
+    var level = row.territory_level || "national";
+    var code = row.territory_code || (level === "national" ? "IT" : "");
+    return code ? { year: row.year, level: level, code: code } : null;
   }
 
   function aggregateRows(rows, keys, makeBase) {
     var buckets = {};
     rows.forEach(function (row) {
       var key = keys.map(function (column) { return row[column] || ""; }).join("||");
-      if (!buckets[key]) buckets[key] = makeBase(row);
+      if (!buckets[key]) {
+        buckets[key] = makeBase(row);
+        buckets[key].value = 0;
+        if ("value_rate_per_100k" in buckets[key]) buckets[key].value_rate_per_100k = 0;
+      }
       buckets[key].value += row.value || 0;
+      if ("value_rate_per_100k" in buckets[key] && !buckets[key]._missingRate) {
+        if (isFiniteNumber(row.value_rate_per_100k)) {
+          buckets[key].value_rate_per_100k += Number(row.value_rate_per_100k);
+        } else {
+          buckets[key].value_rate_per_100k = null;
+          buckets[key]._missingRate = true;
+        }
+      }
     });
-    return Object.keys(buckets).map(function (key) { return buckets[key]; });
+    return Object.keys(buckets).map(function (key) {
+      delete buckets[key]._missingRate;
+      return buckets[key];
+    });
   }
 
   function aggregateBy(rows, keyFn) {
@@ -1487,11 +2076,15 @@
     }
     el.innerHTML = "";
     var theme = currentTheme();
+    var chartWidth = el.clientWidth || window.innerWidth || 900;
+    var leftMargin = (options && options.marginLeft) || 64;
+    if (chartWidth < 520) leftMargin = Math.min(leftMargin, 138);
+    else if (chartWidth < 760) leftMargin = Math.min(leftMargin, 180);
     var layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: cssVar("--text", theme === "light" ? "#17120f" : "#f5f2ed"), family: "system-ui, -apple-system, Segoe UI, sans-serif" },
-      margin: { t: 24, r: 18, b: 56, l: (options && options.marginLeft) || 64 },
+      margin: { t: 24, r: 18, b: 56, l: leftMargin },
       xaxis: { title: options && options.xTitle || "", gridcolor: cssVar("--line", "#303030"), zerolinecolor: cssVar("--line", "#303030") },
       yaxis: { title: options && options.yTitle || "", gridcolor: cssVar("--line", "#303030"), zerolinecolor: cssVar("--line", "#303030"), automargin: true },
       showlegend: Boolean(options && options.legend),
@@ -1520,10 +2113,14 @@
     }
     if (options && options.yearAxis) {
       var axisYears = years().map(yearLabel);
+      var yearStep = chartWidth < 520 ? 3 : chartWidth < 780 ? 2 : 1;
+      var tickYears = axisYears.filter(function (_, index) {
+        return index % yearStep === 0 || index === axisYears.length - 1;
+      });
       layout.xaxis.type = "category";
       layout.xaxis.tickmode = "array";
-      layout.xaxis.tickvals = axisYears;
-      layout.xaxis.ticktext = axisYears;
+      layout.xaxis.tickvals = tickYears;
+      layout.xaxis.ticktext = tickYears;
       layout.xaxis.categoryorder = "array";
       layout.xaxis.categoryarray = axisYears;
     }
@@ -1614,6 +2211,12 @@
     return list.map(optionFromValue);
   }
 
+  function surveyIndicatorOptions(rows) {
+    return [{ value: "all", label: "Tutti gli indicatori" }].concat(
+      unique(rows.map(function (row) { return row.indicator; })).sort(sortItalian).map(optionFromValue)
+    );
+  }
+
   function normalizedComparisonYear() {
     var validYears = years().filter(function (year) { return year < STATE.year; }).sort(function (a, b) { return a - b; });
     if (!validYears.length) {
@@ -1636,7 +2239,7 @@
   }
 
   function metricScopeLabelForRow(row) {
-    if (STATE.crime !== "all") return crimeLabel(row) + codeLine(row.crime_code);
+    if (STATE.crime !== "all") return crimeLabel(row);
     if (STATE.theme !== "all") return themeLabel(row._theme);
     return crimeLabel(row);
   }
@@ -1649,6 +2252,7 @@
 
   function measureLabel() {
     if (STATE.measure === "rate") return "Tasso per 100.000";
+    if (STATE.measure === "rate_1000") return "Tasso per 1.000";
     if (STATE.measure === "index") return "Indice";
     if (STATE.measure === "moving_average") return "Media mobile triennale";
     if (STATE.measure === "yoy") return "Variazione % annua";
@@ -1740,8 +2344,17 @@
   }
 
   function ageLabel(value) {
-    value = String(value || "eta n.d.");
-    return value.replace(/^Y_/, "").replace(/_/g, " ");
+    var code = String(value || "").toUpperCase();
+    if (isTotalAgeGroup(code)) return "Totale";
+    if (code === "Y_UN13" || code === "UN13" || code === "Y_LT14" || code === "LT14") return "Fino a 13 anni";
+    if (code === "Y_GE65" || code === "GE65") return "65 anni e oltre";
+    var range = code.replace(/^Y_?/, "").match(/^(\d{1,2})-(\d{1,2})$/);
+    if (range) return range[1] + "-" + range[2] + " anni";
+    var over = code.replace(/^Y_?/, "").match(/^GE(\d{1,2})$/);
+    if (over) return over[1] + " anni e oltre";
+    var under = code.replace(/^Y_?/, "").match(/^UN(\d{1,2})$/);
+    if (under) return "Fino a " + under[1] + " anni";
+    return labelize(code || "eta n.d.");
   }
 
   function optionFromValue(value) {
@@ -1787,7 +2400,7 @@
   }
 
   function isFiniteNumber(value) {
-    return Number.isFinite(Number(value));
+    return value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
   }
 
   function sum(rows, getter) {
