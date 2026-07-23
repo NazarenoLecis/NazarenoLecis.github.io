@@ -272,6 +272,10 @@
     return location.pathname.indexOf("/dashboard/") >= 0;
   }
 
+  function isWideContentPage() {
+    return isDashboardPage() || location.pathname.indexOf("/articoli") >= 0 || location.pathname.indexOf("/media") >= 0;
+  }
+
   function removeTopGithubLink() {
     document.querySelectorAll(".site-header .nav a").forEach(function (link) {
       var href = link.getAttribute("href") || "";
@@ -297,10 +301,10 @@
     document.head.appendChild(style);
   }
 
-  function injectDashboardFitStyle() {
-    if (!isDashboardPage() || document.getElementById("dashboardFitStyle")) return;
+  function injectWideContentFitStyle() {
+    if (!isWideContentPage() || document.getElementById("wideContentFitStyle")) return;
     var style = document.createElement("style");
-    style.id = "dashboardFitStyle";
+    style.id = "wideContentFitStyle";
     style.textContent = [
       "@media (min-width:1024px){",
       ".site-header .wrap,main.wrap{width:calc(100% - clamp(32px,3vw,64px))!important;max-width:none!important}",
@@ -893,7 +897,7 @@
     apply(saved || "dark");
     ensureFavicon();
     injectSocialStyle();
-    injectDashboardFitStyle();
+    injectWideContentFitStyle();
     installDashboardMobileHeader();
     installDashboardCreditFormatter();
     removeTopGithubLink();
