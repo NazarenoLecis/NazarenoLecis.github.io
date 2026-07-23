@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-7.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260723-8.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -103,8 +103,8 @@
         <label>Misura
           <select id="siMeasure">
             <option value="absolute">Valori assoluti</option>
-            <option value="rate">Tassi per 100.000, se disponibili</option>
-            <option value="rate_1000">Tassi per 1.000, se disponibili</option>
+            <option value="rate">Tassi per 100.000 abitanti</option>
+            <option value="rate_1000">Tassi per 1.000 abitanti</option>
             <option value="index">Indice primo anno = 100</option>
             <option value="moving_average">Media mobile triennale</option>
             <option value="yoy">Variazione % annua</option>
@@ -333,7 +333,7 @@
             <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siHomicideTrendChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> confronta l'Italia con il territorio selezionato o con due province della stessa regione usando Territorio e Confronta con. I tassi per 100.000 vengono mostrati solo se presenti nel payload. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> confronta l'Italia con il territorio selezionato o con due province della stessa regione usando Territorio e Confronta con. I tassi sono calcolati rapportando il valore alla popolazione residente del territorio e anno selezionati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Suddivisione e geografia</h3><span id="siHomicideStructureTag">tipi o territori</span></div>
@@ -363,7 +363,7 @@
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siHomicidePeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Le quote sono calcolate sul grafico selezionato; i tassi vengono mostrati solo quando il payload contiene denominatori coerenti per cittadinanza, sesso, eta e territorio. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Le quote sono calcolate sul grafico selezionato; i tassi rapportano i conteggi alla popolazione residente totale del territorio e anno selezionati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -389,7 +389,7 @@
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siPeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Puoi leggere conteggi, quote del grafico o tassi se i denominatori coerenti sono presenti nel payload. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Puoi leggere conteggi, quote del grafico o tassi sulla popolazione residente totale. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Identikit per sesso ed eta</h3><span id="siDemographyTag">quando disponibile</span></div>
@@ -402,7 +402,7 @@
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siDemographyChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> identikit registrato nei dataflow disponibili, oggi soprattutto nazionale. Le normalizzazioni per sesso, eta e cittadinanza richiedono denominatori coerenti. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> identikit registrato nei dataflow disponibili, oggi soprattutto nazionale. I tassi rapportano il conteggio mostrato alla popolazione residente totale del territorio e anno selezionati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
