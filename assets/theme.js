@@ -295,6 +295,19 @@
     document.head.appendChild(style);
   }
 
+  function injectDashboardFitStyle() {
+    if (!isDashboardPage() || document.getElementById("dashboardFitStyle")) return;
+    var style = document.createElement("style");
+    style.id = "dashboardFitStyle";
+    style.textContent = [
+      "@media (min-width:1024px){",
+      ".site-header .wrap,main.wrap{width:calc(100% - clamp(32px,3vw,64px))!important;max-width:none!important}",
+      "main.wrap[class*='dashboard'],main.wrap.alm-dashboard,main.wrap.bp-dashboard,main.wrap.br-dashboard,main.wrap.dp-dashboard,main.wrap.di-dashboard,main.wrap.gpg-dashboard,main.wrap.hi-dashboard,main.wrap.housing-dashboard,main.wrap.heat-dashboard,main.wrap.pi-dashboard,main.wrap.si-dashboard,main.wrap.vai-dashboard{--max:none!important}",
+      "}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
   function replaceText(value, replacements) {
     var output = value;
     replacements.forEach(function (pair) {
@@ -436,6 +449,7 @@
     apply(saved || "dark");
     ensureFavicon();
     injectSocialStyle();
+    injectDashboardFitStyle();
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
