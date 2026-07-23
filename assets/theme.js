@@ -4,6 +4,7 @@
   var dashboardPlotlyNoZoomPatched = false;
   var dashboardPlotlyTouchGuardInstalled = false;
   var dashboardMobileHeaderInstalled = false;
+  var dashboardCreditFormatterInstalled = false;
 
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
@@ -407,6 +408,350 @@
     syncDashboardMobileHeader();
   }
 
+  function injectDashboardCreditStyle() {
+    if (!isDashboardPage() || document.getElementById("dashboardCreditStyle")) return;
+    var style = document.createElement("style");
+    style.id = "dashboardCreditStyle";
+    style.textContent = [
+      ".dashboard-credit-source,.dashboard-credit-note{display:inline}",
+      ".dashboard-credit-note{display:inline-block;margin-top:4px}",
+      ".dashboard-credit-source a,.dashboard-credit-note a{color:var(--orange);font-weight:800}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function dashboardCreditLinkDefinitions() {
+    var links = [
+      ["Eurostat Census Hub", "https://ec.europa.eu/eurostat/web/population-demography/population-housing-censuses/database"],
+      ["OECD Data Explorer", "https://data-explorer.oecd.org/"],
+      ["Ministero della Salute", "https://www.salute.gov.it/"],
+      ["Ministero del Lavoro", "https://www.lavoro.gov.it/"],
+      ["MEF - Dipartimento delle Finanze", "https://www.finanze.gov.it/"],
+      ["MEF Dipartimento Finanze", "https://www.finanze.gov.it/"],
+      ["Dipartimento delle Finanze", "https://www.finanze.gov.it/"],
+      ["RGS-OpenBDAP", "https://openbdap.rgs.mef.gov.it/"],
+      ["OpenBDAP/RGS", "https://openbdap.rgs.mef.gov.it/"],
+      ["MEF-RGS", "https://www.rgs.mef.gov.it/"],
+      ["OpenBDAP", "https://openbdap.rgs.mef.gov.it/"],
+      ["Corte dei conti", "https://www.corteconti.it/"],
+      ["Banca d'Italia", "https://www.bancaditalia.it/"],
+      ["Agenzia Entrate", "https://www.agenziaentrate.gov.it/"],
+      ["OMI Agenzia Entrate", "https://www.agenziaentrate.gov.it/portale/web/guest/schede/fabbricatiterreni/omi"],
+      ["OpenCoesione", "https://opencoesione.gov.it/"],
+      ["AlmaLaurea", "https://www.almalaurea.it/"],
+      ["SIOPE", "https://www.siope.it/"],
+      ["Eurostat", "https://ec.europa.eu/eurostat/databrowser/"],
+      ["ISTAT", "https://www.istat.it/"],
+      ["INPS", "https://www.inps.it/"],
+      ["MIM", "https://dati.istruzione.it/opendata/"]
+    ];
+    [
+      "bd_9bd_sz_cl_r2", "demo_frate", "demo_gind", "demo_mlexpec", "demo_pjan",
+      "demo_r_find3", "demo_r_gind3", "demo_r_pjangroup", "earn_gr_gpgr2",
+      "earn_ses_pub1a", "earn_ses_pub1i", "earn_ses_pub1s", "edat_lfse_03",
+      "gov_10a_exp", "gov_10a_main", "gov_10a_taxag", "ilc_pnp3", "lc_lci_lev",
+      "migr_pop3ctb", "nama_10_a64", "nama_10_a64_e", "nama_10_gdp",
+      "nama_10r_3gdp", "nama_10r_3gva", "proj_23np", "sbs_sc_ovw", "spr_exp_pens"
+    ].forEach(function (code) {
+      links.push([code, "https://ec.europa.eu/eurostat/databrowser/view/" + code + "/default/table"]);
+    });
+    return links.sort(function (left, right) {
+      return right[0].length - left[0].length;
+    });
+  }
+
+  function dashboardCreditPlainText(html) {
+    var box = document.createElement("div");
+    box.innerHTML = html;
+    return (box.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  function dashboardCreditIsEnglish(html) {
+    return document.documentElement.lang === "en" || /\b(Source|Sources|Data source|Processing by|Note):/i.test(dashboardCreditPlainText(html));
+  }
+
+  function dashboardCreditHasElaboration(html) {
+    return /\b(Elaborazione di Nazareno Lecis|Processing by Nazareno Lecis|Classificazione ed elaborazione di Nazareno Lecis)\b/i.test(dashboardCreditPlainText(html));
+  }
+
+  function dashboardCreditEnsureSentence(html) {
+    if (!html) return html;
+    return /[.!?]\s*$/.test(dashboardCreditPlainText(html)) ? html : html + ".";
+  }
+
+  function dashboardCreditSourceRegex() {
+    return /(?:<strong[^>]*>\s*)?(?:Fonte dati|Fonte|Fonti|Data source|Source|Sources):(?:\s*<\/strong>)?/i;
+  }
+
+  function dashboardCreditNoteRegex() {
+    return /(?:<strong[^>]*>\s*)?(?:Nota(?:\s+[^:<]+)?|Note(?:\s+[^:<]+)?):(?:\s*<\/strong>)?/i;
+  }
+
+  function dashboardCreditElaborationRegex() {
+    return /\b(?:Elaborazione di Nazareno Lecis|Processing by Nazareno Lecis|Classificazione ed elaborazione di Nazareno Lecis)\.?/i;
+  }
+
+  function normalizeDashboardCreditLanguage(html) {
+    return html
+      .replace(/<strong[^>]*>\s*Elaborazione:\s*Nazareno Lecis\.?\s*<\/strong>/gi, "Elaborazione di Nazareno Lecis.")
+      .replace(/\bElaborazione:\s*Nazareno Lecis\.?/gi, "Elaborazione di Nazareno Lecis.")
+      .replace(/<strong[^>]*>\s*Processing:\s*Nazareno Lecis\.?\s*<\/strong>/gi, "Processing by Nazareno Lecis.")
+      .replace(/\bProcessing:\s*Nazareno Lecis\.?/gi, "Processing by Nazareno Lecis.");
+  }
+
+  function dashboardCreditNoteStartIndex(html) {
+    var match = html.match(/\.\s+(?:Il|La|Le|Lo|Gli|I|Unita|Unità|Territorio|Totale|Valori|Anno|Serie|Celle|Positive|Negative|Con|Per|Nel|Nella|L')\b/);
+    return match ? match.index + match[0].match(/^\.\s*/)[0].length : -1;
+  }
+
+  function splitDashboardCreditSourceAndNote(html) {
+    var normalized = normalizeDashboardCreditLanguage(html.trim());
+    var sourceRegex = dashboardCreditSourceRegex();
+    var noteRegex = dashboardCreditNoteRegex();
+    var sourceMatch = sourceRegex.exec(normalized);
+    var noteMatch = noteRegex.exec(normalized);
+    var sourceHtml;
+    var noteHtml = "";
+    var elaborationMatch;
+    var noteStart;
+    var beforeElaboration;
+    var afterElaboration;
+
+    if (!sourceMatch) return null;
+
+    if (noteMatch) {
+      if (sourceMatch.index < noteMatch.index) {
+        sourceHtml = normalized.slice(sourceMatch.index, noteMatch.index).trim();
+        noteHtml = normalized.slice(noteMatch.index).trim();
+      } else {
+        noteHtml = normalized.slice(noteMatch.index, sourceMatch.index).trim();
+        sourceHtml = normalized.slice(sourceMatch.index).trim();
+      }
+      return { source: sourceHtml, note: noteHtml };
+    }
+
+    sourceHtml = normalized.slice(sourceMatch.index).trim();
+    elaborationMatch = dashboardCreditElaborationRegex().exec(sourceHtml);
+    if (elaborationMatch) {
+      beforeElaboration = sourceHtml.slice(0, elaborationMatch.index).trim();
+      afterElaboration = sourceHtml.slice(elaborationMatch.index + elaborationMatch[0].length).trim();
+      noteStart = dashboardCreditNoteStartIndex(beforeElaboration);
+      if (noteStart >= 0) {
+        noteHtml = beforeElaboration.slice(noteStart).trim();
+        sourceHtml = (beforeElaboration.slice(0, noteStart).trim() + " " + elaborationMatch[0].trim()).trim();
+      } else {
+        sourceHtml = (beforeElaboration + " " + elaborationMatch[0].trim()).trim();
+      }
+      if (afterElaboration) noteHtml = [noteHtml, afterElaboration].filter(Boolean).join(" ");
+      return { source: sourceHtml, note: noteHtml };
+    }
+
+    noteStart = dashboardCreditNoteStartIndex(sourceHtml);
+    if (noteStart >= 0) {
+      noteHtml = sourceHtml.slice(noteStart).trim();
+      sourceHtml = sourceHtml.slice(0, noteStart).trim();
+    }
+    return { source: sourceHtml, note: noteHtml };
+  }
+
+  function buildDashboardCreditHtml(parts, english) {
+    var sourceBody = parts.source.replace(dashboardCreditSourceRegex(), "").trim();
+    var noteBody = (parts.note || "").replace(dashboardCreditNoteRegex(), "").trim();
+    var elaboration = english ? "Processing by Nazareno Lecis." : "Elaborazione di Nazareno Lecis.";
+    var noteLabel = english ? "Note:" : "Nota:";
+    var sourceLabel = english ? "Source:" : "Fonte:";
+
+    if (!sourceBody) return null;
+    if (!dashboardCreditHasElaboration(sourceBody)) {
+      sourceBody = dashboardCreditEnsureSentence(sourceBody) + " " + elaboration;
+    }
+
+    return '<span class="dashboard-credit-source"><strong>' + sourceLabel + '</strong> ' + sourceBody + '</span>' +
+      (noteBody ? '<br><span class="dashboard-credit-note"><strong>' + noteLabel + '</strong> ' + noteBody + '</span>' : "");
+  }
+
+  function dashboardCreditChildParts(element) {
+    var source = element.querySelector(".si-chart-source");
+    var note = element.querySelector(".si-chart-note");
+    if (!source) return null;
+    return {
+      source: source.innerHTML.trim(),
+      note: note ? note.innerHTML.trim() : ""
+    };
+  }
+
+  function dashboardCreditClosestLink(node) {
+    var parent = node.parentElement;
+    return parent && parent.closest("a");
+  }
+
+  function createDashboardCreditLink(text, href) {
+    var link = document.createElement("a");
+    link.href = href;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = text;
+    return link;
+  }
+
+  function findDashboardCreditLinkMatch(text, links) {
+    var lower = text.toLowerCase();
+    var best = null;
+    links.forEach(function (link) {
+      var index = lower.indexOf(link[0].toLowerCase());
+      if (index < 0) return;
+      if (!best || index < best.index || (index === best.index && link[0].length > best.text.length)) {
+        best = { index: index, text: text.slice(index, index + link[0].length), href: link[1] };
+      }
+    });
+    return best;
+  }
+
+  function linkDashboardCreditTextNodes(source) {
+    var links = dashboardCreditLinkDefinitions();
+    var walker = document.createTreeWalker(source, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        if (!node.nodeValue || !node.nodeValue.trim() || dashboardCreditClosestLink(node)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var nodes = [];
+    var node;
+    while ((node = walker.nextNode())) nodes.push(node);
+
+    nodes.forEach(function (textNode) {
+      var text = textNode.nodeValue;
+      var fragment = document.createDocumentFragment();
+      var match;
+      while ((match = findDashboardCreditLinkMatch(text, links))) {
+        if (match.index > 0) fragment.appendChild(document.createTextNode(text.slice(0, match.index)));
+        fragment.appendChild(createDashboardCreditLink(match.text, match.href));
+        text = text.slice(match.index + match.text.length);
+      }
+      if (!fragment.childNodes.length) return;
+      if (text) fragment.appendChild(document.createTextNode(text));
+      textNode.parentNode.replaceChild(fragment, textNode);
+    });
+  }
+
+  function linkDashboardCreditCodeNodes(source) {
+    var links = dashboardCreditLinkDefinitions();
+    source.querySelectorAll("code").forEach(function (code) {
+      if (code.closest("a")) return;
+      var text = (code.textContent || "").trim().toLowerCase();
+      var match = links.find(function (link) { return link[0].toLowerCase() === text; });
+      if (!match) return;
+      var wrapper = createDashboardCreditLink("", match[1]);
+      code.parentNode.insertBefore(wrapper, code);
+      wrapper.appendChild(code);
+    });
+  }
+
+  function linkDashboardCreditSources(element) {
+    element.querySelectorAll(".dashboard-credit-source").forEach(function (source) {
+      linkDashboardCreditCodeNodes(source);
+      linkDashboardCreditTextNodes(source);
+    });
+  }
+
+  function replaceDashboardCreditText(element, from, to) {
+    var walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        return dashboardCreditClosestLink(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue.indexOf(from) >= 0) node.nodeValue = node.nodeValue.split(from).join(to);
+    }
+  }
+
+  function syncDashboardCreditLanguage(element) {
+    var english = document.documentElement.lang === "en";
+    var sourceLabel = element.querySelector(".dashboard-credit-source strong");
+    var noteLabel = element.querySelector(".dashboard-credit-note strong");
+    if (sourceLabel) sourceLabel.textContent = english ? "Source:" : "Fonte:";
+    if (noteLabel) noteLabel.textContent = english ? "Note:" : "Nota:";
+    if (english) {
+      replaceDashboardCreditText(element, "Elaborazione di Nazareno Lecis.", "Processing by Nazareno Lecis.");
+    } else {
+      replaceDashboardCreditText(element, "Processing by Nazareno Lecis.", "Elaborazione di Nazareno Lecis.");
+    }
+  }
+
+  function isDashboardCreditElement(element) {
+    var className = element.className || "";
+    if (typeof className !== "string") return false;
+    if (!element.classList) return false;
+    return element.classList.contains("chart-credit") ||
+      element.classList.contains("chart-source") ||
+      element.classList.contains("chart-bottom-credit") ||
+      element.classList.contains("table-credit") ||
+      element.classList.contains("source-credit") ||
+      /(^|\s)[a-z0-9]+-chart-credit(\s|$)/i.test(className);
+  }
+
+  function formatDashboardCreditElement(element) {
+    if (!isDashboardPage() || !isDashboardCreditElement(element)) return;
+    var signature = element.innerHTML.trim();
+    if (!signature || element.dataset.dashboardCreditLast === signature) return;
+    if (element.querySelector(".dashboard-credit-source")) {
+      syncDashboardCreditLanguage(element);
+      linkDashboardCreditSources(element);
+      element.dataset.dashboardCreditLast = element.innerHTML.trim();
+      return;
+    }
+    var parts = dashboardCreditChildParts(element) || splitDashboardCreditSourceAndNote(signature);
+    var formatted = parts && buildDashboardCreditHtml(parts, dashboardCreditIsEnglish(signature));
+    if (!formatted) {
+      element.dataset.dashboardCreditLast = signature;
+      return;
+    }
+    element.innerHTML = formatted;
+    syncDashboardCreditLanguage(element);
+    linkDashboardCreditSources(element);
+    element.dataset.dashboardCreditLast = element.innerHTML.trim();
+  }
+
+  function formatDashboardCredits(root) {
+    if (!isDashboardPage() || !root) return;
+    if (root.nodeType === 1 && isDashboardCreditElement(root)) formatDashboardCreditElement(root);
+    if (!root.querySelectorAll) return;
+    root.querySelectorAll(".chart-credit,.chart-source,.chart-bottom-credit,.table-credit,.source-credit,[class*='-chart-credit']").forEach(formatDashboardCreditElement);
+  }
+
+  function installDashboardCreditFormatter() {
+    if (!isDashboardPage() || dashboardCreditFormatterInstalled || !document.body) return;
+    dashboardCreditFormatterInstalled = true;
+    injectDashboardCreditStyle();
+    formatDashboardCredits(document.body);
+    [100, 500, 1200, 2500, 5000].forEach(function (delay) {
+      window.setTimeout(function () { formatDashboardCredits(document.body); }, delay);
+    });
+    window.addEventListener("site-language-change", function () {
+      window.setTimeout(function () { formatDashboardCredits(document.body); }, 0);
+      window.setTimeout(function () { formatDashboardCredits(document.body); }, 150);
+    });
+    new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        if (mutation.type === "characterData" && mutation.target.parentElement) {
+          formatDashboardCreditElement(mutation.target.parentElement);
+          return;
+        }
+        mutation.addedNodes.forEach(function (node) {
+          formatDashboardCredits(node);
+        });
+        if (mutation.target && mutation.target.nodeType === 1) {
+          formatDashboardCreditElement(mutation.target);
+        }
+      });
+    }).observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
   function replaceText(value, replacements) {
     var output = value;
     replacements.forEach(function (pair) {
@@ -550,10 +895,11 @@
     injectSocialStyle();
     injectDashboardFitStyle();
     installDashboardMobileHeader();
+    installDashboardCreditFormatter();
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260722-dashboard-i18n-3", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260723-chart-credits", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

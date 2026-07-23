@@ -2307,6 +2307,7 @@
     ["Dati aggiornati al", "Data updated to"],
     ["Ultimo dato", "Latest data"],
     ["Fonte:", "Source:"],
+    ["Nota:", "Note:"],
     ["Ministero della Salute", "Ministry of Health"],
     ["Corte dei conti", "Court of Auditors"],
     ["Ragioneria Generale dello Stato", "State General Accounting Department"],
