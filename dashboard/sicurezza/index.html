@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sicurezza in Italia | Nazareno Lecis</title>
-  <meta name="description" content="Dashboard sulla sicurezza in Italia: criminalita registrata, territori, reati, autori, vittime, cittadinanza, trend, fonti e metodologia.">
+  <meta name="description" content="Dashboard sulla sicurezza in Italia: criminalità registrata, territori, reati, autori, vittime, cittadinanza, trend, fonti e metodologia.">
   <link rel="icon" href="../../assets/logo.png" type="image/png">
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-12.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260723-13.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -40,7 +40,7 @@
     <section class="si-head">
       <div>
         <span class="eyebrow">Sicurezza in Italia</span>
-        <h1>Criminalita registrata, vittime, percezione e sistema di sicurezza</h1>
+        <h1>Criminalità registrata, vittime, percezione e sistema di sicurezza</h1>
         <p class="lead">Una dashboard per leggere serie storiche nazionali, regionali, provinciali e dei comuni capoluogo, distinguendo reati, territori, autori e vittime senza confondere denunce, vittimizzazione e percezione.</p>
       </div>
       <aside class="si-source-panel" aria-label="Fonte dati">
@@ -68,14 +68,14 @@
     </nav>
 
     <p id="siStatus" class="si-status">Caricamento dati sicurezza ...</p>
-    <p class="si-note"><strong>Regola di lettura:</strong> qui i reati sono delitti denunciati o accertati dalle Forze di polizia e trasmessi all'autorita giudiziaria, non tutti i reati effettivamente commessi. Vittimizzazione e percezione sono fenomeni diversi e vanno tenuti separati.</p>
+    <p class="si-note"><strong>Regola di lettura:</strong> qui i reati sono delitti denunciati o accertati dalle Forze di polizia e trasmessi all'autorità giudiziaria, non tutti i reati effettivamente commessi. Vittimizzazione e percezione sono fenomeni diversi e vanno tenuti separati.</p>
 
     <section id="quadro" class="si-section">
       <div class="si-section-head">
         <span class="eyebrow">Quadro</span>
         <div>
           <h2>Come leggere la dashboard</h2>
-          <p>Ogni grafico ha i propri filtri, cosi l'utente puo scegliere anno, territorio, reato e misura direttamente nel punto in cui sta leggendo il dato. Il livello comunale disponibile nei dati e quello dei comuni capoluogo.</p>
+          <p>Ogni grafico ha i propri filtri: l'utente può scegliere anno, territorio, reato e misura direttamente nel punto in cui sta leggendo il dato. Il livello comunale disponibile nei dati è quello dei comuni capoluogo.</p>
         </div>
       </div>
       <p class="si-note"><strong>Nota:</strong> per confronti territoriali usa i tassi quando disponibili. I valori assoluti restano utili per capire il volume amministrativo del fenomeno. Per Roma, Milano, Cagliari, Venezia e gli altri capoluoghi seleziona il livello "Comuni capoluogo" nei filtri dei grafici.</p>
@@ -85,8 +85,8 @@
       <div class="si-section-head">
         <span class="eyebrow">Serie storiche</span>
         <div>
-          <h2>Andamento della criminalita registrata</h2>
-          <p>Il punto di partenza e sempre nazionale. Se scegli un territorio, la dashboard lo confronta con l'Italia.</p>
+          <h2>Andamento della criminalità registrata</h2>
+          <p>Il punto di partenza è nazionale. Se scegli un territorio, il grafico mostra solo quel territorio; usa "Confronta con" per aggiungere una seconda serie.</p>
         </div>
       </div>
       <div class="si-chart-grid">
@@ -103,7 +103,7 @@
             <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siTrendChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> la serie mantiene l'Italia come benchmark. Per confrontare due province della stessa regione, scegli livello Province, seleziona la regione, poi imposta Territorio e Confronta con. Fonte: ISTAT, delitti denunciati dalle Forze di polizia. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> per confrontare due province della stessa regione, scegli livello Province, seleziona la regione, poi imposta Territorio e Confronta con. Fonte: ISTAT, delitti denunciati dalle Forze di polizia. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Composizione dei reati</h3><span id="siCompositionTag">ultimo anno selezionato</span></div>
@@ -136,7 +136,7 @@
             <label>Reato<select data-si-control="crime"></select></label>
           </div>
           <div id="siContributionChart" class="si-chart si-chart-compact"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> mostra i singoli reati con variazione percentuale almeno pari alla soglia scelta rispetto all'anno di confronto. Ordinando per variazioni percentuali possono emergere reati a base piu bassa o in crescita rapida, come truffe e frodi informatiche: non significa che gli altri dati manchino. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> mostra i singoli reati con variazione percentuale almeno pari alla soglia scelta rispetto all'anno di confronto. Ordinando per variazioni percentuali possono emergere reati a base più bassa o in crescita rapida, come truffe e frodi informatiche: non significa che gli altri dati manchino. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -146,7 +146,7 @@
         <span class="eyebrow">Territori</span>
         <div>
           <h2>Nazionale, regioni, province e comuni capoluogo</h2>
-          <p>La granularita dipende dalla fonte: per i reati denunciati arriva fino ai comuni capoluogo, non a tutti i comuni italiani.</p>
+          <p>La granularità dipende dalla fonte: per i reati denunciati arriva fino ai comuni capoluogo, non a tutti i comuni italiani.</p>
         </div>
       </div>
       <div class="si-chart-grid">
@@ -193,7 +193,7 @@
             <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siTreemapChart" class="si-chart si-chart-compact"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> mostra i territori con il valore piu alto nel perimetro selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> mostra i territori con il valore più alto nel perimetro selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
       <article class="si-panel si-section-gap">
@@ -313,7 +313,7 @@
             <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siHomicideTrendChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> confronta l'Italia con il territorio selezionato o con due province della stessa regione usando Territorio e Confronta con. I tassi sono calcolati rapportando il valore alla popolazione residente del territorio e anno selezionati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> confronta il territorio selezionato con un secondo territorio solo quando usi Confronta con. I tassi sono calcolati rapportando il valore alla popolazione residente del territorio e anno selezionati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Suddivisione e geografia</h3><span id="siHomicideStructureTag">tipi o territori</span></div>
@@ -338,12 +338,12 @@
             <label>Ruolo<select data-si-control="role"></select></label>
             <label>Cittadinanza<select data-si-control="citizenship"></select></label>
             <label>Sesso<select data-si-control="homicideSex"></select></label>
-            <label>Eta<select data-si-control="homicideAgeGroup"></select></label>
+            <label>Età<select data-si-control="homicideAgeGroup"></select></label>
             <label>Vista persone<select data-si-control="homicidePeopleBreakdown"></select></label>
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siHomicidePeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Le quote sono calcolate sul grafico selezionato; il payload persone caricato ora e nazionale, quindi i tassi rapportano i conteggi alla popolazione residente totale italiana dell'anno selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Le quote sono calcolate sul grafico selezionato; il payload persone caricato ora è nazionale, quindi i tassi rapportano i conteggi alla popolazione residente totale italiana dell'anno selezionato. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -353,7 +353,7 @@
         <span class="eyebrow">Autori, vittime e cittadinanza</span>
         <div>
           <h2>Chi commette i reati e chi sono le vittime</h2>
-          <p>Qui si distinguono autori registrati e vittime registrate. Il dettaglio caricato ora e nazionale; i livelli territoriali verranno mostrati quando saranno disponibili nel payload persone.</p>
+          <p>Qui si distinguono autori registrati e vittime registrate. Il dettaglio caricato ora è nazionale; i livelli territoriali verranno mostrati quando saranno disponibili nel payload persone.</p>
         </div>
       </div>
       <p id="siPeopleNotice" class="si-note">Caricamento dei dati persone...</p>
@@ -369,10 +369,10 @@
             <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siPeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Il payload persone caricato ora e nazionale; puoi leggere conteggi, quote del grafico o tassi sulla popolazione residente totale italiana. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Il payload persone caricato ora è nazionale; puoi leggere conteggi, quote del grafico o tassi sulla popolazione residente totale italiana. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
-          <div class="si-panel-title"><h3>Identikit per sesso ed eta</h3><span id="siDemographyTag">quando disponibile</span></div>
+          <div class="si-panel-title"><h3>Identikit per sesso ed età</h3><span id="siDemographyTag">quando disponibile</span></div>
           <div class="si-chart-controls">
             <label>Anno<select data-si-control="year"></select></label>
             <label>Ruolo<select data-si-control="role"></select></label>
@@ -422,33 +422,53 @@
         </div>
       </div>
       <div class="si-method-grid">
-        <article class="si-panel"><h3>Denunce registrate</h3><p>Delitti denunciati o accertati dalle Forze di polizia e trasmessi all'autorita giudiziaria. Sono la fonte piu granulare per territorio, anno e tipo di reato.</p></article>
+        <article class="si-panel"><h3>Denunce registrate</h3><p>Delitti denunciati o accertati dalle Forze di polizia e trasmessi all'autorità giudiziaria. Sono la fonte più granulare per territorio, anno e tipo di reato.</p></article>
         <article class="si-panel"><h3>Vittimizzazione</h3><p>Persone o famiglie che dichiarano di aver subito reati, comprese situazioni non denunciate. Aiuta a stimare il sommerso e la propensione alla denuncia.</p></article>
-        <article class="si-panel"><h3>Sicurezza percepita</h3><p>Paura del crimine, rischio percepito e comportamenti di evitamento. Puo muoversi in modo diverso rispetto alle denunce registrate.</p></article>
+        <article class="si-panel"><h3>Sicurezza percepita</h3><p>Paura del crimine, rischio percepito e comportamenti di evitamento. Può muoversi in modo diverso rispetto alle denunce registrate.</p></article>
       </div>
       <div class="si-chart-grid si-section-gap">
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Sicurezza percepita</h3><span id="siPerceptionTag">indagine campionaria</span></div>
           <div class="si-chart-controls">
             <label>Indicatore<select data-si-control="surveyPerceptionIndicator"></select></label>
+            <label>Dettaglio<select data-si-control="surveyPerceptionDimension"></select></label>
+            <label>Voce<select data-si-control="surveyPerceptionResponse"></select></label>
+            <label>Periodo<select data-si-control="surveyPerceptionPeriod"></select></label>
           </div>
-          <div id="siPerceptionChart" class="si-chart si-chart-compact si-chart-survey"></div>
+          <div id="siPerceptionChart" class="si-chart si-chart-survey"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> percentuali da indagine campionaria ISTAT sulla percezione della sicurezza, confrontabili con cautela con le denunce registrate ma non sommabili. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Vittimizzazione dichiarata</h3><span id="siVictimizationTag">indagine campionaria</span></div>
           <div class="si-chart-controls">
-            <label>Indicatore / reato dichiarato<select data-si-control="surveyVictimizationIndicator"></select></label>
+            <label>Indicatore<select data-si-control="surveyVictimizationIndicator"></select></label>
+            <label>Dettaglio<select data-si-control="surveyVictimizationDimension"></select></label>
+            <label>Reato dichiarato<select data-si-control="surveyVictimizationCrime"></select></label>
+            <label>Voce<select data-si-control="surveyVictimizationResponse"></select></label>
+            <label>Unità<select data-si-control="surveyVictimizationUnit"></select></label>
+            <label>Periodo<select data-si-control="surveyVictimizationPeriod"></select></label>
           </div>
-          <div id="siVictimizationChart" class="si-chart si-chart-compact si-chart-survey"></div>
+          <div id="siVictimizationChart" class="si-chart si-chart-survey"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> quote di persone o famiglie che dichiarano di aver subito reati nei 12 mesi precedenti l'intervista; misura anche fenomeni non denunciati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Propensione alla denuncia</h3><span id="siReportingTag">indagine campionaria</span></div>
+          <div class="si-chart-controls">
+            <label>Indicatore<select data-si-control="surveyReportingIndicator"></select></label>
+            <label>Dettaglio<select data-si-control="surveyReportingDimension"></select></label>
+            <label>Reato dichiarato<select data-si-control="surveyReportingCrime"></select></label>
+            <label>Voce / motivo<select data-si-control="surveyReportingResponse"></select></label>
+            <label>Periodo<select data-si-control="surveyReportingPeriod"></select></label>
+          </div>
+          <div id="siReportingChart" class="si-chart si-chart-survey"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> mostra le quote di episodi denunciati, non denunciati o i motivi dichiarati quando la tavola ISTAT li pubblica. Gli incroci più spinti, per esempio sesso ed età nello stesso modello, richiedono microdati o tavole dedicate. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
       <article class="si-panel si-section-gap">
         <h3>Come leggere questa parte</h3>
         <div class="si-definition-table">
           <div><strong>Domanda</strong><span>Quanti delitti risultano registrati?</span><span>Quante persone dichiarano di averne subiti?</span><span>Quanto le persone si sentono insicure?</span></div>
-          <div><strong>Unita</strong><span>Denunce o delitti registrati</span><span>Persone/famiglie intervistate</span><span>Opinioni e comportamenti dichiarati</span></div>
+          <div><strong>Unità</strong><span>Denunce o delitti registrati</span><span>Persone/famiglie intervistate</span><span>Opinioni e comportamenti dichiarati</span></div>
           <div><strong>Uso corretto</strong><span>Serie territoriali e confronto tra reati</span><span>Sommerso e profilo delle vittime</span><span>Paura, evitamento e fiducia nello spazio pubblico</span></div>
         </div>
         <p class="si-chart-credit"><strong>Nota:</strong> percezione e vittimizzazione vanno affiancate ai reati denunciati, non sommate. Fonte: ISTAT, indagini su sicurezza dei cittadini e percezione della sicurezza. Elaborazione di Nazareno Lecis.</p>
@@ -479,8 +499,8 @@
       </div>
       <article class="si-panel si-section-gap">
         <h3>Note rapide di lettura</h3>
-        <p class="si-chart-credit"><strong>Nota su truffe e frodi:</strong> nel dataflow ISTAT usato qui il codice <strong>SWINCYB</strong> e pubblicato come aggregato di truffe e frodi informatiche. La dashboard quindi non lo divide in sottotipologie perche quel dettaglio non e presente nel payload attuale; per farlo servirebbe integrare una fonte aggiuntiva dedicata.</p>
-        <p class="si-chart-credit"><strong>Nota sugli omicidi:</strong> gli omicidi volontari sono una voce specifica, non il totale di tutte le morti violente o di tutte le fattispecie collegate. Le voci su omicidi colposi, stradali, preterintenzionali, tentati omicidi, omicidi per rapina, mafiosi, infanticidi, stragi e finalita terroristica sono mostrate separatamente per evitare doppi conteggi tra aggregati e dettagli.</p>
+        <p class="si-chart-credit"><strong>Nota su truffe e frodi:</strong> nel dataflow ISTAT usato qui il codice <strong>SWINCYB</strong> è pubblicato come aggregato di truffe e frodi informatiche. La dashboard quindi non lo divide in sottotipologie perché quel dettaglio non è presente nel payload attuale; per farlo servirebbe integrare una fonte aggiuntiva dedicata.</p>
+        <p class="si-chart-credit"><strong>Nota sugli omicidi:</strong> gli omicidi volontari sono una voce specifica, non il totale di tutte le morti violente o di tutte le fattispecie collegate. Le voci su omicidi colposi, stradali, preterintenzionali, tentati omicidi, omicidi per rapina, mafiosi, infanticidi, stragi e finalità terroristica sono mostrate separatamente per evitare doppi conteggi tra aggregati e dettagli.</p>
         <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
       </article>
     </section>
