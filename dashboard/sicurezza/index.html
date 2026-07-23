@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260722-10">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260723-1">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard.js?v=20260722-10"></script>
+  <script defer src="../../assets/sicurezza-dashboard.js?v=20260723-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -145,12 +145,13 @@
             <label>Livello<select data-si-control="level"></select></label>
             <label>Regione<select data-si-control="region"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Confronta con<select data-si-control="compareTerritory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
             <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siTrendChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> la serie mantiene l'Italia come benchmark quando scegli un territorio. Fonte: ISTAT, delitti denunciati dalle Forze di polizia. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> la serie mantiene l'Italia come benchmark. Per confrontare due province della stessa regione, scegli livello Province, seleziona la regione, poi imposta Territorio e Confronta con. Fonte: ISTAT, delitti denunciati dalle Forze di polizia. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Composizione dei reati</h3><span id="siCompositionTag">ultimo anno selezionato</span></div>
@@ -179,7 +180,7 @@
             <label>Categoria<select data-si-control="theme"></select></label>
           </div>
           <div id="siContributionChart" class="si-chart si-chart-compact"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> mostra i singoli reati con variazione percentuale almeno pari alla soglia scelta rispetto all'anno di confronto. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> mostra i singoli reati con variazione percentuale almeno pari alla soglia scelta rispetto all'anno di confronto. Ordinando per variazioni percentuali possono emergere reati a base piu bassa o in crescita rapida, come truffe e frodi informatiche: non significa che gli altri dati manchino. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
