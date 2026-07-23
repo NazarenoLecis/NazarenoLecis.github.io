@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-11.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260723-12.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -72,63 +72,13 @@
 
     <section id="quadro" class="si-section">
       <div class="si-section-head">
-        <span class="eyebrow">Filtri</span>
+        <span class="eyebrow">Quadro</span>
         <div>
-          <h2>Quadro generale del territorio selezionato</h2>
-          <p>I filtri governano tutta la pagina. La serie storica mantiene sempre l'Italia come benchmark, poi permette il dettaglio regionale, provinciale o dei comuni capoluogo.</p>
+          <h2>Come leggere la dashboard</h2>
+          <p>Ogni grafico ha i propri filtri, cosi l'utente puo scegliere anno, territorio, reato e misura direttamente nel punto in cui sta leggendo il dato. Il livello comunale disponibile nei dati e quello dei comuni capoluogo.</p>
         </div>
       </div>
-      <div class="si-filter-panel si-filter-panel-wide">
-        <label>Anno
-          <select id="siYear"></select>
-        </label>
-        <label>Livello
-          <select id="siLevel"></select>
-        </label>
-        <label>Regione
-          <select id="siRegion"></select>
-        </label>
-        <label>Provincia
-          <select id="siProvince"></select>
-        </label>
-        <label>Territorio
-          <select id="siTerritory"></select>
-        </label>
-        <label>Categoria
-          <select id="siTheme"></select>
-        </label>
-        <label>Reato
-          <select id="siCrime"></select>
-        </label>
-        <label>Misura
-          <select id="siMeasure">
-            <option value="absolute">Valori assoluti</option>
-            <option value="rate">Tassi per 100.000 abitanti</option>
-            <option value="rate_1000">Tassi per 1.000 abitanti</option>
-            <option value="index">Indice primo anno = 100</option>
-            <option value="moving_average">Media mobile triennale</option>
-            <option value="yoy">Variazione % annua</option>
-          </select>
-        </label>
-        <label>Ruolo persona
-          <select id="siRole"></select>
-        </label>
-        <label>Cittadinanza
-          <select id="siCitizenship"></select>
-        </label>
-        <label>Scostamenti
-          <select id="siCounterDirection">
-            <option value="all">Tutte le controtendenze</option>
-            <option value="worse">Peggiora mentre Italia migliora</option>
-            <option value="better">Migliora mentre Italia peggiora</option>
-          </select>
-        </label>
-        <label>Ricerca tabella
-          <input id="siSearch" type="search" placeholder="Reato, codice o territorio">
-        </label>
-        <button id="siReset" class="si-reset" type="button">Reset</button>
-      </div>
-      <p class="si-filter-help">Per confronti territoriali usa i tassi quando disponibili. I valori assoluti restano utili per capire il volume amministrativo del fenomeno.</p>
+      <p class="si-note"><strong>Nota:</strong> per confronti territoriali usa i tassi quando disponibili. I valori assoluti restano utili per capire il volume amministrativo del fenomeno. Per Roma, Milano, Cagliari, Venezia e gli altri capoluoghi seleziona il livello "Comuni capoluogo" nei filtri dei grafici.</p>
     </section>
 
     <section id="andamento" class="si-section">
@@ -248,6 +198,17 @@
       </div>
       <article class="si-panel si-section-gap">
         <div class="si-panel-title"><h3>Tabella filtrabile</h3><span id="siTableTag">dati pubblici</span></div>
+        <div class="si-chart-controls">
+          <label>Anno<select data-si-control="year"></select></label>
+          <label>Livello<select data-si-control="level"></select></label>
+          <label>Regione<select data-si-control="region"></select></label>
+          <label>Provincia<select data-si-control="province"></select></label>
+          <label>Territorio<select data-si-control="territory"></select></label>
+          <label>Categoria<select data-si-control="theme"></select></label>
+          <label>Reato<select data-si-control="crime"></select></label>
+          <label>Misura<select data-si-control="measure"></select></label>
+          <label>Ricerca tabella<input id="siSearch" type="search" placeholder="Reato, codice o territorio"></label>
+        </div>
         <div id="siTerritoryTable" class="si-table-wrap"></div>
       </article>
     </section>
