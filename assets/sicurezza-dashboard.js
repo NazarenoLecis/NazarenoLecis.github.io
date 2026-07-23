@@ -1653,7 +1653,7 @@
         y: transformSeriesValues(serie.points).map(function (point) { return point.value; }),
         line: { color: COLORS[index % COLORS.length], width: 3 },
         marker: { size: 7 },
-        hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
+        hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": " + measureHoverValue("y") + "<extra></extra>"
       };
     }), { yTitle: measureLabel(), legend: true, yearAxis: true });
   }
@@ -1746,7 +1746,7 @@
       x: rows.map(metricValueForRow),
       y: yLabels,
       marker: { color: rows.map(function (_, index) { return COLORS[index % COLORS.length]; }) },
-      hovertemplate: "%{y}<br>" + measureLabel() + ": %{x:,.2f}<extra></extra>"
+      hovertemplate: "%{y}<br>" + measureLabel() + ": " + measureHoverValue("x") + "<extra></extra>"
     }], {
       xTitle: measureLabel(),
       marginLeft: marginForYLabels(yLabels, 180, 300),
@@ -1778,7 +1778,7 @@
         color: rows.map(function (row) { return row.change_pct_yoy >= 0 ? "#d96363" : "#5e9f65"; }),
         opacity: .78
       },
-      hovertemplate: "<b>%{text}</b><br>" + measureLabel() + ": %{x:,.2f}<br>" + ui("Var. annua", "Annual change") + ": %{y:.1f}%<extra></extra>"
+      hovertemplate: "<b>%{text}</b><br>" + measureLabel() + ": " + measureHoverValue("x") + "<br>" + ui("Var. annua", "Annual change") + ": %{y:.1f}%<extra></extra>"
     }], { xTitle: measureLabel(), yTitle: ui("Variazione % annua", "Annual % change") });
   }
 
@@ -1798,7 +1798,7 @@
       y: yLabels,
       marker: { color: rows.map(function (row) { return row.change_pct_yoy >= 0 ? "#d96363" : "#5e9f65"; }) },
       customdata: rows.map(function (row) { return [metricScopeLabel(), formatPercent(row.change_pct_yoy), territoryContext(row)]; }),
-      hovertemplate: "<b>%{y}</b><br>" + measureLabel() + ": %{x:,.2f}<br>" + ui("Reato/categoria", "Offence/category") + ": %{customdata[0]}<br>" + ui("Var. annua", "Annual change") + ": %{customdata[1]}<br>%{customdata[2]}<extra></extra>"
+      hovertemplate: "<b>%{y}</b><br>" + measureLabel() + ": " + measureHoverValue("x") + "<br>" + ui("Reato/categoria", "Offence/category") + ": %{customdata[0]}<br>" + ui("Var. annua", "Annual change") + ": %{customdata[1]}<br>%{customdata[2]}<extra></extra>"
     }], {
       xTitle: measureLabel(),
       marginLeft: marginForYLabels(yLabels, 180, 300),
@@ -1851,7 +1851,7 @@
         y: transformSeriesValues(points).map(function (point) { return point.value; }),
         line: { color: COLORS[index % COLORS.length], width: 3 },
         marker: { size: 7 },
-        hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
+        hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": " + measureHoverValue("y") + "<extra></extra>"
       };
     }), { yTitle: measureLabel(), legend: true, yearAxis: true });
   }
@@ -1869,8 +1869,8 @@
     if (!rows.length) return emptyChart("siViolentChart", ui("Nessun dato per classificazione violenti/altri.", "No data for the violent/other classification."));
     if (!violentPoints.concat(otherPoints).some(function (point) { return isFiniteNumber(point.value); })) return emptyChart("siViolentChart", measureUnavailableMessage("questo perimetro"));
     plot("siViolentChart", [
-      { type: "bar", name: ui("Reati violenti", "Violent offences"), x: yearsList.map(yearLabel), y: transformSeriesValues(violentPoints).map(function (point) { return point.value; }), marker: { color: "#d96363" } },
-      { type: "bar", name: ui("Altri reati", "Other offences"), x: yearsList.map(yearLabel), y: transformSeriesValues(otherPoints).map(function (point) { return point.value; }), marker: { color: "#4f8bc9" } }
+      { type: "bar", name: ui("Reati violenti", "Violent offences"), x: yearsList.map(yearLabel), y: transformSeriesValues(violentPoints).map(function (point) { return point.value; }), marker: { color: "#d96363" }, hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": " + measureHoverValue("y") + "<extra></extra>" },
+      { type: "bar", name: ui("Altri reati", "Other offences"), x: yearsList.map(yearLabel), y: transformSeriesValues(otherPoints).map(function (point) { return point.value; }), marker: { color: "#4f8bc9" }, hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": " + measureHoverValue("y") + "<extra></extra>" }
     ], {
       barmode: (STATE.measure === "index" || STATE.measure === "yoy") ? "group" : "stack",
       yTitle: measureLabel(),
@@ -1898,7 +1898,7 @@
       fill: "tozeroy",
       line: { color: "#ff5a1f", width: 3 },
       marker: { size: 8 },
-      hovertemplate: ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
+      hovertemplate: ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": " + measureHoverValue("y") + "<extra></extra>"
     }], { yTitle: measureLabel(), yearAxis: true });
   }
 
@@ -1925,7 +1925,7 @@
         y: transformSeriesValues(points).map(function (point) { return point.value; }),
         line: { color: COLORS[index % COLORS.length], width: 3 },
         marker: { size: 7 },
-        hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": %{y:,.2f}<extra></extra>"
+        hovertemplate: "<b>%{fullData.name}</b><br>" + ui("Anno", "Year") + ": %{x}<br>" + measureLabel() + ": " + measureHoverValue("y") + "<extra></extra>"
       };
     }), { yTitle: measureLabel(), legend: true, yearAxis: true });
   }
@@ -2007,7 +2007,7 @@
       y: yLabels,
       customdata: rows.map(function (row) { return [formatPercent(row.change_pct_yoy), territoryContext(row)]; }),
       marker: { color: rows.map(function (row) { return row.change_pct_yoy >= 0 ? "#d96363" : "#5e9f65"; }) },
-      hovertemplate: "<b>%{y}</b><br>" + measureLabel() + ": %{x:,.2f}<br>" + ui("Var. annua", "Annual change") + ": %{customdata[0]}<br>%{customdata[1]}<extra></extra>"
+      hovertemplate: "<b>%{y}</b><br>" + measureLabel() + ": " + measureHoverValue("x") + "<br>" + ui("Var. annua", "Annual change") + ": %{customdata[0]}<br>%{customdata[1]}<extra></extra>"
     }], {
       xTitle: measureLabel(),
       marginLeft: marginForYLabels(yLabels, 180, 300),
@@ -3661,6 +3661,16 @@
     if (STATE.measure === "moving_average") return ui("Media mobile triennale", "Three-year moving average");
     if (STATE.measure === "yoy") return ui("Variazione % annua", "Annual % change");
     return ui("Delitti denunciati", "Reported crimes");
+  }
+
+  function measureHoverValue(axis) {
+    return "%{" + axis + measureHoverFormat() + "}" + (STATE.measure === "yoy" ? "%" : "");
+  }
+
+  function measureHoverFormat() {
+    if (STATE.measure === "absolute") return ":,.0f";
+    if (STATE.measure === "rate" || STATE.measure === "rate_1000") return ":,.2f";
+    return ":,.1f";
   }
 
   function contributionDirectionLabel() {
