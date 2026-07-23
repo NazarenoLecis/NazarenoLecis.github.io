@@ -3,6 +3,7 @@
   var dashboardPlotlyNoZoomHooked = false;
   var dashboardPlotlyNoZoomPatched = false;
   var dashboardPlotlyTouchGuardInstalled = false;
+  var dashboardMobileHeaderInstalled = false;
 
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
@@ -308,6 +309,104 @@
     document.head.appendChild(style);
   }
 
+  function injectDashboardMobileHeaderStyle() {
+    if (!isDashboardPage() || document.getElementById("dashboardMobileHeaderStyle")) return;
+    var style = document.createElement("style");
+    style.id = "dashboardMobileHeaderStyle";
+    style.textContent = [
+      "@media (max-width:900px){",
+      ".dashboard-menu-toggle{display:none;width:44px;height:44px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--text);align-items:center;justify-content:center;flex-direction:column;gap:4px;padding:0;cursor:pointer;grid-column:2;grid-row:1;justify-self:end}",
+      ".dashboard-menu-toggle:before,.dashboard-menu-toggle:after,.dashboard-menu-toggle span{content:\"\";display:block;width:18px;height:2px;border-radius:999px;background:currentColor;transition:transform .18s ease,opacity .18s ease}",
+      ".dashboard-menu-toggle:focus-visible{outline:2px solid var(--orange);outline-offset:2px}",
+      "body.dashboard-mobile-compact .site-header .header-inner{grid-template-columns:minmax(0,1fr) auto;min-height:58px;padding:6px 0;gap:8px;overflow:visible}",
+      "body.dashboard-mobile-compact .site-header .brand{grid-column:1;grid-row:1;min-width:0;gap:10px}",
+      "body.dashboard-mobile-compact .site-header .logo{width:40px;height:40px}",
+      "body.dashboard-mobile-compact .site-header .brand-name{font-size:.96rem;line-height:1.08}",
+      "body.dashboard-mobile-compact .site-header .brand-tag{font-size:.72rem;line-height:1.08;margin-top:1px}",
+      "body.dashboard-mobile-compact .site-header .nav,body.dashboard-mobile-compact .site-header .header-tools,body.dashboard-mobile-compact .site-header .header-inner>.sun{display:none!important}",
+      "body.dashboard-mobile-compact .site-header .dashboard-menu-toggle{display:inline-flex}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header{box-shadow:0 16px 36px rgba(0,0,0,.3)}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header .nav{display:flex!important;grid-column:1/-1;grid-row:2;width:100%;overflow-x:auto;gap:10px;padding:4px 0 2px;scrollbar-width:none}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header .header-tools{display:flex!important;grid-column:1/-1;grid-row:3;justify-content:flex-end;padding:4px 0 0}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header .header-inner>.sun{display:grid!important;grid-column:1/-1;grid-row:3;justify-self:end}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header .dashboard-menu-toggle span{opacity:0}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header .dashboard-menu-toggle:before{transform:translateY(6px) rotate(45deg)}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header .dashboard-menu-toggle:after{transform:translateY(-6px) rotate(-45deg)}",
+      "body.dashboard-mobile-compact.dashboard-mobile-menu-open .site-header .nav a{padding:9px 12px}",
+      "}",
+      "@media (min-width:901px){.dashboard-menu-toggle{display:none!important}}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function setDashboardMobileMenuOpen(open) {
+    document.body.classList.toggle("dashboard-mobile-menu-open", open);
+    var header = document.querySelector(".site-header");
+    if (header) header.classList.toggle("dashboard-menu-open", open);
+    var button = document.querySelector(".dashboard-menu-toggle");
+    if (button) {
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+      button.setAttribute("aria-label", open ? "Chiudi menu" : "Apri menu");
+    }
+  }
+
+  function syncDashboardMobileHeader() {
+    if (!isDashboardPage() || !document.body) return;
+    var compact = window.matchMedia("(max-width: 900px)").matches && window.scrollY > 24;
+    document.body.classList.toggle("dashboard-mobile-compact", compact);
+    if (!compact) setDashboardMobileMenuOpen(false);
+  }
+
+  function installDashboardMobileHeader() {
+    if (!isDashboardPage() || dashboardMobileHeaderInstalled || !document.body) return;
+    var header = document.querySelector(".site-header");
+    var inner = header && header.querySelector(".header-inner");
+    if (!header || !inner) return;
+    dashboardMobileHeaderInstalled = true;
+    injectDashboardMobileHeaderStyle();
+
+    var button = inner.querySelector(".dashboard-menu-toggle");
+    if (!button) {
+      button = document.createElement("button");
+      button.type = "button";
+      button.className = "dashboard-menu-toggle";
+      button.setAttribute("aria-label", "Apri menu");
+      button.setAttribute("aria-expanded", "false");
+      button.innerHTML = "<span></span>";
+      var themeButton = inner.querySelector(".sun,.theme-toggle");
+      if (themeButton && themeButton.nextSibling) {
+        inner.insertBefore(button, themeButton.nextSibling);
+      } else {
+        inner.appendChild(button);
+      }
+    }
+
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      setDashboardMobileMenuOpen(!document.body.classList.contains("dashboard-mobile-menu-open"));
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!document.body.classList.contains("dashboard-mobile-menu-open")) return;
+      if (event.target.closest && event.target.closest(".site-header")) return;
+      setDashboardMobileMenuOpen(false);
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest || !event.target.closest(".site-header .nav a")) return;
+      setDashboardMobileMenuOpen(false);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") setDashboardMobileMenuOpen(false);
+    });
+
+    window.addEventListener("scroll", syncDashboardMobileHeader, { passive: true });
+    window.addEventListener("resize", syncDashboardMobileHeader);
+    syncDashboardMobileHeader();
+  }
+
   function replaceText(value, replacements) {
     var output = value;
     replacements.forEach(function (pair) {
@@ -450,6 +549,7 @@
     ensureFavicon();
     injectSocialStyle();
     injectDashboardFitStyle();
+    installDashboardMobileHeader();
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
