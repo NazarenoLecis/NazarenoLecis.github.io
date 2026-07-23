@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var VERSION = "20260723-1";
+  var VERSION = "20260723-2";
   var PAYLOAD_GLOBALS = {
     metadata: "SICUREZZA_DASHBOARD_METADATA",
     reported: "SICUREZZA_REPORTED_CRIMES",
@@ -875,14 +875,21 @@
     var rows = territoryMetricRows().sort(descMetric).slice(0, 25).reverse();
     els.siRankingTag.textContent = LEVEL_LABELS[STATE.level] + " - " + metricScopeLabel();
     if (!rows.length) return emptyChart("siRankingChart", "Nessun territorio nel perimetro selezionato.");
+    var yLabels = rows.map(function (row) { return territoryLabel(row); });
     plot("siRankingChart", [{
       type: "bar",
       orientation: "h",
       x: rows.map(metricValueForRow),
-      y: rows.map(function (row) { return territoryLabel(row); }),
+      y: yLabels,
       marker: { color: rows.map(function (_, index) { return COLORS[index % COLORS.length]; }) },
       hovertemplate: "%{y}<br>" + measureLabel() + ": %{x:,.2f}<extra></extra>"
-    }], { xTitle: measureLabel(), marginLeft: 170 });
+    }], {
+      xTitle: measureLabel(),
+      marginLeft: marginForYLabels(yLabels, 180, 300),
+      height: barChartHeight(rows.length),
+      yTickVals: yLabels,
+      yTickText: yLabels
+    });
   }
 
   function renderScatterChart() {
@@ -912,15 +919,22 @@
       .reverse();
     els.siTreemapTag.textContent = LEVEL_LABELS[STATE.level] + " - " + String(STATE.year);
     if (!rows.length) return emptyChart("siTreemapChart", "Seleziona un livello territoriale locale per vedere la distribuzione.");
+    var yLabels = rows.map(territoryLabel);
     plot("siTreemapChart", [{
       type: "bar",
       orientation: "h",
       x: rows.map(metricValueForRow),
-      y: rows.map(territoryLabel),
+      y: yLabels,
       marker: { color: rows.map(function (row) { return row.change_pct_yoy >= 0 ? "#d96363" : "#5e9f65"; }) },
       customdata: rows.map(function (row) { return [metricScopeLabel(), formatPercent(row.change_pct_yoy), territoryContext(row)]; }),
       hovertemplate: "<b>%{y}</b><br>" + measureLabel() + ": %{x:,.2f}<br>Reato/categoria: %{customdata[0]}<br>Var. annua: %{customdata[1]}<br>%{customdata[2]}<extra></extra>"
-    }], { xTitle: measureLabel(), marginLeft: 180 });
+    }], {
+      xTitle: measureLabel(),
+      marginLeft: marginForYLabels(yLabels, 180, 300),
+      height: barChartHeight(rows.length),
+      yTickVals: yLabels,
+      yTickText: yLabels
+    });
   }
 
   function renderPropertyFocusChart() {
@@ -1451,6 +1465,17 @@
     var out = {};
     rows.forEach(function (row) { out[row.key] = row; });
     return out;
+  }
+
+  function barChartHeight(rowCount) {
+    return Math.max(440, rowCount * 34 + 150);
+  }
+
+  function marginForYLabels(labels, minWidth, maxWidth) {
+    var longest = labels.reduce(function (max, label) {
+      return Math.max(max, String(label || "").length);
+    }, 0);
+    return Math.max(minWidth, Math.min(maxWidth, longest * 8 + 36));
   }
 
   function plot(id, traces, options) {
