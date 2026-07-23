@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-6.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260723-7.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -104,6 +104,7 @@
           <select id="siMeasure">
             <option value="absolute">Valori assoluti</option>
             <option value="rate">Tassi per 100.000, se disponibili</option>
+            <option value="rate_1000">Tassi per 1.000, se disponibili</option>
             <option value="index">Indice primo anno = 100</option>
             <option value="moving_average">Media mobile triennale</option>
             <option value="yoy">Variazione % annua</option>
@@ -279,6 +280,7 @@
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siViolentChart" class="si-chart"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> classificazione operativa sui codici reato, non definizione legale esaustiva. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
@@ -302,6 +304,7 @@
             <label>Reato<select data-si-control="crime"></select></label>
             <label>Livello<select data-si-control="level"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siCrimeChart" class="si-chart"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> seleziona un reato specifico per leggere la sua serie nel territorio. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
@@ -317,7 +320,7 @@
           <p>La sezione separa omicidi volontari, colposi, stradali, preterintenzionali, tentati omicidi e altre voci disponibili, evitando somme improprie tra aggregati e sottocategorie.</p>
         </div>
       </div>
-      <p class="si-note"><strong>Nota metodologica:</strong> il dato sugli omicidi volontari riguarda solo il codice ISTAT <strong>INTENHOM</strong>. Le altre voci, come omicidi colposi, stradali, per rapina, di tipo mafioso, stragi e tentati omicidi, vanno lette affiancate: alcune possono essere aggregati, dettagli o fattispecie specifiche e non vanno sommate automaticamente per costruire un totale.</p>
+      <p class="si-note"><strong>Nota metodologica:</strong> il dato sugli omicidi volontari va letto come voce specifica della classificazione ISTAT. Le altre voci, come omicidi colposi, stradali, per rapina, di tipo mafioso, stragi e tentati omicidi, vanno lette affiancate: alcune possono essere aggregati, dettagli o fattispecie specifiche e non vanno sommate automaticamente per costruire un totale.</p>
       <div class="si-chart-grid">
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Serie storica omicidi</h3><span id="siHomicideTrendTag">tipo selezionato</span></div>
@@ -357,9 +360,10 @@
             <label>Sesso<select data-si-control="homicideSex"></select></label>
             <label>Eta<select data-si-control="homicideAgeGroup"></select></label>
             <label>Vista persone<select data-si-control="homicidePeopleBreakdown"></select></label>
+            <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siHomicidePeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Il dettaglio persone disponibile oggi e nazionale e rappresenta conteggi registrati, non tassi di propensione per cittadinanza, sesso o eta. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Le quote sono calcolate sul grafico selezionato; i tassi vengono mostrati solo quando il payload contiene denominatori coerenti per cittadinanza, sesso, eta e territorio. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -382,9 +386,10 @@
             <label>Cittadinanza<select data-si-control="citizenship"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
+            <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siPeopleChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Sono conteggi registrati, non tassi di propensione. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime non sono sommati nello stesso indicatore: scegli il ruolo dal filtro. Puoi leggere conteggi, quote del grafico o tassi se i denominatori coerenti sono presenti nel payload. Fonte: ISTAT, autori e vittime dei delitti denunciati. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Identikit per sesso ed eta</h3><span id="siDemographyTag">quando disponibile</span></div>
@@ -394,9 +399,10 @@
             <label>Cittadinanza<select data-si-control="citizenship"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
             <label>Reato<select data-si-control="crime"></select></label>
+            <label>Misura<select data-si-control="peopleMeasure"></select></label>
           </div>
           <div id="siDemographyChart" class="si-chart"></div>
-          <p class="si-chart-credit"><strong>Nota:</strong> identikit registrato nei dataflow disponibili, oggi soprattutto nazionale. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+          <p class="si-chart-credit"><strong>Nota:</strong> identikit registrato nei dataflow disponibili, oggi soprattutto nazionale. Le normalizzazioni per sesso, eta e cittadinanza richiedono denominatori coerenti. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
     </section>
@@ -491,7 +497,7 @@
       <article class="si-panel si-section-gap">
         <h3>Note rapide di lettura</h3>
         <p class="si-chart-credit"><strong>Nota su truffe e frodi:</strong> nel dataflow ISTAT usato qui il codice <strong>SWINCYB</strong> e pubblicato come aggregato di truffe e frodi informatiche. La dashboard quindi non lo divide in sottotipologie perche quel dettaglio non e presente nel payload attuale; per farlo servirebbe integrare una fonte aggiuntiva dedicata.</p>
-        <p class="si-chart-credit"><strong>Nota sugli omicidi:</strong> <strong>INTENHOM</strong> indica gli omicidi volontari, non il totale di tutte le morti violente o di tutte le fattispecie collegate. Le voci su omicidi colposi, stradali, preterintenzionali, tentati omicidi, omicidi per rapina, mafiosi, infanticidi, stragi e finalita terroristica sono mostrate separatamente per evitare doppi conteggi tra aggregati e dettagli.</p>
+        <p class="si-chart-credit"><strong>Nota sugli omicidi:</strong> gli omicidi volontari sono una voce specifica, non il totale di tutte le morti violente o di tutte le fattispecie collegate. Le voci su omicidi colposi, stradali, preterintenzionali, tentati omicidi, omicidi per rapina, mafiosi, infanticidi, stragi e finalita terroristica sono mostrate separatamente per evitare doppi conteggi tra aggregati e dettagli.</p>
         <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
       </article>
     </section>
