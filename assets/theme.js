@@ -2,6 +2,7 @@
   var themeScript = document.currentScript;
   var dashboardPlotlyNoZoomHooked = false;
   var dashboardPlotlyNoZoomPatched = false;
+  var dashboardPlotlyTouchGuardInstalled = false;
 
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
@@ -133,9 +134,31 @@
     style.textContent = [
       ".js-plotly-plot .modebar{display:none!important}",
       ".js-plotly-plot .nsewdrag,.js-plotly-plot .drag{cursor:default!important}",
-      ".js-plotly-plot .draglayer,.js-plotly-plot .nsewdrag{touch-action:pan-x pan-y!important}"
+      ".js-plotly-plot .draglayer,.js-plotly-plot .nsewdrag{touch-action:pan-x pan-y!important}",
+      "@media (pointer:coarse),(hover:none),(max-width:768px){.js-plotly-plot .draglayer,.js-plotly-plot .nsewdrag,.js-plotly-plot .drag{pointer-events:none!important;touch-action:pan-x pan-y!important}}"
     ].join("");
     document.head.appendChild(style);
+  }
+
+  function isDashboardPlotlyTouchEvent(event) {
+    var target = event.target;
+    if (!target || !target.closest || !target.closest(".js-plotly-plot")) return false;
+    if (event.type.indexOf("touch") === 0) return true;
+    return event.pointerType === "touch";
+  }
+
+  function stopDashboardPlotlyTouch(event) {
+    if (!isDashboardPlotlyTouchEvent(event)) return;
+    event.stopPropagation();
+    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+  }
+
+  function installDashboardPlotlyTouchGuard() {
+    if (!isDashboardPage() || dashboardPlotlyTouchGuardInstalled || !document.addEventListener) return;
+    dashboardPlotlyTouchGuardInstalled = true;
+    ["touchstart", "touchmove", "pointerdown", "pointermove"].forEach(function (eventName) {
+      document.addEventListener(eventName, stopDashboardPlotlyTouch, { capture: true, passive: true });
+    });
   }
 
   function disableDashboardPlotlyZoomOnCharts() {
@@ -167,6 +190,7 @@
   function scheduleDashboardPlotlyNoZoom() {
     if (!isDashboardPage()) return;
     ensureDashboardPlotlyNoZoomStyle();
+    installDashboardPlotlyTouchGuard();
     patchDashboardPlotlyNoZoom();
     disableDashboardPlotlyZoomOnCharts();
     [0, 50, 150, 400, 900, 1800, 3200].forEach(function (delay) {
@@ -441,6 +465,8 @@
       }
     });
   }
+
+  installDashboardPlotlyNoZoomHook();
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", start);

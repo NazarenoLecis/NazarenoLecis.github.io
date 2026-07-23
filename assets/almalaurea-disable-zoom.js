@@ -22,7 +22,7 @@
     if (byId("plotlyDisableZoomStyle")) return;
     var style = document.createElement("style");
     style.id = "plotlyDisableZoomStyle";
-    style.textContent = ".js-plotly-plot,.js-plotly-plot .plotly,.js-plotly-plot .svg-container,.js-plotly-plot .main-svg,.js-plotly-plot .draglayer,.js-plotly-plot .nsewdrag{touch-action:pan-y!important}.js-plotly-plot .nsewdrag,.js-plotly-plot .drag{cursor:default!important}.js-plotly-plot .modebar{display:none!important}";
+    style.textContent = ".js-plotly-plot,.js-plotly-plot .plotly,.js-plotly-plot .svg-container,.js-plotly-plot .main-svg,.js-plotly-plot .draglayer,.js-plotly-plot .nsewdrag{touch-action:pan-x pan-y!important}.js-plotly-plot .nsewdrag,.js-plotly-plot .drag{cursor:default!important}.js-plotly-plot .modebar{display:none!important}@media (pointer:coarse),(hover:none),(max-width:768px){.js-plotly-plot .draglayer,.js-plotly-plot .nsewdrag,.js-plotly-plot .drag{pointer-events:none!important;touch-action:pan-x pan-y!important}}";
     document.head.appendChild(style);
   }
 
