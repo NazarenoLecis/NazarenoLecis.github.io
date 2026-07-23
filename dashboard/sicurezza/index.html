@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-3.css">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-3.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260723-4.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -60,6 +60,7 @@
       <a href="#territori">Territori</a>
       <a href="#focus-patrimonio">Patrimonio</a>
       <a href="#focus-persona">Persona</a>
+      <a href="#omicidi">Omicidi</a>
       <a href="#persone">Autori/vittime</a>
       <a href="#controtendenze">Controtendenze</a>
       <a href="#percezione">Percezione</a>
@@ -309,6 +310,61 @@
       </div>
     </section>
 
+    <section id="omicidi" class="si-section">
+      <div class="si-section-head">
+        <span class="eyebrow">Focus omicidi</span>
+        <div>
+          <h2>Omicidi e categorie collegate</h2>
+          <p>La sezione separa omicidi volontari, colposi, stradali, preterintenzionali, tentati omicidi e altre voci disponibili, evitando somme improprie tra aggregati e sottocategorie.</p>
+        </div>
+      </div>
+      <p class="si-note"><strong>Nota metodologica:</strong> il dato sugli omicidi volontari riguarda solo il codice ISTAT <strong>INTENHOM</strong>. Le altre voci, come omicidi colposi, stradali, per rapina, di tipo mafioso, stragi e tentati omicidi, vanno lette affiancate: alcune possono essere aggregati, dettagli o fattispecie specifiche e non vanno sommate automaticamente per costruire un totale.</p>
+      <div class="si-chart-grid">
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Serie storica omicidi</h3><span id="siHomicideTrendTag">tipo selezionato</span></div>
+          <div class="si-chart-controls">
+            <label>Tipo<select data-si-control="homicideType"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Confronta con<select data-si-control="compareTerritory"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
+          </div>
+          <div id="siHomicideTrendChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> confronta l'Italia con il territorio selezionato o con due province della stessa regione usando Territorio e Confronta con. I tassi per 100.000 vengono mostrati solo se presenti nel payload. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Suddivisione e geografia</h3><span id="siHomicideStructureTag">tipi o territori</span></div>
+          <div class="si-chart-controls">
+            <label>Vista<select data-si-control="homicideStructureView"></select></label>
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Tipo per ranking<select data-si-control="homicideType"></select></label>
+            <label>Livello<select data-si-control="level"></select></label>
+            <label>Regione<select data-si-control="region"></select></label>
+            <label>Provincia<select data-si-control="province"></select></label>
+            <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Misura<select data-si-control="measure"></select></label>
+          </div>
+          <div id="siHomicideStructureChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> in vista suddivisione il grafico mostra tutte le voci omicidio disponibili per il territorio selezionato; in vista ranking ordina i territori per il tipo scelto. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Vittime e autori registrati</h3><span id="siHomicidePeopleTag">Italia</span></div>
+          <div class="si-chart-controls">
+            <label>Anno<select data-si-control="year"></select></label>
+            <label>Tipo<select data-si-control="homicideType"></select></label>
+            <label>Ruolo<select data-si-control="role"></select></label>
+            <label>Cittadinanza<select data-si-control="citizenship"></select></label>
+            <label>Sesso<select data-si-control="homicideSex"></select></label>
+            <label>Eta<select data-si-control="homicideAgeGroup"></select></label>
+            <label>Vista persone<select data-si-control="homicidePeopleBreakdown"></select></label>
+          </div>
+          <div id="siHomicidePeopleChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> autori e vittime restano separati dal filtro Ruolo. Il dettaglio persone disponibile oggi e nazionale e rappresenta conteggi registrati, non tassi di propensione per cittadinanza, sesso o eta. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
+        </article>
+      </div>
+    </section>
+
     <section id="persone" class="si-section">
       <div class="si-section-head">
         <span class="eyebrow">Autori, vittime e cittadinanza</span>
@@ -436,6 +492,7 @@
       <article class="si-panel si-section-gap">
         <h3>Note rapide di lettura</h3>
         <p class="si-chart-credit"><strong>Nota su truffe e frodi:</strong> nel dataflow ISTAT usato qui il codice <strong>SWINCYB</strong> e pubblicato come aggregato di truffe e frodi informatiche. La dashboard quindi non lo divide in sottotipologie perche quel dettaglio non e presente nel payload attuale; per farlo servirebbe integrare una fonte aggiuntiva dedicata.</p>
+        <p class="si-chart-credit"><strong>Nota sugli omicidi:</strong> <strong>INTENHOM</strong> indica gli omicidi volontari, non il totale di tutte le morti violente o di tutte le fattispecie collegate. Le voci su omicidi colposi, stradali, preterintenzionali, tentati omicidi, omicidi per rapina, mafiosi, infanticidi, stragi e finalita terroristica sono mostrate separatamente per evitare doppi conteggi tra aggregati e dettagli.</p>
         <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
       </article>
     </section>
