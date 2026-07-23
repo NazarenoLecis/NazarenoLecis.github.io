@@ -307,7 +307,7 @@
       displaylogo: false,
       modeBarButtonsToRemove: ["lasso2d", "select2d", "toImage"],
       scrollZoom: false,
-      doubleClick: "reset"
+      doubleClick: false
     })["catch"](function () {
       showEmpty(id, "Errore nella costruzione del grafico");
     });

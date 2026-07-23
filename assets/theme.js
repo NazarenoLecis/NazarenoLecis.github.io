@@ -1,5 +1,7 @@
 (function () {
   var themeScript = document.currentScript;
+  var dashboardPlotlyNoZoomHooked = false;
+  var dashboardPlotlyNoZoomPatched = false;
 
   function apply(theme) {
     document.documentElement.setAttribute("data-theme", theme);
@@ -55,6 +57,143 @@
       }
       window.Plotly.relayout(chart, update).catch(function () {});
     });
+  }
+
+  function dashboardPlotlyNoZoomButtons(config) {
+    var blocked = [
+      "zoom2d",
+      "pan2d",
+      "select2d",
+      "lasso2d",
+      "zoomIn2d",
+      "zoomOut2d",
+      "autoScale2d",
+      "resetScale2d",
+      "hoverClosestCartesian",
+      "hoverCompareCartesian"
+    ];
+    var existing = (config && Array.isArray(config.modeBarButtonsToRemove)) ? config.modeBarButtonsToRemove : [];
+    blocked.forEach(function (button) {
+      if (existing.indexOf(button) < 0) existing.push(button);
+    });
+    return existing;
+  }
+
+  function dashboardPlotlyNoZoomConfig(config) {
+    return Object.assign({}, config || {}, {
+      responsive: true,
+      displayModeBar: false,
+      displaylogo: false,
+      scrollZoom: false,
+      doubleClick: false,
+      showTips: false,
+      modeBarButtonsToRemove: dashboardPlotlyNoZoomButtons(config)
+    });
+  }
+
+  function dashboardPlotlyAxisNames(layout) {
+    var names = ["xaxis", "yaxis"];
+    Object.keys(layout || {}).forEach(function (name) {
+      if (/^[xy]axis[0-9]*$/.test(name) && names.indexOf(name) < 0) names.push(name);
+    });
+    return names;
+  }
+
+  function dashboardPlotlyNoZoomLayout(layout) {
+    var output = Object.assign({}, layout || {});
+    output.dragmode = false;
+    dashboardPlotlyAxisNames(output).forEach(function (axis) {
+      output[axis] = Object.assign({}, output[axis] || {}, { fixedrange: true });
+    });
+    ["polar", "polar2", "polar3", "polar4"].forEach(function (polar) {
+      if (!output[polar]) return;
+      output[polar] = Object.assign({}, output[polar]);
+      output[polar].radialaxis = Object.assign({}, output[polar].radialaxis || {}, { fixedrange: true });
+      output[polar].angularaxis = Object.assign({}, output[polar].angularaxis || {}, { fixedrange: true });
+    });
+    ["scene", "scene2", "scene3", "scene4"].forEach(function (scene) {
+      if (!output[scene]) return;
+      output[scene] = Object.assign({}, output[scene], { dragmode: false });
+    });
+    return output;
+  }
+
+  function dashboardPlotlyNoZoomUpdate(chart) {
+    var update = { dragmode: false };
+    dashboardPlotlyAxisNames(chart && chart._fullLayout).forEach(function (axis) {
+      update[axis + ".fixedrange"] = true;
+    });
+    return update;
+  }
+
+  function ensureDashboardPlotlyNoZoomStyle() {
+    if (!isDashboardPage() || document.getElementById("dashboardPlotlyNoZoomStyle")) return;
+    var style = document.createElement("style");
+    style.id = "dashboardPlotlyNoZoomStyle";
+    style.textContent = [
+      ".js-plotly-plot .modebar{display:none!important}",
+      ".js-plotly-plot .nsewdrag,.js-plotly-plot .drag{cursor:default!important}",
+      ".js-plotly-plot .draglayer,.js-plotly-plot .nsewdrag{touch-action:pan-x pan-y!important}"
+    ].join("");
+    document.head.appendChild(style);
+  }
+
+  function disableDashboardPlotlyZoomOnCharts() {
+    if (!isDashboardPage() || !window.Plotly || !window.Plotly.relayout || !document.body) return;
+    ensureDashboardPlotlyNoZoomStyle();
+    document.querySelectorAll(".js-plotly-plot").forEach(function (chart) {
+      window.Plotly.relayout(chart, dashboardPlotlyNoZoomUpdate(chart)).catch(function () {});
+    });
+  }
+
+  function patchDashboardPlotlyNoZoom() {
+    if (!isDashboardPage() || dashboardPlotlyNoZoomPatched || !window.Plotly || !window.Plotly.react) return false;
+    var plotly = window.Plotly;
+    var originalReact = plotly.react;
+    var originalNewPlot = plotly.newPlot;
+    dashboardPlotlyNoZoomPatched = true;
+    plotly.react = function (target, data, layout, config) {
+      return originalReact.call(plotly, target, data, dashboardPlotlyNoZoomLayout(layout), dashboardPlotlyNoZoomConfig(config));
+    };
+    if (originalNewPlot) {
+      plotly.newPlot = function (target, data, layout, config) {
+        return originalNewPlot.call(plotly, target, data, dashboardPlotlyNoZoomLayout(layout), dashboardPlotlyNoZoomConfig(config));
+      };
+    }
+    disableDashboardPlotlyZoomOnCharts();
+    return true;
+  }
+
+  function scheduleDashboardPlotlyNoZoom() {
+    if (!isDashboardPage()) return;
+    ensureDashboardPlotlyNoZoomStyle();
+    patchDashboardPlotlyNoZoom();
+    disableDashboardPlotlyZoomOnCharts();
+    [0, 50, 150, 400, 900, 1800, 3200].forEach(function (delay) {
+      window.setTimeout(function () {
+        patchDashboardPlotlyNoZoom();
+        disableDashboardPlotlyZoomOnCharts();
+      }, delay);
+    });
+  }
+
+  function installDashboardPlotlyNoZoomHook() {
+    if (!isDashboardPage() || dashboardPlotlyNoZoomHooked) return;
+    dashboardPlotlyNoZoomHooked = true;
+    var currentPlotly = window.Plotly;
+    try {
+      Object.defineProperty(window, "Plotly", {
+        configurable: true,
+        get: function () {
+          return currentPlotly;
+        },
+        set: function (value) {
+          currentPlotly = value;
+          scheduleDashboardPlotlyNoZoom();
+        }
+      });
+    } catch (error) {}
+    scheduleDashboardPlotlyNoZoom();
   }
 
   function loadScript(src, key) {
@@ -274,6 +413,7 @@
     ensureFavicon();
     injectSocialStyle();
     removeTopGithubLink();
+    installDashboardPlotlyNoZoomHook();
     observeDashboardText();
     loadScriptWhenIdle("/assets/lang.js?v=20260722-dashboard-i18n-3", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
