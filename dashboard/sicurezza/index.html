@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sicurezza-dashboard.css?v=20260723-2">
+  <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-3.css">
   <script defer src="../../assets/theme.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-2.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260723-3.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -162,6 +162,7 @@
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Vista<select data-si-control="compositionMode"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
             <label>Misura<select data-si-control="compositionMetric"></select></label>
           </div>
           <div id="siCompositionChart" class="si-chart"></div>
@@ -178,6 +179,7 @@
             <label>Regione<select data-si-control="region"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
             <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
           </div>
           <div id="siContributionChart" class="si-chart si-chart-compact"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> mostra i singoli reati con variazione percentuale almeno pari alla soglia scelta rispetto all'anno di confronto. Ordinando per variazioni percentuali possono emergere reati a base piu bassa o in crescita rapida, come truffe e frodi informatiche: non significa che gli altri dati manchino. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
@@ -252,6 +254,8 @@
         <div class="si-chart-controls">
           <label>Livello<select data-si-control="level"></select></label>
           <label>Territorio<select data-si-control="territory"></select></label>
+          <label>Categoria<select data-si-control="theme"></select></label>
+          <label>Reato<select data-si-control="crime"></select></label>
           <label>Misura<select data-si-control="measure"></select></label>
         </div>
         <div id="siPropertyFocusChart" class="si-chart"></div>
@@ -273,6 +277,8 @@
           <div class="si-chart-controls">
             <label>Livello<select data-si-control="level"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
           </div>
           <div id="siViolentChart" class="si-chart"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> classificazione operativa sui codici reato, non definizione legale esaustiva. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
@@ -282,6 +288,8 @@
           <div class="si-chart-controls">
             <label>Livello<select data-si-control="level"></select></label>
             <label>Territorio<select data-si-control="territory"></select></label>
+            <label>Categoria<select data-si-control="theme"></select></label>
+            <label>Reato<select data-si-control="crime"></select></label>
             <label>Misura<select data-si-control="measure"></select></label>
           </div>
           <div id="siPersonFocusChart" class="si-chart"></div>
@@ -377,12 +385,18 @@
       <div class="si-chart-grid si-section-gap">
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Sicurezza percepita</h3><span id="siPerceptionTag">indagine campionaria</span></div>
-          <div id="siPerceptionChart" class="si-chart si-chart-compact"></div>
+          <div class="si-chart-controls">
+            <label>Indicatore<select data-si-control="surveyPerceptionIndicator"></select></label>
+          </div>
+          <div id="siPerceptionChart" class="si-chart si-chart-compact si-chart-survey"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> percentuali da indagine campionaria ISTAT sulla percezione della sicurezza, confrontabili con cautela con le denunce registrate ma non sommabili. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
         <article class="si-panel si-chart-block">
           <div class="si-panel-title"><h3>Vittimizzazione dichiarata</h3><span id="siVictimizationTag">indagine campionaria</span></div>
-          <div id="siVictimizationChart" class="si-chart si-chart-compact"></div>
+          <div class="si-chart-controls">
+            <label>Indicatore / reato dichiarato<select data-si-control="surveyVictimizationIndicator"></select></label>
+          </div>
+          <div id="siVictimizationChart" class="si-chart si-chart-compact si-chart-survey"></div>
           <p class="si-chart-credit"><strong>Nota:</strong> quote di persone o famiglie che dichiarano di aver subito reati nei 12 mesi precedenti l'intervista; misura anche fenomeni non denunciati. Fonte: ISTAT. Elaborazione di Nazareno Lecis.</p>
         </article>
       </div>
@@ -421,6 +435,7 @@
       </div>
       <article class="si-panel si-section-gap">
         <h3>Note rapide di lettura</h3>
+        <p class="si-chart-credit"><strong>Nota su truffe e frodi:</strong> nel dataflow ISTAT usato qui il codice <strong>SWINCYB</strong> e pubblicato come aggregato di truffe e frodi informatiche. La dashboard quindi non lo divide in sottotipologie perche quel dettaglio non e presente nel payload attuale; per farlo servirebbe integrare una fonte aggiuntiva dedicata.</p>
         <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
       </article>
     </section>
