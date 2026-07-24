@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-5">
   <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260720-9"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -177,10 +177,16 @@
         <p class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3>Tipologia di dimissione</h3><span>SDO, ultimo anno disponibile</span></div>
+        <div class="hi-card-title"><h3 id="hiDischargeTypeTitle">Tipologia di dimissione</h3><span>SDO, ultimo anno disponibile</span></div>
         <div class="hi-chart-controls" aria-label="Filtri tipologia dimissione">
           <label>Territorio
             <select id="hiDischargeRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiDischargeProvinceFilter"></select>
+          </label>
+          <label>Struttura
+            <select id="hiDischargeStructureFilter"></select>
           </label>
         </div>
         <div id="hiDischargeTypeChart" class="hi-chart"></div>

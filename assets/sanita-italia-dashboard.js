@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260720-6",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260720-6",
+    "../../data/sanita-italia/dashboard.json?v=20260724-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260724-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -24,6 +24,8 @@
     nationalBedsRatio: "absolute",
     nationalBedsLimit: "25",
     dischargeRegion: "Italia",
+    dischargeProvince: "all",
+    dischargeStructure: "all",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -197,6 +199,21 @@
       ]
     },
     {
+      id: "hospital_activity_by_discipline",
+      label: "Strutture per disciplina",
+      columns: [
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["structure", "Struttura"],
+        ["municipality", "Comune"],
+        ["discipline", "Disciplina"],
+        ["discharges", "Dimissioni"],
+        ["stay_days", "Giornate"],
+        ["ordinary_beds", "PL ordinari"],
+        ["avg_los_days", "Degenza media"]
+      ]
+    },
+    {
       id: "population_denominators",
       label: "Denominatori demografici",
       columns: [
@@ -266,6 +283,36 @@
       columns: [
         ["year", "Anno"],
         ["region", "Regione"],
+        ["deaths", "Decessi"],
+        ["home_discharges", "Domicilio"],
+        ["transfers", "Trasferimenti"],
+        ["known_total", "Totale noto"],
+        ["masked_cells", "Celle oscurate"]
+      ]
+    },
+    {
+      id: "discharge_type_by_province",
+      label: "Tipologia dimissioni province",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["deaths", "Decessi"],
+        ["home_discharges", "Domicilio"],
+        ["transfers", "Trasferimenti"],
+        ["known_total", "Totale noto"],
+        ["masked_cells", "Celle oscurate"]
+      ]
+    },
+    {
+      id: "discharge_type_by_structure",
+      label: "Tipologia dimissioni strutture",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["structure", "Struttura"],
+        ["municipality", "Comune"],
         ["deaths", "Decessi"],
         ["home_discharges", "Domicilio"],
         ["transfers", "Trasferimenti"],
@@ -475,9 +522,35 @@
 
   function refreshProvinceFilters() {
     refreshProvinceFilter("hiNationalActivityProvinceFilter", "nationalActivityProvince", STATE.nationalActivityRegion);
+    refreshProvinceFilter("hiDischargeProvinceFilter", "dischargeProvince", STATE.dischargeRegion);
     refreshProvinceFilter("hiDisciplineProvinceFilter", "disciplineProvince", STATE.disciplineRegion);
     refreshProvinceFilter("hiHospitalProvinceFilter", "hospitalProvince", STATE.hospitalRegion);
     refreshProvinceFilter("hiTableProvinceFilter", "tableProvince", STATE.tableRegion);
+  }
+
+  function dischargeStructureOptions() {
+    var rows = tableRows("discharge_type_by_structure").filter(function (row) {
+      if (STATE.dischargeRegion === "Italia") return false;
+      if (row.region !== STATE.dischargeRegion) return false;
+      return STATE.dischargeProvince === "all" || row.province === STATE.dischargeProvince;
+    });
+    rows = rows.sort(function (a, b) {
+      return asText(a.structure).localeCompare(asText(b.structure));
+    });
+    return [{ value: "all", label: STATE.dischargeRegion === "Italia" ? "Seleziona una regione" : "Tutte" }].concat(rows.map(function (row) {
+      var place = STATE.dischargeProvince === "all" ? " (" + row.province + ")" : "";
+      return { value: row.structure_code, label: compact(row.structure, 52) + place };
+    }));
+  }
+
+  function refreshDischargeStructureFilter() {
+    var options = dischargeStructureOptions();
+    if (STATE.dischargeRegion === "Italia" || !options.some(function (option) { return option.value === STATE.dischargeStructure; })) {
+      STATE.dischargeStructure = "all";
+    }
+    fillSelect("hiDischargeStructureFilter", options, STATE.dischargeStructure);
+    var node = byId("hiDischargeStructureFilter");
+    if (node) node.disabled = STATE.dischargeRegion === "Italia";
   }
 
   function denominatorValueForRow(row, denominator) {
@@ -739,6 +812,7 @@
       var node = byId(item[0]);
       if (node) node.value = STATE[item[1]];
     });
+    refreshDischargeStructureFilter();
 
     var tableSelect = byId("hiTableSelect");
     if (tableSelect) {
@@ -771,6 +845,8 @@
       ["hiNationalBedsRatioFilter", "nationalBedsRatio"],
       ["hiNationalBedsLimitFilter", "nationalBedsLimit"],
       ["hiDischargeRegionFilter", "dischargeRegion"],
+      ["hiDischargeProvinceFilter", "dischargeProvince"],
+      ["hiDischargeStructureFilter", "dischargeStructure"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -981,14 +1057,33 @@
 
   function renderDischargeTypeChart() {
     var region = STATE.dischargeRegion;
-    var rows = region === "Italia" ? tableRows("discharge_type_national") : tableRows("discharge_type_by_region").filter(function (row) {
-      return row.region === region;
-    });
+    var territory = region;
+    var rows;
+    if (region === "Italia") {
+      rows = tableRows("discharge_type_national");
+      territory = "Italia";
+    } else if (STATE.dischargeStructure !== "all") {
+      rows = tableRows("discharge_type_by_structure").filter(function (row) {
+        return row.region === region && row.structure_code === STATE.dischargeStructure;
+      });
+      territory = rows.length ? rows[0].structure : territoryLabel(region, STATE.dischargeProvince);
+    } else if (STATE.dischargeProvince !== "all") {
+      rows = tableRows("discharge_type_by_province").filter(function (row) {
+        return row.region === region && row.province === STATE.dischargeProvince;
+      });
+      territory = territoryLabel(region, STATE.dischargeProvince);
+    } else {
+      rows = tableRows("discharge_type_by_region").filter(function (row) {
+        return row.region === region;
+      });
+    }
     var row = latestRow(rows);
     if (!row) {
       showEmptyChart("hiDischargeTypeChart");
       return;
     }
+    var title = byId("hiDischargeTypeTitle");
+    if (title) title.textContent = "Tipologia di dimissione - " + territory;
     var labels = ["A domicilio", "Trasferimenti", "Decessi"];
     var values = [row.home_discharges, row.transfers, row.deaths].map(function (value) { return toNumber(value) || 0; });
     plot("hiDischargeTypeChart", [{
@@ -1003,7 +1098,7 @@
     });
     var note = byId("hiDischargeTypeNote");
     if (note) {
-      note.textContent = "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". Le celle oscurate non sono trattate come zero.";
+      note.textContent = "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". La fonte pubblica la tipologia per istituto, non per disciplina; le celle oscurate non sono trattate come zero.";
     }
   }
 
@@ -1330,22 +1425,26 @@
   }
 
   function renderHospitals() {
-    var rows = tableRows("hospital_activity_top");
+    var disciplineSelected = STATE.hospitalDiscipline !== "all";
+    var tableName = disciplineSelected ? "hospital_activity_by_discipline" : "hospital_activity_top";
+    var rows = tableRows(tableName);
     if (STATE.hospitalRegion !== "Italia") rows = rows.filter(function (row) { return row.region === STATE.hospitalRegion; });
     if (STATE.hospitalProvince !== "all") rows = rows.filter(function (row) { return row.province === STATE.hospitalProvince; });
-    if (STATE.hospitalDiscipline !== "all") rows = rows.filter(function (row) { return row.main_discipline === STATE.hospitalDiscipline; });
+    if (disciplineSelected) rows = rows.filter(function (row) { return row.discipline === STATE.hospitalDiscipline; });
     rows = sortDescending(rows, "discharges");
     var title = byId("hiHospitalTitle");
-    if (title) title.textContent = "Top strutture per dimissioni - " + territoryLabel(STATE.hospitalRegion, STATE.hospitalProvince);
+    if (title) {
+      title.textContent = "Top strutture per dimissioni - " + territoryLabel(STATE.hospitalRegion, STATE.hospitalProvince) + (disciplineSelected ? " - " + STATE.hospitalDiscipline : "");
+    }
     horizontalBar("hiHospitalChart", rows, "structure", "discharges", {
       limit: 22,
       color: COLORS[6],
       leftMargin: 260,
       labelLength: 42,
       xTitle: "dimissioni",
-      hovertemplate: "%{y}<br>Dimissioni: %{x:,.0f}<extra></extra>"
+      hovertemplate: disciplineSelected ? "%{y}<br>" + STATE.hospitalDiscipline + ": %{x:,.0f} dimissioni<extra></extra>" : "%{y}<br>Dimissioni: %{x:,.0f}<extra></extra>"
     });
-    createTable("hiHospitalTable", rows, tableOption("hospital_activity_top").columns, 80);
+    createTable("hiHospitalTable", rows, tableOption(tableName).columns, 80);
   }
 
   function renderMobility() {
@@ -1752,6 +1851,7 @@
 
   function renderDynamic() {
     refreshProvinceFilters();
+    refreshDischargeStructureFilter();
     renderNationalCharts();
     renderRegionalRank();
     renderRegionProfile();
