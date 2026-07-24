@@ -1237,6 +1237,14 @@
     return rows[0];
   }
 
+  function dischargeDisciplineLabel() {
+    return STATE.dischargeDiscipline === "all" ? "tutte le specializzazioni" : STATE.dischargeDiscipline;
+  }
+
+  function dischargeTypeScopeLabel() {
+    return STATE.dischargeStructure === "all" ? "territorio" : "istituto";
+  }
+
   function renderDischargeTypeChart() {
     var region = STATE.dischargeRegion;
     var territory = region;
@@ -1264,9 +1272,11 @@
       showEmptyChart("hiDischargeTypeChart");
       return;
     }
+    var specialtyConfig = dischargeDisciplineMetricConfig();
+    var specialtyLabel = dischargeDisciplineLabel();
     var title = byId("hiDischargeTypeTitle");
-    if (title) title.textContent = "Tipologia di dimissione - " + territory;
-    setTag("hiDischargeTypeTag", "anno " + asText(row.year) + " - " + (STATE.dischargeStructure === "all" ? "territorio" : "istituto"));
+    if (title) title.textContent = "Tipologia SDO e " + specialtyConfig.label + " per " + specialtyLabel + " - " + territory;
+    setTag("hiDischargeTypeTag", "anno " + asText(row.year) + " - " + dischargeTypeScopeLabel() + " | sotto: " + specialtyLabel + " - " + specialtyConfig.label);
     var labels = ["A domicilio", "Trasferimenti", "Decessi"];
     var values = [row.home_discharges, row.transfers, row.deaths].map(function (value) { return toNumber(value) || 0; });
     plot("hiDischargeTypeChart", [{
@@ -1282,7 +1292,7 @@
     var note = byId("hiDischargeTypeNote");
     if (note) setChartCredit("hiDischargeTypeNote", [
       { id: "ministero_sdo_tipologia_dimissione", label: "Ministero della Salute, SDO per tipologia di dimissione" }
-    ], "Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". La fonte pubblica la tipologia per istituto, non per disciplina; le celle oscurate non sono trattate come zero.");
+    ], "Vista SDO: anno " + row.year + ", " + dischargeTypeScopeLabel() + " " + territory + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". Le barre sopra mostrano la tipologia amministrativa aggregata; il filtro specializzazione aggiorna sotto la misura " + specialtyConfig.label + " per " + specialtyLabel + ".");
     renderDischargeDisciplineChart();
   }
 
@@ -1345,11 +1355,13 @@
   function renderDischargeDisciplineChart() {
     var config = dischargeDisciplineMetricConfig();
     var selectedDiscipline = STATE.dischargeDiscipline;
+    var specialtyLabel = dischargeDisciplineLabel();
     var rows = dischargeActivityRows();
     var selectedStructure = STATE.dischargeStructure !== "all";
     var labelField = "discipline";
     var titlePrefix = config.label + " per specializzazione";
     var tableColumns;
+    var viewNote = "";
 
     if (selectedStructure) {
       rows = summarizeActivityRows(rows, function (row) {
@@ -1372,6 +1384,11 @@
         ["avg_los_days", "Degenza media"],
         ["bed_utilization_percent", "Utilizzo posti letto"]
       ];
+      if (selectedDiscipline === "all") {
+        viewNote = "Vista selezionata: " + config.label + " per tutte le specializzazioni dentro la struttura scelta.";
+      } else {
+        viewNote = "Vista selezionata: " + config.label + ". La struttura scelta mostra tutte le specializzazioni e mette in evidenza " + selectedDiscipline + ".";
+      }
     } else if (selectedDiscipline !== "all") {
       rows = rows.filter(function (row) { return row.discipline === selectedDiscipline; });
       rows = summarizeActivityRows(rows, function (row) {
@@ -1399,6 +1416,7 @@
         ["avg_los_days", "Degenza media"],
         ["bed_utilization_percent", "Utilizzo posti letto"]
       ];
+      viewNote = "Vista selezionata: " + config.label + " per " + selectedDiscipline + ". Il grafico confronta le strutture del territorio selezionato che pubblicano quella specializzazione.";
     } else {
       rows = summarizeActivityRows(rows, function (row) {
         return row.discipline;
@@ -1414,14 +1432,17 @@
         ["avg_los_days", "Degenza media"],
         ["bed_utilization_percent", "Utilizzo posti letto"]
       ];
+      viewNote = "Vista selezionata: " + config.label + " per tutte le specializzazioni. Il grafico aggrega i reparti del territorio selezionato.";
     }
 
     var territory = territoryLabel(STATE.dischargeRegion, STATE.dischargeProvince);
     var structureRows = selectedStructure ? dischargeActivityRows() : [];
     if (selectedStructure && structureRows.length) territory = structureRows[0].structure;
     var title = byId("hiDischargeDisciplineTitle");
-    if (title) title.textContent = titlePrefix + " - " + territory;
-    setTag("hiDischargeDisciplineTag", "2022 - " + (selectedDiscipline === "all" ? "tutte le specializzazioni" : selectedDiscipline));
+    if (title) {
+      title.textContent = titlePrefix + " - " + territory + (selectedDiscipline !== "all" && selectedStructure ? " (focus " + selectedDiscipline + ")" : "");
+    }
+    setTag("hiDischargeDisciplineTag", "2022 - " + specialtyLabel + " | misura: " + config.label);
 
     rows = rows.filter(function (row) { return toNumber(row[config.field]) !== null; });
     horizontalBar("hiDischargeDisciplineChart", rows, labelField, config.field, {
@@ -1439,7 +1460,7 @@
     var note = byId("hiDischargeDisciplineNote");
     if (note) setChartCredit("hiDischargeDisciplineNote", [
       { id: "ministero_attivita_reparti", label: "Ministero della Salute, dati di attivita dei reparti" }
-    ], "La specializzazione usa i dati di attivita dei reparti 2022. La tipologia amministrativa SDO sopra resta disponibile per territorio o istituto, non per disciplina clinica.");
+    ], viewNote + " La tipologia amministrativa SDO sopra resta disponibile per territorio o istituto, non per disciplina clinica.");
   }
 
   function dischargeCategoryConfig() {
