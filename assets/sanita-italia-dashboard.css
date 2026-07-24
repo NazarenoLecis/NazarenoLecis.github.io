@@ -354,6 +354,26 @@
   line-height: 1.4;
 }
 
+.hi-chart-source {
+  color: var(--muted);
+}
+
+.hi-chart-source a,
+.hi-chart-note a {
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.hi-chart-note {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.hi-chart-note strong {
+  color: var(--text);
+}
+
 .hi-empty {
   min-height: 280px;
   display: grid;

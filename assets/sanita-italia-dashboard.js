@@ -476,6 +476,62 @@
     return toArray(tables[name]);
   }
 
+  function escapeHtml(value) {
+    return asText(value, "").replace(/[&<>"']/g, function (char) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char];
+    });
+  }
+
+  function sourceById(id) {
+    return tableRows("sources").find(function (row) {
+      return row.id === id;
+    }) || null;
+  }
+
+  function sourceLink(id, label) {
+    var row = sourceById(id);
+    var text = label || (row && row.provider) || id;
+    if (!row || !row.url) return escapeHtml(text);
+    return '<a href="' + escapeHtml(row.url) + '" target="_blank" rel="noopener">' + escapeHtml(text) + "</a>";
+  }
+
+  function sourceBody(sources) {
+    var links = toArray(sources).map(function (source) {
+      return sourceLink(source.id, source.label);
+    }).filter(Boolean);
+    return links.join(", ") + ". Elaborazione di Nazareno Lecis.";
+  }
+
+  function sourceLine(sources) {
+    return "Fonte: " + sourceBody(sources);
+  }
+
+  function setChartCredit(id, sources, note) {
+    var node = byId(id);
+    if (!node) return;
+    node.innerHTML = '<span class="dashboard-credit-source"><strong>Fonte:</strong> ' + sourceBody(sources) + '</span>' +
+      (note ? '<br><span class="dashboard-credit-note"><strong>Nota:</strong> ' + escapeHtml(note) + "</span>" : "");
+  }
+
+  function setTag(id, text) {
+    var node = byId(id);
+    if (node) node.textContent = text;
+  }
+
+  function bedsSourceId(year) {
+    var selected = Number(year);
+    if (selected >= 2020 && selected <= 2023) return "ministero_posti_letto_" + selected;
+    return "ministero_posti_letto_2019";
+  }
+
+  function denominatorSources(mode) {
+    if (mode === "population_total" || mode === "population_65_plus" || mode === "population_75_plus" || mode === "auto" || mode === "clinical") {
+      return [{ id: "istat_posas_2026", label: "ISTAT denominatori demografici" }];
+    }
+    if (mode === "gdp") return [{ id: "eurostat_gdp_nuts2", label: "Eurostat PIL regionale" }];
+    return [];
+  }
+
   function populationMap() {
     var map = {};
     tableRows("population_denominators").forEach(function (row) {
@@ -1051,6 +1107,9 @@
         hovertemplate: "%{y}<br>" + activityConfig.label + ": %{text}<extra></extra>"
       }
     );
+    setChartCredit("hiNationalActivityNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute, attivita dei reparti" }
+    ].concat(denominatorSources(STATE.nationalActivityRatio)), "La misura e il territorio selezionati determinano la classifica delle discipline; sono dati di attivita ospedaliera, non una misura di appropriatezza o qualita clinica.");
 
     var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
     var selectedYear = STATE.nationalBedsYear === "latest" ? latestBedsYear : Number(STATE.nationalBedsYear);
@@ -1089,6 +1148,9 @@
         hovertemplate: "%{y}<br>" + bedLabel + ": %{text}<extra></extra>"
       }
     );
+    setChartCredit("hiNationalBedsNote", [
+      { id: bedsSourceId(selectedYear), label: "Ministero della Salute, posti letto per regione e disciplina" }
+    ].concat(denominatorSources(STATE.nationalBedsRatio)), "Il filtro anno e il rapporto scelto cambiano la lettura del grafico; i posti letto misurano la dotazione pubblicata dalla fonte, non il personale disponibile o i tempi di accesso.");
 
     renderDischargeTypeChart();
     renderDischargeHospitalRank();
@@ -1189,6 +1251,7 @@
     }
     var title = byId("hiDischargeTypeTitle");
     if (title) title.textContent = "Tipologia di dimissione - " + territory;
+    setTag("hiDischargeTypeTag", "anno " + asText(row.year) + " - " + (STATE.dischargeStructure === "all" ? "territorio" : "istituto"));
     var labels = ["A domicilio", "Trasferimenti", "Decessi"];
     var values = [row.home_discharges, row.transfers, row.deaths].map(function (value) { return toNumber(value) || 0; });
     plot("hiDischargeTypeChart", [{
@@ -1202,9 +1265,9 @@
       yaxis: { title: "dimissioni note" }
     });
     var note = byId("hiDischargeTypeNote");
-    if (note) {
-      note.textContent = "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". La fonte pubblica la tipologia per istituto, non per disciplina; le celle oscurate non sono trattate come zero.";
-    }
+    if (note) setChartCredit("hiDischargeTypeNote", [
+      { id: "ministero_sdo_tipologia_dimissione", label: "Ministero della Salute, SDO per tipologia di dimissione" }
+    ], "Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". La fonte pubblica la tipologia per istituto, non per disciplina; le celle oscurate non sono trattate come zero.");
   }
 
   function dischargeCategoryConfig() {
@@ -1227,6 +1290,7 @@
     var territory = territoryLabel(STATE.dischargeHospitalRegion, STATE.dischargeHospitalProvince);
     var title = byId("hiDischargeHospitalTitle");
     if (title) title.textContent = config.label + " per ospedale - " + territory;
+    setTag("hiDischargeHospitalTag", "istituti SDO - " + chartLimit(STATE.dischargeHospitalLimit, 20) + " strutture");
     horizontalBar("hiDischargeHospitalChart", rows, "structure", config.field, {
       limit: chartLimit(STATE.dischargeHospitalLimit, 20),
       color: config.color,
@@ -1238,9 +1302,9 @@
     });
     createTable("hiDischargeHospitalTable", rows, tableOption("discharge_type_by_structure").columns, chartLimit(STATE.dischargeHospitalLimit, 20));
     var note = byId("hiDischargeHospitalNote");
-    if (note) {
-      note.textContent = "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Categoria selezionata: " + config.label + ". La fonte pubblica queste categorie per istituto, non per disciplina clinica.";
-    }
+    if (note) setChartCredit("hiDischargeHospitalNote", [
+      { id: "ministero_sdo_tipologia_dimissione", label: "Ministero della Salute, SDO per tipologia di dimissione" }
+    ], "Categoria selezionata: " + config.label + ". La fonte pubblica queste categorie per istituto, non per disciplina clinica.");
   }
 
   function ratioMode() {
@@ -1304,6 +1368,12 @@
     var tag = byId("hiRegionalRankTag");
     if (title) title.textContent = config.label;
     if (tag) tag.textContent = (STATE.region === "Italia" ? "tutte le regioni" : "focus " + STATE.region) + " - " + ratioModeLabel();
+    setChartCredit("hiRegionalRankNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute" },
+      { id: "openbdap_ssn", label: "OpenBDAP/RGS" },
+      { id: "istat_posas_2026", label: "ISTAT" },
+      { id: "eurostat_gdp_nuts2", label: "Eurostat PIL regionale" }
+    ], "Il confronto regionale usa la misura selezionata e, quando richiesto, rapporta i valori alla popolazione residente, alla popolazione anziana, alle dimissioni o al PIL.");
     horizontalBar("hiRegionalRankChart", rows, "region", "selected_metric", {
       limit: 21,
       highlight: STATE.region,
@@ -1394,10 +1464,10 @@
     rows.sort(function (a, b) { return (toNumber(b.selected_value) || 0) - (toNumber(a.selected_value) || 0); });
     var title = byId("hiDisciplineRegionTitle");
     var tag = byId("hiDisciplineRegionTag");
-    var denominatorLabel = STATE.denominator === "auto" ? "automatico" : DENOMINATORS[STATE.denominator];
+    var denominatorText = STATE.denominator === "auto" ? "automatico" : denominatorLabel(STATE.denominator);
     var territory = territoryLabel(STATE.disciplineRegion, STATE.disciplineProvince);
     if (title) title.textContent = STATE.discipline || "Disciplina";
-    if (tag) tag.textContent = territory + " - " + (config.rate ? "per 1.000, denominatore " + denominatorLabel : config.label);
+    if (tag) tag.textContent = territory + " - " + (config.rate ? "per 1.000, denominatore " + denominatorText : config.label);
     horizontalBar("hiDisciplineRegionChart", rows, "territory_label", "selected_value", {
       limit: provinceLevel ? 40 : 21,
       highlight: provinceLevel ? STATE.disciplineProvince : STATE.disciplineRegion,
@@ -1408,10 +1478,10 @@
       hovertemplate: "%{y}<br>" + config.label + ": %{text}<extra></extra>"
     });
     var note = byId("hiDisciplineNote");
-    if (note) {
-      var source = "Fonte: Ministero della Salute, dati di attivita dei reparti; ISTAT POSAS 2026 per denominatori. Elaborazione di Nazareno Lecis. ";
-      note.textContent = source + (config.rate ? "Denominatore selezionato: " + denominatorLabel + ". La tabella riporta anche volumi assoluti, degenza media e utilizzo dei posti letto." : "Misura selezionata: " + config.label + ". I tassi per popolazione restano disponibili cambiando misura.");
-    }
+    if (note) setChartCredit("hiDisciplineNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute, attivita dei reparti" },
+      { id: "istat_posas_2026", label: "ISTAT POSAS 2026" }
+    ], config.rate ? "Denominatore selezionato: " + denominatorText + ". La tabella riporta anche volumi assoluti, degenza media e utilizzo dei posti letto." : "Misura selezionata: " + config.label + ". I tassi per popolazione restano disponibili cambiando misura.");
     var tableColumns = [
       [provinceLevel ? "province" : "region", provinceLevel ? "Provincia" : "Regione"],
       ["discipline", "Disciplina"],
@@ -1449,6 +1519,11 @@
     rows.sort(function (a, b) { return (toNumber(b[config.field]) || 0) - (toNumber(a[config.field]) || 0); });
     var title = byId("hiCostRegionTitle");
     if (title) title.textContent = label + " per regione - " + config.label;
+    setTag("hiCostRegionTag", "conto economico 2024 - " + config.xTitle);
+    var costSources = [{ id: "openbdap_ssn", label: "OpenBDAP/RGS, Enti del SSN" }];
+    costSources = costSources.concat(denominatorSources(STATE.costRatio));
+    if (STATE.costRatio === "discharges") costSources.push({ id: "ministero_attivita_reparti", label: "Ministero della Salute, dimissioni" });
+    setChartCredit("hiCostRegionNote", costSources, "Le voci sono contabili e regionali: aiutano a leggere dove si concentra la spesa, ma non misurano il costo clinico della singola prestazione.");
     horizontalBar("hiCostRegionChart", rows, "region", config.field, {
       limit: 21,
       highlight: STATE.costRegion,
@@ -1471,6 +1546,10 @@
     });
     var compositionTitle = byId("hiCostCompositionTitle");
     if (compositionTitle) compositionTitle.textContent = "Composizione dei costi - " + compositionRegion;
+    setTag("hiCostCompositionTag", "conto economico 2024 - miliardi di euro");
+    setChartCredit("hiCostCompositionNote", [
+      { id: "openbdap_ssn", label: "OpenBDAP/RGS, Enti del SSN" }
+    ], "La composizione esclude il totale per mostrare le principali voci contabili del territorio selezionato.");
     horizontalBar("hiCostCompositionChart", sortDescending(composition, "amount_billion"), "cost_label", "amount_billion", {
       limit: 8,
       color: COLORS[4],
@@ -1521,6 +1600,11 @@
     rows.sort(function (a, b) { return a.year - b.year; });
     var title = byId("hiBedsSeriesTitle");
     if (title) title.textContent = metric.label + " nel tempo - " + region + " - " + ratioLabel(STATE.bedsSeriesRatio);
+    setTag("hiBedsSeriesTag", "2010-2023 - " + ratioLabel(STATE.bedsSeriesRatio));
+    setChartCredit("hiBedsSeriesNote", [
+      { id: "ministero_posti_letto_2019", label: "Ministero della Salute 2010-2019" },
+      { id: "ministero_posti_letto_2023", label: "Ministero della Salute 2020-2023" }
+    ], "Serie costruita sui CSV 2010-2019 e sui file annuali 2020, 2021, 2022 e 2023 normalizzati nella pipeline.");
     var valueFormat = STATE.bedsSeriesRatio === "absolute" ? "%{y:,.0f}" : "%{y:,.2f}";
     var years = rows.map(function (row) { return String(row.year); });
     lineChart("hiBedsSeriesChart", [{
@@ -1562,6 +1646,10 @@
     });
     var title = byId("hiPharmaSeriesTitle");
     if (title) title.textContent = "Spesa farmaceutica - " + region;
+    setTag("hiPharmaSeriesTag", "2012-2024 - " + (STATE.pharmaLabel === "all" ? "tutte le voci" : STATE.pharmaLabel));
+    setChartCredit("hiPharmaSeriesNote", [
+      { id: "openbdap_ssn", label: "OpenBDAP/RGS, Enti del SSN" }
+    ], "\"Farmaceutica convenzionata\" e \"Prodotti farmaceutici\" sono canali o voci contabili diversi; il grafico li affianca senza sommarli automaticamente.");
     lineChart("hiPharmaSeriesChart", traces, { yTitle: "miliardi di euro" });
   }
 
@@ -1577,6 +1665,10 @@
     if (title) {
       title.textContent = "Top strutture per dimissioni - " + territoryLabel(STATE.hospitalRegion, STATE.hospitalProvince) + (disciplineSelected ? " - " + STATE.hospitalDiscipline : "");
     }
+    setTag("hiHospitalTag", "2022 - " + (disciplineSelected ? STATE.hospitalDiscipline : "tutte le discipline"));
+    setChartCredit("hiHospitalNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute, attivita dei reparti" }
+    ], "Se scegli una disciplina, la classifica conta le dimissioni di quella disciplina dentro ogni struttura; la numerosita non misura automaticamente qualita o appropriatezza.");
     horizontalBar("hiHospitalChart", rows, "structure", "discharges", {
       limit: 22,
       color: COLORS[6],
@@ -1614,6 +1706,7 @@
     if (title) {
       title.textContent = config.label + " per reparto - " + structureLabel;
     }
+    setTag("hiHospitalDepartmentTag", "2022 - " + territoryLabel(STATE.hospitalDepartmentRegion, STATE.hospitalDepartmentProvince) + " - top " + chartLimit(STATE.hospitalDepartmentLimit, 20));
     horizontalBar("hiHospitalDepartmentChart", rows, "discipline", config.field, {
       limit: chartLimit(STATE.hospitalDepartmentLimit, 20),
       color: config.color,
@@ -1625,9 +1718,9 @@
     });
     createTable("hiHospitalDepartmentTable", rows, tableOption("hospital_activity_by_discipline").columns, chartLimit(STATE.hospitalDepartmentLimit, 20));
     var note = byId("hiHospitalDepartmentNote");
-    if (note) {
-      note.textContent = "Fonte: Ministero della Salute, dati di attivita dei reparti, 2022. Elaborazione di Nazareno Lecis. Vista selezionata: " + config.label + " per disciplina/reparto dentro la struttura ospedaliera.";
-    }
+    if (note) setChartCredit("hiHospitalDepartmentNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute, attivita dei reparti" }
+    ], "Vista selezionata: " + config.label + " per disciplina/reparto dentro la struttura ospedaliera.");
   }
 
   function renderMobility() {
@@ -1645,6 +1738,8 @@
       showEmptyChart("hiMobilitySankeyChart", "Saldi regionali non disponibili nel payload");
       return;
     }
+    var title = byId("hiMobilitySankeyTitle");
+    if (title) title.textContent = "Sankey regionale dei saldi netti - 2024";
     var labels = [];
     rows.forEach(function (row) {
       if (labels.indexOf(row.source) === -1) labels.push(row.source);
@@ -1688,10 +1783,11 @@
     }], {
       margin: { t: 12, r: 12, b: 16, l: 12 }
     });
+    setTag("hiMobilitySankeyTag", "2024 - soglia " + formatMillionEuro(minValue));
     var note = byId("hiMobilitySankeyNote");
-    if (note) {
-      note.textContent = "Fonte: Corte dei conti, saldi economici della mobilita sanitaria. Elaborazione di Nazareno Lecis. Le compensazioni economiche derivano dai flussi di prestazioni/pazienti, ma il saldo netto non conserva la coppia origine-destinazione reale; il grafico abbina regioni con saldo passivo a regioni con saldo attivo e soggetti extraregionali per rappresentare i saldi netti 2024. Vaticano indica l'Ospedale Pediatrico Bambino Gesu.";
-    }
+    if (note) setChartCredit("hiMobilitySankeyNote", [
+      { id: "corte_conti_mobilita_2024", label: "Corte dei conti, mobilita sanitaria" }
+    ], "Le compensazioni economiche derivano dai flussi di prestazioni/pazienti, ma il saldo netto non conserva la coppia origine-destinazione reale; il grafico abbina regioni con saldo passivo a regioni con saldo attivo e soggetti extraregionali per rappresentare i saldi netti 2024. Vaticano indica l'Ospedale Pediatrico Bambino Gesu.");
   }
 
   function mobilityRegionalNetLinks(minValue) {
@@ -1772,6 +1868,7 @@
     });
     var title = byId("hiMobilityHospitalTitle");
     if (title) title.textContent = "Da regione a ospedali piu frequentati - " + STATE.mobilityHospitalRegion;
+    setTag("hiMobilityHospitalTag", "2022 - top " + limit + " strutture per dimissioni");
     plot("hiMobilityHospitalChart", [{
       type: "sankey",
       arrangement: "snap",
@@ -1799,6 +1896,9 @@
     }], {
       margin: { t: 12, r: 12, b: 16, l: 12 }
     });
+    setChartCredit("hiMobilityHospitalNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute, attivita dei reparti" }
+    ], "Il grafico mostra la regione di erogazione e le strutture con piu dimissioni, non la residenza dei pazienti; il Bambino Gesu e evidenziato come soggetto extraterritoriale.");
   }
 
   function includeBambinoGesuHospital(rows, availableRows) {
@@ -1822,6 +1922,10 @@
     });
     var title = byId("hiMobilityBalanceTitle");
     if (title) title.textContent = "Saldo mobilita per regione - " + config.label;
+    setTag("hiMobilityBalanceTag", "2024 - " + config.xTitle);
+    var mobilitySources = [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti, mobilita sanitaria" }];
+    mobilitySources = mobilitySources.concat(denominatorSources(STATE.mobilityRatio));
+    setChartCredit("hiMobilityBalanceNote", mobilitySources, "Valori positivi indicano attrazione economica netta; valori negativi indicano fuga economica netta. Il rapporto selezionato serve a confrontare regioni di dimensione diversa.");
     horizontalBar("hiMobilityBalanceChart", rows, "region", config.field, {
       limit: 21,
       highlight: STATE.mobilitySeriesRegion,
@@ -1864,6 +1968,10 @@
       rows = source.filter(function (row) { return row.region === STATE.mobilitySeriesRegion; });
       if (title) title.textContent = "Serie storica del saldo - " + STATE.mobilitySeriesRegion + " - " + config.xTitle;
     }
+    setTag("hiMobilitySeriesTag", "2014-2024 - " + config.xTitle);
+    var mobilitySeriesSources = [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti, mobilita sanitaria" }];
+    mobilitySeriesSources = mobilitySeriesSources.concat(denominatorSources(STATE.mobilitySeriesRatio));
+    setChartCredit("hiMobilitySeriesNote", mobilitySeriesSources, "La serie aiuta a distinguere oscillazioni annuali e persistenza del turismo sanitario economico; i valori sono saldi economici netti, non conteggi di pazienti.");
     rows.sort(function (a, b) { return a.year - b.year; });
     lineChart("hiMobilitySeriesChart", [{
       type: "scatter",

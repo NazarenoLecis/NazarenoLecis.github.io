@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-3">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-4">
   <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-3"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-4"></script>
 </head>
 <body>
   <header class="site-header">
@@ -167,7 +167,7 @@
           </label>
         </div>
         <div id="hiNationalActivityChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis.</p>
+        <p id="hiNationalActivityNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiNationalBedsTitle">Posti letto per disciplina</h3><span id="hiNationalBedsTag">Ministero Salute, 2023</span></div>
@@ -204,10 +204,10 @@
           </label>
         </div>
         <div id="hiNationalBedsChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis.</p>
+        <p id="hiNationalBedsNote" class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiDischargeTypeTitle">Tipologia di dimissione</h3><span>SDO, ultimo anno disponibile</span></div>
+        <div class="hi-card-title"><h3 id="hiDischargeTypeTitle">Tipologia di dimissione</h3><span id="hiDischargeTypeTag">SDO, ultimo anno disponibile</span></div>
         <div class="hi-chart-controls" aria-label="Filtri tipologia dimissione">
           <label>Territorio
             <select id="hiDischargeRegionFilter"></select>
@@ -223,7 +223,7 @@
         <p id="hiDischargeTypeNote" class="hi-chart-credit">Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiDischargeHospitalTitle">Ospedali per categoria di dimissione</h3><span>SDO, istituti</span></div>
+        <div class="hi-card-title"><h3 id="hiDischargeHospitalTitle">Ospedali per categoria di dimissione</h3><span id="hiDischargeHospitalTag">SDO, istituti</span></div>
         <div class="hi-chart-controls" aria-label="Filtri ospedali per categoria di dimissione">
           <label>Regione
             <select id="hiDischargeHospitalRegionFilter"></select>
@@ -259,7 +259,7 @@
         <div><h2>Ospedali con maggior volume</h2><p>Classifica delle strutture pubbliche ed equiparate. Se scegli una disciplina, il grafico usa le dimissioni della disciplina dentro ogni struttura, non la disciplina prevalente dell'ospedale.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiHospitalTitle">Top strutture per dimissioni</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-card-title"><h3 id="hiHospitalTitle">Top strutture per dimissioni</h3><span id="hiHospitalTag">Ministero Salute, 2022</span></div>
         <div class="hi-chart-controls" aria-label="Filtri strutture">
           <label>Territorio
             <select id="hiHospitalRegionFilter"></select>
@@ -272,10 +272,10 @@
           </label>
         </div>
         <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
+        <p id="hiHospitalNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiHospitalDepartmentTitle">Dimissioni per reparto dentro l'ospedale</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-card-title"><h3 id="hiHospitalDepartmentTitle">Dimissioni per reparto dentro l'ospedale</h3><span id="hiHospitalDepartmentTag">Ministero Salute, 2022</span></div>
         <div class="hi-chart-controls" aria-label="Filtri reparti dentro l'ospedale">
           <label>Territorio
             <select id="hiHospitalDepartmentRegionFilter"></select>
@@ -347,7 +347,7 @@
           </label>
         </div>
         <div id="hiRegionalRankChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonti: Ministero della Salute, OpenBDAP, ISTAT. Elaborazione di Nazareno Lecis. I rapporti usano popolazione residente ISTAT 2026.</p>
+        <p id="hiRegionalRankNote" class="hi-chart-credit">Fonti: Ministero della Salute, OpenBDAP, ISTAT. Elaborazione di Nazareno Lecis. I rapporti usano popolazione residente ISTAT 2026.</p>
       </article>
       <div id="hiRegionProfile" class="hi-profile-grid" aria-label="Profilo regionale"></div>
       <article class="hi-card">
@@ -410,7 +410,7 @@
         <div><h2>Dotazione ospedaliera nel tempo</h2><p>Serie 2010-2023 dei posti letto per territorio e tipo di letto, con rapporti alla popolazione totale, 65+ e 75+.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiBedsSeriesTitle">Posti letto nel tempo</h3><span>2010-2023</span></div>
+        <div class="hi-card-title"><h3 id="hiBedsSeriesTitle">Posti letto nel tempo</h3><span id="hiBedsSeriesTag">2010-2023</span></div>
         <div class="hi-chart-controls" aria-label="Filtri serie posti letto">
           <label>Territorio
             <select id="hiBedsSeriesRegionFilter"></select>
@@ -433,7 +433,7 @@
           </label>
         </div>
         <div id="hiBedsSeriesChart" class="hi-chart"></div>
-        <p class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis. Serie costruita sui CSV 2010-2019 e sui file annuali 2020, 2021, 2022 e 2023 normalizzati nella pipeline.</p>
+        <p id="hiBedsSeriesNote" class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis. Serie costruita sui CSV 2010-2019 e sui file annuali 2020, 2021, 2022 e 2023 normalizzati nella pipeline.</p>
       </article>
     </section>
 
@@ -443,7 +443,7 @@
         <div><h2>Turismo sanitario, flussi economici e saldi</h2><p>La mobilit&agrave; viene letta con grafici propri: saldi economici regionali, serie storica e strutture ospedaliere pi&ugrave; frequentate.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3>Sankey regionale dei saldi netti</h3><span>Corte dei conti, 2024</span></div>
+        <div class="hi-card-title"><h3 id="hiMobilitySankeyTitle">Sankey regionale dei saldi netti</h3><span id="hiMobilitySankeyTag">Corte dei conti, 2024</span></div>
         <div class="hi-chart-controls" aria-label="Filtri Sankey mobilita">
           <label>Mostra flussi sopra
             <select id="hiMobilitySankeyMinFilter">
@@ -458,7 +458,7 @@
         <p id="hiMobilitySankeyNote" class="hi-chart-credit">Fonte: Corte dei conti, saldi economici della mobilit&agrave; sanitaria. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiMobilityHospitalTitle">Da regione a ospedali pi&ugrave; frequentati</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-card-title"><h3 id="hiMobilityHospitalTitle">Da regione a ospedali pi&ugrave; frequentati</h3><span id="hiMobilityHospitalTag">Ministero Salute, 2022</span></div>
         <div class="hi-chart-controls" aria-label="Filtri ospedali frequentati">
           <label>Regione
             <select id="hiMobilityHospitalRegionFilter"></select>
@@ -472,10 +472,10 @@
           </label>
         </div>
         <div id="hiMobilityHospitalChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. Il grafico mostra la regione di erogazione e le strutture con pi&ugrave; dimissioni, non la residenza dei pazienti; il Bambino Ges&ugrave; &egrave; evidenziato come soggetto extraterritoriale.</p>
+        <p id="hiMobilityHospitalNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. Il grafico mostra la regione di erogazione e le strutture con pi&ugrave; dimissioni, non la residenza dei pazienti; il Bambino Ges&ugrave; &egrave; evidenziato come soggetto extraterritoriale.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiMobilityBalanceTitle">Saldo mobilit&agrave; per regione</h3><span>milioni di euro</span></div>
+        <div class="hi-card-title"><h3 id="hiMobilityBalanceTitle">Saldo mobilit&agrave; per regione</h3><span id="hiMobilityBalanceTag">milioni di euro</span></div>
         <div class="hi-chart-controls" aria-label="Filtri saldo mobilita">
           <label>Rapporta a
             <select id="hiMobilityRatioFilter">
@@ -488,10 +488,10 @@
           </label>
         </div>
         <div id="hiMobilityBalanceChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: Corte dei conti su dati Intesa Stato-Regioni. Elaborazione di Nazareno Lecis. Valori positivi: attrazione netta; valori negativi: fuga netta.</p>
+        <p id="hiMobilityBalanceNote" class="hi-chart-credit">Fonte: Corte dei conti su dati Intesa Stato-Regioni. Elaborazione di Nazareno Lecis. Valori positivi: attrazione netta; valori negativi: fuga netta.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiMobilitySeriesTitle">Serie storica del saldo</h3><span>2014-2024</span></div>
+        <div class="hi-card-title"><h3 id="hiMobilitySeriesTitle">Serie storica del saldo</h3><span id="hiMobilitySeriesTag">2014-2024</span></div>
         <div class="hi-chart-controls" aria-label="Filtri serie mobilita">
           <label>Territorio
             <select id="hiMobilitySeriesRegionFilter"></select>
@@ -507,7 +507,7 @@
           </label>
         </div>
         <div id="hiMobilitySeriesChart" class="hi-chart"></div>
-        <p class="hi-chart-credit">Fonte: Corte dei conti, saldi economici della mobilit&agrave; sanitaria 2014-2024. Elaborazione di Nazareno Lecis. La serie aiuta a distinguere oscillazioni annuali e persistenza del turismo sanitario economico.</p>
+        <p id="hiMobilitySeriesNote" class="hi-chart-credit">Fonte: Corte dei conti, saldi economici della mobilit&agrave; sanitaria 2014-2024. Elaborazione di Nazareno Lecis. La serie aiuta a distinguere oscillazioni annuali e persistenza del turismo sanitario economico.</p>
       </article>
       <article class="hi-card">
         <div class="hi-card-title"><h3>Dettaglio mobilit&agrave;</h3><span>saldi regionali</span></div>
@@ -521,7 +521,7 @@
         <div><h2>Quanto costa il SSN e dove</h2><p>Costi di Conto economico degli Enti del SSN e serie farmaceutica. Sono dati contabili regionali: servono a leggere ordini di grandezza, composizione e rapporti con popolazione, dimissioni e PIL.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiCostRegionTitle">Costi regionali</h3><span>OpenBDAP, 2024</span></div>
+        <div class="hi-card-title"><h3 id="hiCostRegionTitle">Costi regionali</h3><span id="hiCostRegionTag">OpenBDAP, 2024</span></div>
         <div class="hi-chart-controls" aria-label="Filtri costi regionali">
           <label>Voce di costo
             <select id="hiCostTypeFilter"></select>
@@ -541,20 +541,20 @@
           </label>
         </div>
         <div id="hiCostRegionChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo 2024. Elaborazione di Nazareno Lecis. Le voci sono contabili: non misurano il costo della singola prestazione clinica.</p>
+        <p id="hiCostRegionNote" class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo 2024. Elaborazione di Nazareno Lecis. Le voci sono contabili: non misurano il costo della singola prestazione clinica.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiCostCompositionTitle">Composizione dei costi</h3><span>miliardi di euro</span></div>
+        <div class="hi-card-title"><h3 id="hiCostCompositionTitle">Composizione dei costi</h3><span id="hiCostCompositionTag">miliardi di euro</span></div>
         <div class="hi-chart-controls" aria-label="Filtri composizione costi">
           <label>Territorio
             <select id="hiCostCompositionRegionFilter"></select>
           </label>
         </div>
         <div id="hiCostCompositionChart" class="hi-chart"></div>
-        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, API tematica sulla finanza degli Enti del SSN. Elaborazione di Nazareno Lecis.</p>
+        <p id="hiCostCompositionNote" class="hi-chart-credit">Fonte: OpenBDAP/RGS, API tematica sulla finanza degli Enti del SSN. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiPharmaSeriesTitle">Spesa farmaceutica</h3><span>2012-2024</span></div>
+        <div class="hi-card-title"><h3 id="hiPharmaSeriesTitle">Spesa farmaceutica</h3><span id="hiPharmaSeriesTag">2012-2024</span></div>
         <div class="hi-chart-controls" aria-label="Filtri serie farmaceutica">
           <label>Territorio
             <select id="hiPharmaSeriesRegionFilter"></select>
@@ -564,7 +564,7 @@
           </label>
         </div>
         <div id="hiPharmaSeriesChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo. Elaborazione di Nazareno Lecis. "Farmaceutica convenzionata" e "Prodotti farmaceutici" sono canali/voci contabili diversi.</p>
+        <p id="hiPharmaSeriesNote" class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo. Elaborazione di Nazareno Lecis. "Farmaceutica convenzionata" e "Prodotti farmaceutici" sono canali/voci contabili diversi.</p>
       </article>
       <article class="hi-card">
         <div class="hi-card-title"><h3>Dettaglio costi regionali</h3><span>quota e variazione</span></div>
