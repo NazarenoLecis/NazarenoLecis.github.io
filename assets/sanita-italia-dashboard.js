@@ -26,6 +26,8 @@
     dischargeRegion: "Italia",
     dischargeProvince: "all",
     dischargeStructure: "all",
+    dischargeDiscipline: "all",
+    dischargeDisciplineMetric: "discharges",
     dischargeHospitalRegion: "Italia",
     dischargeHospitalProvince: "all",
     dischargeHospitalCategory: "known_total",
@@ -636,6 +638,15 @@
     if (node) node.disabled = STATE.dischargeRegion === "Italia";
   }
 
+  function dischargeActivityRows() {
+    return tableRows("hospital_activity_by_discipline").filter(function (row) {
+      if (STATE.dischargeRegion !== "Italia" && row.region !== STATE.dischargeRegion) return false;
+      if (STATE.dischargeProvince !== "all" && row.province !== STATE.dischargeProvince) return false;
+      if (STATE.dischargeStructure !== "all" && structureKey(row) !== STATE.dischargeStructure) return false;
+      return true;
+    });
+  }
+
   function structureKey(row) {
     return asText(row.structure_code || (asText(row.region) + "|" + asText(row.structure)));
   }
@@ -914,6 +925,7 @@
     refreshProvinceFilters();
 
     fillSelect("hiDisciplineFilter", disciplineOptions, STATE.discipline);
+    fillSelect("hiDischargeDisciplineFilter", disciplineOptionsWithAll, STATE.dischargeDiscipline);
     fillSelect("hiHospitalDisciplineFilter", disciplineOptionsWithAll, STATE.hospitalDiscipline);
     fillSelect("hiTableDisciplineFilter", disciplineOptionsWithAll, STATE.tableDiscipline);
     fillSelect("hiCostTypeFilter", costOptions, STATE.costType);
@@ -943,6 +955,7 @@
       ["hiDisciplineMetricFilter", "disciplineMetric"],
       ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
       ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
+      ["hiDischargeDisciplineMetricFilter", "dischargeDisciplineMetric"],
       ["hiHospitalDepartmentMetricFilter", "hospitalDepartmentMetric"],
       ["hiHospitalDepartmentLimitFilter", "hospitalDepartmentLimit"],
       ["hiBedsSeriesMetricFilter", "bedsSeriesMetric"],
@@ -990,6 +1003,8 @@
       ["hiDischargeRegionFilter", "dischargeRegion"],
       ["hiDischargeProvinceFilter", "dischargeProvince"],
       ["hiDischargeStructureFilter", "dischargeStructure"],
+      ["hiDischargeDisciplineFilter", "dischargeDiscipline"],
+      ["hiDischargeDisciplineMetricFilter", "dischargeDisciplineMetric"],
       ["hiDischargeHospitalRegionFilter", "dischargeHospitalRegion"],
       ["hiDischargeHospitalProvinceFilter", "dischargeHospitalProvince"],
       ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
@@ -1268,6 +1283,163 @@
     if (note) setChartCredit("hiDischargeTypeNote", [
       { id: "ministero_sdo_tipologia_dimissione", label: "Ministero della Salute, SDO per tipologia di dimissione" }
     ], "Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". La fonte pubblica la tipologia per istituto, non per disciplina; le celle oscurate non sono trattate come zero.");
+    renderDischargeDisciplineChart();
+  }
+
+  function dischargeDisciplineMetricConfig() {
+    var metric = STATE.dischargeDisciplineMetric;
+    if (metric === "stay_days") return { label: "Giornate di degenza", field: "stay_days", xTitle: "giornate", color: COLORS[2], format: formatNumber };
+    if (metric === "ordinary_beds") return { label: "Posti letto ordinari", field: "ordinary_beds", xTitle: "posti letto ordinari", color: COLORS[3], format: formatNumber };
+    if (metric === "avg_los_days") return { label: "Degenza media", field: "avg_los_days", xTitle: "giorni", color: COLORS[4], format: formatDecimal };
+    if (metric === "bed_utilization_percent") return { label: "Utilizzo posti letto", field: "bed_utilization_percent", xTitle: "percentuale", color: COLORS[5], format: formatPercent };
+    return { label: "Dimissioni", field: "discharges", xTitle: "dimissioni", color: COLORS[1], format: formatNumber };
+  }
+
+  function summarizeActivityRows(rows, keyFn, labelFn) {
+    var grouped = {};
+    toArray(rows).forEach(function (row) {
+      var key = keyFn(row);
+      if (!key) return;
+      if (!grouped[key]) {
+        grouped[key] = Object.assign({
+          key: key,
+          year: row.year,
+          discharges: 0,
+          stay_days: 0,
+          available_days: 0,
+          ordinary_beds: 0,
+          day_hospital_beds: 0,
+          day_surgery_beds: 0,
+          used_beds: 0
+        }, labelFn(row));
+      }
+      grouped[key].discharges += toNumber(row.discharges) || 0;
+      grouped[key].stay_days += toNumber(row.stay_days) || 0;
+      grouped[key].available_days += toNumber(row.available_days) || 0;
+      grouped[key].ordinary_beds += toNumber(row.ordinary_beds) || 0;
+      grouped[key].day_hospital_beds += toNumber(row.day_hospital_beds) || 0;
+      grouped[key].day_surgery_beds += toNumber(row.day_surgery_beds) || 0;
+      grouped[key].used_beds += toNumber(row.used_beds) || 0;
+    });
+    return Object.keys(grouped).map(function (key) {
+      var row = grouped[key];
+      row.avg_los_days = row.discharges ? row.stay_days / row.discharges : null;
+      row.bed_utilization_percent = row.available_days ? (row.stay_days / row.available_days) * 100 : null;
+      return row;
+    });
+  }
+
+  function topRowsKeepingSelection(rows, labelField, selectedValue, valueField, limit) {
+    rows = sortDescending(rows, valueField);
+    if (!selectedValue || selectedValue === "all" || limit === "all") return rows;
+    var numericLimit = chartLimit(limit, 25);
+    var selected = rows.find(function (row) { return row[labelField] === selectedValue; });
+    if (!selected) return rows;
+    var top = rows.slice(0, numericLimit);
+    if (!top.some(function (row) { return row[labelField] === selectedValue; }) && top.length) {
+      top[top.length - 1] = selected;
+    }
+    return sortDescending(top, valueField);
+  }
+
+  function renderDischargeDisciplineChart() {
+    var config = dischargeDisciplineMetricConfig();
+    var selectedDiscipline = STATE.dischargeDiscipline;
+    var rows = dischargeActivityRows();
+    var selectedStructure = STATE.dischargeStructure !== "all";
+    var labelField = "discipline";
+    var titlePrefix = config.label + " per specializzazione";
+    var tableColumns;
+
+    if (selectedStructure) {
+      rows = summarizeActivityRows(rows, function (row) {
+        return row.discipline;
+      }, function (row) {
+        return {
+          region: row.region,
+          province: row.province,
+          structure: row.structure,
+          municipality: row.municipality,
+          discipline: row.discipline
+        };
+      });
+      rows = topRowsKeepingSelection(rows, "discipline", selectedDiscipline, config.field, 25);
+      tableColumns = [
+        ["discipline", "Disciplina"],
+        ["discharges", "Dimissioni"],
+        ["stay_days", "Giornate di degenza"],
+        ["ordinary_beds", "Posti letto ordinari"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo posti letto"]
+      ];
+    } else if (selectedDiscipline !== "all") {
+      rows = rows.filter(function (row) { return row.discipline === selectedDiscipline; });
+      rows = summarizeActivityRows(rows, function (row) {
+        return structureKey(row);
+      }, function (row) {
+        return {
+          region: row.region,
+          province: row.province,
+          structure: row.structure,
+          municipality: row.municipality,
+          discipline: row.discipline
+        };
+      });
+      labelField = "structure";
+      titlePrefix = config.label + " per ospedale - " + selectedDiscipline;
+      rows = sortDescending(rows, config.field);
+      tableColumns = [
+        ["structure", "Struttura"],
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["discipline", "Disciplina"],
+        ["discharges", "Dimissioni"],
+        ["stay_days", "Giornate di degenza"],
+        ["ordinary_beds", "Posti letto ordinari"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo posti letto"]
+      ];
+    } else {
+      rows = summarizeActivityRows(rows, function (row) {
+        return row.discipline;
+      }, function (row) {
+        return { discipline: row.discipline };
+      });
+      rows = sortDescending(rows, config.field);
+      tableColumns = [
+        ["discipline", "Disciplina"],
+        ["discharges", "Dimissioni"],
+        ["stay_days", "Giornate di degenza"],
+        ["ordinary_beds", "Posti letto ordinari"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo posti letto"]
+      ];
+    }
+
+    var territory = territoryLabel(STATE.dischargeRegion, STATE.dischargeProvince);
+    var structureRows = selectedStructure ? dischargeActivityRows() : [];
+    if (selectedStructure && structureRows.length) territory = structureRows[0].structure;
+    var title = byId("hiDischargeDisciplineTitle");
+    if (title) title.textContent = titlePrefix + " - " + territory;
+    setTag("hiDischargeDisciplineTag", "2022 - " + (selectedDiscipline === "all" ? "tutte le specializzazioni" : selectedDiscipline));
+
+    rows = rows.filter(function (row) { return toNumber(row[config.field]) !== null; });
+    horizontalBar("hiDischargeDisciplineChart", rows, labelField, config.field, {
+      limit: 25,
+      color: config.color,
+      highlight: selectedDiscipline,
+      highlightField: "discipline",
+      leftMargin: labelField === "structure" ? 280 : 250,
+      labelLength: labelField === "structure" ? 48 : 42,
+      xTitle: config.xTitle,
+      format: config.format,
+      hovertemplate: "%{y}<br>" + config.label + ": %{text}<extra></extra>"
+    });
+    createTable("hiDischargeDisciplineTable", rows, tableColumns, 80);
+    var note = byId("hiDischargeDisciplineNote");
+    if (note) setChartCredit("hiDischargeDisciplineNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute, dati di attivita dei reparti" }
+    ], "La specializzazione usa i dati di attivita dei reparti 2022. La tipologia amministrativa SDO sopra resta disponibile per territorio o istituto, non per disciplina clinica.");
   }
 
   function dischargeCategoryConfig() {

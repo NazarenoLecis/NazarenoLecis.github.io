@@ -903,7 +903,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260724-sanita-en", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260724-sanita-specialty", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

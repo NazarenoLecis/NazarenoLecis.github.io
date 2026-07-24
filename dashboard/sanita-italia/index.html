@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-5">
-  <script defer src="../../assets/theme.js?v=20260724-sanita-en"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-6">
+  <script defer src="../../assets/theme.js?v=20260724-sanita-specialty"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-5"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-6"></script>
 </head>
 <body>
   <header class="site-header">
@@ -218,9 +218,25 @@
           <label>Struttura
             <select id="hiDischargeStructureFilter"></select>
           </label>
+          <label>Specializzazione
+            <select id="hiDischargeDisciplineFilter"></select>
+          </label>
+          <label>Misura specializzazione
+            <select id="hiDischargeDisciplineMetricFilter">
+              <option value="discharges">Dimissioni</option>
+              <option value="stay_days">Giornate di degenza</option>
+              <option value="ordinary_beds">Posti letto ordinari</option>
+              <option value="avg_los_days">Degenza media</option>
+              <option value="bed_utilization_percent">Utilizzo posti letto</option>
+            </select>
+          </label>
         </div>
         <div id="hiDischargeTypeChart" class="hi-chart"></div>
         <p id="hiDischargeTypeNote" class="hi-chart-credit">Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis.</p>
+        <div class="hi-card-title hi-card-title-secondary"><h3 id="hiDischargeDisciplineTitle">Specializzazioni nella selezione</h3><span id="hiDischargeDisciplineTag">Ministero Salute, 2022</span></div>
+        <div id="hiDischargeDisciplineChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiDischargeDisciplineTable" class="hi-table-wrap"></div>
+        <p id="hiDischargeDisciplineNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attività dei reparti. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiDischargeHospitalTitle">Ospedali per categoria di dimissione</h3><span id="hiDischargeHospitalTag">SDO, istituti</span></div>
