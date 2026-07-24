@@ -2154,6 +2154,14 @@
     renderHospitals();
     renderMobility();
     renderExplorer();
+    refreshSiteLanguage();
+  }
+
+  function refreshSiteLanguage() {
+    if (!window.SiteLanguage || typeof window.SiteLanguage.refresh !== "function") return;
+    window.setTimeout(function () {
+      window.SiteLanguage.refresh(document.body);
+    }, 0);
   }
 
   function renderAll() {
