@@ -26,6 +26,10 @@
     dischargeRegion: "Italia",
     dischargeProvince: "all",
     dischargeStructure: "all",
+    dischargeHospitalRegion: "Italia",
+    dischargeHospitalProvince: "all",
+    dischargeHospitalCategory: "known_total",
+    dischargeHospitalLimit: "20",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -472,7 +476,7 @@
   function provinceLabel(region, province) {
     var meta = provinceMeta(region, province);
     if (!province || province === "all") return "Tutte";
-    return meta && meta.province_name ? province + " - " + meta.province_name : province;
+    return meta && meta.province_name ? meta.province_name + " (" + province + ")" : province;
   }
 
   function plainKey(value) {
@@ -523,6 +527,7 @@
   function refreshProvinceFilters() {
     refreshProvinceFilter("hiNationalActivityProvinceFilter", "nationalActivityProvince", STATE.nationalActivityRegion);
     refreshProvinceFilter("hiDischargeProvinceFilter", "dischargeProvince", STATE.dischargeRegion);
+    refreshProvinceFilter("hiDischargeHospitalProvinceFilter", "dischargeHospitalProvince", STATE.dischargeHospitalRegion);
     refreshProvinceFilter("hiDisciplineProvinceFilter", "disciplineProvince", STATE.disciplineRegion);
     refreshProvinceFilter("hiHospitalProvinceFilter", "hospitalProvince", STATE.hospitalRegion);
     refreshProvinceFilter("hiTableProvinceFilter", "tableProvince", STATE.tableRegion);
@@ -761,6 +766,7 @@
       ["hiNationalBedsRegionFilter", "nationalBedsRegion"],
       ["hiRegionalRegionFilter", "region"],
       ["hiDischargeRegionFilter", "dischargeRegion"],
+      ["hiDischargeHospitalRegionFilter", "dischargeHospitalRegion"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiCostRegionFilter", "costRegion"],
       ["hiCostCompositionRegionFilter", "costCompositionRegion"],
@@ -803,6 +809,8 @@
       ["hiNationalBedsRatioFilter", "nationalBedsRatio"],
       ["hiNationalBedsLimitFilter", "nationalBedsLimit"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
+      ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
+      ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
       ["hiBedsSeriesMetricFilter", "bedsSeriesMetric"],
       ["hiBedsSeriesRatioFilter", "bedsSeriesRatio"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
@@ -847,6 +855,10 @@
       ["hiDischargeRegionFilter", "dischargeRegion"],
       ["hiDischargeProvinceFilter", "dischargeProvince"],
       ["hiDischargeStructureFilter", "dischargeStructure"],
+      ["hiDischargeHospitalRegionFilter", "dischargeHospitalRegion"],
+      ["hiDischargeHospitalProvinceFilter", "dischargeHospitalProvince"],
+      ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
+      ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -937,6 +949,10 @@
     if (activityTag) {
       activityTag.textContent = territoryLabel(STATE.nationalActivityRegion, STATE.nationalActivityProvince) + " - " + activityConfig.context;
     }
+    var activityTitle = byId("hiNationalActivityTitle");
+    if (activityTitle) {
+      activityTitle.textContent = activityConfig.label + " per disciplina - " + territoryLabel(STATE.nationalActivityRegion, STATE.nationalActivityProvince);
+    }
     horizontalBar(
       "hiNationalActivityChart",
       sortDescending(activityRows, "selected_value"),
@@ -965,6 +981,10 @@
     if (bedTag) {
       bedTag.textContent = territoryLabel(STATE.nationalBedsRegion, "all") + " - " + selectedYear + " - " + ratioLabel(STATE.nationalBedsRatio);
     }
+    var bedTitle = byId("hiNationalBedsTitle");
+    if (bedTitle) {
+      bedTitle.textContent = bedConfig.label + " per disciplina - " + territoryLabel(STATE.nationalBedsRegion, "all");
+    }
     var bedLabel = STATE.nationalBedsRatio === "absolute" ? bedConfig.label : bedConfig.label + " " + ratioLabel(STATE.nationalBedsRatio);
     var bedFormat = STATE.nationalBedsRatio === "absolute" ? formatNumber : formatDecimal;
     var bedXTitle = STATE.nationalBedsRatio === "absolute" ? bedConfig.xTitle : ratioLabel(STATE.nationalBedsRatio);
@@ -987,6 +1007,7 @@
     );
 
     renderDischargeTypeChart();
+    renderDischargeHospitalRank();
   }
 
   function chartLimit(value, fallback) {
@@ -1099,6 +1120,42 @@
     var note = byId("hiDischargeTypeNote");
     if (note) {
       note.textContent = "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Anno " + row.year + ". Celle oscurate nella selezione: " + formatNumber(row.masked_cells) + ". La fonte pubblica la tipologia per istituto, non per disciplina; le celle oscurate non sono trattate come zero.";
+    }
+  }
+
+  function dischargeCategoryConfig() {
+    var category = STATE.dischargeHospitalCategory;
+    if (category === "home_discharges") return { label: "Dimissioni a domicilio", field: "home_discharges", xTitle: "dimissioni a domicilio", color: COLORS[2] };
+    if (category === "transfers") return { label: "Trasferimenti verso altra struttura", field: "transfers", xTitle: "trasferimenti", color: COLORS[4] };
+    if (category === "deaths") return { label: "Decessi", field: "deaths", xTitle: "decessi", color: COLORS[5] };
+    return { label: "Totale noto delle categorie SDO", field: "known_total", xTitle: "dimissioni note", color: COLORS[1] };
+  }
+
+  function renderDischargeHospitalRank() {
+    var config = dischargeCategoryConfig();
+    var rows = tableRows("discharge_type_by_structure").filter(function (row) {
+      if (STATE.dischargeHospitalRegion !== "Italia" && row.region !== STATE.dischargeHospitalRegion) return false;
+      return STATE.dischargeHospitalProvince === "all" || row.province === STATE.dischargeHospitalProvince;
+    }).filter(function (row) {
+      return toNumber(row[config.field]) !== null;
+    });
+    rows = sortDescending(rows, config.field);
+    var territory = territoryLabel(STATE.dischargeHospitalRegion, STATE.dischargeHospitalProvince);
+    var title = byId("hiDischargeHospitalTitle");
+    if (title) title.textContent = config.label + " per ospedale - " + territory;
+    horizontalBar("hiDischargeHospitalChart", rows, "structure", config.field, {
+      limit: chartLimit(STATE.dischargeHospitalLimit, 20),
+      color: config.color,
+      leftMargin: 270,
+      labelLength: 44,
+      xTitle: config.xTitle,
+      format: formatNumber,
+      hovertemplate: "%{y}<br>" + config.label + ": %{text}<extra></extra>"
+    });
+    createTable("hiDischargeHospitalTable", rows, tableOption("discharge_type_by_structure").columns, chartLimit(STATE.dischargeHospitalLimit, 20));
+    var note = byId("hiDischargeHospitalNote");
+    if (note) {
+      note.textContent = "Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Categoria selezionata: " + config.label + ". La fonte pubblica queste categorie per istituto, non per disciplina clinica.";
     }
   }
 

@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260720-5">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-2">
   <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -56,30 +56,31 @@
     <section class="workflow-grid hi-workflow" aria-label="Percorso di lettura">
       <div class="workflow-step">
         <span>1</span>
-        <h2>Italia</h2>
-        <p>Parti dal quadro nazionale: quante dimissioni, quali discipline, quante giornate, quanti posti letto e quali costi.</p>
+        <h2>Dati</h2>
+        <p>Parti dalla copertura: quali fonti arrivano a regione, provincia, ospedale o disciplina e quali invece restano contabili.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
-        <h2>Regioni</h2>
-        <p>Confronta volumi, dotazioni, costi e mobilit&agrave; con rapporti per popolazione totale, over 65, over 75, denominatore clinico o PIL.</p>
+        <h2>Attivit&agrave;</h2>
+        <p>Leggi dimissioni, discipline, strutture, tipologie amministrative e dotazioni prima di passare ai confronti territoriali.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
-        <h2>Metodo</h2>
-        <p>Leggi definizioni, fonti, anni, limiti e regole di normalizzazione prima di interpretare le classifiche.</p>
+        <h2>Spesa</h2>
+        <p>Solo dopo confronta costi, farmaceutica e mobilit&agrave;, ricordando che sono saldi o voci contabili e non costi clinici puntuali.</p>
       </div>
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard sanit&agrave;">
       <a href="#indicatori">Indicatori</a>
-      <a href="#italia">Italia</a>
+      <a href="#copertura">Dati disponibili</a>
+      <a href="#italia">Dimissioni</a>
+      <a href="#strutture">Strutture</a>
       <a href="#regioni">Regioni</a>
       <a href="#discipline">Discipline</a>
-      <a href="#costi">Costi</a>
       <a href="#serie">Serie</a>
-      <a href="#strutture">Strutture</a>
       <a href="#mobilita">Mobilit&agrave;</a>
+      <a href="#costi">Spesa</a>
       <a href="#dati">Dati</a>
       <a href="#metodo">Metodo</a>
     </nav>
@@ -95,13 +96,42 @@
       <div id="hiKpis" class="hi-kpi-grid" aria-label="Indicatori principali"></div>
     </section>
 
+    <section id="copertura" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Dati disponibili</span>
+        <div><h2>Cosa si pu&ograve; leggere e a quale livello</h2><p>Le fonti hanno granularit&agrave; diverse: alcuni indicatori arrivano alla struttura, altri solo alla regione. Questa mappa serve a non confrontare per errore dati con perimetri diversi.</p></div>
+      </div>
+      <div class="hi-coverage-list hi-coverage-grid" aria-label="Copertura informativa dei dati sanitari">
+        <div class="hi-coverage-item">
+          <strong>Dimissioni e attivit&agrave; dei reparti</strong>
+          <span>Disponibili per disciplina, regione, provincia e struttura ospedaliera. Misure: dimissioni, giornate di degenza, posti letto, degenza media e utilizzo dei posti letto.</span>
+          <em>Italia / regione / provincia / ospedale / disciplina</em>
+        </div>
+        <div class="hi-coverage-item">
+          <strong>Tipologia amministrativa della dimissione</strong>
+          <span>Disponibile per istituto: dimissioni a domicilio, trasferimenti verso altra struttura e decessi. La fonte SDO non pubblica questa tipologia per disciplina clinica.</span>
+          <em>Italia / regione / provincia / ospedale</em>
+        </div>
+        <div class="hi-coverage-item">
+          <strong>Dotazione ospedaliera</strong>
+          <span>Posti letto per disciplina e territorio, con serie storica 2010-2023. Misura dotazione dichiarata, non personale disponibile o accessibilit&agrave; effettiva.</span>
+          <em>Italia / regione / disciplina</em>
+        </div>
+        <div class="hi-coverage-item">
+          <strong>Spesa e mobilit&agrave;</strong>
+          <span>Costi SSN e spesa farmaceutica sono dati contabili regionali; la mobilit&agrave; usa saldi economici netti. Non sono costi clinici della singola prestazione n&eacute; una matrice paziente origine-destinazione.</span>
+          <em>Regione / conto economico / saldo netto</em>
+        </div>
+      </div>
+    </section>
+
     <section id="italia" class="dashboard-section">
       <div class="section-head">
-        <span class="eyebrow">Italia</span>
-        <div><h2>Quante prestazioni ospedaliere e quali</h2><p>Volumi nazionali di dimissioni per disciplina, posti letto per disciplina e tipologia amministrativa di dimissione.</p></div>
+        <span class="eyebrow">Dimissioni ospedaliere</span>
+        <div><h2>Quante dimissioni, dove e con quale esito</h2><p>Prima si leggono volumi e discipline; poi si scende a provincia, struttura ospedaliera e categoria amministrativa della dimissione.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3>Dimissioni per disciplina</h3><span id="hiNationalActivityTag">Ministero Salute, 2022</span></div>
+        <div class="hi-card-title"><h3 id="hiNationalActivityTitle">Dimissioni per disciplina</h3><span id="hiNationalActivityTag">Ministero Salute, 2022</span></div>
         <div class="hi-chart-controls" aria-label="Filtri dimissioni nazionali">
           <label>Regione
             <select id="hiNationalActivityRegionFilter"></select>
@@ -140,7 +170,7 @@
         <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3>Posti letto per disciplina</h3><span id="hiNationalBedsTag">Ministero Salute, 2023</span></div>
+        <div class="hi-card-title"><h3 id="hiNationalBedsTitle">Posti letto per disciplina</h3><span id="hiNationalBedsTag">Ministero Salute, 2023</span></div>
         <div class="hi-chart-controls" aria-label="Filtri posti letto nazionali">
           <label>Territorio
             <select id="hiNationalBedsRegionFilter"></select>
@@ -191,6 +221,62 @@
         </div>
         <div id="hiDischargeTypeChart" class="hi-chart"></div>
         <p id="hiDischargeTypeNote" class="hi-chart-credit">Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiDischargeHospitalTitle">Ospedali per categoria di dimissione</h3><span>SDO, istituti</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri ospedali per categoria di dimissione">
+          <label>Regione
+            <select id="hiDischargeHospitalRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiDischargeHospitalProvinceFilter"></select>
+          </label>
+          <label>Categoria
+            <select id="hiDischargeHospitalCategoryFilter">
+              <option value="known_total">Totale noto</option>
+              <option value="home_discharges">A domicilio</option>
+              <option value="transfers">Trasferimenti</option>
+              <option value="deaths">Decessi</option>
+            </select>
+          </label>
+          <label>Numero strutture
+            <select id="hiDischargeHospitalLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiDischargeHospitalChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiDischargeHospitalTable" class="hi-table-wrap"></div>
+        <p id="hiDischargeHospitalNote" class="hi-chart-credit">Fonte: Ministero della Salute, SDO per tipologia di dimissione. Elaborazione di Nazareno Lecis. Le categorie sono amministrative e riferite all'istituto, non alla singola disciplina clinica.</p>
+      </article>
+    </section>
+
+    <section id="strutture" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Strutture</span>
+        <div><h2>Ospedali con maggior volume</h2><p>Classifica delle strutture pubbliche ed equiparate. Se scegli una disciplina, il grafico usa le dimissioni della disciplina dentro ogni struttura, non la disciplina prevalente dell'ospedale.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiHospitalTitle">Top strutture per dimissioni</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri strutture">
+          <label>Territorio
+            <select id="hiHospitalRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiHospitalProvinceFilter"></select>
+          </label>
+          <label>Disciplina
+            <select id="hiHospitalDisciplineFilter"></select>
+          </label>
+        </div>
+        <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
+      </article>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Dettaglio strutture</h3><span>top volumi</span></div>
+        <div id="hiHospitalTable" class="hi-table-wrap"></div>
       </article>
     </section>
 
@@ -285,54 +371,10 @@
       </article>
     </section>
 
-    <section id="costi" class="dashboard-section">
-      <div class="section-head">
-        <span class="eyebrow">Costi</span>
-        <div><h2>Quanto costa il SSN e dove</h2><p>Costi di Conto economico degli Enti del SSN a livello regionale: totale, beni e servizi, personale, ammortamenti e altri costi.</p></div>
-      </div>
-      <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiCostRegionTitle">Costi regionali</h3><span>OpenBDAP, 2024</span></div>
-        <div class="hi-chart-controls" aria-label="Filtri costi regionali">
-          <label>Voce di costo
-            <select id="hiCostTypeFilter"></select>
-          </label>
-          <label>Focus
-            <select id="hiCostRegionFilter"></select>
-          </label>
-          <label>Rapporta a
-            <select id="hiCostRatioFilter">
-              <option value="population_total">Popolazione totale</option>
-              <option value="absolute">Valore assoluto</option>
-              <option value="population_65_plus">Popolazione 65+</option>
-              <option value="population_75_plus">Popolazione 75+</option>
-              <option value="discharges">Dimissioni ospedaliere</option>
-              <option value="gdp">PIL regionale</option>
-            </select>
-          </label>
-        </div>
-        <div id="hiCostRegionChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo 2024. Elaborazione di Nazareno Lecis. Le voci sono contabili: non misurano il costo della singola prestazione clinica.</p>
-      </article>
-      <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiCostCompositionTitle">Composizione dei costi</h3><span>miliardi di euro</span></div>
-        <div class="hi-chart-controls" aria-label="Filtri composizione costi">
-          <label>Territorio
-            <select id="hiCostCompositionRegionFilter"></select>
-          </label>
-        </div>
-        <div id="hiCostCompositionChart" class="hi-chart"></div>
-        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, API tematica sulla finanza degli Enti del SSN. Elaborazione di Nazareno Lecis.</p>
-      </article>
-      <article class="hi-card">
-        <div class="hi-card-title"><h3>Dettaglio costi regionali</h3><span>quota e variazione</span></div>
-        <div id="hiCostTable" class="hi-table-wrap"></div>
-      </article>
-    </section>
-
     <section id="serie" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Serie storiche</span>
-        <div><h2>Andamenti disponibili</h2><p>I posti letto hanno una serie minima 2021-2023; la spesa farmaceutica usa la serie OpenBDAP 2012-2024.</p></div>
+        <div><h2>Dotazione ospedaliera nel tempo</h2><p>Serie 2010-2023 dei posti letto per territorio e tipo di letto, con rapporti alla popolazione totale, 65+ e 75+.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiBedsSeriesTitle">Posti letto nel tempo</h3><span>2010-2023</span></div>
@@ -358,47 +400,7 @@
           </label>
         </div>
         <div id="hiBedsSeriesChart" class="hi-chart"></div>
-        <p class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis. Serie costruita sui file CSV 2021 e 2023 normalizzati nella pipeline.</p>
-      </article>
-      <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiPharmaSeriesTitle">Spesa farmaceutica</h3><span>2012-2024</span></div>
-        <div class="hi-chart-controls" aria-label="Filtri serie farmaceutica">
-          <label>Territorio
-            <select id="hiPharmaSeriesRegionFilter"></select>
-          </label>
-          <label>Voce
-            <select id="hiPharmaSeriesLabelFilter"></select>
-          </label>
-        </div>
-        <div id="hiPharmaSeriesChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo. Elaborazione di Nazareno Lecis.</p>
-      </article>
-    </section>
-
-    <section id="strutture" class="dashboard-section">
-      <div class="section-head">
-        <span class="eyebrow">Strutture</span>
-        <div><h2>Ospedali con maggior volume</h2><p>Classifica delle strutture pubbliche ed equiparate con pi&ugrave; dimissioni nel perimetro del dataset Ministero della Salute.</p></div>
-      </div>
-      <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiHospitalTitle">Top strutture per dimissioni</h3><span>Ministero Salute, 2022</span></div>
-        <div class="hi-chart-controls" aria-label="Filtri strutture">
-          <label>Territorio
-            <select id="hiHospitalRegionFilter"></select>
-          </label>
-          <label>Provincia
-            <select id="hiHospitalProvinceFilter"></select>
-          </label>
-          <label>Disciplina principale
-            <select id="hiHospitalDisciplineFilter"></select>
-          </label>
-        </div>
-        <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
-        <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
-      </article>
-      <article class="hi-card">
-        <div class="hi-card-title"><h3>Dettaglio strutture</h3><span>top volumi</span></div>
-        <div id="hiHospitalTable" class="hi-table-wrap"></div>
+        <p class="hi-chart-credit">Fonte: Ministero della Salute, posti letto per regione e disciplina. Elaborazione di Nazareno Lecis. Serie costruita sui CSV 2010-2019 e sui file annuali 2020, 2021, 2022 e 2023 normalizzati nella pipeline.</p>
       </article>
     </section>
 
@@ -477,6 +479,63 @@
       <article class="hi-card">
         <div class="hi-card-title"><h3>Dettaglio mobilit&agrave;</h3><span>saldi regionali</span></div>
         <div id="hiMobilityTable" class="hi-table-wrap"></div>
+      </article>
+    </section>
+
+    <section id="costi" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Spesa</span>
+        <div><h2>Quanto costa il SSN e dove</h2><p>Costi di Conto economico degli Enti del SSN e serie farmaceutica. Sono dati contabili regionali: servono a leggere ordini di grandezza, composizione e rapporti con popolazione, dimissioni e PIL.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiCostRegionTitle">Costi regionali</h3><span>OpenBDAP, 2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri costi regionali">
+          <label>Voce di costo
+            <select id="hiCostTypeFilter"></select>
+          </label>
+          <label>Focus
+            <select id="hiCostRegionFilter"></select>
+          </label>
+          <label>Rapporta a
+            <select id="hiCostRatioFilter">
+              <option value="population_total">Popolazione totale</option>
+              <option value="absolute">Valore assoluto</option>
+              <option value="population_65_plus">Popolazione 65+</option>
+              <option value="population_75_plus">Popolazione 75+</option>
+              <option value="discharges">Dimissioni ospedaliere</option>
+              <option value="gdp">PIL regionale</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiCostRegionChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo 2024. Elaborazione di Nazareno Lecis. Le voci sono contabili: non misurano il costo della singola prestazione clinica.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiCostCompositionTitle">Composizione dei costi</h3><span>miliardi di euro</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri composizione costi">
+          <label>Territorio
+            <select id="hiCostCompositionRegionFilter"></select>
+          </label>
+        </div>
+        <div id="hiCostCompositionChart" class="hi-chart"></div>
+        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, API tematica sulla finanza degli Enti del SSN. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiPharmaSeriesTitle">Spesa farmaceutica</h3><span>2012-2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri serie farmaceutica">
+          <label>Territorio
+            <select id="hiPharmaSeriesRegionFilter"></select>
+          </label>
+          <label>Voce
+            <select id="hiPharmaSeriesLabelFilter"></select>
+          </label>
+        </div>
+        <div id="hiPharmaSeriesChart" class="hi-chart hi-chart-wide"></div>
+        <p class="hi-chart-credit">Fonte: OpenBDAP/RGS, Conto economico Enti SSN, consuntivo. Elaborazione di Nazareno Lecis. "Farmaceutica convenzionata" e "Prodotti farmaceutici" sono canali/voci contabili diversi.</p>
+      </article>
+      <article class="hi-card">
+        <div class="hi-card-title"><h3>Dettaglio costi regionali</h3><span>quota e variazione</span></div>
+        <div id="hiCostTable" class="hi-table-wrap"></div>
       </article>
     </section>
 
