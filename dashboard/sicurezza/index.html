@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260723-18.js?v=20260723-tooltip-integers"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260724-1.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -422,7 +422,7 @@
         </div>
       </div>
       <div class="si-method-grid">
-        <article class="si-panel"><h3>Denunce registrate</h3><p>Delitti denunciati o accertati dalle Forze di polizia e trasmessi all'autorità giudiziaria. Sono la fonte più granulare per territorio, anno e tipo di reato.</p></article>
+        <article class="si-panel"><h3>Denunce registrate</h3><p>Delitti denunciati o accertati dalle Forze di polizia e trasmessi all'autorità giudiziaria. Sono la fonte più granulare per territorio, anno e tipo di reato, ma riflettono anche propensione e possibilità concreta di denunciare.</p></article>
         <article class="si-panel"><h3>Vittimizzazione</h3><p>Persone o famiglie che dichiarano di aver subito reati, comprese situazioni non denunciate. Aiuta a stimare il sommerso e la propensione alla denuncia.</p></article>
         <article class="si-panel"><h3>Sicurezza percepita</h3><p>Paura del crimine, rischio percepito e comportamenti di evitamento. Può muoversi in modo diverso rispetto alle denunce registrate.</p></article>
       </div>
@@ -499,6 +499,7 @@
       </div>
       <article class="si-panel si-section-gap">
         <h3>Note rapide di lettura</h3>
+        <p class="si-chart-credit"><strong>Nota su denunce e accesso alla denuncia:</strong> i valori sui delitti denunciati dipendono anche dalla propensione e dalla possibilità concreta di denunciare. Difficoltà burocratiche, linguistiche o di accesso ai servizi possono ridurre le denunce; campagne di sensibilizzazione, canali più semplici o cambiamenti normativi possono aumentarle senza implicare necessariamente più reati commessi.</p>
         <p class="si-chart-credit"><strong>Nota su truffe e frodi:</strong> nel dataflow ISTAT usato qui il codice <strong>SWINCYB</strong> è pubblicato come aggregato di truffe e frodi informatiche. La dashboard quindi non lo divide in sottotipologie perché quel dettaglio non è presente nel payload attuale; per farlo servirebbe integrare una fonte aggiuntiva dedicata.</p>
         <p class="si-chart-credit"><strong>Nota sugli omicidi:</strong> gli omicidi volontari sono una voce specifica, non il totale di tutte le morti violente o di tutte le fattispecie collegate. Le voci su omicidi colposi, stradali, preterintenzionali, tentati omicidi, omicidi per rapina, mafiosi, infanticidi, stragi e finalità terroristica sono mostrate separatamente per evitare doppi conteggi tra aggregati e dettagli.</p>
         <div id="siCoverage" class="si-coverage-grid" aria-label="Copertura campi disponibili"></div>
