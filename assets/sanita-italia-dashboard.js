@@ -46,6 +46,11 @@
     hospitalRegion: "Italia",
     hospitalProvince: "all",
     hospitalDiscipline: "all",
+    hospitalDepartmentRegion: "Italia",
+    hospitalDepartmentProvince: "all",
+    hospitalDepartmentStructure: "",
+    hospitalDepartmentMetric: "discharges",
+    hospitalDepartmentLimit: "20",
     mobilityRatio: "absolute",
     mobilitySeriesRegion: "Italia",
     mobilitySeriesRatio: "absolute",
@@ -214,7 +219,9 @@
         ["discharges", "Dimissioni"],
         ["stay_days", "Giornate"],
         ["ordinary_beds", "PL ordinari"],
-        ["avg_los_days", "Degenza media"]
+        ["used_beds", "PL usati"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo PL"]
       ]
     },
     {
@@ -415,11 +422,25 @@
     return number.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + " mln euro";
   }
 
+  function denominatorLabel(value) {
+    var labels = {
+      auto: "Denominatore automatico",
+      population_total: "Popolazione totale",
+      population_65_plus: "Residenti 65+",
+      population_75_plus: "Residenti 75+",
+      population_0: "Neonati / residenti eta 0",
+      population_0_14: "Residenti 0-14",
+      women_15_49: "Donne 15-49 anni"
+    };
+    return labels[value] || DENOMINATORS[value] || asText(value);
+  }
+
   function formatCell(column, value) {
     if (/million_eur$/i.test(column)) return formatMillionEuro(value);
     if (/per_capita_eur|per_over65_eur|per_over75_eur|per_discharge_eur/i.test(column)) return formatEuroDecimal(value);
     if (/eur$/i.test(column) || column === "amount_eur" || column === "ssn_cost_eur") return formatEuroCompact(value);
     if (/percent$/i.test(column)) return formatPercent(value);
+    if (/denominator/i.test(column)) return denominatorLabel(value);
     if (column === "selected_value") return formatDecimal(value);
     if (/per_1000|avg_los|share|change|utilization/i.test(column)) return formatDecimal(value);
     if (/population|beds|discharges|days|total|structures|deaths|transfers|masked|year/i.test(column)) return formatNumber(value);
@@ -530,6 +551,7 @@
     refreshProvinceFilter("hiDischargeHospitalProvinceFilter", "dischargeHospitalProvince", STATE.dischargeHospitalRegion);
     refreshProvinceFilter("hiDisciplineProvinceFilter", "disciplineProvince", STATE.disciplineRegion);
     refreshProvinceFilter("hiHospitalProvinceFilter", "hospitalProvince", STATE.hospitalRegion);
+    refreshProvinceFilter("hiHospitalDepartmentProvinceFilter", "hospitalDepartmentProvince", STATE.hospitalDepartmentRegion);
     refreshProvinceFilter("hiTableProvinceFilter", "tableProvince", STATE.tableRegion);
   }
 
@@ -556,6 +578,59 @@
     fillSelect("hiDischargeStructureFilter", options, STATE.dischargeStructure);
     var node = byId("hiDischargeStructureFilter");
     if (node) node.disabled = STATE.dischargeRegion === "Italia";
+  }
+
+  function structureKey(row) {
+    return asText(row.structure_code || (asText(row.region) + "|" + asText(row.structure)));
+  }
+
+  function hospitalDepartmentStructureRows() {
+    var grouped = {};
+    tableRows("hospital_activity_by_discipline").forEach(function (row) {
+      if (STATE.hospitalDepartmentRegion !== "Italia" && row.region !== STATE.hospitalDepartmentRegion) return;
+      if (STATE.hospitalDepartmentProvince !== "all" && row.province !== STATE.hospitalDepartmentProvince) return;
+      var key = structureKey(row);
+      if (!key) return;
+      if (!grouped[key]) {
+        grouped[key] = {
+          key: key,
+          region: row.region,
+          province: row.province,
+          structure: row.structure,
+          municipality: row.municipality,
+          discharges: 0
+        };
+      }
+      grouped[key].discharges += toNumber(row.discharges) || 0;
+    });
+    return Object.keys(grouped).map(function (key) {
+      return grouped[key];
+    }).sort(function (a, b) {
+      return (toNumber(b.discharges) || 0) - (toNumber(a.discharges) || 0);
+    });
+  }
+
+  function hospitalDepartmentStructureOptions() {
+    return hospitalDepartmentStructureRows().map(function (row) {
+      var place = STATE.hospitalDepartmentRegion === "Italia" ? " - " + row.region + " (" + row.province + ")" : (STATE.hospitalDepartmentProvince === "all" ? " (" + row.province + ")" : "");
+      return { value: row.key, label: compact(row.structure, 54) + place };
+    });
+  }
+
+  function refreshHospitalDepartmentStructureFilter() {
+    var options = hospitalDepartmentStructureOptions();
+    var node = byId("hiHospitalDepartmentStructureFilter");
+    if (!options.length) {
+      STATE.hospitalDepartmentStructure = "";
+      fillSelect("hiHospitalDepartmentStructureFilter", [{ value: "", label: "Nessun ospedale disponibile" }], "");
+      if (node) node.disabled = true;
+      return;
+    }
+    if (!STATE.hospitalDepartmentStructure || !options.some(function (option) { return option.value === STATE.hospitalDepartmentStructure; })) {
+      STATE.hospitalDepartmentStructure = options[0].value;
+    }
+    fillSelect("hiHospitalDepartmentStructureFilter", options, STATE.hospitalDepartmentStructure);
+    if (node) node.disabled = false;
   }
 
   function denominatorValueForRow(row, denominator) {
@@ -773,6 +848,7 @@
       ["hiBedsSeriesRegionFilter", "bedsSeriesRegion"],
       ["hiPharmaSeriesRegionFilter", "pharmaRegion"],
       ["hiHospitalRegionFilter", "hospitalRegion"],
+      ["hiHospitalDepartmentRegionFilter", "hospitalDepartmentRegion"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
       ["hiMobilityHospitalRegionFilter", "mobilityHospitalRegion"],
       ["hiTableRegionFilter", "tableRegion"]
@@ -811,6 +887,8 @@
       ["hiDisciplineMetricFilter", "disciplineMetric"],
       ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
       ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
+      ["hiHospitalDepartmentMetricFilter", "hospitalDepartmentMetric"],
+      ["hiHospitalDepartmentLimitFilter", "hospitalDepartmentLimit"],
       ["hiBedsSeriesMetricFilter", "bedsSeriesMetric"],
       ["hiBedsSeriesRatioFilter", "bedsSeriesRatio"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
@@ -821,6 +899,7 @@
       if (node) node.value = STATE[item[1]];
     });
     refreshDischargeStructureFilter();
+    refreshHospitalDepartmentStructureFilter();
 
     var tableSelect = byId("hiTableSelect");
     if (tableSelect) {
@@ -875,6 +954,11 @@
       ["hiHospitalRegionFilter", "hospitalRegion"],
       ["hiHospitalProvinceFilter", "hospitalProvince"],
       ["hiHospitalDisciplineFilter", "hospitalDiscipline"],
+      ["hiHospitalDepartmentRegionFilter", "hospitalDepartmentRegion"],
+      ["hiHospitalDepartmentProvinceFilter", "hospitalDepartmentProvince"],
+      ["hiHospitalDepartmentStructureFilter", "hospitalDepartmentStructure"],
+      ["hiHospitalDepartmentMetricFilter", "hospitalDepartmentMetric"],
+      ["hiHospitalDepartmentLimitFilter", "hospitalDepartmentLimit"],
       ["hiMobilityRatioFilter", "mobilityRatio"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
@@ -1502,6 +1586,48 @@
       hovertemplate: disciplineSelected ? "%{y}<br>" + STATE.hospitalDiscipline + ": %{x:,.0f} dimissioni<extra></extra>" : "%{y}<br>Dimissioni: %{x:,.0f}<extra></extra>"
     });
     createTable("hiHospitalTable", rows, tableOption(tableName).columns, 80);
+    renderHospitalDepartments();
+  }
+
+  function hospitalDepartmentMetricConfig() {
+    var metric = STATE.hospitalDepartmentMetric;
+    if (metric === "stay_days") return { label: "Giornate di degenza", field: "stay_days", xTitle: "giornate", color: COLORS[2], format: formatNumber };
+    if (metric === "ordinary_beds") return { label: "Posti letto ordinari", field: "ordinary_beds", xTitle: "posti letto ordinari", color: COLORS[3], format: formatNumber };
+    if (metric === "avg_los_days") return { label: "Degenza media", field: "avg_los_days", xTitle: "giorni", color: COLORS[4], format: formatDecimal };
+    if (metric === "bed_utilization_percent") return { label: "Utilizzo posti letto", field: "bed_utilization_percent", xTitle: "percentuale", color: COLORS[5], format: formatPercent };
+    return { label: "Dimissioni", field: "discharges", xTitle: "dimissioni", color: COLORS[1], format: formatNumber };
+  }
+
+  function renderHospitalDepartments() {
+    var config = hospitalDepartmentMetricConfig();
+    var rows = tableRows("hospital_activity_by_discipline").filter(function (row) {
+      return structureKey(row) === STATE.hospitalDepartmentStructure;
+    }).filter(function (row) {
+      return toNumber(row[config.field]) !== null;
+    });
+    rows = sortDescending(rows, config.field);
+    var selected = rows.length ? rows[0] : hospitalDepartmentStructureRows().find(function (row) {
+      return row.key === STATE.hospitalDepartmentStructure;
+    });
+    var structureLabel = selected && selected.structure ? selected.structure : "ospedale selezionato";
+    var title = byId("hiHospitalDepartmentTitle");
+    if (title) {
+      title.textContent = config.label + " per reparto - " + structureLabel;
+    }
+    horizontalBar("hiHospitalDepartmentChart", rows, "discipline", config.field, {
+      limit: chartLimit(STATE.hospitalDepartmentLimit, 20),
+      color: config.color,
+      leftMargin: 250,
+      labelLength: 42,
+      xTitle: config.xTitle,
+      format: config.format,
+      hovertemplate: "%{y}<br>" + config.label + ": %{text}<extra></extra>"
+    });
+    createTable("hiHospitalDepartmentTable", rows, tableOption("hospital_activity_by_discipline").columns, chartLimit(STATE.hospitalDepartmentLimit, 20));
+    var note = byId("hiHospitalDepartmentNote");
+    if (note) {
+      note.textContent = "Fonte: Ministero della Salute, dati di attivita dei reparti, 2022. Elaborazione di Nazareno Lecis. Vista selezionata: " + config.label + " per disciplina/reparto dentro la struttura ospedaliera.";
+    }
   }
 
   function renderMobility() {
@@ -1793,7 +1919,7 @@
       var item = create("div", "hi-coverage-item");
       item.appendChild(create("strong", "", rule.label));
       item.appendChild(create("span", "", rule.keywords && rule.keywords.length ? "Parole chiave: " + rule.keywords.join(", ") : "Regola generale se non ci sono parole chiave cliniche."));
-      item.appendChild(create("em", "", rule.denominator));
+      item.appendChild(create("em", "", denominatorLabel(rule.denominator)));
       container.appendChild(item);
     });
   }
@@ -1815,7 +1941,7 @@
   }
 
   function rowText(row) {
-    return Object.keys(row || {}).map(function (key) { return asText(row[key], ""); }).join(" ").toLowerCase();
+    return Object.keys(row || {}).map(function (key) { return asText(formatCell(key, row[key]), ""); }).join(" ").toLowerCase();
   }
 
   function rowMatchesExplorer(row) {
@@ -1909,6 +2035,7 @@
   function renderDynamic() {
     refreshProvinceFilters();
     refreshDischargeStructureFilter();
+    refreshHospitalDepartmentStructureFilter();
     renderNationalCharts();
     renderRegionalRank();
     renderRegionProfile();

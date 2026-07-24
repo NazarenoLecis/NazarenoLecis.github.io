@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-2">
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-3">
   <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-2"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-3"></script>
 </head>
 <body>
   <header class="site-header">
@@ -273,6 +273,39 @@
         </div>
         <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
         <p class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiHospitalDepartmentTitle">Dimissioni per reparto dentro l'ospedale</h3><span>Ministero Salute, 2022</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri reparti dentro l'ospedale">
+          <label>Territorio
+            <select id="hiHospitalDepartmentRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiHospitalDepartmentProvinceFilter"></select>
+          </label>
+          <label>Ospedale
+            <select id="hiHospitalDepartmentStructureFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiHospitalDepartmentMetricFilter">
+              <option value="discharges">Dimissioni</option>
+              <option value="stay_days">Giornate di degenza</option>
+              <option value="ordinary_beds">Posti letto ordinari</option>
+              <option value="avg_los_days">Degenza media</option>
+              <option value="bed_utilization_percent">Utilizzo posti letto</option>
+            </select>
+          </label>
+          <label>Numero reparti
+            <select id="hiHospitalDepartmentLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiHospitalDepartmentChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiHospitalDepartmentTable" class="hi-table-wrap"></div>
+        <p id="hiHospitalDepartmentNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. Il reparto corrisponde alla disciplina pubblicata nella fonte.</p>
       </article>
       <article class="hi-card">
         <div class="hi-card-title"><h3>Dettaglio strutture</h3><span>top volumi</span></div>
