@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="../../assets/sicurezza-dashboard-20260723-4.css">
   <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sicurezza-dashboard-20260724-1.js"></script>
+  <script defer src="../../assets/sicurezza-dashboard-20260813-1.js"></script>
 </head>
 <body>
   <header class="site-header">
@@ -64,6 +64,7 @@
       <a href="#persone">Autori/vittime</a>
       <a href="#controtendenze">Controtendenze</a>
       <a href="#percezione">Percezione</a>
+      <a href="#spesa-sicurezza">Spesa</a>
       <a href="#metodo">Metodo</a>
     </nav>
 
@@ -477,6 +478,56 @@
         <h3>Fonti di contesto</h3>
         <ul id="siPlannedSourceList" class="si-source-links"></ul>
       </article>
+    </section>
+
+    <section id="spesa-sicurezza" class="si-section">
+      <div class="si-section-head">
+        <span class="eyebrow">Spesa e mercato</span>
+        <div>
+          <h2>Risorse pubbliche e sicurezza privata</h2>
+          <p>Questa sezione affianca alle denunce il contesto macro: spesa pubblica per ordine pubblico e sicurezza e proxy del mercato privato della sicurezza.</p>
+        </div>
+      </div>
+      <p class="si-note"><strong>Nota:</strong> la spesa pubblica usa COFOG GF03, distinta dalla difesa COFOG GF02. La sicurezza privata usa Eurostat NACE N80 come proxy di mercato: non misura tutta la spesa privata effettiva di famiglie e imprese.</p>
+      <div class="si-chart-grid">
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Serie storica della spesa</h3><span id="siSecuritySpendingTrendTag">Italia</span></div>
+          <div class="si-chart-controls">
+            <label>Dominio<select data-si-control="securityDomain"></select></label>
+            <label>Paese<select data-si-control="securityGeo"></select></label>
+            <label>Confronta con<select data-si-control="securityCompareGeo"></select></label>
+            <label>Voce<select data-si-control="securityClassification"></select></label>
+            <label>Misura<select data-si-control="securityMeasure"></select></label>
+            <label>Normalizzazione<select data-si-control="securityTransform"></select></label>
+          </div>
+          <div id="siSecuritySpendingTrendChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> serie annuale macro, con valori normalizzabili in indice o variazione annua. Fonte: Eurostat. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Scomposizione micro</h3><span id="siSecuritySpendingBreakdownTag">dettaglio</span></div>
+          <div class="si-chart-controls">
+            <label>Dominio<select data-si-control="securityDomain"></select></label>
+            <label>Anno<select data-si-control="securityYear"></select></label>
+            <label>Paese<select data-si-control="securityGeo"></select></label>
+            <label>Misura<select data-si-control="securityMeasure"></select></label>
+            <label>Normalizzazione<select data-si-control="securityTransform"></select></label>
+          </div>
+          <div id="siSecuritySpendingBreakdownChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> sottovoci COFOG GF03 per la spesa pubblica e sottosettori NACE N80 per la sicurezza privata. Fonte: Eurostat. Elaborazione di Nazareno Lecis.</p>
+        </article>
+        <article class="si-panel si-chart-block">
+          <div class="si-panel-title"><h3>Confronto europeo</h3><span id="siSecuritySpendingRankingTag">ranking</span></div>
+          <div class="si-chart-controls">
+            <label>Dominio<select data-si-control="securityDomain"></select></label>
+            <label>Anno<select data-si-control="securityYear"></select></label>
+            <label>Voce<select data-si-control="securityClassification"></select></label>
+            <label>Misura<select data-si-control="securityMeasure"></select></label>
+            <label>Normalizzazione<select data-si-control="securityTransform"></select></label>
+          </div>
+          <div id="siSecuritySpendingRankingChart" class="si-chart"></div>
+          <p class="si-chart-credit"><strong>Nota:</strong> confronto fra paesi europei disponibili nella fonte; l'Italia è evidenziata. Fonte: Eurostat. Elaborazione di Nazareno Lecis.</p>
+        </article>
+      </div>
     </section>
 
     <section id="metodo" class="si-section">
