@@ -412,11 +412,24 @@
         ["structure", "Pronto soccorso"],
         ["emergency_level", "Livello PS/DEA"],
         ["accesses_total", "Accessi totali"],
-        ["wait_bianco_minutes", "Bianco"],
-        ["wait_verde_minutes", "Verde"],
-        ["wait_giallo_minutes", "Giallo"],
         ["wait_rosso_minutes", "Rosso"],
+        ["wait_arancione_minutes", "Arancione"],
+        ["wait_blu_minutes", "Blu/azzurro"],
+        ["wait_giallo_minutes", "Giallo"],
+        ["wait_verde_minutes", "Verde"],
+        ["wait_bianco_minutes", "Bianco"],
         ["mean_wait_minutes", "Media codici"]
+      ]
+    },
+    {
+      id: "ps_triage_codes",
+      label: "Codici triage PS",
+      columns: [
+        ["label", "Codice triage"],
+        ["priority", "Priorita"],
+        ["expected_access_minutes", "Tempo massimo"],
+        ["available_wait_times", "Tempi pubblicati"],
+        ["model", "Modello"]
       ]
     },
     {
@@ -597,6 +610,12 @@
   }
 
   function formatCell(column, value) {
+    if (column === "available_wait_times") return value ? "Si" : "No";
+    if (column === "expected_access_minutes") {
+      var accessMinutes = toNumber(value);
+      if (accessMinutes === null) return MISSING;
+      return accessMinutes === 0 ? "immediato" : formatNumber(accessMinutes) + " minuti";
+    }
     if (/wait_.*minutes|mean_wait_minutes|median_wait_minutes|max_wait_minutes/i.test(column)) return formatDurationMinutes(value);
     if (/million_eur$/i.test(column)) return formatMillionEuro(value);
     if (/per_capita_eur|per_over65_eur|per_over75_eur|per_discharge_eur/i.test(column)) return formatEuroDecimal(value);
@@ -776,7 +795,7 @@
   }
 
   function triageOrder(value) {
-    var order = { rosso: 1, arancione: 2, giallo: 3, verde: 4, blu: 5, bianco: 6 };
+    var order = { rosso: 1, arancione: 2, giallo: 3, blu: 4, verde: 5, bianco: 6 };
     return order[value] || 99;
   }
 
@@ -804,15 +823,39 @@
   }
 
   function psTriageOptions(includeAll) {
-    var values = unique(tableRows("ps_wait_times_by_structure_triage").map(function (row) {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.ps_triage_codes);
+    if (!rows.length) {
+      rows = unique(tableRows("ps_wait_times_by_structure_triage").map(function (row) {
+        return row.triage_code;
+      })).map(function (code) {
+        return { id: code, label: triageLabel(code), sort_order: triageOrder(code), available_wait_times: true };
+      });
+    }
+    rows = rows.slice().sort(function (a, b) {
+      return (toNumber(a.sort_order) || triageOrder(a.id)) - (toNumber(b.sort_order) || triageOrder(b.id));
+    });
+    var options = rows.map(function (row) {
+      return { value: row.id, label: row.label || triageLabel(row.id) };
+    });
+    return includeAll ? [{ value: "all", label: "Tutti i codici disponibili" }].concat(options) : options;
+  }
+
+  function psTriageAvailableCodes() {
+    return unique(tableRows("ps_wait_times_by_structure_triage").map(function (row) {
       return row.triage_code;
     })).sort(function (a, b) {
       return triageOrder(a) - triageOrder(b);
     });
-    var options = values.map(function (value) {
-      return { value: value, label: triageLabel(value) };
-    });
-    return includeAll ? [{ value: "all", label: "Tutti i codici disponibili" }].concat(options) : options;
+  }
+
+  function psTriageHasData(code) {
+    if (!code || code === "all") return true;
+    return psTriageAvailableCodes().indexOf(code) !== -1;
+  }
+
+  function psTriageUnavailableText(code) {
+    if (psTriageHasData(code)) return "";
+    return triageLabel(code) + " fa parte del modello triage AGENAS a 5 codici, ma l'endpoint pubblico dei tempi PS non pubblica valori per questo colore nel payload corrente.";
   }
 
   function psStructureKey(row) {
@@ -1260,7 +1303,26 @@
     var node = byId(id);
     if (!node) return;
     if (window.Plotly) {
-      try { window.Plotly.purge(node); } catch (error) {}
+      try {
+        window.Plotly.react(node, [], baseLayout({
+          margin: { t: 16, r: 18, b: 28, l: 18 },
+          xaxis: { visible: false },
+          yaxis: { visible: false },
+          annotations: [{
+            text: message || "Nessun dato disponibile",
+            x: 0.5,
+            y: 0.5,
+            xref: "paper",
+            yref: "paper",
+            showarrow: false,
+            font: { size: 14, color: cssVar("--muted", "#b9b2aa") }
+          }]
+        }), plotConfig()).catch(function () {
+          clear(node);
+          node.appendChild(create("div", "hi-empty", message || "Nessun dato disponibile"));
+        });
+        return;
+      } catch (error) {}
     }
     clear(node);
     node.appendChild(create("div", "hi-empty", message || "Nessun dato disponibile"));
@@ -2179,8 +2241,8 @@
   }
 
   function psAvailableCodesText() {
-    var values = psTriageOptions(false).map(function (option) {
-      return option.label.replace("Codice ", "").toLowerCase();
+    var values = psTriageAvailableCodes().map(function (code) {
+      return triageLabel(code).replace("Codice ", "").toLowerCase();
     });
     return values.length ? values.join(", ") : "codici disponibili";
   }
@@ -2221,9 +2283,10 @@
     var triageText = STATE.psRegionTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psRegionTriage).toLowerCase();
     if (title) title.textContent = "Pronto soccorso: " + psMetricLabel(metric) + " - " + triageText;
     setTag("hiPsRegionTag", "2024 - " + psMetricLabel(metric));
+    var unavailable = psTriageUnavailableText(STATE.psRegionTriage);
     setChartCredit("hiPsRegionNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Il tempo misura la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita. Il confronto regionale e non pesato per struttura; l'endpoint pubblico usato espone " + psAvailableCodesText() + ", non blu/azzurro e arancione.");
+    ], "Il tempo misura la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita. Il confronto regionale e non pesato per struttura. La pagina AGENAS descrive il triage a 5 codici; l'endpoint pubblico dei tempi nel payload corrente pubblica valori per " + psAvailableCodesText() + "." + (unavailable ? " " + unavailable : ""));
     horizontalBar("hiPsRegionChart", rows, "region", "selected_value", {
       limit: 21,
       highlight: STATE.psRegion,
@@ -2302,9 +2365,10 @@
       hovertemplate: "%{y}<br>Permanenza: %{text}<extra></extra>"
     });
     createTable("hiPsStructureTable", rows, tableColumns, selectedStructure ? 20 : chartLimit(STATE.psStructureLimit, 20));
+    var unavailable = psTriageUnavailableText(STATE.psStructureTriage);
     setChartCredit("hiPsStructureNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. Accessi totali e livello PS/DEA sono riportati in tabella; gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore.");
+    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. Accessi totali e livello PS/DEA sono riportati in tabella; gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " " + unavailable : ""));
   }
 
   function renderWaitingLists() {
