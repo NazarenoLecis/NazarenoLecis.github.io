@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260813-2">
-  <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
-  <script defer src="../../assets/lang.js"></script>
+  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260813-3">
+  <script defer src="../../assets/theme.js?v=20260813-demografia-1"></script>
+  <script defer src="../../assets/lang.js?v=20260813-demografia-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/demografia-dashboard.js?v=20260813-2"></script>
+  <script defer src="../../assets/demografia-dashboard.js?v=20260813-3"></script>
 </head>
 <body>
   <header class="site-header">
@@ -126,6 +126,12 @@
         </div>
         <div id="diKebabChart" class="di-chart di-chart-tall"></div>
         <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>. Elaborazione: Nazareno Lecis. Nota: totale residenti mostra una sola distribuzione; la sovrapposizione nati nel paese / nati all'estero mostra due profili distinti sulla stessa scala. Nati all'estero misura i residenti nati fuori dal paese selezionato, non i soli cittadini stranieri; nati nel paese è calcolato sottraendo i nati all'estero dai residenti totali. La percentuale sulla popolazione selezionata usa come denominatore solo il profilo scelto; la percentuale sulla popolazione totale usa tutti i residenti del territorio e dell'anno. Le regioni italiane sono disponibili per il totale residenti, ma non per questa scomposizione per paese di nascita in <code>migr_pop3ctb</code>. Fissa sulla selezione mantiene la scala stabile tra gli anni della scelta corrente; Scala comune rende confrontabili paesi e regioni; Adatta ai dati ingrandisce l'anno visualizzato.</p>
+      </article>
+      <article class="di-card di-chart-block">
+        <div class="di-card-title"><h3>Paese di nascita e cittadinanza</h3><span id="diBirthCitizenshipTag">Italia</span></div>
+        <p class="di-explain">Nascere in Italia e avere cittadinanza italiana sono due dimensioni diverse. Il grafico confronta i totali marginali disponibili: serve a leggere il perimetro, non a stimare l'incrocio esatto tra nati in Italia e cittadini stranieri.</p>
+        <div id="diBirthCitizenshipChart" class="di-chart"></div>
+        <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop1ctz/default/table" target="_blank" rel="noopener"><code>migr_pop1ctz</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>; <a href="https://demo.istat.it/app/?i=RCS&l=it" target="_blank" rel="noopener">nota metodologica ISTAT sulla popolazione per cittadinanza o paese di nascita</a>. Elaborazione: Nazareno Lecis. Nota: il dato esatto sui residenti nati in Italia senza cittadinanza italiana richiede l'incrocio tra cittadinanza e paese di nascita. ISTAT segnala che questo incrocio non è rilasciato nelle tavole aperte e può essere richiesto come elaborazione personalizzata tramite Contact Centre. Per questo il grafico mostra le due marginali, non una stima del sottoinsieme.</p>
       </article>
     </section>
 

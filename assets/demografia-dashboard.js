@@ -1715,6 +1715,66 @@
     });
   }
 
+  function latestItalyStockYear(payload) {
+    var citizenshipYears = unique((payload.population_by_citizenship || []).filter(function (row) {
+      return row.iso3 === "ITA" && row.sex === "T";
+    }).map(function (row) { return row.year; }));
+    var birthYears = unique((payload.population_by_country_of_birth || []).filter(function (row) {
+      return row.iso3 === "ITA" && row.sex === "T";
+    }).map(function (row) { return row.year; }));
+    var birthSet = new Set(birthYears.map(function (year) { return Number(year); }));
+    var years = citizenshipYears.map(Number).filter(function (year) { return birthSet.has(year); }).sort(function (a, b) { return a - b; });
+    return years.length ? years[years.length - 1] : null;
+  }
+
+  function stockCategoryValue(rows, category) {
+    var row = rows.find(function (item) { return item.category === category; });
+    return row ? toNumber(row.value) : null;
+  }
+
+  function renderBirthCitizenshipReadingChart(payload) {
+    var year = latestItalyStockYear(payload);
+    if (year === null) return showEmpty("diBirthCitizenshipChart");
+    var citizenshipRows = (payload.population_by_citizenship || []).filter(function (row) {
+      return row.iso3 === "ITA" && row.sex === "T" && Number(row.year) === Number(year);
+    });
+    var birthRows = (payload.population_by_country_of_birth || []).filter(function (row) {
+      return row.iso3 === "ITA" && row.sex === "T" && Number(row.year) === Number(year);
+    });
+    var total = stockCategoryValue(citizenshipRows, "TOTAL") || stockCategoryValue(birthRows, "TOTAL");
+    var bornInItaly = stockCategoryValue(birthRows, "NAT");
+    var foreignBorn = stockCategoryValue(birthRows, "FOR");
+    var italianCitizens = stockCategoryValue(citizenshipRows, "NAT");
+    var foreignCitizens = stockCategoryValue(citizenshipRows, "FOR_STLS");
+    var x = [textFor("Paese di nascita", "Country of birth"), textFor("Cittadinanza", "Citizenship")];
+    var tag = byId("diBirthCitizenshipTag");
+    if (tag) tag.textContent = textFor("Italia, ", "Italy, ") + year;
+    plot("diBirthCitizenshipChart", [
+      {
+        type: "bar",
+        name: textFor("Nati in Italia / cittadini italiani", "Born in Italy / Italian citizens"),
+        x: x,
+        y: [bornInItaly, italianCitizens].map(function (value) { return value && total ? (value / total) * 100 : null; }),
+        marker: { color: COLORS.orange },
+        customdata: [bornInItaly, italianCitizens],
+        hovertemplate: "%{x}<br>%{customdata:,.0f}<br>%{y:.1f}%<extra></extra>"
+      },
+      {
+        type: "bar",
+        name: textFor("Nati all'estero / cittadini stranieri o apolidi", "Foreign-born / foreign or stateless citizens"),
+        x: x,
+        y: [foreignBorn, foreignCitizens].map(function (value) { return value && total ? (value / total) * 100 : null; }),
+        marker: { color: COLORS.blue },
+        customdata: [foreignBorn, foreignCitizens],
+        hovertemplate: "%{x}<br>%{customdata:,.0f}<br>%{y:.1f}%<extra></extra>"
+      }
+    ], {
+      barmode: "stack",
+      yaxis: { title: { text: textFor("% residenti", "% residents") }, ticksuffix: "%", range: [0, 100] },
+      margin: { l: 78, r: 34, t: 18, b: 72 }
+    });
+  }
+
   function renderPopulationChart(payload) {
     var metric = METRICS[STATE.seriesMetric];
     var traces = [metricSeriesTrace(payload, STATE.seriesTerritory, STATE.seriesMetric, COLORS.orange, "solid", territoryLabel(payload, STATE.seriesTerritory))];
@@ -2163,6 +2223,7 @@
     renderKpis(payload);
     renderControls(payload);
     renderKebabChart(payload);
+    renderBirthCitizenshipReadingChart(payload);
     renderPopulationChart(payload);
     renderAgeSharesChart(payload);
     renderAgeDistributionChart(payload);
@@ -2195,7 +2256,7 @@
     [
       "diKebabChart", "diPopulationChart", "diAgeSharesChart", "diAgeDistributionChart", "diDependencyChart",
       "diRegionalRankChart", "diRegionalSeriesChart", "diFertilityChart", "diBirthDeathChart", "diMigrationChart",
-      "diMigrationAgeChart", "diMigrationCitizenshipChart", "diEducationChart", "diTertiaryChart",
+      "diBirthCitizenshipChart", "diMigrationAgeChart", "diMigrationCitizenshipChart", "diEducationChart", "diTertiaryChart",
       "diMigrantEducationChart", "diMigrantTertiaryRegionChart", "diEuropeRankChart", "diEuropeSeriesChart"
     ].forEach(function (id) {
       showEmpty(id, textFor("Dati non disponibili.", "Data not available."));

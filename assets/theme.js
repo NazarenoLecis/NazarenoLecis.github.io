@@ -678,8 +678,10 @@
     if (noteLabel) noteLabel.textContent = english ? "Note:" : "Nota:";
     if (english) {
       replaceDashboardCreditText(element, "Elaborazione di Nazareno Lecis.", "Processing by Nazareno Lecis.");
+      replaceDashboardCreditText(element, "nota metodologica ISTAT", "ISTAT methodological note");
     } else {
       replaceDashboardCreditText(element, "Processing by Nazareno Lecis.", "Elaborazione di Nazareno Lecis.");
+      replaceDashboardCreditText(element, "ISTAT methodological note", "nota metodologica ISTAT");
     }
   }
 
