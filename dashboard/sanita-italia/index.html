@@ -77,7 +77,8 @@
       <a href="#salute">Salute</a>
       <a href="#tumori-recenti">Tumori recenti</a>
       <a href="#mortalita">Mortalit&agrave;</a>
-      <a href="#pronto-soccorso">PS e attese</a>
+      <a href="#pronto-soccorso">Pronto soccorso</a>
+      <a href="#liste-attesa">Liste d'attesa</a>
       <a href="#italia">Dimissioni</a>
       <a href="#strutture">Strutture</a>
       <a href="#regioni">Regioni</a>
@@ -333,8 +334,8 @@
 
     <section id="pronto-soccorso" class="dashboard-section">
       <div class="section-head">
-        <span class="eyebrow">Pronto soccorso e liste d'attesa</span>
-        <div><h2>Quanto si resta in PS e quanto si attende per visite ed esami</h2><p>Il PS arriva alla singola struttura. Le liste d'attesa PNLA sono confrontabili per regione, prestazione, priorita, regime e tipo accesso.</p></div>
+        <span class="eyebrow">Pronto soccorso</span>
+        <div><h2>Tempi di permanenza in pronto soccorso</h2><p>Confronto per regione, provincia, struttura e codice triage. I dati misurano la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiPsRegionTitle">Tempi PS per regione</h3><span id="hiPsRegionTag">AGENAS, 2024</span></div>
@@ -382,6 +383,13 @@
         <div id="hiPsStructureTable" class="hi-table-wrap"></div>
         <p id="hiPsStructureNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
       </article>
+    </section>
+
+    <section id="liste-attesa" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Liste d'attesa</span>
+        <div><h2>Quanto si attende per visite ed esami PNLA</h2><p>Sezione separata dal pronto soccorso: qui il confronto avviene per prestazione, priorit&agrave;, regime, tipo accesso e territorio, cos&igrave; tempi e volumi non vengono mescolati ai flussi di emergenza.</p></div>
+      </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiWaitingRegionTitle">Liste d'attesa per regione</h3><span id="hiWaitingRegionTag">PNLA</span></div>
         <p id="hiWaitingRegionSubtitle" class="hi-card-subtitle">Confronto tra regioni e province autonome sulla stessa prestazione, priorit&agrave;, regime e misura.</p>
