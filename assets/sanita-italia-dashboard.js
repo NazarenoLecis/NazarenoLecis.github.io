@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260813-health-2",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260813-health-2",
+    "../../data/sanita-italia/dashboard.json?v=20260813-cancer-detail-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260813-cancer-detail-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -70,6 +70,8 @@
     healthTrendTerritory: "Italia",
     healthTrendGroup: "risk_smoking",
     healthTrendIndicator: "smokers_15_plus",
+    cancerRecentMetric: "new_cases",
+    cancerRecentSite: "pancreas",
     mortalityGroup: "mortality_cancers",
     mortalityIndicator: "mortality_tumors",
     mortalityYear: "latest",
@@ -80,6 +82,13 @@
     mortalityTrendTerritory: "Italia",
     mortalityTrendGroup: "mortality_cancers",
     mortalityTrendIndicator: "mortality_tumors",
+    mortalityDetailGroup: "cancer_detail",
+    mortalityDetailCause: "C25",
+    mortalityDetailYear: "latest",
+    mortalityDetailTerritoryFocus: "Italia",
+    mortalityDetailTrendTerritory: "Italia",
+    mortalityDetailTrendGroup: "cancer_detail",
+    mortalityDetailTrendCause: "C25",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -507,6 +516,50 @@
       ]
     },
     {
+      id: "recent_cancer_estimates",
+      label: "Stime oncologiche recenti",
+      columns: [
+        ["site", "Sede tumorale"],
+        ["incidence_year", "Anno incidenza"],
+        ["new_cases", "Nuove diagnosi"],
+        ["new_cases_male", "Uomini"],
+        ["new_cases_female", "Donne"],
+        ["mortality_year", "Anno mortalita"],
+        ["deaths", "Decessi"],
+        ["prevalence_year", "Anno prevalenza"],
+        ["prevalence", "Prevalenza"],
+        ["survival_5y_label", "Sopravvivenza 5 anni"],
+        ["source", "Fonte"]
+      ]
+    },
+    {
+      id: "mortality_detail_by_territory_year",
+      label: "Mortalita dettagliata Eurostat",
+      columns: [
+        ["year", "Anno"],
+        ["territory", "Territorio"],
+        ["cause", "Causa"],
+        ["group_label", "Gruppo"],
+        ["cause_code", "Codice ICD-10"],
+        ["value", "Tasso standardizzato"],
+        ["unit_label", "Unita"],
+        ["definition", "Definizione"]
+      ]
+    },
+    {
+      id: "mortality_detail_causes",
+      label: "Cause mortalita Eurostat",
+      columns: [
+        ["cause_code", "Codice ICD-10"],
+        ["label", "Causa"],
+        ["group_label", "Gruppo"],
+        ["first_year", "Primo anno"],
+        ["latest_year", "Ultimo anno"],
+        ["unit_label", "Unita"],
+        ["definition", "Definizione"]
+      ]
+    },
+    {
       id: "definitions",
       label: "Definizioni",
       columns: [
@@ -635,7 +688,7 @@
     if (/mean_.*days/i.test(column)) return formatDecimal(value);
     if (column === "selected_value" || column === "value") return formatDecimal(value);
     if (/per_1000|avg_los|share|change|utilization/i.test(column)) return formatDecimal(value);
-    if (/population|beds|discharges|days|total|structures|deaths|transfers|masked|year/i.test(column)) return formatNumber(value);
+    if (/population|beds|discharges|cases|prevalence|days|total|structures|deaths|transfers|masked|year/i.test(column)) return formatNumber(value);
     return asText(value);
   }
 
@@ -1616,6 +1669,171 @@
     return parts.join(" ");
   }
 
+  function recentCancerRows() {
+    return tableRows("recent_cancer_estimates");
+  }
+
+  function recentCancerTotals() {
+    return tableRows("recent_cancer_totals");
+  }
+
+  function recentCancerMetricOptions() {
+    var options = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.recent_cancer_metrics);
+    if (!options.length) {
+      options = [
+        { id: "new_cases", label: "Nuove diagnosi stimate", year_label: "incidenza 2024" },
+        { id: "deaths", label: "Decessi stimati", year_label: "mortalita 2022" },
+        { id: "prevalence", label: "Persone viventi dopo diagnosi", year_label: "prevalenza 2024" }
+      ];
+    }
+    return options.map(function (option) {
+      return { value: option.id, label: option.label, yearLabel: option.year_label };
+    });
+  }
+
+  function recentCancerMetricConfig(metric) {
+    var match = recentCancerMetricOptions().find(function (option) { return option.value === metric; }) || recentCancerMetricOptions()[0];
+    if (!match || match.value === "new_cases") {
+      return { field: "new_cases", label: "Nuove diagnosi stimate", shortLabel: "nuove diagnosi", yearLabel: "incidenza 2024", xTitle: "casi stimati", format: formatNumber };
+    }
+    if (match.value === "deaths") {
+      return { field: "deaths", label: "Decessi stimati", shortLabel: "decessi", yearLabel: "mortalita 2022", xTitle: "decessi stimati", format: formatNumber };
+    }
+    return { field: "prevalence", label: "Persone viventi dopo diagnosi", shortLabel: "prevalenza", yearLabel: "prevalenza 2024", xTitle: "persone", format: formatNumber };
+  }
+
+  function recentCancerSiteOptions() {
+    return recentCancerRows().map(function (row) {
+      return { value: row.site_id, label: row.site };
+    });
+  }
+
+  function recentCancerSelectedSite() {
+    return recentCancerRows().find(function (row) {
+      return row.site_id === STATE.cancerRecentSite;
+    }) || recentCancerRows()[0] || null;
+  }
+
+  function refreshRecentCancerFilters() {
+    var metricOptions = recentCancerMetricOptions();
+    var siteOptions = recentCancerSiteOptions();
+    if (!metricOptions.some(function (option) { return option.value === STATE.cancerRecentMetric; })) {
+      STATE.cancerRecentMetric = metricOptions[0] ? metricOptions[0].value : "new_cases";
+    }
+    if (!siteOptions.some(function (option) { return option.value === STATE.cancerRecentSite; })) {
+      var pancreas = siteOptions.find(function (option) { return option.value === "pancreas"; });
+      STATE.cancerRecentSite = pancreas ? pancreas.value : (siteOptions[0] ? siteOptions[0].value : "");
+    }
+    fillSelect("hiCancerRecentMetricFilter", metricOptions, STATE.cancerRecentMetric);
+    fillSelect("hiCancerRecentSiteFilter", siteOptions, STATE.cancerRecentSite);
+  }
+
+  function mortalityDetailRows() {
+    return tableRows("mortality_detail_by_territory_year");
+  }
+
+  function mortalityDetailCauses() {
+    return toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.mortality_detail_causes);
+  }
+
+  function mortalityDetailGroups() {
+    return toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.mortality_detail_groups).map(function (group) {
+      return { value: group.id, label: group.label };
+    });
+  }
+
+  function mortalityDetailTerritoryOptions() {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.mortality_detail_territories);
+    return rows.map(function (row) {
+      return { value: row.id || row.territory, label: row.label || row.territory };
+    });
+  }
+
+  function mortalityDetailCauseOptions(group) {
+    return mortalityDetailCauses().filter(function (cause) {
+      return !group || cause.group === group;
+    }).map(function (cause) {
+      return { value: cause.cause_code || cause.id, label: compact(cause.label, 76) };
+    });
+  }
+
+  function mortalityDetailCauseByCode(code) {
+    return mortalityDetailCauses().find(function (cause) {
+      return cause.cause_code === code || cause.id === code;
+    }) || null;
+  }
+
+  function mortalityDetailYearsForCause(causeCode, regionalOnly) {
+    var years = unique(mortalityDetailRows().filter(function (row) {
+      if (row.cause_code !== causeCode) return false;
+      return !regionalOnly || row.territory_type === "region";
+    }).map(function (row) { return row.year; })).sort(function (a, b) { return b - a; });
+    if (!years.length && regionalOnly) return mortalityDetailYearsForCause(causeCode, false);
+    return years;
+  }
+
+  function mortalityDetailYearOptions(causeCode, regionalOnly) {
+    var years = mortalityDetailYearsForCause(causeCode, regionalOnly);
+    return [{ value: "latest", label: regionalOnly ? "Ultimo anno con regioni" : "Ultimo anno disponibile" }].concat(years.map(function (year) {
+      return { value: String(year), label: String(year) };
+    }));
+  }
+
+  function mortalityDetailYearValue(value, causeCode, regionalOnly) {
+    if (value === "latest") {
+      var years = mortalityDetailYearsForCause(causeCode, regionalOnly);
+      return years.length ? years[0] : null;
+    }
+    return toNumber(value);
+  }
+
+  function refreshMortalityDetailFilters() {
+    var groupOptions = mortalityDetailGroups();
+    var territoryOptions = mortalityDetailTerritoryOptions();
+    if (!groupOptions.some(function (option) { return option.value === STATE.mortalityDetailGroup; })) {
+      STATE.mortalityDetailGroup = groupOptions[0] ? groupOptions[0].value : "cancer_detail";
+    }
+    if (!groupOptions.some(function (option) { return option.value === STATE.mortalityDetailTrendGroup; })) {
+      STATE.mortalityDetailTrendGroup = STATE.mortalityDetailGroup;
+    }
+    var causeOptions = mortalityDetailCauseOptions(STATE.mortalityDetailGroup);
+    if (!causeOptions.some(function (option) { return option.value === STATE.mortalityDetailCause; })) {
+      var pancreas = causeOptions.find(function (option) { return option.value === "C25"; });
+      STATE.mortalityDetailCause = pancreas ? pancreas.value : (causeOptions[0] ? causeOptions[0].value : "");
+    }
+    var trendCauseOptions = mortalityDetailCauseOptions(STATE.mortalityDetailTrendGroup);
+    if (!trendCauseOptions.some(function (option) { return option.value === STATE.mortalityDetailTrendCause; })) {
+      var trendPancreas = trendCauseOptions.find(function (option) { return option.value === "C25"; });
+      STATE.mortalityDetailTrendCause = trendPancreas ? trendPancreas.value : (trendCauseOptions[0] ? trendCauseOptions[0].value : "");
+    }
+    if (!territoryOptions.some(function (option) { return option.value === STATE.mortalityDetailTerritoryFocus; })) STATE.mortalityDetailTerritoryFocus = "Italia";
+    if (!territoryOptions.some(function (option) { return option.value === STATE.mortalityDetailTrendTerritory; })) STATE.mortalityDetailTrendTerritory = "Italia";
+    if (!mortalityDetailYearOptions(STATE.mortalityDetailCause, true).some(function (option) { return option.value === STATE.mortalityDetailYear; })) STATE.mortalityDetailYear = "latest";
+
+    fillSelect("hiMortalityDetailGroupFilter", groupOptions, STATE.mortalityDetailGroup);
+    fillSelect("hiMortalityDetailCauseFilter", causeOptions, STATE.mortalityDetailCause);
+    fillSelect("hiMortalityDetailYearFilter", mortalityDetailYearOptions(STATE.mortalityDetailCause, true), STATE.mortalityDetailYear);
+    fillSelect("hiMortalityDetailFocusFilter", territoryOptions, STATE.mortalityDetailTerritoryFocus);
+    fillSelect("hiMortalityDetailTrendTerritoryFilter", territoryOptions, STATE.mortalityDetailTrendTerritory);
+    fillSelect("hiMortalityDetailTrendGroupFilter", groupOptions, STATE.mortalityDetailTrendGroup);
+    fillSelect("hiMortalityDetailTrendCauseFilter", trendCauseOptions, STATE.mortalityDetailTrendCause);
+  }
+
+  function formatMortalityDetailValue(value) {
+    return formatDecimal(value);
+  }
+
+  function mortalityDetailNote(cause, year, extra) {
+    var parts = [];
+    parts.push("Dato Eurostat: tasso standardizzato per eta, sesso totale e tutte le eta, per regione NUTS2 di residenza.");
+    if (cause) parts.push("Causa ICD-10 selezionata: " + cause.label + " (" + (cause.cause_code || cause.id) + ").");
+    if (year) parts.push("Anno selezionato: " + year + ".");
+    if (STATE.mortalityDetailTerritoryFocus) parts.push("Territorio evidenziato nel grafico: " + STATE.mortalityDetailTerritoryFocus + ".");
+    parts.push("Misura decessi, non nuovi casi, prevalenza, tempi di attesa o qualita delle cure.");
+    if (extra) parts.push(extra);
+    return parts.join(" ");
+  }
+
   function refreshHealthFilters() {
     var groupOptions = healthGroupOptions("health");
     var territoryOptions = healthTerritoryOptions();
@@ -1785,7 +2003,9 @@
     });
     refreshWaitingFilters(regionOptions);
     refreshHealthFilters();
+    refreshRecentCancerFilters();
     refreshMortalityFilters();
+    refreshMortalityDetailFilters();
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
@@ -1867,6 +2087,8 @@
       ["hiHealthTrendTerritoryFilter", "healthTrendTerritory"],
       ["hiHealthTrendGroupFilter", "healthTrendGroup"],
       ["hiHealthTrendIndicatorFilter", "healthTrendIndicator"],
+      ["hiCancerRecentMetricFilter", "cancerRecentMetric"],
+      ["hiCancerRecentSiteFilter", "cancerRecentSite"],
       ["hiMortalityGroupFilter", "mortalityGroup"],
       ["hiMortalityIndicatorFilter", "mortalityIndicator"],
       ["hiMortalityYearFilter", "mortalityYear"],
@@ -1877,6 +2099,13 @@
       ["hiMortalityTrendTerritoryFilter", "mortalityTrendTerritory"],
       ["hiMortalityTrendGroupFilter", "mortalityTrendGroup"],
       ["hiMortalityTrendIndicatorFilter", "mortalityTrendIndicator"],
+      ["hiMortalityDetailGroupFilter", "mortalityDetailGroup"],
+      ["hiMortalityDetailCauseFilter", "mortalityDetailCause"],
+      ["hiMortalityDetailYearFilter", "mortalityDetailYear"],
+      ["hiMortalityDetailFocusFilter", "mortalityDetailTerritoryFocus"],
+      ["hiMortalityDetailTrendTerritoryFilter", "mortalityDetailTrendTerritory"],
+      ["hiMortalityDetailTrendGroupFilter", "mortalityDetailTrendGroup"],
+      ["hiMortalityDetailTrendCauseFilter", "mortalityDetailTrendCause"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -1948,7 +2177,8 @@
       ["Pronto soccorso", kpis.ps_structures, "AGENAS " + asText(kpis.ps_year), "tempi per struttura e codice triage"],
       ["Liste d'attesa", kpis.pnla_bookings_latest, "PNLA " + asText(kpis.pnla_year), formatNumber(kpis.pnla_services) + " prestazioni monitorate"],
       ["Salute italiani", kpis.health_status_indicators || kpis.health_indicators, "ISTAT HFA", "fattori, condizioni, limitazioni e tumori non-mortalita"],
-      ["Mortalita per causa", kpis.mortality_indicators, "ISTAT HFA", formatNumber(kpis.health_latest_mortality_year) + " ultimo anno disponibile"],
+      ["Tumori recenti", kpis.recent_cancer_estimated_cases_2025, "AIRTUM 2025", formatNumber(kpis.recent_cancer_sites) + " sedi tumorali nel dettaglio AIOM"],
+      ["Mortalita dettagliata", kpis.mortality_detail_causes, "Eurostat " + asText(kpis.mortality_detail_latest_year), "cause ICD-10 con regioni NUTS2"],
       ["Saldo mobilita", formatEuroCompact(mobility.balance_eur), "Corte dei conti " + asText(mobility.year), formatEuroDecimal(mobility.balance_per_capita_eur) + " per abitante"]
     ];
     var container = byId("hiKpis");
@@ -2688,6 +2918,56 @@
     renderHealthTerritoryChart();
     renderHealthProfileChart();
     renderHealthTrendChart();
+    renderRecentCancer();
+  }
+
+  function renderRecentCancer() {
+    var config = recentCancerMetricConfig(STATE.cancerRecentMetric);
+    var selectedSite = recentCancerSelectedSite();
+    var rows = recentCancerRows().map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row[config.field]);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    rows = sortDescending(rows, "selected_value");
+    var title = byId("hiCancerRecentTitle");
+    var titleFocus = selectedSite ? " - focus " + selectedSite.site : "";
+    if (title) title.textContent = config.label + " per sede tumorale - Italia" + titleFocus;
+    var total = recentCancerTotals().find(function (row) {
+      return row.metric === "new_malignant_cancers_estimate";
+    });
+    var totalText = total ? " AIRTUM stima " + formatNumber(total.value) + " nuovi tumori maligni nel 2025." : "";
+    var selectedText = selectedSite ? " Sede in evidenza: " + selectedSite.site + "." : "";
+    setSubtitle("hiCancerRecentSubtitle", "Scheda nazionale AIOM/AIRTUM: " + config.yearLabel + " per sede tumorale." + totalText + selectedText);
+    setTag("hiCancerRecentTag", config.yearLabel + " - Italia");
+    horizontalBar("hiCancerRecentChart", rows, "site", "selected_value", {
+      limit: 20,
+      color: COLORS[6],
+      highlightField: "site_id",
+      highlight: STATE.cancerRecentSite,
+      leftMargin: 150,
+      xTitle: config.xTitle,
+      format: config.format,
+      hovertemplate: "%{y}<br>" + config.label + ": %{text}<extra></extra>"
+    });
+    createTable("hiCancerRecentTable", rows.map(function (row) {
+      return Object.assign({}, row, {
+        selected_value_text: config.format(row.selected_value)
+      });
+    }), [
+      ["site", "Sede tumorale"],
+      ["selected_value_text", config.label],
+      ["new_cases", "Nuove diagnosi"],
+      ["deaths", "Decessi"],
+      ["prevalence", "Prevalenza"],
+      ["survival_5y_label", "Sopravvivenza 5 anni"]
+    ], 20);
+    setChartCredit("hiCancerRecentNote", [
+      { id: "aiom_cancer_numbers_2025", label: "I numeri del cancro in Italia 2025" },
+      { id: "airtum_incidence_2025", label: "AIRTUM incidenza 2025" }
+    ], "Stime nazionali per sede tumorale: incidenza 2024, mortalita 2022 e prevalenza riportate nel volume AIOM/AIRTUM 2025. " + (selectedSite ? "Sede evidenziata: " + selectedSite.site + ". " : "") + "Il totale 2025 e una stima nazionale AIRTUM, non una serie regionale. Per confronti regionali di mortalita usa il grafico Eurostat sotto.");
   }
 
   function renderHealthTerritoryChart() {
@@ -2872,6 +3152,115 @@
     renderMortalityTerritoryChart();
     renderMortalityProfileChart();
     renderMortalityTrendChart();
+    renderMortalityDetail();
+  }
+
+  function renderMortalityDetail() {
+    renderMortalityDetailTerritoryChart();
+    renderMortalityDetailTrendChart();
+  }
+
+  function renderMortalityDetailTerritoryChart() {
+    var cause = mortalityDetailCauseByCode(STATE.mortalityDetailCause);
+    if (!cause) {
+      showEmptyChart("hiMortalityDetailChart");
+      return;
+    }
+    var year = mortalityDetailYearValue(STATE.mortalityDetailYear, STATE.mortalityDetailCause, true);
+    var rows = mortalityDetailRows().filter(function (row) {
+      return row.cause_code === STATE.mortalityDetailCause && row.year === year;
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row.value);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    rows = sortDescending(rows, "selected_value");
+    var title = byId("hiMortalityDetailTitle");
+    var focusLabel = STATE.mortalityDetailTerritoryFocus || "Italia";
+    var detailFocusTitle = focusLabel && focusLabel !== "Italia" ? " - focus " + focusLabel : "";
+    if (title) title.textContent = cause.label + " per regione" + detailFocusTitle;
+    setSubtitle("hiMortalityDetailSubtitle", "Confronto territoriale Eurostat sul tasso standardizzato di mortalita. Gruppo: " + asText(cause.group_label) + ". Territorio evidenziato: " + focusLabel + ".");
+    setTag("hiMortalityDetailTag", "Eurostat " + asText(year) + " - per 100.000 standardizzato");
+    horizontalBar("hiMortalityDetailChart", rows, "territory", "selected_value", {
+      limit: 22,
+      color: COLORS[5],
+      highlightField: "territory",
+      highlight: STATE.mortalityDetailTerritoryFocus,
+      leftMargin: 160,
+      xTitle: "decessi per 100.000 abitanti, tasso standardizzato",
+      format: formatMortalityDetailValue,
+      hovertemplate: "%{y}<br>" + cause.label + ": %{text}<br>Tasso standardizzato per 100.000<extra></extra>"
+    });
+    createTable("hiMortalityDetailTable", rows.map(function (row) {
+      return Object.assign({}, row, {
+        selected_value_text: formatMortalityDetailValue(row.selected_value)
+      });
+    }), [
+      ["territory", "Territorio"],
+      ["cause", "Causa"],
+      ["cause_code", "Codice ICD-10"],
+      ["year", "Anno"],
+      ["selected_value_text", "Tasso standardizzato"]
+    ], 80);
+    setChartCredit("hiMortalityDetailNote", [
+      { id: "eurostat_mortality_detail", label: "Eurostat hlth_cd_asdr2" }
+    ], mortalityDetailNote(cause, year, "Il confronto usa la popolazione standard Eurostat: e piu adatto dei conteggi assoluti quando le regioni hanno eta medie diverse."));
+  }
+
+  function renderMortalityDetailTrendChart() {
+    var cause = mortalityDetailCauseByCode(STATE.mortalityDetailTrendCause);
+    var territory = STATE.mortalityDetailTrendTerritory;
+    if (!cause) {
+      showEmptyChart("hiMortalityDetailTrendChart");
+      return;
+    }
+    var territoryRows = mortalityDetailRows().filter(function (row) {
+      return row.cause_code === STATE.mortalityDetailTrendCause && row.territory === territory;
+    }).sort(function (a, b) { return a.year - b.year; });
+    var italyRows = mortalityDetailRows().filter(function (row) {
+      return row.cause_code === STATE.mortalityDetailTrendCause && row.territory === "Italia";
+    }).sort(function (a, b) { return a.year - b.year; });
+    var traces = [];
+    if (territoryRows.length) {
+      traces.push({
+        x: territoryRows.map(function (row) { return row.year; }),
+        y: territoryRows.map(function (row) { return row.value; }),
+        text: territoryRows.map(function (row) { return formatMortalityDetailValue(row.value); }),
+        type: "scatter",
+        mode: "lines+markers",
+        name: territory,
+        line: { color: COLORS[5], width: 3 },
+        marker: { size: 7 },
+        hovertemplate: "%{x}<br>" + territory + ": %{text}<extra></extra>"
+      });
+    }
+    if (territory !== "Italia" && italyRows.length) {
+      traces.push({
+        x: italyRows.map(function (row) { return row.year; }),
+        y: italyRows.map(function (row) { return row.value; }),
+        text: italyRows.map(function (row) { return formatMortalityDetailValue(row.value); }),
+        type: "scatter",
+        mode: "lines+markers",
+        name: "Italia",
+        line: { color: COLORS[0], width: 3 },
+        marker: { size: 7 },
+        hovertemplate: "%{x}<br>Italia: %{text}<extra></extra>"
+      });
+    }
+    var title = byId("hiMortalityDetailTrendTitle");
+    if (title) title.textContent = cause.label + " nel tempo - " + territory;
+    var years = territoryRows.map(function (row) { return row.year; });
+    setSubtitle("hiMortalityDetailTrendSubtitle", "Serie storica Eurostat del tasso standardizzato di mortalita per " + cause.label + ". Gruppo: " + asText(cause.group_label) + ".");
+    setTag("hiMortalityDetailTrendTag", (years.length ? Math.min.apply(null, years) + "-" + Math.max.apply(null, years) : "serie") + " - per 100.000 standardizzato");
+    lineChart("hiMortalityDetailTrendChart", traces, {
+      xAxis: { title: "anno", tickmode: "linear", dtick: 1 },
+      yTitle: "decessi per 100.000 abitanti, tasso standardizzato"
+    });
+    setChartCredit("hiMortalityDetailTrendNote", [
+      { id: "eurostat_mortality_detail", label: "Eurostat hlth_cd_asdr2" }
+    ], mortalityDetailNote(cause, null, "La serie usa solo gli anni pubblicati da Eurostat per questa causa e questo territorio."));
   }
 
   function renderMortalityTerritoryChart() {

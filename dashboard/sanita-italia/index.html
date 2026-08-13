@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sanit&agrave; italiana | Nazareno Lecis</title>
-  <meta name="description" content="Dashboard sulla sanit&agrave; italiana: salute degli italiani, attivit&agrave; ospedaliera, pronto soccorso, liste d'attesa, costi del SSN, mobilit&agrave; sanitaria, definizioni e fonti.">
+  <meta name="description" content="Dashboard sulla sanit&agrave; italiana: salute degli italiani, tumori, mortalit&agrave; dettagliata, attivit&agrave; ospedaliera, pronto soccorso, liste d'attesa, costi del SSN, mobilit&agrave; sanitaria, definizioni e fonti.">
   <link rel="icon" href="../../assets/logo.png" type="image/png">
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260813-health-2">
-  <script defer src="../../assets/theme.js?v=20260813-health-2"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260813-cancer-detail-1">
+  <script defer src="../../assets/theme.js?v=20260813-cancer-detail-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260813-health-2"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260813-cancer-detail-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -41,12 +41,12 @@
       <div>
         <span class="eyebrow">Sanit&agrave; italiana</span>
         <h1>Salute degli italiani, accesso alle cure, ospedali, mobilit&agrave; sanitaria e risorse del SSN</h1>
-        <p class="lead">Dashboard con dati pubblici effettivi: fattori di rischio, condizioni croniche, salute percepita, limitazioni funzionali, incidenza e prevalenza tumorale, mortalit&agrave; per causa, dimissioni ospedaliere per disciplina e territorio, pronto soccorso, liste d'attesa, posti letto, costi regionali del SSN, PIL e saldi economici della mobilit&agrave; sanitaria.</p>
+        <p class="lead">Dashboard con dati pubblici effettivi: fattori di rischio, condizioni croniche, salute percepita, limitazioni funzionali, incidenza e prevalenza tumorale, stime oncologiche recenti, mortalit&agrave; dettagliata per causa ICD-10, dimissioni ospedaliere per disciplina e territorio, pronto soccorso, liste d'attesa, posti letto, costi regionali del SSN, PIL e saldi economici della mobilit&agrave; sanitaria.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Ministero della Salute, OpenBDAP, ISTAT Health for All, Eurostat, AGENAS, Corte dei conti</strong>
+          <strong>Ministero della Salute, AIOM/AIRTUM, OpenBDAP, ISTAT Health for All, Eurostat, AGENAS, Corte dei conti</strong>
           <span id="hiSourceMeta">Dati normalizzati dalla pipeline pubblica e aggiornati nel payload della dashboard.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Agenas" target="_blank" rel="noopener">Repository Agenas</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
@@ -75,6 +75,7 @@
       <a href="#indicatori">Indicatori</a>
       <a href="#copertura">Dati disponibili</a>
       <a href="#salute">Salute</a>
+      <a href="#tumori-recenti">Tumori recenti</a>
       <a href="#mortalita">Mortalit&agrave;</a>
       <a href="#pronto-soccorso">PS e attese</a>
       <a href="#italia">Dimissioni</a>
@@ -136,9 +137,14 @@
           <em>Italia / regione / indicatore / anno</em>
         </div>
         <div class="hi-coverage-item">
+          <strong>Tumori recenti</strong>
+          <span>Stime nazionali AIOM/AIRTUM per sede tumorale: nuove diagnosi, decessi, prevalenza e sopravvivenza a 5 anni. Include pancreas, polmone, fegato, colon-retto, mammella, prostata, ovaio, rene, vescica e stomaco.</span>
+          <em>Italia / sede tumorale / misura</em>
+        </div>
+        <div class="hi-coverage-item">
           <strong>Mortalit&agrave; per causa</strong>
-          <span>Sezione separata dagli indicatori di salute: i tassi di mortalit&agrave; misurano decessi per causa, non persone malate, diagnosi o prevalenza.</span>
-          <em>Italia / regione / indicatore / anno</em>
+          <span>Sezione separata dagli indicatori di salute: Health for All copre macro-cause e cause selezionate; Eurostat aggiunge cause ICD-10 pi&ugrave; granulari, come tumore del pancreas, rene, fegato e polmone.</span>
+          <em>Italia / regione NUTS2 / causa / anno</em>
         </div>
         <div class="hi-coverage-item">
           <strong>Spesa e mobilit&agrave;</strong>
@@ -208,12 +214,27 @@
         <div id="hiHealthTrendChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiHealthTrendNote" class="hi-chart-credit">Fonte: ISTAT Health for All. Elaborazione di Nazareno Lecis.</p>
       </article>
+      <article id="tumori-recenti" class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiCancerRecentTitle">Stime oncologiche recenti</h3><span id="hiCancerRecentTag">AIOM/AIRTUM</span></div>
+        <p id="hiCancerRecentSubtitle" class="hi-card-subtitle">Sedi tumorali nazionali con nuove diagnosi, decessi e prevalenza riportate nel volume 2025.</p>
+        <div class="hi-chart-controls" aria-label="Filtri stime oncologiche recenti">
+          <label>Misura
+            <select id="hiCancerRecentMetricFilter"></select>
+          </label>
+          <label>Sede in evidenza
+            <select id="hiCancerRecentSiteFilter"></select>
+          </label>
+        </div>
+        <div id="hiCancerRecentChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiCancerRecentTable" class="hi-table-wrap"></div>
+        <p id="hiCancerRecentNote" class="hi-chart-credit">Fonte: AIOM/AIRTUM, I numeri del cancro in Italia 2025. Elaborazione di Nazareno Lecis.</p>
+      </article>
     </section>
 
     <section id="mortalita" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Mortalit&agrave; per causa</span>
-        <div><h2>Decessi, cause e differenze territoriali</h2><p>La mortalit&agrave; viene letta separatamente da fattori di rischio, prevalenza e condizioni dichiarate: qui ogni valore &egrave; un tasso di decessi per causa, con dettaglio per sesso o 65+ quando disponibile.</p></div>
+        <div><h2>Decessi, cause e differenze territoriali</h2><p>La mortalit&agrave; viene letta separatamente da fattori di rischio, prevalenza e condizioni dichiarate. Health for All copre macro-cause e cause selezionate; Eurostat aggiunge tassi standardizzati per cause ICD-10 pi&ugrave; granulari.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiMortalityTerritoryTitle">Mortalit&agrave; per territorio</h3><span id="hiMortalityTerritoryTag">ISTAT HFA</span></div>
@@ -269,6 +290,44 @@
         </div>
         <div id="hiMortalityTrendChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiMortalityTrendNote" class="hi-chart-credit">Fonte: ISTAT Health for All. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiMortalityDetailTitle">Mortalit&agrave; dettagliata per causa</h3><span id="hiMortalityDetailTag">Eurostat</span></div>
+        <p id="hiMortalityDetailSubtitle" class="hi-card-subtitle">Tassi standardizzati per et&agrave; da Eurostat, con cause ICD-10 pi&ugrave; granulari come tumore del pancreas.</p>
+        <div class="hi-chart-controls" aria-label="Filtri mortalita dettagliata Eurostat">
+          <label>Gruppo
+            <select id="hiMortalityDetailGroupFilter"></select>
+          </label>
+          <label>Causa
+            <select id="hiMortalityDetailCauseFilter"></select>
+          </label>
+          <label>Anno
+            <select id="hiMortalityDetailYearFilter"></select>
+          </label>
+          <label>Focus
+            <select id="hiMortalityDetailFocusFilter"></select>
+          </label>
+        </div>
+        <div id="hiMortalityDetailChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiMortalityDetailTable" class="hi-table-wrap"></div>
+        <p id="hiMortalityDetailNote" class="hi-chart-credit">Fonte: Eurostat hlth_cd_asdr2. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiMortalityDetailTrendTitle">Serie storica mortalit&agrave; dettagliata</h3><span id="hiMortalityDetailTrendTag">Eurostat</span></div>
+        <p id="hiMortalityDetailTrendSubtitle" class="hi-card-subtitle">Andamento della stessa causa ICD-10 nel territorio selezionato, confrontato con l'Italia.</p>
+        <div class="hi-chart-controls" aria-label="Filtri serie mortalita dettagliata Eurostat">
+          <label>Territorio
+            <select id="hiMortalityDetailTrendTerritoryFilter"></select>
+          </label>
+          <label>Gruppo
+            <select id="hiMortalityDetailTrendGroupFilter"></select>
+          </label>
+          <label>Causa
+            <select id="hiMortalityDetailTrendCauseFilter"></select>
+          </label>
+        </div>
+        <div id="hiMortalityDetailTrendChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiMortalityDetailTrendNote" class="hi-chart-credit">Fonte: Eurostat hlth_cd_asdr2. Elaborazione di Nazareno Lecis.</p>
       </article>
     </section>
 
