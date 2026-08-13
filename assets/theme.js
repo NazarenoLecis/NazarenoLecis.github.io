@@ -905,7 +905,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260724-sanita-discharge-narrative", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260813-pnla-2", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

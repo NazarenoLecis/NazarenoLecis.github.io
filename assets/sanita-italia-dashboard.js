@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260724-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260724-1",
+    "../../data/sanita-italia/dashboard.json?v=20260813-pnla-2",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260813-pnla-2",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -32,6 +32,34 @@
     dischargeHospitalProvince: "all",
     dischargeHospitalCategory: "known_total",
     dischargeHospitalLimit: "20",
+    psRegion: "Italia",
+    psRegionTriage: "verde",
+    psRegionMetric: "mean_wait_minutes",
+    psStructureRegion: "Italia",
+    psStructureProvince: "all",
+    psStructure: "all",
+    psStructureTriage: "verde",
+    psStructureLimit: "20",
+    waitingYear: "latest",
+    waitingServiceType: "all",
+    waitingService: "all",
+    waitingPriority: "all",
+    waitingRegime: "institutional",
+    waitingAccess: "first",
+    waitingMetric: "mean_first_available_days",
+    waitingRegionFocus: "Italia",
+    waitingServiceRegion: "Italia",
+    waitingServiceYear: "latest",
+    waitingServiceType2: "all",
+    waitingServicePriority: "all",
+    waitingServiceRegime: "institutional",
+    waitingServiceAccess: "first",
+    waitingServiceMetric: "mean_first_available_days",
+    waitingServiceLimit: "20",
+    waitingTrendRegion: "Italia",
+    waitingTrendService: "33 - ESOFAGOGASTRODUODENOSCOPIA [EGDS]",
+    waitingTrendPriority: "all",
+    waitingTrendMetric: "mean_first_available_days",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -334,6 +362,89 @@
       ]
     },
     {
+      id: "ps_wait_times_by_structure_triage",
+      label: "Pronto soccorso per struttura e triage",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["province_name", "Nome provincia"],
+        ["municipality", "Comune"],
+        ["structure", "Pronto soccorso"],
+        ["emergency_level", "Livello PS/DEA"],
+        ["triage_label", "Codice triage"],
+        ["wait_minutes", "Permanenza media"],
+        ["accesses_total", "Accessi totali"]
+      ]
+    },
+    {
+      id: "ps_wait_times_by_region_triage",
+      label: "Pronto soccorso per regione e triage",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["triage_label", "Codice triage"],
+        ["structures", "Strutture"],
+        ["mean_wait_minutes", "Media strutture"],
+        ["median_wait_minutes", "Mediana strutture"],
+        ["accesses_total", "Accessi totali"]
+      ]
+    },
+    {
+      id: "ps_structures",
+      label: "Pronto soccorso",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["province_name", "Nome provincia"],
+        ["municipality", "Comune"],
+        ["structure", "Pronto soccorso"],
+        ["emergency_level", "Livello PS/DEA"],
+        ["accesses_total", "Accessi totali"],
+        ["wait_bianco_minutes", "Bianco"],
+        ["wait_verde_minutes", "Verde"],
+        ["wait_giallo_minutes", "Giallo"],
+        ["wait_rosso_minutes", "Rosso"],
+        ["mean_wait_minutes", "Media codici"]
+      ]
+    },
+    {
+      id: "waiting_lists_pnla_summary",
+      label: "Liste d'attesa PNLA",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["service_type", "Tipo prestazione"],
+        ["service", "Prestazione"],
+        ["priority_label", "Priorita"],
+        ["regime_label", "Regime"],
+        ["access_type_label", "Tipo accesso"],
+        ["bookings", "Prenotazioni"],
+        ["within_target_bookings", "Entro soglia"],
+        ["within_target_percent", "% entro soglia"],
+        ["accepted_within_target_percent", "% appuntamento"],
+        ["mean_first_available_days", "Giorni prima disponibilita"],
+        ["mean_accepted_wait_days", "Giorni appuntamento"]
+      ]
+    },
+    {
+      id: "waiting_lists_pnla_monthly",
+      label: "Serie mensile PNLA",
+      columns: [
+        ["year", "Anno"],
+        ["month", "Mese"],
+        ["region", "Regione"],
+        ["service_id", "Prestazione"],
+        ["priority_label", "Priorita"],
+        ["bookings", "Prenotazioni"],
+        ["within_target_percent", "% entro soglia"],
+        ["accepted_within_target_percent", "% appuntamento"],
+        ["mean_first_available_days", "Giorni prima disponibilita"],
+        ["mean_accepted_wait_days", "Giorni appuntamento"]
+      ]
+    },
+    {
       id: "definitions",
       label: "Definizioni",
       columns: [
@@ -392,6 +503,15 @@
     return number.toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
+  function formatDurationMinutes(value) {
+    var number = toNumber(value);
+    if (number === null) return MISSING;
+    var minutes = Math.round(number);
+    var hours = Math.floor(minutes / 60);
+    var remainder = minutes % 60;
+    return String(hours).padStart(2, "0") + ":" + String(remainder).padStart(2, "0");
+  }
+
   function formatPercent(value) {
     var number = toNumber(value);
     if (number === null) return MISSING;
@@ -438,11 +558,13 @@
   }
 
   function formatCell(column, value) {
+    if (/wait_.*minutes|mean_wait_minutes|median_wait_minutes|max_wait_minutes/i.test(column)) return formatDurationMinutes(value);
     if (/million_eur$/i.test(column)) return formatMillionEuro(value);
     if (/per_capita_eur|per_over65_eur|per_over75_eur|per_discharge_eur/i.test(column)) return formatEuroDecimal(value);
     if (/eur$/i.test(column) || column === "amount_eur" || column === "ssn_cost_eur") return formatEuroCompact(value);
     if (/percent$/i.test(column)) return formatPercent(value);
     if (/denominator/i.test(column)) return denominatorLabel(value);
+    if (/mean_.*days/i.test(column)) return formatDecimal(value);
     if (column === "selected_value") return formatDecimal(value);
     if (/per_1000|avg_los|share|change|utilization/i.test(column)) return formatDecimal(value);
     if (/population|beds|discharges|days|total|structures|deaths|transfers|masked|year/i.test(column)) return formatNumber(value);
@@ -607,10 +729,316 @@
     refreshProvinceFilter("hiNationalActivityProvinceFilter", "nationalActivityProvince", STATE.nationalActivityRegion);
     refreshProvinceFilter("hiDischargeProvinceFilter", "dischargeProvince", STATE.dischargeRegion);
     refreshProvinceFilter("hiDischargeHospitalProvinceFilter", "dischargeHospitalProvince", STATE.dischargeHospitalRegion);
+    refreshProvinceFilter("hiPsStructureProvinceFilter", "psStructureProvince", STATE.psStructureRegion);
     refreshProvinceFilter("hiDisciplineProvinceFilter", "disciplineProvince", STATE.disciplineRegion);
     refreshProvinceFilter("hiHospitalProvinceFilter", "hospitalProvince", STATE.hospitalRegion);
     refreshProvinceFilter("hiHospitalDepartmentProvinceFilter", "hospitalDepartmentProvince", STATE.hospitalDepartmentRegion);
     refreshProvinceFilter("hiTableProvinceFilter", "tableProvince", STATE.tableRegion);
+  }
+
+  function triageOrder(value) {
+    var order = { rosso: 1, arancione: 2, giallo: 3, verde: 4, blu: 5, bianco: 6 };
+    return order[value] || 99;
+  }
+
+  function triageLabel(value) {
+    var labels = {
+      all: "Tutti",
+      bianco: "Codice bianco",
+      verde: "Codice verde",
+      giallo: "Codice giallo",
+      rosso: "Codice rosso",
+      blu: "Codice blu/azzurro",
+      arancione: "Codice arancione"
+    };
+    return labels[value] || asText(value);
+  }
+
+  function triageColor(value) {
+    if (value === "bianco") return "#cfd6df";
+    if (value === "verde") return COLORS[3];
+    if (value === "giallo") return COLORS[4];
+    if (value === "rosso") return COLORS[5];
+    if (value === "blu") return COLORS[1];
+    if (value === "arancione") return COLORS[0];
+    return COLORS[2];
+  }
+
+  function psTriageOptions(includeAll) {
+    var values = unique(tableRows("ps_wait_times_by_structure_triage").map(function (row) {
+      return row.triage_code;
+    })).sort(function (a, b) {
+      return triageOrder(a) - triageOrder(b);
+    });
+    var options = values.map(function (value) {
+      return { value: value, label: triageLabel(value) };
+    });
+    return includeAll ? [{ value: "all", label: "Tutti i codici disponibili" }].concat(options) : options;
+  }
+
+  function psStructureKey(row) {
+    return asText(row.structure_code || row.institute_code || (asText(row.region) + "|" + asText(row.structure)), "");
+  }
+
+  function psStructureRows() {
+    return tableRows("ps_structures").filter(function (row) {
+      if (STATE.psStructureRegion !== "Italia" && row.region !== STATE.psStructureRegion) return false;
+      return STATE.psStructureProvince === "all" || row.province === STATE.psStructureProvince;
+    });
+  }
+
+  function psStructureOptions() {
+    var rows = psStructureRows().sort(function (a, b) {
+      return asText(a.structure).localeCompare(asText(b.structure));
+    });
+    return [{ value: "all", label: "Tutti" }].concat(rows.map(function (row) {
+      var place = STATE.psStructureRegion === "Italia" ? " (" + row.region + ", " + row.province + ")" : " (" + row.province + ")";
+      return { value: psStructureKey(row), label: compact(row.structure, 52) + place };
+    }));
+  }
+
+  function refreshPsStructureFilter() {
+    var options = psStructureOptions();
+    if (!options.some(function (option) { return option.value === STATE.psStructure; })) {
+      STATE.psStructure = "all";
+    }
+    fillSelect("hiPsStructureFilter", options, STATE.psStructure);
+  }
+
+  function waitingRows() {
+    return tableRows("waiting_lists_pnla_summary");
+  }
+
+  function waitingMonthlyRows() {
+    return tableRows("waiting_lists_pnla_monthly");
+  }
+
+  function waitingLatestYear() {
+    var years = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_years).map(toNumber).filter(function (value) {
+      return value !== null;
+    });
+    if (!years.length) years = unique(waitingRows().map(function (row) { return row.year; })).map(toNumber).filter(function (value) { return value !== null; });
+    return years.length ? Math.max.apply(null, years) : null;
+  }
+
+  function waitingYearValue(value) {
+    if (value === "latest") return waitingLatestYear();
+    return toNumber(value);
+  }
+
+  function waitingServiceMap() {
+    var result = {};
+    toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_services).forEach(function (row) {
+      result[row.id] = row;
+    });
+    return result;
+  }
+
+  function waitingServiceLabel(serviceId) {
+    var service = waitingServiceMap()[serviceId];
+    return service ? service.label : asText(serviceId);
+  }
+
+  function waitingServiceType(serviceId) {
+    var service = waitingServiceMap()[serviceId];
+    return service ? service.service_type : "";
+  }
+
+  function waitingYearOptions() {
+    var years = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_years).slice().sort();
+    return [{ value: "latest", label: "Ultimo anno" }].concat(years.map(function (year) {
+      return { value: String(year), label: String(year) };
+    }));
+  }
+
+  function waitingServiceTypeOptions() {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_service_types);
+    return [{ value: "all", label: "Tutte" }].concat(rows.map(function (row) {
+      return { value: row.id, label: row.label };
+    }));
+  }
+
+  function waitingServiceOptions(serviceType, includeAll) {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_services).filter(function (row) {
+      return serviceType === "all" || row.service_type === serviceType;
+    });
+    var options = rows.map(function (row) {
+      return { value: row.id, label: compact(row.label, 70) };
+    });
+    return includeAll ? [{ value: "all", label: "Tutte" }].concat(options) : options;
+  }
+
+  function waitingPriorityOptions(includeAll) {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_priorities);
+    var options = rows.map(function (row) {
+      return { value: row.id, label: row.label };
+    });
+    return includeAll ? [{ value: "all", label: "Tutte" }].concat(options) : options;
+  }
+
+  function waitingRegimeOptions() {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_regimes);
+    return [{ value: "all", label: "Tutti" }].concat(rows.map(function (row) {
+      return { value: row.id, label: row.label };
+    }));
+  }
+
+  function waitingAccessOptions() {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.waiting_access_types);
+    return [{ value: "all", label: "Tutti" }].concat(rows.map(function (row) {
+      return { value: row.id, label: row.label };
+    }));
+  }
+
+  function refreshWaitingServiceFilter(id, stateKey, serviceType, includeAll) {
+    var options = waitingServiceOptions(serviceType, includeAll);
+    if (!options.some(function (option) { return option.value === STATE[stateKey]; })) {
+      STATE[stateKey] = includeAll ? "all" : (options[0] ? options[0].value : "all");
+    }
+    fillSelect(id, options, STATE[stateKey]);
+  }
+
+  function refreshWaitingFilters(regionOptions) {
+    fillSelect("hiWaitingYearFilter", waitingYearOptions(), STATE.waitingYear);
+    fillSelect("hiWaitingServiceYearFilter", waitingYearOptions(), STATE.waitingServiceYear);
+    fillSelect("hiWaitingServiceTypeFilter", waitingServiceTypeOptions(), STATE.waitingServiceType);
+    fillSelect("hiWaitingServiceType2Filter", waitingServiceTypeOptions(), STATE.waitingServiceType2);
+    fillSelect("hiWaitingPriorityFilter", waitingPriorityOptions(true), STATE.waitingPriority);
+    fillSelect("hiWaitingServicePriorityFilter", waitingPriorityOptions(true), STATE.waitingServicePriority);
+    fillSelect("hiWaitingTrendPriorityFilter", waitingPriorityOptions(true), STATE.waitingTrendPriority);
+    fillSelect("hiWaitingRegimeFilter", waitingRegimeOptions(), STATE.waitingRegime);
+    fillSelect("hiWaitingServiceRegimeFilter", waitingRegimeOptions(), STATE.waitingServiceRegime);
+    fillSelect("hiWaitingAccessFilter", waitingAccessOptions(), STATE.waitingAccess);
+    fillSelect("hiWaitingServiceAccessFilter", waitingAccessOptions(), STATE.waitingServiceAccess);
+    fillSelect("hiWaitingRegionFocusFilter", regionOptions, STATE.waitingRegionFocus);
+    fillSelect("hiWaitingServiceRegionFilter", regionOptions, STATE.waitingServiceRegion);
+    fillSelect("hiWaitingTrendRegionFilter", regionOptions, STATE.waitingTrendRegion);
+    refreshWaitingServiceFilter("hiWaitingServiceFilter", "waitingService", STATE.waitingServiceType, true);
+    refreshWaitingServiceFilter("hiWaitingTrendServiceFilter", "waitingTrendService", "all", true);
+    var simpleSelects = [
+      ["hiWaitingMetricFilter", "waitingMetric"],
+      ["hiWaitingServiceMetricFilter", "waitingServiceMetric"],
+      ["hiWaitingServiceLimitFilter", "waitingServiceLimit"],
+      ["hiWaitingTrendMetricFilter", "waitingTrendMetric"]
+    ];
+    simpleSelects.forEach(function (item) {
+      var node = byId(item[0]);
+      if (node) node.value = STATE[item[1]];
+    });
+  }
+
+  function setSubtitle(id, text) {
+    var node = byId(id);
+    if (node) node.textContent = text;
+  }
+
+  function waitingServiceText(serviceId, serviceType) {
+    if (serviceId && serviceId !== "all") return waitingServiceLabel(serviceId);
+    if (serviceType && serviceType !== "all") return serviceType.toLowerCase();
+    return "tutte le prestazioni PNLA";
+  }
+
+  function waitingPriorityText(priority) {
+    return priority && priority !== "all" ? priority : "tutte le priorita";
+  }
+
+  function waitingRegimeText(regime) {
+    if (regime === "institutional") return "Istituzionale";
+    if (regime === "private") return "ALPI";
+    return "tutti i regimi";
+  }
+
+  function waitingAccessText(access) {
+    if (access === "first") return "Primo accesso";
+    if (access === "subsequent") return "Accesso successivo";
+    return "tutti gli accessi";
+  }
+
+  function waitingScopeText(settings) {
+    return [
+      waitingServiceText(settings.service, settings.serviceType),
+      waitingPriorityText(settings.priority),
+      waitingRegimeText(settings.regime),
+      waitingAccessText(settings.access)
+    ].join(", ");
+  }
+
+  function waitingMetricConfig(metric) {
+    if (metric === "mean_accepted_wait_days") {
+      return { label: "giorni medi all'appuntamento accettato", field: "mean_accepted_wait_days", xTitle: "giorni", format: function (value) { return formatDecimal(value) + " giorni"; }, lowerBetter: false };
+    }
+    if (metric === "within_target_percent") {
+      return { label: "% entro soglia - prima disponibilita", field: "within_target_percent", xTitle: "% entro soglia", format: formatPercent, lowerBetter: true };
+    }
+    if (metric === "accepted_within_target_percent") {
+      return { label: "% entro soglia - appuntamento accettato", field: "accepted_within_target_percent", xTitle: "% entro soglia", format: formatPercent, lowerBetter: true };
+    }
+    if (metric === "bookings") {
+      return { label: "prenotazioni", field: "bookings", xTitle: "prenotazioni", format: formatNumber, lowerBetter: false };
+    }
+    return { label: "giorni medi alla prima disponibilita", field: "mean_first_available_days", xTitle: "giorni", format: function (value) { return formatDecimal(value) + " giorni"; }, lowerBetter: false };
+  }
+
+  function filterWaitingRows(settings) {
+    var year = waitingYearValue(settings.year);
+    return waitingRows().filter(function (row) {
+      if (year && row.year !== year) return false;
+      if (settings.region && settings.region !== "Italia" && row.region !== settings.region) return false;
+      if (settings.serviceType && settings.serviceType !== "all" && row.service_type !== settings.serviceType) return false;
+      if (settings.service && settings.service !== "all" && row.service_id !== settings.service) return false;
+      if (settings.priority && settings.priority !== "all" && row.priority_label !== settings.priority) return false;
+      if (settings.regime && settings.regime !== "all" && row.regime !== settings.regime) return false;
+      if (settings.access && settings.access !== "all" && row.access_type !== settings.access) return false;
+      return true;
+    });
+  }
+
+  function weightedValue(rows, field) {
+    var totalWeight = 0;
+    var totalValue = 0;
+    rows.forEach(function (row) {
+      var value = toNumber(row[field]);
+      var weight = toNumber(row.bookings) || 0;
+      if (value === null || !weight) return;
+      totalWeight += weight;
+      totalValue += value * weight;
+    });
+    return totalWeight ? totalValue / totalWeight : null;
+  }
+
+  function aggregateWaitingRows(rows, groupField, labelField) {
+    var grouped = {};
+    rows.forEach(function (row) {
+      var key = groupField(row);
+      if (!key) return;
+      var item = grouped[key] || { key: key, label: labelField(row), bookings: 0, within_target_bookings: 0, rows: [] };
+      item.bookings += toNumber(row.bookings) || 0;
+      item.within_target_bookings += toNumber(row.within_target_bookings) || 0;
+      item.rows.push(row);
+      grouped[key] = item;
+    });
+    return Object.keys(grouped).map(function (key) {
+      var item = grouped[key];
+      item.bookings = Math.round(item.bookings);
+      item.within_target_bookings = Math.round(item.within_target_bookings);
+      item.within_target_percent = item.bookings ? (item.within_target_bookings / item.bookings) * 100 : weightedValue(item.rows, "within_target_percent");
+      item.accepted_within_target_percent = weightedValue(item.rows, "accepted_within_target_percent");
+      item.mean_first_available_days = weightedValue(item.rows, "mean_first_available_days");
+      item.mean_accepted_wait_days = weightedValue(item.rows, "mean_accepted_wait_days");
+      delete item.rows;
+      return item;
+    });
+  }
+
+  function sortWaitingMetric(rows, field, lowerBetter) {
+    return rows.slice().sort(function (a, b) {
+      var av = toNumber(a[field]);
+      var bv = toNumber(b[field]);
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return lowerBetter ? av - bv : bv - av;
+    });
   }
 
   function dischargeStructureOptions() {
@@ -909,6 +1337,8 @@
       ["hiRegionalRegionFilter", "region"],
       ["hiDischargeRegionFilter", "dischargeRegion"],
       ["hiDischargeHospitalRegionFilter", "dischargeHospitalRegion"],
+      ["hiPsRegionFilter", "psRegion"],
+      ["hiPsStructureRegionFilter", "psStructureRegion"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiCostRegionFilter", "costRegion"],
       ["hiCostCompositionRegionFilter", "costCompositionRegion"],
@@ -928,6 +1358,8 @@
     fillSelect("hiDischargeDisciplineFilter", disciplineOptionsWithAll, STATE.dischargeDiscipline);
     fillSelect("hiHospitalDisciplineFilter", disciplineOptionsWithAll, STATE.hospitalDiscipline);
     fillSelect("hiTableDisciplineFilter", disciplineOptionsWithAll, STATE.tableDiscipline);
+    fillSelect("hiPsRegionTriageFilter", psTriageOptions(true), STATE.psRegionTriage);
+    fillSelect("hiPsStructureTriageFilter", psTriageOptions(true), STATE.psStructureTriage);
     fillSelect("hiCostTypeFilter", costOptions, STATE.costType);
     var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
     fillSelect("hiNationalBedsYearFilter", [{ value: "latest", label: latestBedsYear ? "Ultimo anno (" + latestBedsYear + ")" : "Ultimo anno" }].concat(bedYears.filter(function (year) {
@@ -955,6 +1387,8 @@
       ["hiDisciplineMetricFilter", "disciplineMetric"],
       ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
       ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
+      ["hiPsRegionMetricFilter", "psRegionMetric"],
+      ["hiPsStructureLimitFilter", "psStructureLimit"],
       ["hiDischargeDisciplineMetricFilter", "dischargeDisciplineMetric"],
       ["hiHospitalDepartmentMetricFilter", "hospitalDepartmentMetric"],
       ["hiHospitalDepartmentLimitFilter", "hospitalDepartmentLimit"],
@@ -967,7 +1401,9 @@
       var node = byId(item[0]);
       if (node) node.value = STATE[item[1]];
     });
+    refreshWaitingFilters(regionOptions);
     refreshDischargeStructureFilter();
+    refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
 
     var tableSelect = byId("hiTableSelect");
@@ -1009,6 +1445,34 @@
       ["hiDischargeHospitalProvinceFilter", "dischargeHospitalProvince"],
       ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
       ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
+      ["hiPsRegionFilter", "psRegion"],
+      ["hiPsRegionTriageFilter", "psRegionTriage"],
+      ["hiPsRegionMetricFilter", "psRegionMetric"],
+      ["hiPsStructureRegionFilter", "psStructureRegion"],
+      ["hiPsStructureProvinceFilter", "psStructureProvince"],
+      ["hiPsStructureFilter", "psStructure"],
+      ["hiPsStructureTriageFilter", "psStructureTriage"],
+      ["hiPsStructureLimitFilter", "psStructureLimit"],
+      ["hiWaitingYearFilter", "waitingYear"],
+      ["hiWaitingServiceTypeFilter", "waitingServiceType"],
+      ["hiWaitingServiceFilter", "waitingService"],
+      ["hiWaitingPriorityFilter", "waitingPriority"],
+      ["hiWaitingRegimeFilter", "waitingRegime"],
+      ["hiWaitingAccessFilter", "waitingAccess"],
+      ["hiWaitingMetricFilter", "waitingMetric"],
+      ["hiWaitingRegionFocusFilter", "waitingRegionFocus"],
+      ["hiWaitingServiceRegionFilter", "waitingServiceRegion"],
+      ["hiWaitingServiceYearFilter", "waitingServiceYear"],
+      ["hiWaitingServiceType2Filter", "waitingServiceType2"],
+      ["hiWaitingServicePriorityFilter", "waitingServicePriority"],
+      ["hiWaitingServiceRegimeFilter", "waitingServiceRegime"],
+      ["hiWaitingServiceAccessFilter", "waitingServiceAccess"],
+      ["hiWaitingServiceMetricFilter", "waitingServiceMetric"],
+      ["hiWaitingServiceLimitFilter", "waitingServiceLimit"],
+      ["hiWaitingTrendRegionFilter", "waitingTrendRegion"],
+      ["hiWaitingTrendServiceFilter", "waitingTrendService"],
+      ["hiWaitingTrendPriorityFilter", "waitingTrendPriority"],
+      ["hiWaitingTrendMetricFilter", "waitingTrendMetric"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -1077,6 +1541,8 @@
       ["Costo SSN", formatEuroCompact(costs.amount_eur), "conto economico " + asText(costs.year), formatEuroDecimal(costs.cost_per_capita_eur) + " pro capite; " + formatPercent(costs.cost_percent_gdp) + " del PIL"],
       ["Popolazione 65+", pop.population_65_plus, "ISTAT 2026", formatPercent(pop.elderly_65_share_percent) + " della popolazione"],
       ["Strutture", kpis.structures, "pubbliche ed equiparate", "nel dataset attivita reparti"],
+      ["Pronto soccorso", kpis.ps_structures, "AGENAS " + asText(kpis.ps_year), "tempi per struttura e codice triage"],
+      ["Liste d'attesa", kpis.pnla_bookings_latest, "PNLA " + asText(kpis.pnla_year), formatNumber(kpis.pnla_services) + " prestazioni monitorate"],
       ["Saldo mobilita", formatEuroCompact(mobility.balance_eur), "Corte dei conti " + asText(mobility.year), formatEuroDecimal(mobility.balance_per_capita_eur) + " per abitante"]
     ];
     var container = byId("hiKpis");
@@ -1498,6 +1964,302 @@
     if (note) setChartCredit("hiDischargeHospitalNote", [
       { id: "ministero_sdo_tipologia_dimissione", label: "Ministero della Salute, SDO per tipologia di dimissione" }
     ], "Categoria selezionata: " + config.label + ". La fonte pubblica queste categorie per istituto, non per disciplina clinica.");
+  }
+
+  function psMetricLabel(metric) {
+    return metric === "median_wait_minutes" ? "permanenza mediana" : "permanenza media";
+  }
+
+  function psAvailableCodesText() {
+    var values = psTriageOptions(false).map(function (option) {
+      return option.label.replace("Codice ", "").toLowerCase();
+    });
+    return values.length ? values.join(", ") : "codici disponibili";
+  }
+
+  function renderPsEmergency() {
+    renderPsRegionChart();
+    renderPsStructureChart();
+  }
+
+  function renderPsRegionChart() {
+    var metric = STATE.psRegionMetric || "mean_wait_minutes";
+    var rows = tableRows("ps_wait_times_by_region_triage");
+    if (STATE.psRegionTriage !== "all") {
+      rows = rows.filter(function (row) { return row.triage_code === STATE.psRegionTriage; });
+    } else {
+      var grouped = {};
+      rows.forEach(function (row) {
+        var key = row.region;
+        if (!grouped[key]) grouped[key] = { region: row.region, year: row.year, triage_label: "Tutti i codici disponibili", values: [] };
+        var value = toNumber(row[metric]);
+        if (value !== null) grouped[key].values.push(value);
+      });
+      rows = Object.keys(grouped).map(function (key) {
+        var item = grouped[key];
+        item[metric] = item.values.length ? item.values.reduce(function (sum, value) { return sum + value; }, 0) / item.values.length : null;
+        return item;
+      });
+    }
+    rows = rows.map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row[metric]);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    rows.sort(function (a, b) { return (toNumber(b.selected_value) || 0) - (toNumber(a.selected_value) || 0); });
+    var title = byId("hiPsRegionTitle");
+    var triageText = STATE.psRegionTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psRegionTriage).toLowerCase();
+    if (title) title.textContent = "Pronto soccorso: " + psMetricLabel(metric) + " - " + triageText;
+    setTag("hiPsRegionTag", "2024 - " + psMetricLabel(metric));
+    setChartCredit("hiPsRegionNote", [
+      { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
+    ], "Il tempo misura la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita. Il confronto regionale e non pesato per struttura; l'endpoint pubblico usato espone " + psAvailableCodesText() + ", non blu/azzurro e arancione.");
+    horizontalBar("hiPsRegionChart", rows, "region", "selected_value", {
+      limit: 21,
+      highlight: STATE.psRegion,
+      colorFor: function (row) {
+        return row.region === STATE.psRegion ? COLORS[0] : triageColor(STATE.psRegionTriage === "all" ? "verde" : STATE.psRegionTriage);
+      },
+      leftMargin: 150,
+      xTitle: "minuti",
+      format: formatDurationMinutes,
+      hovertemplate: "%{y}<br>Permanenza: %{text}<extra></extra>"
+    });
+  }
+
+  function psWaitRowsForStructureChart() {
+    return tableRows("ps_wait_times_by_structure_triage").filter(function (row) {
+      if (STATE.psStructureRegion !== "Italia" && row.region !== STATE.psStructureRegion) return false;
+      if (STATE.psStructureProvince !== "all" && row.province !== STATE.psStructureProvince) return false;
+      if (STATE.psStructure !== "all" && psStructureKey(row) !== STATE.psStructure) return false;
+      if (STATE.psStructureTriage !== "all" && row.triage_code !== STATE.psStructureTriage) return false;
+      return true;
+    });
+  }
+
+  function renderPsStructureChart() {
+    var selectedStructure = STATE.psStructure !== "all";
+    var triageText = STATE.psStructureTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psStructureTriage).toLowerCase();
+    var territory = territoryLabel(STATE.psStructureRegion, STATE.psStructureProvince);
+    var rows;
+    var tableColumns;
+    var labelField;
+
+    if (selectedStructure) {
+      rows = psWaitRowsForStructureChart().map(function (row) {
+        var copy = Object.assign({}, row);
+        copy.selected_value = toNumber(row.wait_minutes);
+        return copy;
+      }).sort(function (a, b) { return triageOrder(a.triage_code) - triageOrder(b.triage_code); });
+      labelField = "triage_label";
+      tableColumns = tableOption("ps_wait_times_by_structure_triage").columns;
+      if (rows.length) territory = rows[0].structure;
+    } else if (STATE.psStructureTriage === "all") {
+      rows = psStructureRows().map(function (row) {
+        var copy = Object.assign({}, row);
+        copy.selected_value = toNumber(row.mean_wait_minutes);
+        return copy;
+      });
+      rows.sort(function (a, b) { return (toNumber(b.selected_value) || 0) - (toNumber(a.selected_value) || 0); });
+      labelField = "structure";
+      tableColumns = tableOption("ps_structures").columns;
+    } else {
+      rows = psWaitRowsForStructureChart().map(function (row) {
+        var copy = Object.assign({}, row);
+        copy.selected_value = toNumber(row.wait_minutes);
+        return copy;
+      });
+      rows.sort(function (a, b) { return (toNumber(b.selected_value) || 0) - (toNumber(a.selected_value) || 0); });
+      labelField = "structure";
+      tableColumns = tableOption("ps_wait_times_by_structure_triage").columns;
+    }
+
+    var title = byId("hiPsStructureTitle");
+    if (title) {
+      title.textContent = selectedStructure ? "Pronto soccorso: codici triage - " + territory : "Pronto soccorso: permanenza per struttura - " + territory + " - " + triageText;
+    }
+    setTag("hiPsStructureTag", "2024 - " + (selectedStructure ? territory : triageText));
+    rows = rows.filter(function (row) { return toNumber(row.selected_value) !== null; });
+    horizontalBar("hiPsStructureChart", rows, labelField, "selected_value", {
+      limit: selectedStructure ? 10 : chartLimit(STATE.psStructureLimit, 20),
+      colorFor: function (row) {
+        return selectedStructure ? triageColor(row.triage_code) : triageColor(STATE.psStructureTriage === "all" ? "verde" : STATE.psStructureTriage);
+      },
+      leftMargin: selectedStructure ? 170 : 300,
+      labelLength: selectedStructure ? 34 : 52,
+      xTitle: "minuti",
+      format: formatDurationMinutes,
+      hovertemplate: "%{y}<br>Permanenza: %{text}<extra></extra>"
+    });
+    createTable("hiPsStructureTable", rows, tableColumns, selectedStructure ? 20 : chartLimit(STATE.psStructureLimit, 20));
+    setChartCredit("hiPsStructureNote", [
+      { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
+    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. Accessi totali e livello PS/DEA sono riportati in tabella; gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore.");
+  }
+
+  function renderWaitingLists() {
+    renderWaitingRegionChart();
+    renderWaitingServiceChart();
+    renderWaitingTrendChart();
+  }
+
+  function waitingSourceNote(settings, extra) {
+    var year = waitingYearValue(settings.year) || waitingLatestYear();
+    var parts = ["Anno " + asText(year)];
+    if (settings.region) parts.push("Territorio: " + settings.region);
+    if (settings.service && settings.service !== "all") parts.push(waitingServiceLabel(settings.service));
+    if (settings.priority && settings.priority !== "all") parts.push(settings.priority);
+    if (settings.regime && settings.regime !== "all") parts.push(settings.regime === "institutional" ? "Istituzionale" : "ALPI");
+    if (settings.access && settings.access !== "all") parts.push(settings.access === "first" ? "Primo accesso" : "Accesso successivo");
+    return parts.join(", ") + ". " + extra;
+  }
+
+  function renderWaitingRegionChart() {
+    var config = waitingMetricConfig(STATE.waitingMetric);
+    var settings = {
+      year: STATE.waitingYear,
+      serviceType: STATE.waitingServiceType,
+      service: STATE.waitingService,
+      priority: STATE.waitingPriority,
+      regime: STATE.waitingRegime,
+      access: STATE.waitingAccess
+    };
+    var rows = aggregateWaitingRows(filterWaitingRows(settings), function (row) {
+      return row.region;
+    }, function (row) {
+      return row.region;
+    }).map(function (row) {
+      row.region = row.label;
+      row.selected_value = toNumber(row[config.field]);
+      return row;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    rows = sortWaitingMetric(rows, "selected_value", config.lowerBetter);
+    var serviceText = waitingServiceText(STATE.waitingService, STATE.waitingServiceType);
+    var priorityText = waitingPriorityText(STATE.waitingPriority);
+    var title = byId("hiWaitingRegionTitle");
+    if (title) title.textContent = "Liste d'attesa per area - " + config.label;
+    setSubtitle("hiWaitingRegionSubtitle", "Confronto tra tutte le regioni e province autonome. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingRegime) + ", " + waitingAccessText(STATE.waitingAccess) + ".");
+    setTag("hiWaitingRegionTag", "PNLA " + asText(waitingYearValue(STATE.waitingYear)) + " - " + priorityText);
+    horizontalBar("hiWaitingRegionChart", rows, "region", "selected_value", {
+      limit: 21,
+      highlight: STATE.waitingRegionFocus,
+      leftMargin: 150,
+      xTitle: config.xTitle,
+      format: config.format,
+      color: config.field.indexOf("percent") !== -1 ? COLORS[3] : COLORS[1],
+      hovertemplate: "%{y}<br>" + config.label + ": %{text}<br>Prenotazioni: %{customdata.bookings:,.0f}<extra></extra>"
+    });
+    setChartCredit("hiWaitingRegionNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], waitingSourceNote(settings, "Dati estratti dalla dashboard PNLA AGENAS tramite endpoint pubblico. Le aggregazioni su piu prestazioni o priorita sono pesate per numero di prenotazioni. La prima disponibilita proposta e diversa dall'appuntamento accettato quando l'utente o l'offerta spostano la data."));
+  }
+
+  function renderWaitingServiceChart() {
+    var config = waitingMetricConfig(STATE.waitingServiceMetric);
+    var settings = {
+      year: STATE.waitingServiceYear,
+      region: STATE.waitingServiceRegion,
+      serviceType: STATE.waitingServiceType2,
+      service: "all",
+      priority: STATE.waitingServicePriority,
+      regime: STATE.waitingServiceRegime,
+      access: STATE.waitingServiceAccess
+    };
+    var rows = aggregateWaitingRows(filterWaitingRows(settings), function (row) {
+      return row.service_id;
+    }, function (row) {
+      return row.service;
+    }).map(function (row) {
+      row.service = row.label;
+      row.selected_value = toNumber(row[config.field]);
+      return row;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    rows = sortWaitingMetric(rows, "selected_value", config.lowerBetter);
+    var territory = STATE.waitingServiceRegion === "Italia" ? "Italia" : STATE.waitingServiceRegion;
+    var title = byId("hiWaitingServiceTitle");
+    if (title) title.textContent = "Prestazioni PNLA - " + territory + " - " + config.label;
+    setSubtitle("hiWaitingServiceSubtitle", "Territorio: " + territory + ". Filtro: " + waitingPriorityText(STATE.waitingServicePriority) + ", " + waitingRegimeText(STATE.waitingServiceRegime) + ", " + waitingAccessText(STATE.waitingServiceAccess) + ".");
+    setTag("hiWaitingServiceTag", "PNLA " + asText(waitingYearValue(STATE.waitingServiceYear)) + " - " + waitingPriorityText(STATE.waitingServicePriority));
+    horizontalBar("hiWaitingServiceChart", rows, "service", "selected_value", {
+      limit: chartLimit(STATE.waitingServiceLimit, 20),
+      leftMargin: 310,
+      labelLength: 56,
+      xTitle: config.xTitle,
+      format: config.format,
+      color: config.field.indexOf("percent") !== -1 ? COLORS[3] : COLORS[2],
+      hovertemplate: "%{y}<br>" + config.label + ": %{text}<br>Prenotazioni: %{customdata.bookings:,.0f}<extra></extra>"
+    });
+    createTable("hiWaitingServiceTable", rows, [
+      ["service", "Prestazione"],
+      ["bookings", "Prenotazioni"],
+      ["within_target_bookings", "Entro soglia"],
+      ["within_target_percent", "% entro soglia"],
+      ["accepted_within_target_percent", "% appuntamento"],
+      ["mean_first_available_days", "Giorni prima disponibilita"],
+      ["mean_accepted_wait_days", "Giorni appuntamento"]
+    ], chartLimit(STATE.waitingServiceLimit, 20));
+    setChartCredit("hiWaitingServiceNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], waitingSourceNote(settings, "Dati estratti dalla dashboard PNLA AGENAS tramite endpoint pubblico. Il grafico ordina le prestazioni secondo la misura selezionata: per i giorni mostra le attese piu lunghe, per le percentuali mette in evidenza le quote piu basse di rispetto dei tempi."));
+  }
+
+  function renderWaitingTrendChart() {
+    var config = waitingMetricConfig(STATE.waitingTrendMetric);
+    var serviceId = STATE.waitingTrendService;
+    var rows = waitingMonthlyRows().filter(function (row) {
+      if (STATE.waitingTrendRegion !== "Italia" && row.region !== STATE.waitingTrendRegion) return false;
+      if (serviceId !== "all" && row.service_id !== serviceId) return false;
+      if (STATE.waitingTrendPriority !== "all" && row.priority_label !== STATE.waitingTrendPriority) return false;
+      return true;
+    });
+    rows = aggregateWaitingRows(rows, function (row) {
+      return row.year + "-" + String(row.month_number).padStart(2, "0");
+    }, function (row) {
+      return row.month;
+    }).map(function (row) {
+      var parts = row.key.split("-");
+      row.year = Number(parts[0]);
+      row.month_number = Number(parts[1]);
+      row.period = row.key;
+      row.selected_value = toNumber(row[config.field]);
+      return row;
+    }).sort(function (a, b) {
+      return (a.year - b.year) || (a.month_number - b.month_number);
+    });
+    if (!rows.length) {
+      showEmptyChart("hiWaitingTrendChart");
+    }
+    var serviceText = waitingServiceText(serviceId, "all");
+    var title = byId("hiWaitingTrendTitle");
+    if (title) title.textContent = "Serie mensile PNLA - " + STATE.waitingTrendRegion + " - " + serviceText;
+    var trendYear = rows.length ? rows[0].year : waitingLatestYear();
+    setSubtitle("hiWaitingTrendSubtitle", "Andamento mensile " + asText(trendYear) + ". Filtro: " + serviceText + ", " + waitingPriorityText(STATE.waitingTrendPriority) + ", Istituzionale, Primo accesso.");
+    setTag("hiWaitingTrendTag", "Istituzionale - primo accesso - " + waitingPriorityText(STATE.waitingTrendPriority));
+    if (rows.length) {
+      lineChart("hiWaitingTrendChart", [{
+        x: rows.map(function (row) { return row.period; }),
+        y: rows.map(function (row) { return row.selected_value; }),
+        text: rows.map(function (row) { return config.format(row.selected_value); }),
+        type: "scatter",
+        mode: "lines+markers",
+        name: config.label,
+        line: { color: COLORS[0], width: 3 },
+        marker: { size: 7 },
+        customdata: rows.map(function (row) { return row.bookings; }),
+        hovertemplate: "%{x}<br>" + config.label + ": %{text}<br>Prenotazioni: %{customdata:,.0f}<extra></extra>"
+      }], {
+        yTitle: config.xTitle
+      });
+    }
+    setChartCredit("hiWaitingTrendNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], "Dati estratti dalla dashboard PNLA AGENAS tramite endpoint pubblico. Serie mensile sull'ultimo anno disponibile nel payload, filtrata su Istituzionale e primo accesso. Serve a seguire la direzione nel tempo, non a stimare la mobilita sanitaria origine-destinazione.");
   }
 
   function ratioMode() {
@@ -2302,6 +3064,8 @@
             link.rel = "noopener";
             link.textContent = "pagina ufficiale";
             td.appendChild(link);
+          } else if (key === "service_id") {
+            td.textContent = compact(waitingServiceLabel(value), 96);
           } else if (key === "region" || key === "discipline" || key === "structure" || key === "indicator" || key === "name" || key === "provider") {
             var strong = document.createElement("strong");
             strong.textContent = compact(value, key === "structure" ? 72 : 56);
@@ -2334,10 +3098,18 @@
   }
 
   function renderDynamic() {
+    var filters = STATE.payload.filters || {};
+    var regionOptions = [{ value: "Italia", label: "Italia" }].concat(toArray(filters.regions).map(function (region) {
+      return { value: region, label: region };
+    }));
     refreshProvinceFilters();
+    refreshWaitingFilters(regionOptions);
     refreshDischargeStructureFilter();
+    refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
     renderNationalCharts();
+    renderPsEmergency();
+    renderWaitingLists();
     renderRegionalRank();
     renderRegionProfile();
     renderRegionalSummaryTable();

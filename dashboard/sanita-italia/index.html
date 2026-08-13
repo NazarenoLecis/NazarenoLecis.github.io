@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260724-7">
-  <script defer src="../../assets/theme.js?v=20260724-sanita-discharge-narrative"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260813-pnla-2">
+  <script defer src="../../assets/theme.js?v=20260813-pnla-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260724-7"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260813-pnla-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -74,6 +74,7 @@
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard sanit&agrave;">
       <a href="#indicatori">Indicatori</a>
       <a href="#copertura">Dati disponibili</a>
+      <a href="#pronto-soccorso">PS e attese</a>
       <a href="#italia">Dimissioni</a>
       <a href="#strutture">Strutture</a>
       <a href="#regioni">Regioni</a>
@@ -86,7 +87,7 @@
     </nav>
 
     <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
-    <p class="hi-note"><strong>Perimetro:</strong> le prestazioni ora misurate sono dimissioni/ricoveri ospedalieri per disciplina. La specialistica ambulatoriale e le liste d'attesa entrano quando i flussi AGENAS saranno disponibili in forma tabellare estraibile.</p>
+    <p class="hi-note"><strong>Perimetro:</strong> le prestazioni ora misurate sono dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale.</p>
 
     <section id="indicatori" class="dashboard-section">
       <div class="section-head">
@@ -118,11 +119,181 @@
           <em>Italia / regione / disciplina</em>
         </div>
         <div class="hi-coverage-item">
+          <strong>Pronto soccorso</strong>
+          <span>Tempo medio di permanenza dal triage alla dimissione per singola struttura e codice bianco, verde, giallo e rosso; accessi totali e livello PS/DEA per struttura.</span>
+          <em>Regione / provincia / pronto soccorso / triage</em>
+        </div>
+        <div class="hi-coverage-item">
+          <strong>Liste d'attesa</strong>
+          <span>PNLA nazionale per prime visite ed esami diagnostici: prenotazioni, percentuale entro soglia, giorni medi alla prima disponibilita proposta e appuntamento accettato.</span>
+          <em>Regione / prestazione / priorita / regime</em>
+        </div>
+        <div class="hi-coverage-item">
           <strong>Spesa e mobilit&agrave;</strong>
           <span>Costi SSN e spesa farmaceutica sono dati contabili regionali; la mobilit&agrave; usa saldi economici netti. Non sono costi clinici della singola prestazione n&eacute; una matrice paziente origine-destinazione.</span>
           <em>Regione / conto economico / saldo netto</em>
         </div>
       </div>
+    </section>
+
+    <section id="pronto-soccorso" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Pronto soccorso e liste d'attesa</span>
+        <div><h2>Quanto si resta in PS e quanto si attende per visite ed esami</h2><p>Il PS arriva alla singola struttura. Le liste d'attesa PNLA sono confrontabili per regione, prestazione, priorita, regime e tipo accesso.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiPsRegionTitle">Tempi PS per regione</h3><span id="hiPsRegionTag">AGENAS, 2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri tempi pronto soccorso per regione">
+          <label>Codice triage
+            <select id="hiPsRegionTriageFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiPsRegionMetricFilter">
+              <option value="mean_wait_minutes">Media strutture</option>
+              <option value="median_wait_minutes">Mediana strutture</option>
+            </select>
+          </label>
+          <label>Focus
+            <select id="hiPsRegionFilter"></select>
+          </label>
+        </div>
+        <div id="hiPsRegionChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiPsRegionNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiPsStructureTitle">Pronto soccorso per struttura</h3><span id="hiPsStructureTag">AGENAS, 2024</span></div>
+        <div class="hi-chart-controls" aria-label="Filtri tempi pronto soccorso per struttura">
+          <label>Regione
+            <select id="hiPsStructureRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiPsStructureProvinceFilter"></select>
+          </label>
+          <label>Pronto soccorso
+            <select id="hiPsStructureFilter"></select>
+          </label>
+          <label>Codice triage
+            <select id="hiPsStructureTriageFilter"></select>
+          </label>
+          <label>Numero strutture
+            <select id="hiPsStructureLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiPsStructureChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiPsStructureTable" class="hi-table-wrap"></div>
+        <p id="hiPsStructureNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiWaitingRegionTitle">Liste d'attesa per regione</h3><span id="hiWaitingRegionTag">PNLA</span></div>
+        <p id="hiWaitingRegionSubtitle" class="hi-card-subtitle">Confronto tra regioni e province autonome sulla stessa prestazione, priorit&agrave;, regime e misura.</p>
+        <div class="hi-chart-controls" aria-label="Filtri liste d'attesa per regione">
+          <label>Anno
+            <select id="hiWaitingYearFilter"></select>
+          </label>
+          <label>Tipo prestazione
+            <select id="hiWaitingServiceTypeFilter"></select>
+          </label>
+          <label>Prestazione
+            <select id="hiWaitingServiceFilter"></select>
+          </label>
+          <label>Priorit&agrave;
+            <select id="hiWaitingPriorityFilter"></select>
+          </label>
+          <label>Regime
+            <select id="hiWaitingRegimeFilter"></select>
+          </label>
+          <label>Tipo accesso
+            <select id="hiWaitingAccessFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiWaitingMetricFilter">
+              <option value="mean_first_available_days">Giorni medi alla prima disponibilit&agrave;</option>
+              <option value="mean_accepted_wait_days">Giorni medi all'appuntamento accettato</option>
+              <option value="within_target_percent">% entro soglia - prima disponibilit&agrave;</option>
+              <option value="accepted_within_target_percent">% entro soglia - appuntamento</option>
+              <option value="bookings">Prenotazioni</option>
+            </select>
+          </label>
+          <label>Focus
+            <select id="hiWaitingRegionFocusFilter"></select>
+          </label>
+        </div>
+        <div id="hiWaitingRegionChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiWaitingRegionNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiWaitingServiceTitle">Prestazioni piu lente o veloci</h3><span id="hiWaitingServiceTag">PNLA</span></div>
+        <p id="hiWaitingServiceSubtitle" class="hi-card-subtitle">Classifica delle prestazioni PNLA nel territorio selezionato, ordinata con la misura scelta.</p>
+        <div class="hi-chart-controls" aria-label="Filtri prestazioni liste d'attesa">
+          <label>Regione
+            <select id="hiWaitingServiceRegionFilter"></select>
+          </label>
+          <label>Anno
+            <select id="hiWaitingServiceYearFilter"></select>
+          </label>
+          <label>Tipo prestazione
+            <select id="hiWaitingServiceType2Filter"></select>
+          </label>
+          <label>Priorit&agrave;
+            <select id="hiWaitingServicePriorityFilter"></select>
+          </label>
+          <label>Regime
+            <select id="hiWaitingServiceRegimeFilter"></select>
+          </label>
+          <label>Tipo accesso
+            <select id="hiWaitingServiceAccessFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiWaitingServiceMetricFilter">
+              <option value="mean_first_available_days">Giorni medi alla prima disponibilit&agrave;</option>
+              <option value="mean_accepted_wait_days">Giorni medi all'appuntamento accettato</option>
+              <option value="within_target_percent">% entro soglia - prima disponibilit&agrave;</option>
+              <option value="accepted_within_target_percent">% entro soglia - appuntamento</option>
+              <option value="bookings">Prenotazioni</option>
+            </select>
+          </label>
+          <label>Numero prestazioni
+            <select id="hiWaitingServiceLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiWaitingServiceChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiWaitingServiceTable" class="hi-table-wrap"></div>
+        <p id="hiWaitingServiceNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiWaitingTrendTitle">Serie mensile liste d'attesa</h3><span id="hiWaitingTrendTag">PNLA</span></div>
+        <p id="hiWaitingTrendSubtitle" class="hi-card-subtitle">Andamento mensile dell'ultimo anno disponibile per territorio, prestazione e classe di priorit&agrave;.</p>
+        <div class="hi-chart-controls" aria-label="Filtri serie mensile liste d'attesa">
+          <label>Regione
+            <select id="hiWaitingTrendRegionFilter"></select>
+          </label>
+          <label>Prestazione
+            <select id="hiWaitingTrendServiceFilter"></select>
+          </label>
+          <label>Priorit&agrave;
+            <select id="hiWaitingTrendPriorityFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiWaitingTrendMetricFilter">
+              <option value="mean_first_available_days">Giorni medi alla prima disponibilit&agrave;</option>
+              <option value="mean_accepted_wait_days">Giorni medi all'appuntamento accettato</option>
+              <option value="within_target_percent">% entro soglia - prima disponibilit&agrave;</option>
+              <option value="accepted_within_target_percent">% entro soglia - appuntamento</option>
+              <option value="bookings">Prenotazioni</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiWaitingTrendChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiWaitingTrendNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
+      </article>
     </section>
 
     <section id="italia" class="dashboard-section">
