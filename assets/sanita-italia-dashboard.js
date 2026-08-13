@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260813-health-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260813-health-1",
+    "../../data/sanita-italia/dashboard.json?v=20260813-health-2",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260813-health-2",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -60,7 +60,7 @@
     waitingTrendService: "33 - ESOFAGOGASTRODUODENOSCOPIA [EGDS]",
     waitingTrendPriority: "all",
     waitingTrendMetric: "mean_first_available_days",
-    healthGroup: "risk_factors",
+    healthGroup: "risk_weight",
     healthIndicator: "obesity_18_plus",
     healthYear: "latest",
     healthTerritoryFocus: "Italia",
@@ -68,8 +68,18 @@
     healthProfileGroup: "chronic_conditions",
     healthProfileYear: "latest",
     healthTrendTerritory: "Italia",
-    healthTrendGroup: "mortality_cancers",
-    healthTrendIndicator: "mortality_tumors",
+    healthTrendGroup: "risk_smoking",
+    healthTrendIndicator: "smokers_15_plus",
+    mortalityGroup: "mortality_cancers",
+    mortalityIndicator: "mortality_tumors",
+    mortalityYear: "latest",
+    mortalityTerritoryFocus: "Italia",
+    mortalityProfileTerritory: "Italia",
+    mortalityProfileGroup: "mortality_cancers",
+    mortalityProfileYear: "latest",
+    mortalityTrendTerritory: "Italia",
+    mortalityTrendGroup: "mortality_cancers",
+    mortalityTrendIndicator: "mortality_tumors",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -1459,8 +1469,16 @@
     return healthIndicatorMap()[id] || null;
   }
 
-  function healthGroupOptions() {
-    return toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.health_groups).map(function (row) {
+  function isMortalityGroup(group) {
+    return asText(group).indexOf("mortality_") === 0;
+  }
+
+  function healthGroupOptions(domain) {
+    return toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.health_groups).filter(function (row) {
+      if (domain === "mortality") return isMortalityGroup(row.id);
+      if (domain === "health") return !isMortalityGroup(row.id);
+      return true;
+    }).map(function (row) {
       return { value: row.id, label: row.label };
     });
   }
@@ -1583,10 +1601,14 @@
     var parts = [];
     if (indicator && indicator.measure_type === "mortality") {
       parts.push("Misura mortalita: indica decessi per causa, non incidenza, prevalenza o numero di persone malate.");
+    } else if (indicator && (indicator.measure_type === "incidence_registry" || indicator.measure_type === "prevalence_registry")) {
+      parts.push("Indicatore epidemiologico: incidenza e prevalenza descrivono nuovi casi o casi presenti, non decessi.");
+    } else if (indicator && indicator.measure_type === "self_report_average") {
+      parts.push("Indicatore dichiarato: misura un comportamento medio riferito dagli intervistati.");
     } else {
       parts.push("Indicatore dichiarato: utile per confronti territoriali e andamento, ma non sostituisce diagnosi cliniche o registri di patologia.");
     }
-    if (indicator && indicator.group === "mortality_cancers") {
+    if (indicator && (indicator.group === "mortality_cancers" || indicator.group === "cancer_burden")) {
       parts.push("Il pancreas non e disponibile come indicatore regionale separato in Health for All; la dashboard non lo stima con proxy.");
     }
     parts.push("In questa fonte Trentino-Alto Adige e pubblicato come area unica, non come P.A. Trento e P.A. Bolzano.");
@@ -1595,16 +1617,16 @@
   }
 
   function refreshHealthFilters() {
-    var groupOptions = healthGroupOptions();
+    var groupOptions = healthGroupOptions("health");
     var territoryOptions = healthTerritoryOptions();
     if (!groupOptions.some(function (option) { return option.value === STATE.healthGroup; })) {
-      STATE.healthGroup = groupOptions[0] ? groupOptions[0].value : "risk_factors";
+      STATE.healthGroup = groupOptions[0] ? groupOptions[0].value : "risk_weight";
     }
     if (!groupOptions.some(function (option) { return option.value === STATE.healthProfileGroup; })) {
       STATE.healthProfileGroup = groupOptions[0] ? groupOptions[0].value : "chronic_conditions";
     }
     if (!groupOptions.some(function (option) { return option.value === STATE.healthTrendGroup; })) {
-      STATE.healthTrendGroup = groupOptions[0] ? groupOptions[0].value : "mortality_cancers";
+      STATE.healthTrendGroup = groupOptions[0] ? groupOptions[0].value : "risk_weight";
     }
     if (!territoryOptions.some(function (option) { return option.value === STATE.healthTerritoryFocus; })) STATE.healthTerritoryFocus = "Italia";
     if (!territoryOptions.some(function (option) { return option.value === STATE.healthProfileTerritory; })) STATE.healthProfileTerritory = "Italia";
@@ -1632,6 +1654,46 @@
     fillSelect("hiHealthTrendTerritoryFilter", territoryOptions, STATE.healthTrendTerritory);
     fillSelect("hiHealthTrendGroupFilter", groupOptions, STATE.healthTrendGroup);
     fillSelect("hiHealthTrendIndicatorFilter", trendIndicatorOptions, STATE.healthTrendIndicator);
+  }
+
+  function refreshMortalityFilters() {
+    var groupOptions = healthGroupOptions("mortality");
+    var territoryOptions = healthTerritoryOptions();
+    if (!groupOptions.some(function (option) { return option.value === STATE.mortalityGroup; })) {
+      STATE.mortalityGroup = groupOptions[0] ? groupOptions[0].value : "mortality_cancers";
+    }
+    if (!groupOptions.some(function (option) { return option.value === STATE.mortalityProfileGroup; })) {
+      STATE.mortalityProfileGroup = groupOptions[0] ? groupOptions[0].value : "mortality_cancers";
+    }
+    if (!groupOptions.some(function (option) { return option.value === STATE.mortalityTrendGroup; })) {
+      STATE.mortalityTrendGroup = groupOptions[0] ? groupOptions[0].value : "mortality_cancers";
+    }
+    if (!territoryOptions.some(function (option) { return option.value === STATE.mortalityTerritoryFocus; })) STATE.mortalityTerritoryFocus = "Italia";
+    if (!territoryOptions.some(function (option) { return option.value === STATE.mortalityProfileTerritory; })) STATE.mortalityProfileTerritory = "Italia";
+    if (!territoryOptions.some(function (option) { return option.value === STATE.mortalityTrendTerritory; })) STATE.mortalityTrendTerritory = "Italia";
+
+    var indicatorOptions = healthIndicatorOptions(STATE.mortalityGroup);
+    if (!indicatorOptions.some(function (option) { return option.value === STATE.mortalityIndicator; })) {
+      STATE.mortalityIndicator = indicatorOptions[0] ? indicatorOptions[0].value : "";
+    }
+    var trendIndicatorOptions = healthIndicatorOptions(STATE.mortalityTrendGroup);
+    if (!trendIndicatorOptions.some(function (option) { return option.value === STATE.mortalityTrendIndicator; })) {
+      STATE.mortalityTrendIndicator = trendIndicatorOptions[0] ? trendIndicatorOptions[0].value : "";
+    }
+    if (!healthYearOptions(STATE.mortalityIndicator, STATE.mortalityGroup, true).some(function (option) { return option.value === STATE.mortalityYear; })) STATE.mortalityYear = "latest";
+    var profileRegionalOnly = STATE.mortalityProfileTerritory !== "Italia";
+    if (!healthYearOptions(null, STATE.mortalityProfileGroup, profileRegionalOnly).some(function (option) { return option.value === STATE.mortalityProfileYear; })) STATE.mortalityProfileYear = "latest";
+
+    fillSelect("hiMortalityGroupFilter", groupOptions, STATE.mortalityGroup);
+    fillSelect("hiMortalityIndicatorFilter", indicatorOptions, STATE.mortalityIndicator);
+    fillSelect("hiMortalityYearFilter", healthYearOptions(STATE.mortalityIndicator, STATE.mortalityGroup, true), STATE.mortalityYear);
+    fillSelect("hiMortalityTerritoryFocusFilter", territoryOptions, STATE.mortalityTerritoryFocus);
+    fillSelect("hiMortalityProfileTerritoryFilter", territoryOptions, STATE.mortalityProfileTerritory);
+    fillSelect("hiMortalityProfileGroupFilter", groupOptions, STATE.mortalityProfileGroup);
+    fillSelect("hiMortalityProfileYearFilter", healthYearOptions(null, STATE.mortalityProfileGroup, profileRegionalOnly), STATE.mortalityProfileYear);
+    fillSelect("hiMortalityTrendTerritoryFilter", territoryOptions, STATE.mortalityTrendTerritory);
+    fillSelect("hiMortalityTrendGroupFilter", groupOptions, STATE.mortalityTrendGroup);
+    fillSelect("hiMortalityTrendIndicatorFilter", trendIndicatorOptions, STATE.mortalityTrendIndicator);
   }
 
   function setupFilters() {
@@ -1723,6 +1785,7 @@
     });
     refreshWaitingFilters(regionOptions);
     refreshHealthFilters();
+    refreshMortalityFilters();
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
@@ -1804,6 +1867,16 @@
       ["hiHealthTrendTerritoryFilter", "healthTrendTerritory"],
       ["hiHealthTrendGroupFilter", "healthTrendGroup"],
       ["hiHealthTrendIndicatorFilter", "healthTrendIndicator"],
+      ["hiMortalityGroupFilter", "mortalityGroup"],
+      ["hiMortalityIndicatorFilter", "mortalityIndicator"],
+      ["hiMortalityYearFilter", "mortalityYear"],
+      ["hiMortalityTerritoryFocusFilter", "mortalityTerritoryFocus"],
+      ["hiMortalityProfileTerritoryFilter", "mortalityProfileTerritory"],
+      ["hiMortalityProfileGroupFilter", "mortalityProfileGroup"],
+      ["hiMortalityProfileYearFilter", "mortalityProfileYear"],
+      ["hiMortalityTrendTerritoryFilter", "mortalityTrendTerritory"],
+      ["hiMortalityTrendGroupFilter", "mortalityTrendGroup"],
+      ["hiMortalityTrendIndicatorFilter", "mortalityTrendIndicator"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -1874,7 +1947,8 @@
       ["Strutture", kpis.structures, "pubbliche ed equiparate", "nel dataset attivita reparti"],
       ["Pronto soccorso", kpis.ps_structures, "AGENAS " + asText(kpis.ps_year), "tempi per struttura e codice triage"],
       ["Liste d'attesa", kpis.pnla_bookings_latest, "PNLA " + asText(kpis.pnla_year), formatNumber(kpis.pnla_services) + " prestazioni monitorate"],
-      ["Salute italiani", kpis.health_indicators, "ISTAT HFA", formatNumber(kpis.health_rows) + " valori per Italia e regioni"],
+      ["Salute italiani", kpis.health_status_indicators || kpis.health_indicators, "ISTAT HFA", "fattori, condizioni, limitazioni e tumori non-mortalita"],
+      ["Mortalita per causa", kpis.mortality_indicators, "ISTAT HFA", formatNumber(kpis.health_latest_mortality_year) + " ultimo anno disponibile"],
       ["Saldo mobilita", formatEuroCompact(mobility.balance_eur), "Corte dei conti " + asText(mobility.year), formatEuroDecimal(mobility.balance_per_capita_eur) + " per abitante"]
     ];
     var container = byId("hiKpis");
@@ -2597,8 +2671,14 @@
   }
 
   function healthColor(group) {
-    if (group === "risk_factors") return COLORS[2];
+    if (group === "risk_weight") return COLORS[2];
+    if (group === "risk_smoking") return COLORS[5];
+    if (group === "risk_food") return COLORS[3];
+    if (group === "risk_activity") return COLORS[4];
     if (group === "chronic_conditions") return COLORS[1];
+    if (group === "cancer_burden") return COLORS[6];
+    if (group === "functional_limitations") return COLORS[4];
+    if (group === "perceived_health") return COLORS[2];
     if (group === "mortality_cancers") return COLORS[5];
     if (group === "mortality_cardio") return COLORS[0];
     return COLORS[4];
@@ -2786,6 +2866,190 @@
     setChartCredit("hiHealthTrendNote", [
       { id: "istat_health_for_all", label: "ISTAT Health for All" }
     ], healthNoteForIndicator(indicator, "La serie usa solo gli anni pubblicati da ISTAT per questo indicatore."));
+  }
+
+  function renderMortality() {
+    renderMortalityTerritoryChart();
+    renderMortalityProfileChart();
+    renderMortalityTrendChart();
+  }
+
+  function renderMortalityTerritoryChart() {
+    var indicator = healthIndicatorById(STATE.mortalityIndicator);
+    if (!indicator) {
+      showEmptyChart("hiMortalityTerritoryChart");
+      return;
+    }
+    var year = healthYearValue(STATE.mortalityYear, indicator.id, true);
+    var rows = healthRows().filter(function (row) {
+      return row.indicator_id === indicator.id && row.year === year;
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row.value);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    rows = sortDescending(rows, "selected_value");
+    var title = byId("hiMortalityTerritoryTitle");
+    if (title) title.textContent = indicator.label + " per territorio";
+    setSubtitle("hiMortalityTerritorySubtitle", healthGroupLabel(indicator.group) + " - " + indicator.definition + " Valori disponibili per Italia e regioni.");
+    setTag("hiMortalityTerritoryTag", asText(year) + " - " + healthUnitTitle(indicator));
+    horizontalBar("hiMortalityTerritoryChart", rows, "territory", "selected_value", {
+      limit: 21,
+      color: healthColor(indicator.group),
+      highlightField: "territory",
+      highlight: STATE.mortalityTerritoryFocus,
+      leftMargin: 150,
+      xTitle: healthUnitTitle(indicator),
+      format: function (value) { return formatHealthValue(value, indicator); },
+      hovertemplate: "%{y}<br>" + indicator.label + ": %{text}<extra></extra>"
+    });
+    setChartCredit("hiMortalityTerritoryNote", [
+      { id: "istat_health_for_all", label: "ISTAT Health for All" }
+    ], healthNoteForIndicator(indicator, "Anno selezionato: " + asText(year) + ". Per il confronto territoriale la lista anni esclude gli anni in cui ISTAT pubblica solo il valore Italia senza dettaglio regionale."));
+  }
+
+  function renderMortalityProfileChart() {
+    var group = STATE.mortalityProfileGroup;
+    var territory = STATE.mortalityProfileTerritory;
+    var indicators = healthIndicatorsForGroup(group);
+    var profileRows = indicators.map(function (indicator) {
+      var paired = healthPairedRows(territory, indicator.id, STATE.mortalityProfileYear);
+      var row = paired.territoryRow;
+      var italyRow = paired.italyRow;
+      return {
+        indicator_id: indicator.id,
+        indicator: indicator.label,
+        subgroup: indicator.subgroup,
+        territory: territory,
+        year: row ? row.year : (italyRow ? italyRow.year : null),
+        territory_value: row ? row.value : null,
+        italy_value: italyRow ? italyRow.value : null,
+        unit_label: indicator.unit_label,
+        unit: indicator.unit,
+        definition: indicator.definition
+      };
+    }).filter(function (row) {
+      return toNumber(row.territory_value) !== null || toNumber(row.italy_value) !== null;
+    });
+    profileRows.sort(function (a, b) {
+      return (toNumber(b.territory_value) || 0) - (toNumber(a.territory_value) || 0);
+    });
+    var chartRows = profileRows.slice().reverse();
+    var labels = chartRows.map(function (row) {
+      var yearLabel = STATE.mortalityProfileYear === "latest" && row.year ? " (" + row.year + ")" : "";
+      return compact(row.indicator + yearLabel, 42);
+    });
+    var firstIndicator = indicators[0] || {};
+    var traces = [{
+      type: "bar",
+      orientation: "h",
+      x: chartRows.map(function (row) { return toNumber(row.territory_value); }),
+      y: labels,
+      text: chartRows.map(function (row) { return formatHealthValue(row.territory_value, row); }),
+      name: territory,
+      marker: { color: healthColor(group) },
+      hovertemplate: "%{y}<br>" + territory + ": %{text}<extra></extra>"
+    }];
+    if (territory !== "Italia") {
+      traces.push({
+        type: "bar",
+        orientation: "h",
+        x: chartRows.map(function (row) { return toNumber(row.italy_value); }),
+        y: labels,
+        text: chartRows.map(function (row) { return formatHealthValue(row.italy_value, row); }),
+        name: "Italia",
+        marker: { color: COLORS[0] },
+        hovertemplate: "%{y}<br>Italia: %{text}<extra></extra>"
+      });
+    }
+    var title = byId("hiMortalityProfileTitle");
+    if (title) title.textContent = "Profilo mortalita - " + territory + " - " + healthGroupLabel(group);
+    setSubtitle("hiMortalityProfileSubtitle", "Cause del gruppo selezionato confrontate con l'Italia. Con 'ultimo anno' ogni causa usa il proprio ultimo anno comparabile tra territorio e Italia.");
+    setTag("hiMortalityProfileTag", STATE.mortalityProfileYear === "latest" ? "ultimo anno per causa" : "anno " + STATE.mortalityProfileYear);
+    if (profileRows.length) {
+      plot("hiMortalityProfileChart", traces, {
+        barmode: "group",
+        margin: { t: 16, r: 26, b: 54, l: 250 },
+        xaxis: { title: healthUnitTitle(firstIndicator) },
+        yaxis: { title: "" },
+        legend: { orientation: "h", y: -0.18 }
+      });
+    } else {
+      showEmptyChart("hiMortalityProfileChart");
+    }
+    createTable("hiMortalityProfileTable", profileRows.map(function (row) {
+      return Object.assign({}, row, {
+        territory_value_text: formatHealthValue(row.territory_value, row),
+        italy_value_text: formatHealthValue(row.italy_value, row)
+      });
+    }), [
+      ["indicator", "Causa"],
+      ["subgroup", "Area"],
+      ["territory", "Territorio"],
+      ["territory_value_text", "Valore territorio"],
+      ["italy_value_text", "Italia"],
+      ["year", "Anno"],
+      ["unit_label", "Unita"]
+    ], 80);
+    setChartCredit("hiMortalityProfileNote", [
+      { id: "istat_health_for_all", label: "ISTAT Health for All" }
+    ], healthNoteForIndicator(firstIndicator, "Gruppo selezionato: " + healthGroupLabel(group) + "."));
+  }
+
+  function renderMortalityTrendChart() {
+    var indicator = healthIndicatorById(STATE.mortalityTrendIndicator);
+    var territory = STATE.mortalityTrendTerritory;
+    if (!indicator) {
+      showEmptyChart("hiMortalityTrendChart");
+      return;
+    }
+    var territoryRows = healthRows().filter(function (row) {
+      return row.indicator_id === indicator.id && row.territory === territory;
+    }).sort(function (a, b) { return a.year - b.year; });
+    var italyRows = healthRows().filter(function (row) {
+      return row.indicator_id === indicator.id && row.territory === "Italia";
+    }).sort(function (a, b) { return a.year - b.year; });
+    var traces = [];
+    if (territoryRows.length) {
+      traces.push({
+        x: territoryRows.map(function (row) { return row.year; }),
+        y: territoryRows.map(function (row) { return row.value; }),
+        text: territoryRows.map(function (row) { return formatHealthValue(row.value, indicator); }),
+        type: "scatter",
+        mode: "lines+markers",
+        name: territory,
+        line: { color: healthColor(indicator.group), width: 3 },
+        marker: { size: 7 },
+        hovertemplate: "%{x}<br>" + territory + ": %{text}<extra></extra>"
+      });
+    }
+    if (territory !== "Italia" && italyRows.length) {
+      traces.push({
+        x: italyRows.map(function (row) { return row.year; }),
+        y: italyRows.map(function (row) { return row.value; }),
+        text: italyRows.map(function (row) { return formatHealthValue(row.value, indicator); }),
+        type: "scatter",
+        mode: "lines+markers",
+        name: "Italia",
+        line: { color: COLORS[0], width: 3 },
+        marker: { size: 7 },
+        hovertemplate: "%{x}<br>Italia: %{text}<extra></extra>"
+      });
+    }
+    var title = byId("hiMortalityTrendTitle");
+    if (title) title.textContent = indicator.label + " nel tempo - " + territory;
+    setSubtitle("hiMortalityTrendSubtitle", healthGroupLabel(indicator.group) + " - " + indicator.definition + " Confronto temporale sullo stesso tasso di mortalita.");
+    var years = territoryRows.map(function (row) { return row.year; });
+    setTag("hiMortalityTrendTag", (years.length ? Math.min.apply(null, years) + "-" + Math.max.apply(null, years) : "serie") + " - " + healthUnitTitle(indicator));
+    lineChart("hiMortalityTrendChart", traces, {
+      xAxis: { title: "anno", tickmode: "linear", dtick: 1 },
+      yTitle: healthUnitTitle(indicator)
+    });
+    setChartCredit("hiMortalityTrendNote", [
+      { id: "istat_health_for_all", label: "ISTAT Health for All" }
+    ], healthNoteForIndicator(indicator, "La serie usa solo gli anni pubblicati da ISTAT per questa causa."));
   }
 
   function ratioMode() {
@@ -3632,6 +3896,7 @@
     refreshProvinceFilters();
     refreshWaitingFilters(regionOptions);
     refreshHealthFilters();
+    refreshMortalityFilters();
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
@@ -3639,6 +3904,7 @@
     renderPsEmergency();
     renderWaitingLists();
     renderHealth();
+    renderMortality();
     renderRegionalRank();
     renderRegionProfile();
     renderRegionalSummaryTable();
