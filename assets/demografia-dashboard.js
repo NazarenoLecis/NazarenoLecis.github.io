@@ -2,8 +2,13 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/demografia/dashboard.json?v=20260722-11",
-    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260722-11"
+    "../../data/demografia/dashboard.json?v=20260813-1",
+    "https://data.nazarenolecis.com/demografia/dashboard.json?v=20260813-1"
+  ];
+
+  var DETAIL_DATA_SOURCES = [
+    "../../data/demografia/migration-details.json?v=20260813-1",
+    "https://data.nazarenolecis.com/demografia/migration-details.json?v=20260813-1"
   ];
 
   var STATE = {
@@ -40,6 +45,16 @@
     birthDeathCompare: "country:ESP",
     migrationTerritory: "country:ITA",
     migrationCompare: "country:ESP",
+    migrationFlowDirection: "immigration",
+    migrationFlowCountry: "ITA",
+    migrationFlowCompare: "ESP",
+    migrationFlowSex: "T",
+    migrationFlowYear: null,
+    migrationCitizenshipDirection: "immigration",
+    migrationCitizenshipCountry: "ITA",
+    migrationCitizenshipCompare: "ESP",
+    migrationCitizenshipSex: "T",
+    migrationCitizenshipYear: null,
     educationCountry: "ITA",
     educationCompareCountry: "ESP",
     educationAge: "25-64",
@@ -50,6 +65,14 @@
     tertiaryAge: "25-64",
     tertiarySex: "T",
     tertiaryLevel: "tertiary",
+    migrantEducationGeo: "IT",
+    migrantEducationAge: "25-64",
+    migrantEducationSex: "T",
+    migrantEducationYear: null,
+    migrantTertiaryBirthGroup: "FOR",
+    migrantTertiaryAge: "25-64",
+    migrantTertiarySex: "T",
+    migrantTertiaryYear: null,
     europeMetric: "share_65_plus",
     europeYear: null,
     europeCountry: "ESP",
@@ -354,6 +377,48 @@
     upper_secondary_or_more: 60
   };
 
+  var BIRTH_GROUP_LABELS = {
+    NAT: "Nati nel paese",
+    FOR: "Nati all'estero",
+    EU27_2020_FOR: "Nati in un altro paese UE",
+    NEU27_2020_FOR: "Nati fuori dall'UE"
+  };
+
+  var BIRTH_GROUP_LABELS_EN = {
+    NAT: "Native-born",
+    FOR: "Foreign-born",
+    EU27_2020_FOR: "Born in another EU country",
+    NEU27_2020_FOR: "Born outside the EU"
+  };
+
+  var CITIZENSHIP_GROUP_LABELS = {
+    NAT: "Cittadini del paese",
+    EU27_2020_FOR: "Cittadini UE",
+    NEU27_2020_FOR: "Cittadini extra UE",
+    TOTAL: "Totale"
+  };
+
+  var CITIZENSHIP_GROUP_LABELS_EN = {
+    NAT: "Nationals",
+    EU27_2020_FOR: "EU citizens",
+    NEU27_2020_FOR: "Non-EU citizens",
+    TOTAL: "Total"
+  };
+
+  var BIRTH_GROUP_ORDER = {
+    NAT: 10,
+    FOR: 20,
+    EU27_2020_FOR: 30,
+    NEU27_2020_FOR: 40
+  };
+
+  var CITIZENSHIP_GROUP_ORDER = {
+    NAT: 10,
+    EU27_2020_FOR: 20,
+    NEU27_2020_FOR: 30,
+    TOTAL: 40
+  };
+
   var LEVEL_LABELS = {
     region: "Regioni",
     province: "Province"
@@ -530,6 +595,14 @@
     return isEnglish() ? EDUCATION_LABELS_EN[level] || EDUCATION_LABELS[level] || level : EDUCATION_LABELS[level] || level;
   }
 
+  function birthGroupLabel(group) {
+    return isEnglish() ? BIRTH_GROUP_LABELS_EN[group] || BIRTH_GROUP_LABELS[group] || group : BIRTH_GROUP_LABELS[group] || group;
+  }
+
+  function citizenshipGroupLabel(group) {
+    return isEnglish() ? CITIZENSHIP_GROUP_LABELS_EN[group] || CITIZENSHIP_GROUP_LABELS[group] || group : CITIZENSHIP_GROUP_LABELS[group] || group;
+  }
+
   function levelLabel(level) {
     return isEnglish() ? LEVEL_LABELS_EN[level] || LEVEL_LABELS[level] || level : LEVEL_LABELS[level] || level;
   }
@@ -643,13 +716,41 @@
     });
   }
 
-  function fetchJsonFrom(index) {
-    if (index >= DATA_SOURCES.length) return Promise.reject(new Error(textFor("Nessuna sorgente dati disponibile", "No data source available")));
-    return fetch(DATA_SOURCES[index], { cache: "no-store" }).then(function (response) {
+  function fetchJsonFrom(sources, index) {
+    if (index >= sources.length) return Promise.reject(new Error(textFor("Nessuna sorgente dati disponibile", "No data source available")));
+    return fetch(sources[index], { cache: "no-store" }).then(function (response) {
       if (!response.ok) throw new Error("HTTP " + response.status);
       return response.json();
     }).catch(function () {
-      return fetchJsonFrom(index + 1);
+      return fetchJsonFrom(sources, index + 1);
+    });
+  }
+
+  function mergeDetailPayload(payload, detailPayload) {
+    if (!detailPayload) return payload;
+    var merged = Object.assign({}, payload, detailPayload);
+    merged.meta = Object.assign({}, payload.meta || {}, detailPayload.meta || {});
+    merged.meta.year_ranges = Object.assign(
+      {},
+      payload.meta && payload.meta.year_ranges || {},
+      detailPayload.meta && detailPayload.meta.year_ranges || {}
+    );
+    merged.meta.source_tables = Object.assign(
+      {},
+      payload.meta && payload.meta.source_tables || {},
+      detailPayload.meta && detailPayload.meta.source_tables || {}
+    );
+    merged.counts = Object.assign({}, payload.counts || {}, detailPayload.counts || {});
+    return merged;
+  }
+
+  function loadDashboardPayload() {
+    return fetchJsonFrom(DATA_SOURCES, 0).then(function (payload) {
+      return fetchJsonFrom(DETAIL_DATA_SOURCES, 0).then(function (detailPayload) {
+        return mergeDetailPayload(payload, detailPayload);
+      }).catch(function () {
+        return payload;
+      });
     });
   }
 
@@ -1311,6 +1412,111 @@
     STATE.educationYear = fillSelect("diEducationYear", years.map(function (year) { return { value: year, label: String(year) }; }), STATE.educationYear || years[years.length - 1], function (value) { STATE.educationYear = Number(value); });
   }
 
+  function migrationDirectionOptions() {
+    return [
+      { value: "immigration", label: textFor("Immigrazione", "Immigration") },
+      { value: "emigration", label: textFor("Emigrazione", "Emigration") }
+    ];
+  }
+
+  function migrationDirectionLabel(direction) {
+    return direction === "emigration" ? textFor("Emigrazione", "Emigration") : textFor("Immigrazione", "Immigration");
+  }
+
+  function migrationRowsByDirection(payload, direction) {
+    return direction === "emigration" ? payload.emigration_citizenship_profile || [] : payload.immigration_citizenship_profile || [];
+  }
+
+  function countryOptionsFromIsoRows(payload, rows) {
+    var options = unique((rows || []).map(function (row) { return row.iso3; }))
+      .sort(function (a, b) { return countryName(payload, a).localeCompare(countryName(payload, b), localeTag()); })
+      .map(function (iso3) { return { value: iso3, label: countryName(payload, iso3) }; });
+    return options.filter(function (item) { return item.value === "ITA"; })
+      .concat(options.filter(function (item) { return item.value !== "ITA"; }));
+  }
+
+  function migrationSexOptions(rows) {
+    return ["T", "M", "F"].filter(function (sex) { return rows.some(function (row) { return row.sex === sex; }); })
+      .map(function (sex) { return { value: sex, label: sexLabel(sex) }; });
+  }
+
+  function migrationYears(rows, iso3, sex) {
+    return unique(rows.filter(function (row) {
+      return row.iso3 === iso3 && row.sex === sex;
+    }).map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
+  }
+
+  function preferredMenuYear(years) {
+    if (!years.length) return null;
+    return years.includes(2024) ? 2024 : years[years.length - 1];
+  }
+
+  function migrantEducationGeoOptions(payload) {
+    var map = {};
+    (payload.migrant_education_by_birth_region || []).forEach(function (row) {
+      if (!row.geo_code || !row.geo_level) return;
+      if (!map[row.geo_code]) {
+        map[row.geo_code] = {
+          value: row.geo_code,
+          level: row.geo_level,
+          label: row.geo_level === "country" ? countryName(payload, row.iso3) : row.geo_name || row.geo_code
+        };
+      }
+    });
+    return Object.keys(map).map(function (key) { return map[key]; }).sort(function (a, b) {
+      if (a.level !== b.level) return a.level === "country" ? -1 : 1;
+      return a.label.localeCompare(b.label, localeTag());
+    });
+  }
+
+  function fillMigrationDetailControls(payload) {
+    STATE.migrationFlowDirection = fillSelect("diMigrationFlowDirection", migrationDirectionOptions(), STATE.migrationFlowDirection, function (value) { STATE.migrationFlowDirection = value; STATE.migrationFlowYear = null; });
+    var flowRows = migrationRowsByDirection(payload, STATE.migrationFlowDirection);
+    var flowCountries = countryOptionsFromIsoRows(payload, flowRows);
+    STATE.migrationFlowCountry = fillSelect("diMigrationFlowCountry", flowCountries, STATE.migrationFlowCountry, function (value) { STATE.migrationFlowCountry = value; STATE.migrationFlowYear = null; });
+    STATE.migrationFlowCompare = fillSelect("diMigrationFlowCompare", compareOptions(flowCountries), STATE.migrationFlowCompare, function (value) { STATE.migrationFlowCompare = value; });
+    STATE.migrationFlowSex = fillSelect("diMigrationFlowSex", migrationSexOptions(flowRows), STATE.migrationFlowSex, function (value) { STATE.migrationFlowSex = value; STATE.migrationFlowYear = null; });
+    var flowYears = migrationYears(flowRows, STATE.migrationFlowCountry, STATE.migrationFlowSex);
+    STATE.migrationFlowYear = fillSelect("diMigrationFlowYear", flowYears.map(function (year) { return { value: year, label: String(year) }; }), STATE.migrationFlowYear || preferredMenuYear(flowYears), function (value) { STATE.migrationFlowYear = Number(value); });
+
+    STATE.migrationCitizenshipDirection = fillSelect("diMigrationCitizenshipDirection", migrationDirectionOptions(), STATE.migrationCitizenshipDirection, function (value) { STATE.migrationCitizenshipDirection = value; STATE.migrationCitizenshipYear = null; });
+    var citizenshipRows = migrationRowsByDirection(payload, STATE.migrationCitizenshipDirection);
+    var citizenshipCountries = countryOptionsFromIsoRows(payload, citizenshipRows);
+    STATE.migrationCitizenshipCountry = fillSelect("diMigrationCitizenshipCountry", citizenshipCountries, STATE.migrationCitizenshipCountry, function (value) { STATE.migrationCitizenshipCountry = value; STATE.migrationCitizenshipYear = null; });
+    STATE.migrationCitizenshipCompare = fillSelect("diMigrationCitizenshipCompare", compareOptions(citizenshipCountries), STATE.migrationCitizenshipCompare, function (value) { STATE.migrationCitizenshipCompare = value; });
+    STATE.migrationCitizenshipSex = fillSelect("diMigrationCitizenshipSex", migrationSexOptions(citizenshipRows), STATE.migrationCitizenshipSex, function (value) { STATE.migrationCitizenshipSex = value; STATE.migrationCitizenshipYear = null; });
+    var citizenshipYears = migrationYears(citizenshipRows, STATE.migrationCitizenshipCountry, STATE.migrationCitizenshipSex);
+    STATE.migrationCitizenshipYear = fillSelect("diMigrationCitizenshipYear", citizenshipYears.map(function (year) { return { value: year, label: String(year) }; }), STATE.migrationCitizenshipYear || preferredMenuYear(citizenshipYears), function (value) { STATE.migrationCitizenshipYear = Number(value); });
+  }
+
+  function fillMigrantEducationControls(payload) {
+    var educationRows = payload.migrant_education_by_birth_region || [];
+    var tertiaryRows = payload.migrant_tertiary_share || [];
+    var geos = migrantEducationGeoOptions(payload);
+    var ages = unique(educationRows.map(function (row) { return row.age_label; })).sort();
+    var sexes = ["T", "M", "F"].filter(function (sex) { return educationRows.some(function (row) { return row.sex === sex; }); });
+    STATE.migrantEducationGeo = fillSelect("diMigrantEducationGeo", geos, STATE.migrantEducationGeo, function (value) { STATE.migrantEducationGeo = value; STATE.migrantEducationYear = null; });
+    STATE.migrantEducationAge = fillSelect("diMigrantEducationAge", ages.map(function (age) { return { value: age, label: age }; }), STATE.migrantEducationAge, function (value) { STATE.migrantEducationAge = value; STATE.migrantEducationYear = null; });
+    STATE.migrantEducationSex = fillSelect("diMigrantEducationSex", sexes.map(function (sex) { return { value: sex, label: sexLabel(sex) }; }), STATE.migrantEducationSex, function (value) { STATE.migrantEducationSex = value; STATE.migrantEducationYear = null; });
+    var educationYears = unique(educationRows.filter(function (row) {
+      return row.geo_code === STATE.migrantEducationGeo && row.age_label === STATE.migrantEducationAge && row.sex === STATE.migrantEducationSex;
+    }).map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
+    STATE.migrantEducationYear = fillSelect("diMigrantEducationYear", educationYears.map(function (year) { return { value: year, label: String(year) }; }), STATE.migrantEducationYear || educationYears[educationYears.length - 1], function (value) { STATE.migrantEducationYear = Number(value); });
+
+    var tertiaryAges = unique(tertiaryRows.map(function (row) { return row.age_label; })).sort();
+    var tertiarySexes = ["T", "M", "F"].filter(function (sex) { return tertiaryRows.some(function (row) { return row.sex === sex; }); });
+    var birthGroups = unique(tertiaryRows.map(function (row) { return row.country_of_birth_group; })).sort(function (a, b) {
+      return (BIRTH_GROUP_ORDER[a] || 999) - (BIRTH_GROUP_ORDER[b] || 999);
+    });
+    STATE.migrantTertiaryBirthGroup = fillSelect("diMigrantTertiaryBirthGroup", birthGroups.map(function (group) { return { value: group, label: birthGroupLabel(group) }; }), STATE.migrantTertiaryBirthGroup, function (value) { STATE.migrantTertiaryBirthGroup = value; STATE.migrantTertiaryYear = null; });
+    STATE.migrantTertiaryAge = fillSelect("diMigrantTertiaryAge", tertiaryAges.map(function (age) { return { value: age, label: age }; }), STATE.migrantTertiaryAge, function (value) { STATE.migrantTertiaryAge = value; STATE.migrantTertiaryYear = null; });
+    STATE.migrantTertiarySex = fillSelect("diMigrantTertiarySex", tertiarySexes.map(function (sex) { return { value: sex, label: sexLabel(sex) }; }), STATE.migrantTertiarySex, function (value) { STATE.migrantTertiarySex = value; STATE.migrantTertiaryYear = null; });
+    var tertiaryYears = unique(tertiaryRows.filter(function (row) {
+      return row.geo_level === "region" && row.country_of_birth_group === STATE.migrantTertiaryBirthGroup && row.age_label === STATE.migrantTertiaryAge && row.sex === STATE.migrantTertiarySex;
+    }).map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
+    STATE.migrantTertiaryYear = fillSelect("diMigrantTertiaryYear", tertiaryYears.map(function (year) { return { value: year, label: String(year) }; }), STATE.migrantTertiaryYear || tertiaryYears[tertiaryYears.length - 1], function (value) { STATE.migrantTertiaryYear = Number(value); });
+  }
+
   function renderControls(payload) {
     var ageTerritories = ageTerritoryOptions(payload);
     var allTerritories = allTerritoryOptions(payload);
@@ -1359,6 +1565,8 @@
     STATE.europeSeriesMetric = fillSelect("diEuropeSeriesMetric", selectOptions("diEuropeSeriesMetric"), STATE.europeSeriesMetric, function (value) { STATE.europeSeriesMetric = value; });
 
     fillEducationControls(payload);
+    fillMigrationDetailControls(payload);
+    fillMigrantEducationControls(payload);
     syncKebabPlayButton();
   }
 
@@ -1645,6 +1853,113 @@
     plot("diMigrationChart", traces, { barmode: "relative", yaxis: { title: { text: textFor("Migliaia di persone", "Thousands of people") }, zeroline: true } });
   }
 
+  function migrationRowsForCountryYear(payload, direction, iso3, sex, year) {
+    return migrationRowsByDirection(payload, direction).filter(function (row) {
+      return row.iso3 === iso3 && row.sex === sex && Number(row.year) === Number(year) && toNumber(row.value) !== null;
+    });
+  }
+
+  function migrationAgeSeriesRows(payload, direction, iso3, sex, year) {
+    var rows = migrationRowsForCountryYear(payload, direction, iso3, sex, year);
+    var totalRows = rows.filter(function (row) { return row.citizenship === "TOTAL" && toNumber(row.age_low) !== null; });
+    var sourceRows = totalRows.length ? totalRows : rows.filter(function (row) {
+      return row.citizenship !== "TOTAL" && toNumber(row.age_low) !== null;
+    });
+    var byAge = {};
+    sourceRows.forEach(function (row) {
+      var key = ageLabel(row);
+      if (!byAge[key]) byAge[key] = { label: key, low: toNumber(row.age_low), value: 0 };
+      byAge[key].value += toNumber(row.value) || 0;
+    });
+    return Object.keys(byAge).map(function (key) { return byAge[key]; }).sort(function (a, b) { return a.low - b.low; });
+  }
+
+  function migrationAgeTrace(payload, direction, iso3, sex, year, color, dash) {
+    var rows = migrationAgeSeriesRows(payload, direction, iso3, sex, year);
+    return {
+      type: "scatter",
+      mode: "lines+markers",
+      name: countryName(payload, iso3),
+      x: rows.map(function (row) { return row.label; }),
+      y: rows.map(function (row) { return row.value / 1000; }),
+      line: { color: color, width: 3, dash: dash || "solid" }
+    };
+  }
+
+  function renderMigrationAgeProfileChart(payload) {
+    var direction = STATE.migrationFlowDirection;
+    setText("diMigrationAgeTitle", migrationDirectionLabel(direction) + textFor(" per età", " by age"));
+    var tag = byId("diMigrationAgeTag");
+    if (tag) tag.textContent = countryName(payload, STATE.migrationFlowCountry) + ", " + sexLabel(STATE.migrationFlowSex) + ", " + STATE.migrationFlowYear;
+    var traces = [
+      migrationAgeTrace(payload, direction, STATE.migrationFlowCountry, STATE.migrationFlowSex, STATE.migrationFlowYear, COLORS.orange)
+    ];
+    if (STATE.migrationFlowCompare !== "none") {
+      traces.push(migrationAgeTrace(payload, direction, STATE.migrationFlowCompare, STATE.migrationFlowSex, STATE.migrationFlowYear, COLORS.blue, "dash"));
+    }
+    plot("diMigrationAgeChart", traces, {
+      yaxis: { title: { text: textFor("Migliaia di persone", "Thousands of people") }, zeroline: true },
+      xaxis: { title: { text: textFor("Età", "Age") } },
+      margin: { l: 70, r: 34, t: 18, b: 82 }
+    });
+  }
+
+  function migrationCitizenshipRows(payload, direction, iso3, sex, year) {
+    var rows = migrationRowsForCountryYear(payload, direction, iso3, sex, year);
+    var totals = rows.filter(function (row) { return row.citizenship !== "TOTAL" && toNumber(row.age_low) === null; });
+    var sourceRows = totals.length ? totals : rows.filter(function (row) {
+      return row.citizenship !== "TOTAL" && toNumber(row.age_low) !== null;
+    });
+    var byGroup = {};
+    sourceRows.forEach(function (row) {
+      var group = row.citizenship || "TOTAL";
+      if (!byGroup[group]) byGroup[group] = 0;
+      byGroup[group] += toNumber(row.value) || 0;
+    });
+    return Object.keys(byGroup).map(function (group) {
+      return { group: group, value: byGroup[group] };
+    }).sort(function (a, b) {
+      return (CITIZENSHIP_GROUP_ORDER[a.group] || 999) - (CITIZENSHIP_GROUP_ORDER[b.group] || 999);
+    });
+  }
+
+  function renderMigrationCitizenshipChart(payload) {
+    var direction = STATE.migrationCitizenshipDirection;
+    setText("diMigrationCitizenshipTitle", migrationDirectionLabel(direction) + textFor(" per cittadinanza", " by citizenship"));
+    var primary = migrationCitizenshipRows(payload, direction, STATE.migrationCitizenshipCountry, STATE.migrationCitizenshipSex, STATE.migrationCitizenshipYear);
+    var compare = STATE.migrationCitizenshipCompare === "none" ? [] : migrationCitizenshipRows(payload, direction, STATE.migrationCitizenshipCompare, STATE.migrationCitizenshipSex, STATE.migrationCitizenshipYear);
+    var groups = unique(primary.concat(compare).map(function (row) { return row.group; })).sort(function (a, b) {
+      return (CITIZENSHIP_GROUP_ORDER[a] || 999) - (CITIZENSHIP_GROUP_ORDER[b] || 999);
+    });
+    var primaryMap = {};
+    var compareMap = {};
+    primary.forEach(function (row) { primaryMap[row.group] = row.value; });
+    compare.forEach(function (row) { compareMap[row.group] = row.value; });
+    var tag = byId("diMigrationCitizenshipTag");
+    if (tag) tag.textContent = countryName(payload, STATE.migrationCitizenshipCountry) + ", " + sexLabel(STATE.migrationCitizenshipSex) + ", " + STATE.migrationCitizenshipYear;
+    var traces = [{
+      type: "bar",
+      name: countryName(payload, STATE.migrationCitizenshipCountry),
+      x: groups.map(citizenshipGroupLabel),
+      y: groups.map(function (group) { return (primaryMap[group] || 0) / 1000; }),
+      marker: { color: COLORS.orange }
+    }];
+    if (STATE.migrationCitizenshipCompare !== "none") {
+      traces.push({
+        type: "bar",
+        name: countryName(payload, STATE.migrationCitizenshipCompare),
+        x: groups.map(citizenshipGroupLabel),
+        y: groups.map(function (group) { return (compareMap[group] || 0) / 1000; }),
+        marker: { color: COLORS.blue }
+      });
+    }
+    plot("diMigrationCitizenshipChart", traces, {
+      barmode: "group",
+      yaxis: { title: { text: textFor("Migliaia di persone", "Thousands of people") }, zeroline: true },
+      margin: { l: 70, r: 34, t: 18, b: 92 }
+    });
+  }
+
   function educationRows(payload, iso3, age, sex, year) {
     return (payload.education_attainment || []).filter(function (row) {
       return row.iso3 === iso3 && row.age_label === age && row.sex === sex && Number(row.year) === Number(year);
@@ -1664,6 +1979,79 @@
       var orderB = EDUCATION_ORDER[b.education_level] || 999;
       if (orderA !== orderB) return orderA - orderB;
       return (toNumber(b.value) || 0) - (toNumber(a.value) || 0);
+    });
+  }
+
+  function migrantEducationGeoLabel(payload, geoCode) {
+    var option = migrantEducationGeoOptions(payload).find(function (item) { return item.value === geoCode; });
+    return option ? option.label : geoCode;
+  }
+
+  function migrantEducationRows(payload, geoCode, age, sex, year) {
+    return (payload.migrant_education_by_birth_region || []).filter(function (row) {
+      return row.geo_code === geoCode && row.age_label === age && row.sex === sex && Number(row.year) === Number(year) && toNumber(row.value) !== null;
+    });
+  }
+
+  function renderMigrantEducationBirthChart(payload) {
+    setText("diMigrantEducationTitle", textFor("Titoli di studio per paese di nascita", "Education level by country of birth"));
+    var rows = migrantEducationRows(payload, STATE.migrantEducationGeo, STATE.migrantEducationAge, STATE.migrantEducationSex, STATE.migrantEducationYear);
+    var displayRows = educationDisplayRows(rows);
+    var levels = unique(displayRows.map(function (row) { return row.education_level; })).sort(function (a, b) {
+      return (EDUCATION_ORDER[a] || 999) - (EDUCATION_ORDER[b] || 999);
+    });
+    var groups = unique(displayRows.map(function (row) { return row.country_of_birth_group; })).sort(function (a, b) {
+      return (BIRTH_GROUP_ORDER[a] || 999) - (BIRTH_GROUP_ORDER[b] || 999);
+    });
+    var colors = [COLORS.orange, COLORS.blue, COLORS.teal, COLORS.purple];
+    var tag = byId("diMigrantEducationTag");
+    if (tag) tag.textContent = migrantEducationGeoLabel(payload, STATE.migrantEducationGeo) + ", " + STATE.migrantEducationAge + ", " + sexLabel(STATE.migrantEducationSex) + ", " + STATE.migrantEducationYear;
+    var traces = groups.map(function (group, index) {
+      var map = {};
+      displayRows.filter(function (row) { return row.country_of_birth_group === group; }).forEach(function (row) {
+        map[row.education_level] = row.value;
+      });
+      return {
+        type: "bar",
+        name: birthGroupLabel(group),
+        x: levels.map(function (level) { return educationLabel(level); }),
+        y: levels.map(function (level) { return map[level]; }),
+        marker: { color: colors[index % colors.length] }
+      };
+    });
+    plot("diMigrantEducationChart", traces, {
+      barmode: "group",
+      yaxis: { title: { text: textFor("% popolazione selezionata", "% selected population") }, ticksuffix: "%" },
+      margin: { l: 70, r: 34, t: 18, b: 100 }
+    });
+  }
+
+  function renderMigrantTertiaryRegionChart(payload) {
+    setText("diMigrantTertiaryTitle", textFor("Regioni italiane per laureati ", "Italian regions by tertiary share ") + "- " + birthGroupLabel(STATE.migrantTertiaryBirthGroup));
+    var rows = (payload.migrant_tertiary_share || []).filter(function (row) {
+      return row.geo_level === "region" &&
+        row.country_of_birth_group === STATE.migrantTertiaryBirthGroup &&
+        row.age_label === STATE.migrantTertiaryAge &&
+        row.sex === STATE.migrantTertiarySex &&
+        Number(row.year) === Number(STATE.migrantTertiaryYear) &&
+        toNumber(row.tertiary_share) !== null;
+    }).sort(function (a, b) { return toNumber(a.tertiary_share) - toNumber(b.tertiary_share); });
+    var tag = byId("diMigrantTertiaryTag");
+    if (tag) tag.textContent = birthGroupLabel(STATE.migrantTertiaryBirthGroup) + ", " + STATE.migrantTertiaryAge + ", " + sexLabel(STATE.migrantTertiarySex) + ", " + STATE.migrantTertiaryYear;
+    var chart = byId("diMigrantTertiaryRegionChart");
+    var chartHeight = Math.max(560, rows.length * 25 + 170);
+    if (chart) chart.style.height = chartHeight + "px";
+    plot("diMigrantTertiaryRegionChart", [{
+      type: "bar",
+      orientation: "h",
+      name: birthGroupLabel(STATE.migrantTertiaryBirthGroup),
+      x: rows.map(function (row) { return row.tertiary_share; }),
+      y: rows.map(function (row) { return row.geo_name || row.geo_code; }),
+      marker: { color: COLORS.blue }
+    }], {
+      height: chartHeight,
+      xaxis: { title: { text: textFor("% con istruzione terziaria", "% with tertiary education") }, ticksuffix: "%" },
+      margin: { l: 170, r: 34, t: 18, b: 62 }
     });
   }
 
@@ -1779,8 +2167,12 @@
     renderFertilityChart(payload);
     renderBirthDeathChart(payload);
     renderMigrationChart(payload);
+    renderMigrationAgeProfileChart(payload);
+    renderMigrationCitizenshipChart(payload);
     renderEducationChart(payload);
     renderEducationTrendChart(payload);
+    renderMigrantEducationBirthChart(payload);
+    renderMigrantTertiaryRegionChart(payload);
     renderEuropeRankChart(payload);
     renderEuropeSeriesChart(payload);
   }
@@ -1789,7 +2181,7 @@
     if (STATE.payload) renderAll(STATE.payload);
   });
 
-  fetchJsonFrom(0).then(function (payload) {
+  loadDashboardPayload().then(function (payload) {
     STATE.payload = payload;
     renderAll(payload);
     setStatus("");
@@ -1798,7 +2190,8 @@
     [
       "diKebabChart", "diPopulationChart", "diAgeSharesChart", "diAgeDistributionChart", "diDependencyChart",
       "diRegionalRankChart", "diRegionalSeriesChart", "diFertilityChart", "diBirthDeathChart", "diMigrationChart",
-      "diEducationChart", "diTertiaryChart", "diEuropeRankChart", "diEuropeSeriesChart"
+      "diMigrationAgeChart", "diMigrationCitizenshipChart", "diEducationChart", "diTertiaryChart",
+      "diMigrantEducationChart", "diMigrantTertiaryRegionChart", "diEuropeRankChart", "diEuropeSeriesChart"
     ].forEach(function (id) {
       showEmpty(id, textFor("Dati non disponibili.", "Data not available."));
     });

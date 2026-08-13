@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260722-4">
+  <link rel="stylesheet" href="../../assets/demografia-dashboard.css?v=20260813-1">
   <script defer src="../../assets/theme.js?v=20260723-chart-credits"></script>
   <script defer src="../../assets/lang.js"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/demografia-dashboard.js?v=20260722-10"></script>
+  <script defer src="../../assets/demografia-dashboard.js?v=20260813-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -342,6 +342,52 @@
           <div id="diMigrationChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a>. Elaborazione: Nazareno Lecis. Nota: il saldo migratorio include l'aggiustamento statistico; l'emigrazione stimata è ricavata da immigrazione e saldo quando entrambi sono disponibili.</p>
         </article>
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3 id="diMigrationAgeTitle">Flussi migratori per età</h3><span id="diMigrationAgeTag">persone</span></div>
+          <p class="di-explain">Scegli immigrazione o emigrazione, paese, sesso e anno. Il confronto mostra le differenze nella struttura per età dei flussi, non la popolazione residente.</p>
+          <div class="di-chart-controls">
+            <label>Flusso
+              <select id="diMigrationFlowDirection"></select>
+            </label>
+            <label>Paese
+              <select id="diMigrationFlowCountry"></select>
+            </label>
+            <label>Confronto
+              <select id="diMigrationFlowCompare"></select>
+            </label>
+            <label>Sesso
+              <select id="diMigrationFlowSex"></select>
+            </label>
+            <label>Anno
+              <select id="diMigrationFlowYear"></select>
+            </label>
+          </div>
+          <div id="diMigrationAgeChart" class="di-chart"></div>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_imm1ctz/default/table" target="_blank" rel="noopener"><code>migr_imm1ctz</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_emi1ctz/default/table" target="_blank" rel="noopener"><code>migr_emi1ctz</code></a>. Elaborazione: Nazareno Lecis. Nota: le classi di età sono quelle armonizzate pubblicate da Eurostat; la cittadinanza indica la nazionalità amministrativa, non il paese di nascita.</p>
+        </article>
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3 id="diMigrationCitizenshipTitle">Flussi migratori per cittadinanza</h3><span id="diMigrationCitizenshipTag">persone</span></div>
+          <p class="di-explain">La vista separa cittadini del paese, cittadini di altri paesi UE e cittadini extra UE. Puoi cambiare flusso, anno, sesso e paese di confronto.</p>
+          <div class="di-chart-controls">
+            <label>Flusso
+              <select id="diMigrationCitizenshipDirection"></select>
+            </label>
+            <label>Paese
+              <select id="diMigrationCitizenshipCountry"></select>
+            </label>
+            <label>Confronto
+              <select id="diMigrationCitizenshipCompare"></select>
+            </label>
+            <label>Sesso
+              <select id="diMigrationCitizenshipSex"></select>
+            </label>
+            <label>Anno
+              <select id="diMigrationCitizenshipYear"></select>
+            </label>
+          </div>
+          <div id="diMigrationCitizenshipChart" class="di-chart"></div>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_imm1ctz/default/table" target="_blank" rel="noopener"><code>migr_imm1ctz</code></a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_emi1ctz/default/table" target="_blank" rel="noopener"><code>migr_emi1ctz</code></a>. Elaborazione: Nazareno Lecis. Nota: il grafico usa il totale annuo per classe di cittadinanza; quando il totale non è disponibile, somma le classi di età disponibili.</p>
+        </article>
       </div>
     </section>
 
@@ -396,6 +442,46 @@
           </div>
           <div id="diTertiaryChart" class="di-chart"></div>
           <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a> e popolazione <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>. Elaborazione: Nazareno Lecis. Nota: la linea percentuale mostra il livello di istruzione scelto; la linea grigia mostra la popolazione totale del paese in milioni.</p>
+        </article>
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3 id="diMigrantEducationTitle">Titoli di studio per paese di nascita</h3><span id="diMigrantEducationTag">25-64</span></div>
+          <p class="di-explain">Questa vista confronta la distribuzione dei titoli di studio tra nati nel paese, nati all'estero, nati in un altro paese UE e nati fuori dall'UE. La misura è una quota della popolazione residente nella fascia selezionata.</p>
+          <div class="di-chart-controls">
+            <label>Territorio
+              <select id="diMigrantEducationGeo"></select>
+            </label>
+            <label>Età
+              <select id="diMigrantEducationAge"></select>
+            </label>
+            <label>Sesso
+              <select id="diMigrantEducationSex"></select>
+            </label>
+            <label>Anno
+              <select id="diMigrantEducationYear"></select>
+            </label>
+          </div>
+          <div id="diMigrantEducationChart" class="di-chart"></div>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfs_9917/default/table" target="_blank" rel="noopener"><code>edat_lfs_9917</code></a>. Elaborazione: Nazareno Lecis. Nota: la fonte usa l'indagine europea sulle forze di lavoro; misura residenti per paese di nascita e titolo di studio, non i flussi migratori annui. Le quote sono percentuali sulla fascia, sesso, anno e territorio selezionati.</p>
+        </article>
+        <article class="di-card di-chart-block">
+          <div class="di-card-title"><h3 id="diMigrantTertiaryTitle">Regioni italiane per laureati</h3><span id="diMigrantTertiaryTag">25-64</span></div>
+          <p class="di-explain">La classifica mostra la quota con istruzione terziaria per paese di nascita nelle regioni italiane. Serve a leggere differenze territoriali dentro l'Italia, non a ordinare i flussi in entrata.</p>
+          <div class="di-chart-controls">
+            <label>Paese di nascita
+              <select id="diMigrantTertiaryBirthGroup"></select>
+            </label>
+            <label>Età
+              <select id="diMigrantTertiaryAge"></select>
+            </label>
+            <label>Sesso
+              <select id="diMigrantTertiarySex"></select>
+            </label>
+            <label>Anno
+              <select id="diMigrantTertiaryYear"></select>
+            </label>
+          </div>
+          <div id="diMigrantTertiaryRegionChart" class="di-chart"></div>
+          <p class="di-chart-credit">Fonte dati: Eurostat <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfs_9917/default/table" target="_blank" rel="noopener"><code>edat_lfs_9917</code></a>. Elaborazione: Nazareno Lecis. Nota: terziario indica ISCED 5-8. La fonte è campionaria, quindi alcune combinazioni regionali, per sesso o per paese di nascita possono mancare o essere più discontinue.</p>
         </article>
       </div>
     </section>
@@ -487,7 +573,7 @@
         </div>
         <div>
           <h3>Fonti</h3>
-          <p>Eurostat: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec/default/table" target="_blank" rel="noopener"><code>demo_mlexpec</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>.</p>
+          <p>Eurostat: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table" target="_blank" rel="noopener"><code>demo_pjan</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/proj_23np/default/table" target="_blank" rel="noopener"><code>proj_23np</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_gind/default/table" target="_blank" rel="noopener"><code>demo_gind</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_frate/default/table" target="_blank" rel="noopener"><code>demo_frate</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_mlexpec/default/table" target="_blank" rel="noopener"><code>demo_mlexpec</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_imm1ctz/default/table" target="_blank" rel="noopener"><code>migr_imm1ctz</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/migr_emi1ctz/default/table" target="_blank" rel="noopener"><code>migr_emi1ctz</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfse_03/default/table" target="_blank" rel="noopener"><code>edat_lfse_03</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/edat_lfs_9917/default/table" target="_blank" rel="noopener"><code>edat_lfs_9917</code></a>.</p>
           <p>Eurostat regionale: <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_pjangroup/default/table" target="_blank" rel="noopener"><code>demo_r_pjangroup</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_gind3/default/table" target="_blank" rel="noopener"><code>demo_r_gind3</code></a>, <a href="https://ec.europa.eu/eurostat/databrowser/view/demo_r_find3/default/table" target="_blank" rel="noopener"><code>demo_r_find3</code></a>.</p>
           <p>Pipeline e trasformazioni: <a href="https://github.com/NazarenoLecis/demografia" target="_blank" rel="noopener">repository demografia</a>.</p>
         </div>
