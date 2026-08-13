@@ -1372,6 +1372,9 @@
     var births = latestNonNull(payload.demographic_balance || [], "live_births");
     var deaths = latestNonNull(payload.demographic_balance || [], "deaths");
     var migration = latestNonNull(payload.demographic_balance || [], "net_migration_adjustment");
+    var lifeExpectancyBirth = latestNonNull(payload.life_expectancy || [], "value", function (row) {
+      return row.iso3 === "ITA" && row.indicator === "life_expectancy_birth" && row.sex === "T";
+    });
     var tertiary = latestNonNull(payload.education_attainment || [], "value", function (row) {
       return row.iso3 === "ITA" && row.age_label === "25-64" && row.sex === "T" && row.education_level === "tertiary";
     });
@@ -1379,7 +1382,9 @@
       createKpi(textFor("Popolazione", "Population"), formatMillions(observed && observed.population_total), observed ? observed.year + textFor(" osservato", " observed") : missingLabel(), textFor("Residenti totali a inizio anno.", "Total residents at the beginning of the year.")),
       createKpi(textFor("Età mediana", "Median age"), formatNumber(observed && observed.median_age) + textFor(" anni", " years"), observed ? observed.year + textFor(" osservato", " observed") : missingLabel(), textFor("Mediana della distribuzione per età.", "Median of the age distribution.")),
       createKpi(textFor("Quota 65+", "Share 65+"), formatPercent(observed && observed.share_65_plus), observed ? observed.year + textFor(" osservato", " observed") : missingLabel(), textFor("Peso della popolazione in età anziana.", "Weight of the older population.")),
+      createKpi(textFor("Dipendenza giovanile", "Youth dependency"), formatDecimal(observed && observed.dependency_youth, 1), textFor("0-14 ogni 100 persone 15-64", "0-14 per 100 people aged 15-64"), textFor("Carico demografico dei più giovani sulle età attive.", "Demographic load of younger ages on working ages.")),
       createKpi(textFor("Dipendenza anziani", "Old-age dependency"), formatDecimal(observed && observed.dependency_old, 1), textFor("ogni 100 persone 15-64", "per 100 people aged 15-64"), textFor("Rapporto strutturale tra 65+ ed età attiva.", "Structural ratio between 65+ and working ages.")),
+      createKpi(textFor("Speranza di vita alla nascita", "Life expectancy at birth"), formatDecimal(lifeExpectancyBirth && lifeExpectancyBirth.value, 1) + textFor(" anni", " years"), lifeExpectancyBirth ? lifeExpectancyBirth.year + " Eurostat" : missingLabel(), textFor("Anni medi attesi alle condizioni di mortalità dell'anno.", "Expected years under the year's mortality conditions.")),
       createKpi(textFor("Fecondità", "Fertility"), formatDecimal(fertility && fertility.value, 2), fertility ? fertility.year + " Eurostat" : missingLabel(), textFor("Figli per donna.", "Children per woman.")),
       createKpi(textFor("Nati vivi", "Live births"), formatNumber(births && births.live_births), births ? births.year + textFor(" persone", " people") : missingLabel(), textFor("Numero di nati vivi nell'anno.", "Number of live births during the year.")),
       createKpi(textFor("Decessi", "Deaths"), formatNumber(deaths && deaths.deaths), deaths ? deaths.year + textFor(" persone", " people") : missingLabel(), textFor("Numero di decessi nell'anno.", "Number of deaths during the year.")),

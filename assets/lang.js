@@ -86,6 +86,7 @@
     "Quadro rapido": "Quick view",
     "Indicatori principali": "Main indicators",
     "Ultimi valori disponibili per popolazione, età, dipendenza anziani, fecondità, saldo migratorio e istruzione.": "Latest available values for population, age, old-age dependency, fertility, migration balance and education.",
+    "Ultimi valori disponibili per popolazione, età, dipendenza giovanile, carico demografico, speranza di vita, fecondità, saldo migratorio e istruzione.": "Latest available values for population, age, youth dependency, demographic load, life expectancy, fertility, migration balance and education.",
     "Età e sesso": "Age and sex",
     "Kebab demografico": "Demographic Kebab",
     "Distribuzione per età, con uomini a sinistra e donne a destra. Formalmente nota come piramide demografica.": "Age distribution, with men on the left and women on the right. Formally known as a population pyramid.",
