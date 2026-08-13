@@ -402,8 +402,7 @@
         ["structure", "Pronto soccorso"],
         ["emergency_level", "Livello PS/DEA"],
         ["triage_label", "Codice triage"],
-        ["wait_minutes", "Permanenza media"],
-        ["accesses_total", "Accessi totali"]
+        ["wait_minutes", "Permanenza media"]
       ]
     },
     {
@@ -415,8 +414,7 @@
         ["triage_label", "Codice triage"],
         ["structures", "Strutture"],
         ["mean_wait_minutes", "Media strutture"],
-        ["median_wait_minutes", "Mediana strutture"],
-        ["accesses_total", "Accessi totali"]
+        ["median_wait_minutes", "Mediana strutture"]
       ]
     },
     {
@@ -2680,6 +2678,8 @@
     var selectedStructure = STATE.psStructure !== "all";
     var triageText = STATE.psStructureTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psStructureTriage).toLowerCase();
     var territory = territoryLabel(STATE.psStructureRegion, STATE.psStructureProvince);
+    var structureAccesses = null;
+    var structureLevel = "";
     var rows;
     var tableColumns;
     var labelField;
@@ -2692,7 +2692,11 @@
       }).sort(function (a, b) { return triageOrder(a.triage_code) - triageOrder(b.triage_code); });
       labelField = "triage_label";
       tableColumns = tableOption("ps_wait_times_by_structure_triage").columns;
-      if (rows.length) territory = rows[0].structure;
+      if (rows.length) {
+        territory = rows[0].structure;
+        structureAccesses = toNumber(rows[0].accesses_total);
+        structureLevel = asText(rows[0].emergency_level);
+      }
     } else if (STATE.psStructureTriage === "all") {
       rows = psStructureRows().map(function (row) {
         var copy = Object.assign({}, row);
@@ -2717,7 +2721,7 @@
     if (title) {
       title.textContent = selectedStructure ? "Pronto soccorso: codici triage - " + territory : "Pronto soccorso: permanenza per struttura - " + territory + " - " + triageText;
     }
-    setTag("hiPsStructureTag", "2024 - " + (selectedStructure ? territory : triageText));
+    setTag("hiPsStructureTag", "2024 - " + (selectedStructure && structureAccesses !== null ? "accessi struttura: " + formatNumber(structureAccesses) : (selectedStructure ? territory : triageText)));
     rows = rows.filter(function (row) { return toNumber(row.selected_value) !== null; });
     horizontalBar("hiPsStructureChart", rows, labelField, "selected_value", {
       limit: selectedStructure ? 10 : chartLimit(STATE.psStructureLimit, 20),
@@ -2734,7 +2738,7 @@
     var unavailable = psUnavailableCodesText();
     setChartCredit("hiPsStructureNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. Accessi totali e livello PS/DEA sono riportati in tabella; gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
+    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. " + (selectedStructure ? "Nel dettaglio per codice triage la tabella non mostra gli accessi, perche la fonte pubblica solo gli accessi totali della struttura" + (structureAccesses !== null ? " (" + formatNumber(structureAccesses) + ")" : "") + (structureLevel ? " e il livello PS/DEA (" + structureLevel + ")" : "") + "." : "Accessi totali e livello PS/DEA sono riportati in tabella come dati della struttura, non del singolo codice triage.") + " Gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
   }
 
   function renderWaitingLists() {
