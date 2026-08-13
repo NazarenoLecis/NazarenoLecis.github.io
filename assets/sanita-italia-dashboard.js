@@ -831,6 +831,9 @@
         return { id: code, label: triageLabel(code), sort_order: triageOrder(code), available_wait_times: true };
       });
     }
+    rows = rows.filter(function (row) {
+      return row.available_wait_times !== false;
+    });
     rows = rows.slice().sort(function (a, b) {
       return (toNumber(a.sort_order) || triageOrder(a.id)) - (toNumber(b.sort_order) || triageOrder(b.id));
     });
@@ -838,6 +841,14 @@
       return { value: row.id, label: row.label || triageLabel(row.id) };
     });
     return includeAll ? [{ value: "all", label: "Tutti i codici disponibili" }].concat(options) : options;
+  }
+
+  function refreshPsTriageFilter(id, stateKey, includeAll) {
+    var options = psTriageOptions(includeAll);
+    if (!options.some(function (option) { return option.value === STATE[stateKey]; })) {
+      STATE[stateKey] = includeAll ? "all" : (options[0] ? options[0].value : "all");
+    }
+    fillSelect(id, options, STATE[stateKey]);
   }
 
   function psTriageAvailableCodes() {
@@ -856,6 +867,19 @@
   function psTriageUnavailableText(code) {
     if (psTriageHasData(code)) return "";
     return triageLabel(code) + " fa parte del modello triage AGENAS a 5 codici, ma l'endpoint pubblico dei tempi PS non pubblica valori per questo colore nel payload corrente.";
+  }
+
+  function psUnavailableCodesText() {
+    var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.ps_triage_codes).filter(function (row) {
+      return row.available_wait_times === false;
+    });
+    if (!rows.length) return "";
+    rows.sort(function (a, b) {
+      return (toNumber(a.sort_order) || triageOrder(a.id)) - (toNumber(b.sort_order) || triageOrder(b.id));
+    });
+    return rows.map(function (row) {
+      return (row.label || triageLabel(row.id)).replace("Codice ", "").toLowerCase();
+    }).join(", ");
   }
 
   function psStructureKey(row) {
@@ -1616,8 +1640,8 @@
     fillSelect("hiDischargeDisciplineFilter", disciplineOptionsWithAll, STATE.dischargeDiscipline);
     fillSelect("hiHospitalDisciplineFilter", disciplineOptionsWithAll, STATE.hospitalDiscipline);
     fillSelect("hiTableDisciplineFilter", disciplineOptionsWithAll, STATE.tableDiscipline);
-    fillSelect("hiPsRegionTriageFilter", psTriageOptions(true), STATE.psRegionTriage);
-    fillSelect("hiPsStructureTriageFilter", psTriageOptions(true), STATE.psStructureTriage);
+    refreshPsTriageFilter("hiPsRegionTriageFilter", "psRegionTriage", true);
+    refreshPsTriageFilter("hiPsStructureTriageFilter", "psStructureTriage", true);
     fillSelect("hiCostTypeFilter", costOptions, STATE.costType);
     var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
     fillSelect("hiNationalBedsYearFilter", [{ value: "latest", label: latestBedsYear ? "Ultimo anno (" + latestBedsYear + ")" : "Ultimo anno" }].concat(bedYears.filter(function (year) {
@@ -2283,10 +2307,10 @@
     var triageText = STATE.psRegionTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psRegionTriage).toLowerCase();
     if (title) title.textContent = "Pronto soccorso: " + psMetricLabel(metric) + " - " + triageText;
     setTag("hiPsRegionTag", "2024 - " + psMetricLabel(metric));
-    var unavailable = psTriageUnavailableText(STATE.psRegionTriage);
+    var unavailable = psUnavailableCodesText();
     setChartCredit("hiPsRegionNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Il tempo misura la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita. Il confronto regionale e non pesato per struttura. La pagina AGENAS descrive il triage a 5 codici; l'endpoint pubblico dei tempi nel payload corrente pubblica valori per " + psAvailableCodesText() + "." + (unavailable ? " " + unavailable : ""));
+    ], "Il tempo misura la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita. Il confronto regionale e non pesato per struttura. Il filtro mostra solo i codici con tempi pubblicati dall'endpoint: " + psAvailableCodesText() + "." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
     horizontalBar("hiPsRegionChart", rows, "region", "selected_value", {
       limit: 21,
       highlight: STATE.psRegion,
@@ -2365,10 +2389,10 @@
       hovertemplate: "%{y}<br>Permanenza: %{text}<extra></extra>"
     });
     createTable("hiPsStructureTable", rows, tableColumns, selectedStructure ? 20 : chartLimit(STATE.psStructureLimit, 20));
-    var unavailable = psTriageUnavailableText(STATE.psStructureTriage);
+    var unavailable = psUnavailableCodesText();
     setChartCredit("hiPsStructureNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. Accessi totali e livello PS/DEA sono riportati in tabella; gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " " + unavailable : ""));
+    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. Accessi totali e livello PS/DEA sono riportati in tabella; gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
   }
 
   function renderWaitingLists() {
