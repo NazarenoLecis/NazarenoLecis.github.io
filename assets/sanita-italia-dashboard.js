@@ -1488,28 +1488,35 @@
     });
   }
 
-  function healthYearsForIndicator(indicatorId) {
-    return unique(healthRows().filter(function (row) {
-      return row.indicator_id === indicatorId;
+  function healthYearsForIndicator(indicatorId, regionalOnly) {
+    var years = unique(healthRows().filter(function (row) {
+      if (row.indicator_id !== indicatorId) return false;
+      return !regionalOnly || row.territory_type === "region";
     }).map(function (row) { return row.year; })).sort(function (a, b) { return b - a; });
+    if (!years.length && regionalOnly) return healthYearsForIndicator(indicatorId, false);
+    return years;
   }
 
-  function healthYearsForGroup(group) {
-    return unique(healthRows().filter(function (row) {
-      return row.group === group;
+  function healthYearsForGroup(group, regionalOnly) {
+    var years = unique(healthRows().filter(function (row) {
+      if (row.group !== group) return false;
+      return !regionalOnly || row.territory_type === "region";
     }).map(function (row) { return row.year; })).sort(function (a, b) { return b - a; });
+    if (!years.length && regionalOnly) return healthYearsForGroup(group, false);
+    return years;
   }
 
-  function healthYearOptions(indicatorId, group) {
-    var years = indicatorId ? healthYearsForIndicator(indicatorId) : healthYearsForGroup(group);
-    return [{ value: "latest", label: indicatorId ? "Ultimo anno disponibile" : "Ultimo anno per indicatore" }].concat(years.map(function (year) {
+  function healthYearOptions(indicatorId, group, regionalOnly) {
+    var years = indicatorId ? healthYearsForIndicator(indicatorId, regionalOnly) : healthYearsForGroup(group, regionalOnly);
+    var latestLabel = regionalOnly ? "Ultimo anno con regioni" : (indicatorId ? "Ultimo anno disponibile" : "Ultimo anno per indicatore");
+    return [{ value: "latest", label: latestLabel }].concat(years.map(function (year) {
       return { value: String(year), label: String(year) };
     }));
   }
 
-  function healthYearValue(value, indicatorId) {
+  function healthYearValue(value, indicatorId, regionalOnly) {
     if (value === "latest") {
-      var years = healthYearsForIndicator(indicatorId);
+      var years = healthYearsForIndicator(indicatorId, regionalOnly);
       return years.length ? years[0] : null;
     }
     return toNumber(value);
@@ -1540,6 +1547,36 @@
       return true;
     });
     return latestRow(rows);
+  }
+
+  function healthPairedRows(territory, indicatorId, yearValue) {
+    if (territory === "Italia") {
+      var italyOnly = healthRowFor("Italia", indicatorId, yearValue);
+      return { territoryRow: italyOnly, italyRow: italyOnly };
+    }
+    if (yearValue !== "latest" && toNumber(yearValue) !== null) {
+      return {
+        territoryRow: healthRowFor(territory, indicatorId, yearValue),
+        italyRow: healthRowFor("Italia", indicatorId, yearValue)
+      };
+    }
+    var territoryRows = healthRows().filter(function (row) {
+      return row.territory === territory && row.indicator_id === indicatorId;
+    });
+    var italyRows = healthRows().filter(function (row) {
+      return row.territory === "Italia" && row.indicator_id === indicatorId;
+    });
+    var italyByYear = {};
+    italyRows.forEach(function (row) {
+      italyByYear[row.year] = row;
+    });
+    territoryRows.sort(function (a, b) { return b.year - a.year; });
+    for (var i = 0; i < territoryRows.length; i += 1) {
+      if (italyByYear[territoryRows[i].year]) {
+        return { territoryRow: territoryRows[i], italyRow: italyByYear[territoryRows[i].year] };
+      }
+    }
+    return { territoryRow: latestRow(territoryRows), italyRow: latestRow(italyRows) };
   }
 
   function healthNoteForIndicator(indicator, extra) {
@@ -1581,16 +1618,17 @@
     if (!trendIndicatorOptions.some(function (option) { return option.value === STATE.healthTrendIndicator; })) {
       STATE.healthTrendIndicator = trendIndicatorOptions[0] ? trendIndicatorOptions[0].value : "";
     }
-    if (!healthYearOptions(STATE.healthIndicator, STATE.healthGroup).some(function (option) { return option.value === STATE.healthYear; })) STATE.healthYear = "latest";
-    if (!healthYearOptions(null, STATE.healthProfileGroup).some(function (option) { return option.value === STATE.healthProfileYear; })) STATE.healthProfileYear = "latest";
+    if (!healthYearOptions(STATE.healthIndicator, STATE.healthGroup, true).some(function (option) { return option.value === STATE.healthYear; })) STATE.healthYear = "latest";
+    var profileRegionalOnly = STATE.healthProfileTerritory !== "Italia";
+    if (!healthYearOptions(null, STATE.healthProfileGroup, profileRegionalOnly).some(function (option) { return option.value === STATE.healthProfileYear; })) STATE.healthProfileYear = "latest";
 
     fillSelect("hiHealthGroupFilter", groupOptions, STATE.healthGroup);
     fillSelect("hiHealthIndicatorFilter", indicatorOptions, STATE.healthIndicator);
-    fillSelect("hiHealthYearFilter", healthYearOptions(STATE.healthIndicator, STATE.healthGroup), STATE.healthYear);
+    fillSelect("hiHealthYearFilter", healthYearOptions(STATE.healthIndicator, STATE.healthGroup, true), STATE.healthYear);
     fillSelect("hiHealthTerritoryFocusFilter", territoryOptions, STATE.healthTerritoryFocus);
     fillSelect("hiHealthProfileTerritoryFilter", territoryOptions, STATE.healthProfileTerritory);
     fillSelect("hiHealthProfileGroupFilter", groupOptions, STATE.healthProfileGroup);
-    fillSelect("hiHealthProfileYearFilter", healthYearOptions(null, STATE.healthProfileGroup), STATE.healthProfileYear);
+    fillSelect("hiHealthProfileYearFilter", healthYearOptions(null, STATE.healthProfileGroup, profileRegionalOnly), STATE.healthProfileYear);
     fillSelect("hiHealthTrendTerritoryFilter", territoryOptions, STATE.healthTrendTerritory);
     fillSelect("hiHealthTrendGroupFilter", groupOptions, STATE.healthTrendGroup);
     fillSelect("hiHealthTrendIndicatorFilter", trendIndicatorOptions, STATE.healthTrendIndicator);
@@ -2578,7 +2616,7 @@
       showEmptyChart("hiHealthTerritoryChart");
       return;
     }
-    var year = healthYearValue(STATE.healthYear, indicator.id);
+    var year = healthYearValue(STATE.healthYear, indicator.id, true);
     var rows = healthRows().filter(function (row) {
       return row.indicator_id === indicator.id && row.year === year;
     }).map(function (row) {
@@ -2605,7 +2643,7 @@
     });
     setChartCredit("hiHealthTerritoryNote", [
       { id: "istat_health_for_all", label: "ISTAT Health for All" }
-    ], healthNoteForIndicator(indicator, "Anno selezionato: " + asText(year) + "."));
+    ], healthNoteForIndicator(indicator, "Anno selezionato: " + asText(year) + ". Per il confronto territoriale la lista anni esclude gli anni in cui ISTAT pubblica solo il valore Italia senza dettaglio regionale."));
   }
 
   function renderHealthProfileChart() {
@@ -2613,8 +2651,9 @@
     var territory = STATE.healthProfileTerritory;
     var indicators = healthIndicatorsForGroup(group);
     var profileRows = indicators.map(function (indicator) {
-      var row = healthRowFor(territory, indicator.id, STATE.healthProfileYear);
-      var italyRow = healthRowFor("Italia", indicator.id, STATE.healthProfileYear);
+      var paired = healthPairedRows(territory, indicator.id, STATE.healthProfileYear);
+      var row = paired.territoryRow;
+      var italyRow = paired.italyRow;
       return {
         indicator_id: indicator.id,
         indicator: indicator.label,
@@ -2663,7 +2702,7 @@
     }
     var title = byId("hiHealthProfileTitle");
     if (title) title.textContent = "Profilo salute - " + territory + " - " + healthGroupLabel(group);
-    setSubtitle("hiHealthProfileSubtitle", "Indicatori del gruppo selezionato confrontati con l'Italia. Con 'ultimo anno' ogni indicatore usa il proprio ultimo dato disponibile.");
+    setSubtitle("hiHealthProfileSubtitle", "Indicatori del gruppo selezionato confrontati con l'Italia. Con 'ultimo anno' ogni indicatore usa il proprio ultimo anno comparabile tra territorio e Italia.");
     setTag("hiHealthProfileTag", STATE.healthProfileYear === "latest" ? "ultimo anno per indicatore" : "anno " + STATE.healthProfileYear);
     if (profileRows.length) {
       plot("hiHealthProfileChart", traces, {
