@@ -55,6 +55,13 @@
     migrationCitizenshipCompare: "ESP",
     migrationCitizenshipSex: "T",
     migrationCitizenshipYear: null,
+    stockBasis: "country_of_birth",
+    stockCountry: "ITA",
+    stockCompare: "ESP",
+    stockMeasure: "absolute",
+    stockDetail: "countries",
+    stockLimit: "25",
+    stockYear: null,
     educationCountry: "ITA",
     educationCompareCountry: "ESP",
     educationAge: "25-64",
@@ -403,6 +410,124 @@
     EU27_2020_FOR: "EU citizens",
     NEU27_2020_FOR: "Non-EU citizens",
     TOTAL: "Total"
+  };
+
+  var STOCK_CATEGORY_LABELS = {
+    AFR: "Africa",
+    AFR_C: "Africa centrale",
+    AFR_E: "Africa orientale",
+    AFR_N: "Africa settentrionale",
+    AFR_S: "Africa meridionale",
+    AFR_W: "Africa occidentale",
+    AME: "America",
+    AME_C: "America centrale",
+    AME_N: "America settentrionale",
+    AME_S: "America meridionale",
+    ASI: "Asia",
+    ASI_C: "Asia centrale",
+    ASI_E: "Asia orientale",
+    ASI_S: "Asia meridionale",
+    ASI_S_E: "Asia sud-orientale",
+    ASI_W: "Asia occidentale",
+    AU_NZ: "Australia e Nuova Zelanda",
+    CC9_23_FOR: "Paesi candidati UE",
+    CRB: "Caraibi",
+    CZ_SK: "Cecoslovacchia",
+    EFTA_FOR: "Paesi EFTA",
+    EU27_2020_FOR: "Altri paesi UE27",
+    EUR: "Europa",
+    EX_SU: "Ex Unione Sovietica",
+    EX_YU: "Ex Jugoslavia",
+    FOR: "Nati all'estero",
+    FOR_STLS: "Cittadini stranieri o apolidi",
+    MEL: "Melanesia",
+    MIC: "Micronesia",
+    NAT: "Nati nel paese / cittadini del paese",
+    NEU27_2020_FOR: "Paesi extra UE27",
+    OCE: "Oceania",
+    OTH: "Altro",
+    POL: "Polinesia",
+    RNC: "Cittadinanza non riconosciuta",
+    RS_ME: "Serbia e Montenegro",
+    STLS: "Apolidi",
+    TOTAL: "Totale residenti",
+    UNK: "Sconosciuto",
+    XK: "Kosovo"
+  };
+
+  var STOCK_CATEGORY_LABELS_EN = {
+    AFR: "Africa",
+    AFR_C: "Central Africa",
+    AFR_E: "Eastern Africa",
+    AFR_N: "Northern Africa",
+    AFR_S: "Southern Africa",
+    AFR_W: "Western Africa",
+    AME: "America",
+    AME_C: "Central America",
+    AME_N: "Northern America",
+    AME_S: "South America",
+    ASI: "Asia",
+    ASI_C: "Central Asia",
+    ASI_E: "Eastern Asia",
+    ASI_S: "Southern Asia",
+    ASI_S_E: "South-eastern Asia",
+    ASI_W: "Western Asia",
+    AU_NZ: "Australia and New Zealand",
+    CC9_23_FOR: "EU candidate countries",
+    CRB: "Caribbean",
+    CZ_SK: "Czechoslovakia",
+    EFTA_FOR: "EFTA countries",
+    EU27_2020_FOR: "Other EU27 countries",
+    EUR: "Europe",
+    EX_SU: "Former Soviet Union",
+    EX_YU: "Former Yugoslavia",
+    FOR: "Foreign-born",
+    FOR_STLS: "Foreign or stateless citizens",
+    MEL: "Melanesia",
+    MIC: "Micronesia",
+    NAT: "Native-born / nationals",
+    NEU27_2020_FOR: "Non-EU countries",
+    OCE: "Oceania",
+    OTH: "Other",
+    POL: "Polynesia",
+    RNC: "Recognised non-citizens",
+    RS_ME: "Serbia and Montenegro",
+    STLS: "Stateless",
+    TOTAL: "Total residents",
+    UNK: "Unknown",
+    XK: "Kosovo"
+  };
+
+  var STOCK_AGGREGATE_CODES = new Set(Object.keys(STOCK_CATEGORY_LABELS).filter(function (code) { return code !== "XK"; }));
+
+  var ISO3_TO_EUROSTAT = {
+    AUT: "AT",
+    BEL: "BE",
+    BGR: "BG",
+    HRV: "HR",
+    CYP: "CY",
+    CZE: "CZ",
+    DNK: "DK",
+    EST: "EE",
+    FIN: "FI",
+    FRA: "FR",
+    DEU: "DE",
+    GRC: "EL",
+    HUN: "HU",
+    IRL: "IE",
+    ITA: "IT",
+    LVA: "LV",
+    LTU: "LT",
+    LUX: "LU",
+    MLT: "MT",
+    NLD: "NL",
+    POL: "PL",
+    PRT: "PT",
+    ROU: "RO",
+    SVK: "SK",
+    SVN: "SI",
+    ESP: "ES",
+    SWE: "SE"
   };
 
   var BIRTH_GROUP_ORDER = {
@@ -801,6 +926,116 @@
     return unique((payload.country_age_structure || []).map(function (row) { return row.iso3; }))
       .sort(function (a, b) { return countryName(payload, a).localeCompare(countryName(payload, b), localeTag()); })
       .map(function (iso3) { return { value: iso3, label: countryName(payload, iso3) }; });
+  }
+
+  function stockTable(payload, basis) {
+    return basis === "citizenship" ? payload.population_by_citizenship || [] : payload.population_by_country_of_birth || [];
+  }
+
+  function stockBasisLabel(basis) {
+    return basis === "citizenship" ? textFor("cittadinanza", "citizenship") : textFor("paese di nascita", "country of birth");
+  }
+
+  function stockBasisOptions() {
+    return [
+      { value: "country_of_birth", label: textFor("Paese di nascita", "Country of birth") },
+      { value: "citizenship", label: textFor("Cittadinanza", "Citizenship") }
+    ];
+  }
+
+  function stockMeasureOptions() {
+    return [
+      { value: "absolute", label: textFor("Migliaia di residenti", "Thousands of residents") },
+      { value: "percent_total", label: textFor("% del totale residenti", "% of total residents") }
+    ];
+  }
+
+  function stockDetailOptions() {
+    return [
+      { value: "countries", label: textFor("Solo nazioni", "Countries only") },
+      { value: "aggregates", label: textFor("Aggregati", "Aggregates") },
+      { value: "all", label: textFor("Nazioni e aggregati", "Countries and aggregates") }
+    ];
+  }
+
+  function stockLimitOptions() {
+    return [
+      { value: "15", label: "Top 15" },
+      { value: "25", label: "Top 25" },
+      { value: "50", label: "Top 50" },
+      { value: "all", label: textFor("Tutte", "All") }
+    ];
+  }
+
+  function stockCountryOptions(payload, basis) {
+    var options = unique(stockTable(payload, basis).map(function (row) { return row.iso3; }))
+      .sort(function (a, b) { return countryName(payload, a).localeCompare(countryName(payload, b), localeTag()); })
+      .map(function (iso3) { return { value: iso3, label: countryName(payload, iso3) }; });
+    return options.filter(function (item) { return item.value === "ITA"; })
+      .concat(options.filter(function (item) { return item.value !== "ITA"; }));
+  }
+
+  function stockYears(payload, basis, iso3) {
+    return unique(stockTable(payload, basis).filter(function (row) {
+      return row.iso3 === iso3 && row.sex === "T";
+    }).map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
+  }
+
+  function stockRegionDisplayName(code) {
+    var text = String(code || "").toUpperCase();
+    var labels = isEnglish() ? STOCK_CATEGORY_LABELS_EN : STOCK_CATEGORY_LABELS;
+    if (text === "NAT" && STATE.stockBasis === "country_of_birth") return textFor("Nati nel paese", "Native-born");
+    if (text === "NAT" && STATE.stockBasis === "citizenship") return textFor("Cittadini del paese", "Nationals");
+    if (labels[text]) return labels[text];
+    if (text.length !== 2 || typeof Intl === "undefined" || !Intl.DisplayNames) return text;
+    var regionCode = text === "EL" ? "GR" : text === "UK" ? "GB" : text;
+    try {
+      return new Intl.DisplayNames([localeTag()], { type: "region" }).of(regionCode) || text;
+    } catch (error) {
+      return text;
+    }
+  }
+
+  function isStockCountryCategory(category) {
+    var text = String(category || "").toUpperCase();
+    return text.length === 2 && !STOCK_AGGREGATE_CODES.has(text);
+  }
+
+  function stockOwnCountryCode(iso3) {
+    return ISO3_TO_EUROSTAT[iso3] || iso3;
+  }
+
+  function stockTotal(rows) {
+    var total = rows.find(function (row) { return String(row.category).toUpperCase() === "TOTAL"; });
+    var totalValue = total ? toNumber(total.value) : null;
+    if (totalValue !== null) return totalValue;
+    return rows.reduce(function (sum, row) {
+      var value = toNumber(row.value);
+      return sum + (value === null ? 0 : value);
+    }, 0);
+  }
+
+  function stockRowsForCountry(payload, basis, iso3, year) {
+    return stockTable(payload, basis).filter(function (row) {
+      return row.iso3 === iso3 &&
+        row.sex === "T" &&
+        Number(row.year) === Number(year) &&
+        toNumber(row.value) !== null &&
+        toNumber(row.value) > 0 &&
+        toNumber(row.age_low) === null &&
+        toNumber(row.age_high) === null;
+    });
+  }
+
+  function stockRowsByDetail(rows, detail, iso3) {
+    var ownCode = stockOwnCountryCode(iso3);
+    return rows.filter(function (row) {
+      var category = String(row.category || "").toUpperCase();
+      if (category === "TOTAL") return false;
+      if (detail === "countries") return isStockCountryCategory(category) && category !== ownCode;
+      if (detail === "aggregates") return !isStockCountryCategory(category);
+      return category !== ownCode;
+    });
   }
 
   function countryTerritoryOptions(payload) {
@@ -1494,6 +1729,24 @@
     STATE.migrationCitizenshipYear = fillSelect("diMigrationCitizenshipYear", citizenshipYears.map(function (year) { return { value: year, label: String(year) }; }), STATE.migrationCitizenshipYear || preferredMenuYear(citizenshipYears), function (value) { STATE.migrationCitizenshipYear = Number(value); });
   }
 
+  function fillStockNationControls(payload) {
+    STATE.stockBasis = fillSelect("diStockBasis", stockBasisOptions(), STATE.stockBasis, function (value) {
+      STATE.stockBasis = value;
+      STATE.stockYear = null;
+    });
+    var countries = stockCountryOptions(payload, STATE.stockBasis);
+    STATE.stockCountry = fillSelect("diStockCountry", countries, STATE.stockCountry, function (value) {
+      STATE.stockCountry = value;
+      STATE.stockYear = null;
+    });
+    STATE.stockCompare = fillSelect("diStockCompare", compareOptions(countries), STATE.stockCompare, function (value) { STATE.stockCompare = value; });
+    STATE.stockMeasure = fillSelect("diStockMeasure", stockMeasureOptions(), STATE.stockMeasure, function (value) { STATE.stockMeasure = value; });
+    STATE.stockDetail = fillSelect("diStockDetail", stockDetailOptions(), STATE.stockDetail, function (value) { STATE.stockDetail = value; });
+    STATE.stockLimit = fillSelect("diStockLimit", stockLimitOptions(), STATE.stockLimit, function (value) { STATE.stockLimit = value; });
+    var years = stockYears(payload, STATE.stockBasis, STATE.stockCountry);
+    STATE.stockYear = fillSelect("diStockYear", years.map(function (year) { return { value: year, label: String(year) }; }), STATE.stockYear || years[years.length - 1], function (value) { STATE.stockYear = Number(value); });
+  }
+
   function fillMigrantEducationControls(payload) {
     var educationRows = payload.migrant_education_by_birth_region || [];
     var tertiaryRows = payload.migrant_tertiary_share || [];
@@ -1571,6 +1824,7 @@
 
     fillEducationControls(payload);
     fillMigrationDetailControls(payload);
+    fillStockNationControls(payload);
     fillMigrantEducationControls(payload);
     syncKebabPlayButton();
   }
@@ -1772,6 +2026,127 @@
       barmode: "stack",
       yaxis: { title: { text: textFor("% residenti", "% residents") }, ticksuffix: "%", range: [0, 100] },
       margin: { l: 78, r: 34, t: 18, b: 72 }
+    });
+  }
+
+  function stockGroupedValues(rows) {
+    var grouped = {};
+    rows.forEach(function (row) {
+      var category = String(row.category || "").toUpperCase();
+      var value = toNumber(row.value);
+      if (!category || value === null) return;
+      grouped[category] = (grouped[category] || 0) + value;
+    });
+    return grouped;
+  }
+
+  function stockDisplayValue(value, total) {
+    if (toNumber(value) === null) return null;
+    if (STATE.stockMeasure === "percent_total") return total ? (value / total) * 100 : null;
+    return value / 1000;
+  }
+
+  function stockDetailLabel(detail) {
+    if (detail === "aggregates") return textFor("aggregati", "aggregates");
+    if (detail === "all") return textFor("nazioni e aggregati", "countries and aggregates");
+    return textFor("nazioni estere", "foreign countries");
+  }
+
+  function renderStockNationCopy(year) {
+    var basis = STATE.stockBasis;
+    var title = textFor("Residenti per ", "Residents by ") + stockBasisLabel(basis) + " - " + stockDetailLabel(STATE.stockDetail);
+    setText("diStockNationTitle", title);
+    setText(
+      "diStockNationExplain",
+      basis === "citizenship"
+        ? textFor(
+          "La cittadinanza indica la nazionalità amministrativa dei residenti. Puoi confrontare paesi europei e passare da valori assoluti a quote sul totale residenti.",
+          "Citizenship identifies residents' administrative nationality. You can compare European countries and switch from absolute values to shares of total residents."
+        )
+        : textFor(
+          "Il paese di nascita indica dove una persona è nata, non la cittadinanza. Puoi confrontare paesi europei e scegliere se mostrare solo nazioni o anche aggregati Eurostat.",
+          "Country of birth identifies where a person was born, not citizenship. You can compare European countries and choose whether to show countries only or Eurostat aggregates too."
+        )
+    );
+    setText("diStockNationTag", countryName(STATE.payload, STATE.stockCountry) + ", " + stockBasisLabel(basis) + ", " + year);
+    var dataset = basis === "citizenship"
+      ? '<a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop1ctz/default/table" target="_blank" rel="noopener"><code>migr_pop1ctz</code></a>'
+      : '<a href="https://ec.europa.eu/eurostat/databrowser/view/migr_pop3ctb/default/table" target="_blank" rel="noopener"><code>migr_pop3ctb</code></a>';
+    var note = basis === "citizenship"
+      ? textFor(
+        "La cittadinanza non coincide necessariamente con il paese di nascita; il grafico mostra la distribuzione marginale per cittadinanza.",
+        "Citizenship does not necessarily match country of birth; the chart shows the marginal distribution by citizenship."
+      )
+      : textFor(
+        "Il paese di nascita non coincide necessariamente con la cittadinanza; il grafico mostra la distribuzione marginale per paese di nascita.",
+        "Country of birth does not necessarily match citizenship; the chart shows the marginal distribution by country of birth."
+      );
+    if (STATE.stockDetail === "countries") {
+      note += " " + textFor(
+        "Solo nazioni esclude il paese selezionato e rimuove continenti, totale e aggregati UE/extra UE.",
+        "Countries only excludes the selected country and removes continents, totals and EU/non-EU aggregates."
+      );
+    }
+    if (STATE.stockMeasure === "percent_total") {
+      note += " " + textFor(
+        "La quota usa come denominatore il totale residenti del paese, anno e sesso totale selezionati.",
+        "The share uses total residents in the selected country, year and total sex as denominator."
+      );
+    }
+    setHtml("diStockNationCredit", textFor("Fonte dati: Eurostat ", "Data source: Eurostat ") + dataset + ". " + textFor("Elaborazione: Nazareno Lecis. Nota: ", "Processing: Nazareno Lecis. Note: ") + note);
+  }
+
+  function renderStockNationChart(payload) {
+    var years = stockYears(payload, STATE.stockBasis, STATE.stockCountry);
+    var year = STATE.stockYear || years[years.length - 1];
+    if (!year) return showEmpty("diStockNationChart");
+    renderStockNationCopy(year);
+    var primaryRows = stockRowsForCountry(payload, STATE.stockBasis, STATE.stockCountry, year);
+    var primaryTotal = stockTotal(primaryRows);
+    var primaryDetail = stockRowsByDetail(primaryRows, STATE.stockDetail, STATE.stockCountry);
+    var ranked = Object.entries(stockGroupedValues(primaryDetail)).sort(function (a, b) { return b[1] - a[1]; });
+    var limit = STATE.stockLimit === "all" ? ranked.length : Number(STATE.stockLimit || 25);
+    var categories = ranked.slice(0, limit).map(function (item) { return item[0]; }).reverse();
+    if (!categories.length) return showEmpty("diStockNationChart");
+    var labels = categories.map(stockRegionDisplayName);
+    var traces = [];
+
+    [
+      { iso3: STATE.stockCountry, color: COLORS.orange, opacity: 1 },
+      { iso3: STATE.stockCompare, color: COLORS.blue, opacity: 0.72 }
+    ].forEach(function (spec) {
+      if (!spec.iso3 || spec.iso3 === "none" || spec.iso3 === STATE.stockCountry && spec.opacity < 1) return;
+      var rows = stockRowsForCountry(payload, STATE.stockBasis, spec.iso3, year);
+      var total = stockTotal(rows);
+      var detailRows = stockRowsByDetail(rows, STATE.stockDetail, spec.iso3);
+      var values = stockGroupedValues(detailRows);
+      var rawValues = categories.map(function (category) { return values[category] || null; });
+      traces.push({
+        type: "bar",
+        orientation: "h",
+        name: countryName(payload, spec.iso3),
+        x: rawValues.map(function (value) { return stockDisplayValue(value, total); }),
+        y: labels,
+        marker: { color: spec.color },
+        opacity: spec.opacity,
+        customdata: rawValues.map(function (value) {
+          return [value, total && value ? (value / total) * 100 : null];
+        }),
+        hovertemplate: "%{y}<br>" +
+          textFor("Residenti", "Residents") + ": %{customdata[0]:,.0f}<br>" +
+          textFor("Quota sul totale", "Share of total") + ": %{customdata[1]:.2f}%<extra>%{fullData.name}</extra>"
+      });
+    });
+
+    plot("diStockNationChart", traces, {
+      barmode: traces.length > 1 ? "group" : "relative",
+      height: Math.max(620, categories.length * 24 + 260),
+      margin: { l: 190, r: 34, t: 18, b: 72 },
+      xaxis: {
+        title: { text: STATE.stockMeasure === "percent_total" ? textFor("% residenti", "% residents") : textFor("Migliaia di residenti", "Thousands of residents") },
+        ticksuffix: STATE.stockMeasure === "percent_total" ? "%" : ""
+      },
+      yaxis: { title: { text: "" } }
     });
   }
 
@@ -2224,6 +2599,7 @@
     renderControls(payload);
     renderKebabChart(payload);
     renderBirthCitizenshipReadingChart(payload);
+    renderStockNationChart(payload);
     renderPopulationChart(payload);
     renderAgeSharesChart(payload);
     renderAgeDistributionChart(payload);
@@ -2256,7 +2632,7 @@
     [
       "diKebabChart", "diPopulationChart", "diAgeSharesChart", "diAgeDistributionChart", "diDependencyChart",
       "diRegionalRankChart", "diRegionalSeriesChart", "diFertilityChart", "diBirthDeathChart", "diMigrationChart",
-      "diBirthCitizenshipChart", "diMigrationAgeChart", "diMigrationCitizenshipChart", "diEducationChart", "diTertiaryChart",
+      "diBirthCitizenshipChart", "diStockNationChart", "diMigrationAgeChart", "diMigrationCitizenshipChart", "diEducationChart", "diTertiaryChart",
       "diMigrantEducationChart", "diMigrantTertiaryRegionChart", "diEuropeRankChart", "diEuropeSeriesChart"
     ].forEach(function (id) {
       showEmpty(id, textFor("Dati non disponibili.", "Data not available."));
