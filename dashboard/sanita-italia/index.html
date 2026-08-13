@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sanit&agrave; italiana | Nazareno Lecis</title>
-  <meta name="description" content="Dashboard sulla sanit&agrave; italiana: attivit&agrave; ospedaliera, regioni, costi del SSN, serie storiche, mobilit&agrave; sanitaria, definizioni e fonti.">
+  <meta name="description" content="Dashboard sulla sanit&agrave; italiana: salute degli italiani, attivit&agrave; ospedaliera, pronto soccorso, liste d'attesa, costi del SSN, mobilit&agrave; sanitaria, definizioni e fonti.">
   <link rel="icon" href="../../assets/logo.png" type="image/png">
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260813-pnla-2">
-  <script defer src="../../assets/theme.js?v=20260813-pnla-2"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260813-health-1">
+  <script defer src="../../assets/theme.js?v=20260813-health-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260813-pnla-2"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260813-health-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -40,13 +40,13 @@
     <section class="dash-head">
       <div>
         <span class="eyebrow">Sanit&agrave; italiana</span>
-        <h1>Accesso alle cure, qualit&agrave; degli ospedali, mobilit&agrave; sanitaria e risorse del SSN</h1>
-        <p class="lead">Dashboard con dati pubblici effettivi: dimissioni ospedaliere per disciplina e territorio, posti letto, costi regionali del SSN, serie storiche farmaceutiche, denominatori demografici, PIL regionale e saldi economici della mobilit&agrave; sanitaria.</p>
+        <h1>Salute degli italiani, accesso alle cure, ospedali, mobilit&agrave; sanitaria e risorse del SSN</h1>
+        <p class="lead">Dashboard con dati pubblici effettivi: fattori di rischio, malattie croniche e mortalit&agrave; per causa, dimissioni ospedaliere per disciplina e territorio, pronto soccorso, liste d'attesa, posti letto, costi regionali del SSN, PIL e saldi economici della mobilit&agrave; sanitaria.</p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Ministero della Salute, OpenBDAP, ISTAT, Eurostat, AGENAS, Corte dei conti</strong>
+          <strong>Ministero della Salute, OpenBDAP, ISTAT Health for All, Eurostat, AGENAS, Corte dei conti</strong>
           <span id="hiSourceMeta">Dati normalizzati dalla pipeline pubblica e aggiornati nel payload della dashboard.</span>
           <span class="source-credit"><a href="https://github.com/NazarenoLecis/Agenas" target="_blank" rel="noopener">Repository Agenas</a>. Elaborazione di Nazareno Lecis.</span>
         </div>
@@ -74,6 +74,7 @@
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard sanit&agrave;">
       <a href="#indicatori">Indicatori</a>
       <a href="#copertura">Dati disponibili</a>
+      <a href="#salute">Salute</a>
       <a href="#pronto-soccorso">PS e attese</a>
       <a href="#italia">Dimissioni</a>
       <a href="#strutture">Strutture</a>
@@ -87,7 +88,7 @@
     </nav>
 
     <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
-    <p class="hi-note"><strong>Perimetro:</strong> le prestazioni ora misurate sono dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale.</p>
+    <p class="hi-note"><strong>Perimetro:</strong> la dashboard combina stato di salute ISTAT Health for All, dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale.</p>
 
     <section id="indicatori" class="dashboard-section">
       <div class="section-head">
@@ -129,11 +130,78 @@
           <em>Regione / prestazione / priorita / regime</em>
         </div>
         <div class="hi-coverage-item">
+          <strong>Salute degli italiani</strong>
+          <span>Indicatori ISTAT Health for All su obesita, sovrappeso, malattie croniche dichiarate e mortalita per causa. Gli anni disponibili cambiano per indicatore.</span>
+          <em>Italia / regione / indicatore / anno</em>
+        </div>
+        <div class="hi-coverage-item">
           <strong>Spesa e mobilit&agrave;</strong>
           <span>Costi SSN e spesa farmaceutica sono dati contabili regionali; la mobilit&agrave; usa saldi economici netti. Non sono costi clinici della singola prestazione n&eacute; una matrice paziente origine-destinazione.</span>
           <em>Regione / conto economico / saldo netto</em>
         </div>
       </div>
+    </section>
+
+    <section id="salute" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Salute degli italiani</span>
+        <div><h2>Fattori di rischio, cronicit&agrave; e mortalit&agrave; per causa</h2><p>Indicatori ISTAT Health for All per Italia e regioni: obesita, sovrappeso, condizioni croniche dichiarate e cause di morte selezionate. Ogni grafico usa filtri propri.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiHealthTerritoryTitle">Indicatore di salute per territorio</h3><span id="hiHealthTerritoryTag">ISTAT HFA</span></div>
+        <p id="hiHealthTerritorySubtitle" class="hi-card-subtitle">Confronto tra Italia e regioni per l'indicatore selezionato.</p>
+        <div class="hi-chart-controls" aria-label="Filtri salute per territorio">
+          <label>Gruppo
+            <select id="hiHealthGroupFilter"></select>
+          </label>
+          <label>Indicatore
+            <select id="hiHealthIndicatorFilter"></select>
+          </label>
+          <label>Anno
+            <select id="hiHealthYearFilter"></select>
+          </label>
+          <label>Focus
+            <select id="hiHealthTerritoryFocusFilter"></select>
+          </label>
+        </div>
+        <div id="hiHealthTerritoryChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiHealthTerritoryNote" class="hi-chart-credit">Fonte: ISTAT Health for All. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiHealthProfileTitle">Profilo salute del territorio</h3><span id="hiHealthProfileTag">ISTAT HFA</span></div>
+        <p id="hiHealthProfileSubtitle" class="hi-card-subtitle">Indicatori del gruppo selezionato, confrontati con il valore Italia.</p>
+        <div class="hi-chart-controls" aria-label="Filtri profilo salute">
+          <label>Territorio
+            <select id="hiHealthProfileTerritoryFilter"></select>
+          </label>
+          <label>Gruppo
+            <select id="hiHealthProfileGroupFilter"></select>
+          </label>
+          <label>Anno
+            <select id="hiHealthProfileYearFilter"></select>
+          </label>
+        </div>
+        <div id="hiHealthProfileChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiHealthProfileTable" class="hi-table-wrap"></div>
+        <p id="hiHealthProfileNote" class="hi-chart-credit">Fonte: ISTAT Health for All. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiHealthTrendTitle">Serie storica salute</h3><span id="hiHealthTrendTag">ISTAT HFA</span></div>
+        <p id="hiHealthTrendSubtitle" class="hi-card-subtitle">Andamento del territorio selezionato rispetto all'Italia.</p>
+        <div class="hi-chart-controls" aria-label="Filtri serie storica salute">
+          <label>Territorio
+            <select id="hiHealthTrendTerritoryFilter"></select>
+          </label>
+          <label>Gruppo
+            <select id="hiHealthTrendGroupFilter"></select>
+          </label>
+          <label>Indicatore
+            <select id="hiHealthTrendIndicatorFilter"></select>
+          </label>
+        </div>
+        <div id="hiHealthTrendChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiHealthTrendNote" class="hi-chart-credit">Fonte: ISTAT Health for All. Elaborazione di Nazareno Lecis.</p>
+      </article>
     </section>
 
     <section id="pronto-soccorso" class="dashboard-section">
@@ -814,6 +882,7 @@
           <li><a href="https://www.dati.salute.gov.it/it/dataset/" target="_blank" rel="noopener">Ministero della Salute - open data</a>: dimissioni ospedaliere, SDO, attivita' dei reparti e posti letto.</li>
           <li><a href="https://www.salute.gov.it/new/it/tema/assistenza-ospedaliera/rapporti-annuali-sui-ricoveri-ospedalieri" target="_blank" rel="noopener">Ministero della Salute - rapporti SDO</a>: contesto metodologico sui ricoveri ospedalieri.</li>
           <li><a href="https://openbdap.rgs.mef.gov.it/it/SSN/Analizza" target="_blank" rel="noopener">OpenBDAP/RGS - Finanza degli Enti del SSN</a>: conto economico, spesa farmaceutica e modelli contabili.</li>
+          <li><a href="https://www.istat.it/sistema-informativo-6/health-for-all-italia/" target="_blank" rel="noopener">ISTAT Health for All - Italia</a>: fattori di rischio, malattie croniche dichiarate e mortalita' per causa per Italia e regioni.</li>
           <li><a href="https://demo.istat.it/" target="_blank" rel="noopener">ISTAT Demo</a> ed <a href="https://ec.europa.eu/eurostat/databrowser/view/nama_10r_3gdp/default/table?lang=en" target="_blank" rel="noopener">Eurostat PIL regionale <code>nama_10r_3gdp</code></a>: denominatori demografici e macroeconomici.</li>
           <li><a href="https://stat.agenas.it/" target="_blank" rel="noopener">Portale statistico AGENAS</a>: indicatori sanitari e monitoraggi pubblici.</li>
           <li><a href="https://www.corteconti.it/Home/Organizzazione/UfficiCentraliRegionali/UffSezAutonomie/SezAutReferti" target="_blank" rel="noopener">Corte dei conti - audizioni e referti</a>: relazioni sui servizi sanitari regionali e mobilita' sanitaria.</li>
