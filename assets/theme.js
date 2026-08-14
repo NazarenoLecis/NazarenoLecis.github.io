@@ -905,7 +905,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260813-ps-accesses-1", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260814-pnla-structures-1", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

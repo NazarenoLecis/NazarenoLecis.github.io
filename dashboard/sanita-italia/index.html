@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260813-cancer-detail-1">
-  <script defer src="../../assets/theme.js?v=20260813-ps-accesses-1"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260814-pnla-structures-1">
+  <script defer src="../../assets/theme.js?v=20260814-pnla-structures-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260813-ps-accesses-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260814-pnla-structures-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -91,7 +91,7 @@
     </nav>
 
     <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
-    <p class="hi-note"><strong>Perimetro:</strong> la dashboard combina stato di salute ISTAT Health for All, dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale.</p>
+    <p class="hi-note"><strong>Perimetro:</strong> la dashboard combina stato di salute ISTAT Health for All, dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale e per struttura della prima disponibilit&agrave; proposta.</p>
 
     <section id="indicatori" class="dashboard-section">
       <div class="section-head">
@@ -129,7 +129,7 @@
         </div>
         <div class="hi-coverage-item">
           <strong>Liste d'attesa</strong>
-          <span>PNLA nazionale per prime visite ed esami diagnostici: prenotazioni, percentuale entro soglia, giorni medi alla prima disponibilita proposta e appuntamento accettato.</span>
+          <span>PNLA nazionale per prime visite ed esami diagnostici: prenotazioni, percentuale entro soglia, giorni medi alla prima disponibilita proposta, appuntamento accettato e dettaglio per struttura nell'ultimo anno disponibile.</span>
           <em>Regione / prestazione / priorita / regime</em>
         </div>
         <div class="hi-coverage-item">
@@ -427,6 +427,46 @@
         </div>
         <div id="hiWaitingRegionChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiWaitingRegionNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiWaitingStructureTitle">Liste d'attesa per struttura</h3><span id="hiWaitingStructureTag">PNLA</span></div>
+        <p id="hiWaitingStructureSubtitle" class="hi-card-subtitle">Dettaglio delle strutture della prima disponibilit&agrave; proposta per regione, prestazione, priorit&agrave; e misura.</p>
+        <div class="hi-chart-controls" aria-label="Filtri liste d'attesa per struttura">
+          <label>Regione
+            <select id="hiWaitingStructureRegionFilter"></select>
+          </label>
+          <label>Tipo prestazione
+            <select id="hiWaitingStructureServiceTypeFilter"></select>
+          </label>
+          <label>Prestazione
+            <select id="hiWaitingStructureServiceFilter"></select>
+          </label>
+          <label>Priorit&agrave;
+            <select id="hiWaitingStructurePriorityFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiWaitingStructureMetricFilter">
+              <option value="mean_first_available_days">Giorni medi alla prima disponibilit&agrave;</option>
+              <option value="mean_accepted_wait_days">Giorni medi all'appuntamento accettato</option>
+              <option value="within_target_percent">% entro soglia - prima disponibilit&agrave;</option>
+              <option value="accepted_within_target_percent">% entro soglia - appuntamento</option>
+              <option value="bookings">Prenotazioni</option>
+            </select>
+          </label>
+          <label>Numero strutture
+            <select id="hiWaitingStructureLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+            </select>
+          </label>
+          <label>Struttura in evidenza
+            <select id="hiWaitingStructureFocusFilter"></select>
+          </label>
+        </div>
+        <div id="hiWaitingStructureChart" class="hi-chart hi-chart-wide"></div>
+        <div id="hiWaitingStructureTable" class="hi-table-wrap"></div>
+        <p id="hiWaitingStructureNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiWaitingServiceTitle">Prestazioni piu lente o veloci</h3><span id="hiWaitingServiceTag">PNLA</span></div>
