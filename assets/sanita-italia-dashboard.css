@@ -88,6 +88,38 @@
   font-weight: 800;
 }
 
+.hi-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.hi-status-row .hi-status {
+  margin: 0;
+}
+
+.hi-share-button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.hi-share-button:hover,
+.hi-share-button:focus-visible {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
 .hi-workflow {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -651,6 +683,14 @@
   .hi-chart-block,
   .hi-dashboard .chart-filter-panel {
     padding: 16px;
+  }
+
+  .hi-status-row {
+    align-items: stretch;
+  }
+
+  .hi-share-button {
+    width: 100%;
   }
 
   .hi-chart,

@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260814-pnla-structures-1">
-  <script defer src="../../assets/theme.js?v=20260814-pnla-structures-1"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260814-direct-compare-1">
+  <script defer src="../../assets/theme.js?v=20260814-direct-compare-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260814-pnla-structures-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260814-direct-compare-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -90,7 +90,10 @@
       <a href="#metodo">Metodo</a>
     </nav>
 
-    <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
+    <div class="hi-status-row">
+      <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
+      <button id="hiShareFiltersButton" class="hi-share-button" type="button">Copia link con filtri</button>
+    </div>
     <p class="hi-note"><strong>Perimetro:</strong> la dashboard combina stato di salute ISTAT Health for All, dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale e per struttura della prima disponibilit&agrave; proposta.</p>
 
     <section id="indicatori" class="dashboard-section">
@@ -469,6 +472,45 @@
         <p id="hiWaitingStructureNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiWaitingCompareTitle">Confronto strutture PNLA</h3><span id="hiWaitingCompareTag">PNLA</span></div>
+        <p id="hiWaitingCompareSubtitle" class="hi-card-subtitle">Confronto diretto tra due strutture sulla stessa prestazione, priorit&agrave; e misura.</p>
+        <div class="hi-chart-controls" aria-label="Filtri confronto diretto liste d'attesa">
+          <label>Regione A
+            <select id="hiWaitingCompareRegionAFilter"></select>
+          </label>
+          <label>Struttura A
+            <select id="hiWaitingCompareStructureAFilter"></select>
+          </label>
+          <label>Regione B
+            <select id="hiWaitingCompareRegionBFilter"></select>
+          </label>
+          <label>Struttura B
+            <select id="hiWaitingCompareStructureBFilter"></select>
+          </label>
+          <label>Tipo prestazione
+            <select id="hiWaitingCompareServiceTypeFilter"></select>
+          </label>
+          <label>Prestazione
+            <select id="hiWaitingCompareServiceFilter"></select>
+          </label>
+          <label>Priorit&agrave;
+            <select id="hiWaitingComparePriorityFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiWaitingCompareMetricFilter">
+              <option value="mean_first_available_days">Giorni medi alla prima disponibilit&agrave;</option>
+              <option value="mean_accepted_wait_days">Giorni medi all'appuntamento accettato</option>
+              <option value="within_target_percent">% entro soglia - prima disponibilit&agrave;</option>
+              <option value="accepted_within_target_percent">% entro soglia - appuntamento</option>
+              <option value="bookings">Prenotazioni</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiWaitingCompareChart" class="hi-chart"></div>
+        <div id="hiWaitingCompareTable" class="hi-table-wrap"></div>
+        <p id="hiWaitingCompareNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiWaitingServiceTitle">Prestazioni piu lente o veloci</h3><span id="hiWaitingServiceTag">PNLA</span></div>
         <p id="hiWaitingServiceSubtitle" class="hi-card-subtitle">Classifica delle prestazioni PNLA nel territorio selezionato, ordinata con la misura scelta.</p>
         <div class="hi-chart-controls" aria-label="Filtri prestazioni liste d'attesa">
@@ -703,6 +745,29 @@
         </div>
         <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiHospitalNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiHospitalProfileTitle">Scheda ospedale</h3><span id="hiHospitalProfileTag">profilo struttura</span></div>
+        <p id="hiHospitalProfileSubtitle" class="hi-card-subtitle">Sintesi della struttura selezionata: reparti, volumi, pronto soccorso collegato e liste PNLA quando il codice struttura coincide.</p>
+        <div class="hi-chart-controls" aria-label="Filtri scheda ospedale">
+          <label>Territorio
+            <select id="hiHospitalProfileRegionFilter"></select>
+          </label>
+          <label>Provincia
+            <select id="hiHospitalProfileProvinceFilter"></select>
+          </label>
+          <label>Ospedale
+            <select id="hiHospitalProfileStructureFilter"></select>
+          </label>
+        </div>
+        <div id="hiHospitalProfileCards" class="hi-profile-grid"></div>
+        <div class="hi-card-title hi-card-title-secondary"><h3>Reparti principali</h3><span>dimissioni</span></div>
+        <div id="hiHospitalProfileDepartmentsChart" class="hi-chart"></div>
+        <div class="hi-card-title hi-card-title-secondary"><h3>Pronto soccorso collegato</h3><span>AGENAS</span></div>
+        <div id="hiHospitalProfilePsTable" class="hi-table-wrap"></div>
+        <div class="hi-card-title hi-card-title-secondary"><h3>Liste PNLA della struttura</h3><span>prima disponibilit&agrave;</span></div>
+        <div id="hiHospitalProfileWaitingTable" class="hi-table-wrap"></div>
+        <p id="hiHospitalProfileNote" class="hi-chart-credit">Fonte: Ministero della Salute, AGENAS Trova Strutture, AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiHospitalDepartmentTitle">Dimissioni per reparto dentro l'ospedale</h3><span id="hiHospitalDepartmentTag">Ministero Salute, 2022</span></div>

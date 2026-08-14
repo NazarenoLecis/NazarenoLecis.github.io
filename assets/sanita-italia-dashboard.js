@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260814-pnla-structures-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260814-pnla-structures-1",
+    "../../data/sanita-italia/dashboard.json?v=20260814-direct-compare-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260814-direct-compare-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -68,6 +68,14 @@
     waitingStructureMetric: "mean_first_available_days",
     waitingStructureLimit: "20",
     waitingStructureFocus: "all",
+    waitingCompareRegionA: "Sardegna",
+    waitingCompareStructureA: "200904",
+    waitingCompareRegionB: "Emilia-Romagna",
+    waitingCompareStructureB: "505001",
+    waitingCompareServiceType: "all",
+    waitingCompareService: "33 - ESOFAGOGASTRODUODENOSCOPIA [EGDS]",
+    waitingComparePriority: "B - Breve (10 giorni)",
+    waitingCompareMetric: "mean_first_available_days",
     healthGroup: "risk_weight",
     healthIndicator: "obesity_18_plus",
     healthYear: "latest",
@@ -118,6 +126,9 @@
     hospitalDepartmentStructure: "",
     hospitalDepartmentMetric: "discharges",
     hospitalDepartmentLimit: "20",
+    hospitalProfileRegion: "Sardegna",
+    hospitalProfileProvince: "all",
+    hospitalProfileStructure: "",
     mobilityRatio: "absolute",
     mobilitySeriesRegion: "Italia",
     mobilitySeriesRatio: "absolute",
@@ -133,6 +144,35 @@
 
   var WAITING_STRUCTURE_CACHE = {};
   var WAITING_STRUCTURE_LOADING = {};
+
+  var URL_STATE_KEYS = [
+    "region", "discipline", "metric", "ratioMode",
+    "nationalActivityRegion", "nationalActivityProvince", "nationalActivityMetric", "nationalActivityRatio", "nationalActivityLimit",
+    "nationalBedsRegion", "nationalBedsYear", "nationalBedsMetric", "nationalBedsRatio", "nationalBedsLimit",
+    "dischargeRegion", "dischargeProvince", "dischargeStructure", "dischargeDiscipline", "dischargeDisciplineMetric",
+    "dischargeHospitalRegion", "dischargeHospitalProvince", "dischargeHospitalCategory", "dischargeHospitalLimit",
+    "psRegion", "psRegionTriage", "psRegionMetric", "psStructureRegion", "psStructureProvince", "psStructure", "psStructureTriage", "psStructureLimit",
+    "waitingYear", "waitingServiceType", "waitingService", "waitingPriority", "waitingRegime", "waitingAccess", "waitingMetric", "waitingRegionFocus",
+    "waitingServiceRegion", "waitingServiceYear", "waitingServiceType2", "waitingServicePriority", "waitingServiceRegime", "waitingServiceAccess", "waitingServiceMetric", "waitingServiceLimit",
+    "waitingTrendRegion", "waitingTrendService", "waitingTrendPriority", "waitingTrendMetric",
+    "waitingStructureRegion", "waitingStructureServiceType", "waitingStructureService", "waitingStructurePriority", "waitingStructureMetric", "waitingStructureLimit", "waitingStructureFocus",
+    "waitingCompareRegionA", "waitingCompareStructureA", "waitingCompareRegionB", "waitingCompareStructureB", "waitingCompareServiceType", "waitingCompareService", "waitingComparePriority", "waitingCompareMetric",
+    "healthGroup", "healthIndicator", "healthYear", "healthTerritoryFocus", "healthProfileTerritory", "healthProfileGroup", "healthProfileYear", "healthTrendTerritory", "healthTrendGroup", "healthTrendIndicator",
+    "cancerRecentMetric", "cancerRecentSite",
+    "mortalityGroup", "mortalityIndicator", "mortalityYear", "mortalityTerritoryFocus", "mortalityProfileTerritory", "mortalityProfileGroup", "mortalityProfileYear", "mortalityTrendTerritory", "mortalityTrendGroup", "mortalityTrendIndicator",
+    "mortalityDetailGroup", "mortalityDetailCause", "mortalityDetailYear", "mortalityDetailTerritoryFocus", "mortalityDetailTrendTerritory", "mortalityDetailTrendGroup", "mortalityDetailTrendCause",
+    "disciplineRegion", "disciplineProvince", "disciplineMetric", "denominator",
+    "costRegion", "costRatio", "costType", "costCompositionRegion", "bedsSeriesRegion", "bedsSeriesMetric", "bedsSeriesRatio", "pharmaRegion", "pharmaLabel",
+    "hospitalRegion", "hospitalProvince", "hospitalDiscipline", "hospitalDepartmentRegion", "hospitalDepartmentProvince", "hospitalDepartmentStructure", "hospitalDepartmentMetric", "hospitalDepartmentLimit",
+    "hospitalProfileRegion", "hospitalProfileProvince", "hospitalProfileStructure",
+    "mobilityRatio", "mobilitySeriesRegion", "mobilitySeriesRatio", "mobilityHospitalRegion", "mobilityHospitalLimit", "mobilitySankeyMin",
+    "tableRegion", "tableProvince", "tableDiscipline", "table"
+  ];
+
+  var DEFAULT_FILTER_STATE = {};
+  URL_STATE_KEYS.forEach(function (key) {
+    DEFAULT_FILTER_STATE[key] = STATE[key];
+  });
 
   var COLORS = ["#ff5a1f", "#5d8fd7", "#3aa6a1", "#65a96b", "#d9ad48", "#d96666", "#9c7ad9", "#8f8f8f"];
   var MISSING = "ND";
@@ -600,6 +640,48 @@
     return document.getElementById(id);
   }
 
+  function applyUrlFilters() {
+    if (!window.URLSearchParams) return;
+    var params = new URLSearchParams(window.location.search);
+    URL_STATE_KEYS.forEach(function (key) {
+      if (params.has(key)) STATE[key] = params.get(key);
+    });
+  }
+
+  function syncFilterUrl() {
+    if (!window.history || !window.URL) return;
+    var url = new URL(window.location.href);
+    URL_STATE_KEYS.forEach(function (key) {
+      url.searchParams.delete(key);
+    });
+    URL_STATE_KEYS.forEach(function (key) {
+      var value = STATE[key];
+      if (value === undefined || value === null || value === "") return;
+      if (String(value) === String(DEFAULT_FILTER_STATE[key])) return;
+      url.searchParams.set(key, value);
+    });
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+  }
+
+  function copyFilterUrl() {
+    syncFilterUrl();
+    var button = byId("hiShareFiltersButton");
+    var url = window.location.href;
+    function done(ok) {
+      if (!button) return;
+      button.textContent = ok ? "Link copiato" : "Link pronto";
+      window.setTimeout(function () {
+        button.textContent = "Copia link con filtri";
+      }, 1800);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () { done(true); }).catch(function () { done(false); });
+      return;
+    }
+    window.prompt("Copia il link con i filtri", url);
+    done(false);
+  }
+
   function toArray(value) {
     return Array.isArray(value) ? value : [];
   }
@@ -706,6 +788,10 @@
     maxLength = maxLength || 72;
     if (text.length <= maxLength) return text;
     return text.slice(0, maxLength - 3).trim() + "...";
+  }
+
+  function normalizeLabel(value) {
+    return asText(value, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   }
 
   function cssVar(name, fallback) {
@@ -863,6 +949,7 @@
     refreshProvinceFilter("hiDisciplineProvinceFilter", "disciplineProvince", STATE.disciplineRegion);
     refreshProvinceFilter("hiHospitalProvinceFilter", "hospitalProvince", STATE.hospitalRegion);
     refreshProvinceFilter("hiHospitalDepartmentProvinceFilter", "hospitalDepartmentProvince", STATE.hospitalDepartmentRegion);
+    refreshProvinceFilter("hiHospitalProfileProvinceFilter", "hospitalProfileProvince", STATE.hospitalProfileRegion);
     refreshProvinceFilter("hiTableProvinceFilter", "tableProvince", STATE.tableRegion);
   }
 
@@ -1003,8 +1090,8 @@
 
   function waitingStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260814-pnla-structures-1",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260814-pnla-structures-1",
+      "../../data/sanita-italia/" + path + "?v=20260814-direct-compare-1",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260814-direct-compare-1",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
@@ -1277,6 +1364,101 @@
     });
   }
 
+  function waitingCompareRegionRows(region) {
+    var cached = WAITING_STRUCTURE_CACHE[region];
+    return cached ? toArray(cached.rows) : [];
+  }
+
+  function waitingCompareServiceOptions() {
+    var rows = waitingCompareRegionRows(STATE.waitingCompareRegionA).concat(waitingCompareRegionRows(STATE.waitingCompareRegionB));
+    if (!rows.length) return waitingServiceOptions(STATE.waitingCompareServiceType, false);
+    var serviceMap = {};
+    rows.forEach(function (row) {
+      if (STATE.waitingCompareServiceType !== "all" && row.service_type !== STATE.waitingCompareServiceType) return;
+      if (!row.service_id || serviceMap[row.service_id]) return;
+      serviceMap[row.service_id] = { value: row.service_id, label: compact(row.service, 70), service_type: row.service_type };
+    });
+    return Object.keys(serviceMap).map(function (key) {
+      return serviceMap[key];
+    }).sort(function (a, b) {
+      return (a.service_type || "").localeCompare(b.service_type || "") || a.label.localeCompare(b.label);
+    });
+  }
+
+  function waitingComparePriorityOptions() {
+    var loadedRows = waitingCompareRegionRows(STATE.waitingCompareRegionA).concat(waitingCompareRegionRows(STATE.waitingCompareRegionB));
+    var baseOptions = waitingPriorityOptions(false);
+    if (!loadedRows.length) return [{ value: "all", label: "Tutte" }].concat(baseOptions);
+    var available = {};
+    loadedRows.forEach(function (row) {
+      if (STATE.waitingCompareServiceType !== "all" && row.service_type !== STATE.waitingCompareServiceType) return;
+      if (STATE.waitingCompareService && row.service_id !== STATE.waitingCompareService) return;
+      if (row.priority_label) available[row.priority_label] = true;
+    });
+    return [{ value: "all", label: "Tutte" }].concat(baseOptions.filter(function (option) {
+      return available[option.value];
+    }));
+  }
+
+  function waitingCompareStructureOptions(region, selectedValue) {
+    var rows = waitingCompareRegionRows(region);
+    if (!rows.length) {
+      return [{ value: selectedValue || "", label: "Caricamento strutture..." }];
+    }
+    var grouped = {};
+    rows.forEach(function (row) {
+      if (STATE.waitingCompareServiceType !== "all" && row.service_type !== STATE.waitingCompareServiceType) return;
+      if (STATE.waitingCompareService && row.service_id !== STATE.waitingCompareService) return;
+      if (STATE.waitingComparePriority && STATE.waitingComparePriority !== "all" && row.priority_label !== STATE.waitingComparePriority) return;
+      if (!row.structure_code || grouped[row.structure_code]) return;
+      grouped[row.structure_code] = { value: row.structure_code, label: compact(row.structure, 72), structure: row.structure };
+    });
+    var options = Object.keys(grouped).map(function (key) {
+      return grouped[key];
+    }).sort(function (a, b) {
+      return a.structure.localeCompare(b.structure);
+    });
+    if (!options.length && selectedValue) return [{ value: selectedValue, label: "Nessun dato con questi filtri" }];
+    return options;
+  }
+
+  function preferredWaitingCompareStructure(region, options) {
+    var preferred = "";
+    if (region === "Sardegna") preferred = "200904";
+    if (region === "Emilia-Romagna") preferred = "505001";
+    if (preferred && options.some(function (option) { return option.value === preferred; })) return preferred;
+    return options[0] ? options[0].value : "";
+  }
+
+  function refreshWaitingCompareStructureFilter(id, stateKey, region) {
+    var options = waitingCompareStructureOptions(region, STATE[stateKey]);
+    if (!options.some(function (option) { return option.value === STATE[stateKey]; })) {
+      STATE[stateKey] = preferredWaitingCompareStructure(region, options);
+    }
+    fillSelect(id, options, STATE[stateKey]);
+  }
+
+  function refreshWaitingCompareFilters() {
+    var regionOptions = waitingStructureRegionOptions();
+    fillSelect("hiWaitingCompareRegionAFilter", regionOptions, STATE.waitingCompareRegionA);
+    fillSelect("hiWaitingCompareRegionBFilter", regionOptions, STATE.waitingCompareRegionB);
+    fillSelect("hiWaitingCompareServiceTypeFilter", waitingServiceTypeOptions(), STATE.waitingCompareServiceType);
+    var serviceOptions = waitingCompareServiceOptions();
+    if (!serviceOptions.some(function (option) { return option.value === STATE.waitingCompareService; })) {
+      STATE.waitingCompareService = defaultWaitingStructureService(serviceOptions);
+    }
+    fillSelect("hiWaitingCompareServiceFilter", serviceOptions.length ? serviceOptions : [{ value: "", label: "Nessuna prestazione disponibile" }], STATE.waitingCompareService);
+    var priorityOptions = waitingComparePriorityOptions();
+    if (!priorityOptions.some(function (option) { return option.value === STATE.waitingComparePriority; })) {
+      STATE.waitingComparePriority = defaultWaitingStructurePriority(priorityOptions);
+    }
+    fillSelect("hiWaitingComparePriorityFilter", priorityOptions.length ? priorityOptions : [{ value: "", label: "Nessuna priorita disponibile" }], STATE.waitingComparePriority);
+    refreshWaitingCompareStructureFilter("hiWaitingCompareStructureAFilter", "waitingCompareStructureA", STATE.waitingCompareRegionA);
+    refreshWaitingCompareStructureFilter("hiWaitingCompareStructureBFilter", "waitingCompareStructureB", STATE.waitingCompareRegionB);
+    var metricNode = byId("hiWaitingCompareMetricFilter");
+    if (metricNode) metricNode.value = STATE.waitingCompareMetric;
+  }
+
   function refreshWaitingFilters(regionOptions) {
     fillSelect("hiWaitingYearFilter", waitingYearOptions(), STATE.waitingYear);
     fillSelect("hiWaitingServiceYearFilter", waitingYearOptions(), STATE.waitingServiceYear);
@@ -1295,6 +1477,7 @@
     refreshWaitingServiceFilter("hiWaitingServiceFilter", "waitingService", STATE.waitingServiceType, true);
     refreshWaitingServiceFilter("hiWaitingTrendServiceFilter", "waitingTrendService", "all", true);
     refreshWaitingStructureFilters();
+    refreshWaitingCompareFilters();
     var simpleSelects = [
       ["hiWaitingMetricFilter", "waitingMetric"],
       ["hiWaitingServiceMetricFilter", "waitingServiceMetric"],
@@ -1524,6 +1707,79 @@
       STATE.hospitalDepartmentStructure = options[0].value;
     }
     fillSelect("hiHospitalDepartmentStructureFilter", options, STATE.hospitalDepartmentStructure);
+    if (node) node.disabled = false;
+  }
+
+  function hospitalProfileStructureRows() {
+    var grouped = {};
+    tableRows("hospital_activity_by_discipline").forEach(function (row) {
+      if (STATE.hospitalProfileRegion !== "Italia" && row.region !== STATE.hospitalProfileRegion) return;
+      if (STATE.hospitalProfileProvince !== "all" && row.province !== STATE.hospitalProfileProvince) return;
+      var key = structureKey(row);
+      if (!key) return;
+      if (!grouped[key]) {
+        grouped[key] = {
+          key: key,
+          year: row.year,
+          region: row.region,
+          region_code: row.region_code,
+          province: row.province,
+          structure_code: row.structure_code,
+          structure: row.structure,
+          municipality: row.municipality,
+          discharges: 0,
+          stay_days: 0,
+          available_days: 0,
+          ordinary_beds: 0,
+          day_hospital_beds: 0,
+          day_surgery_beds: 0,
+          departments: 0,
+          main_discipline: "",
+          main_discipline_discharges: 0
+        };
+      }
+      grouped[key].discharges += toNumber(row.discharges) || 0;
+      grouped[key].stay_days += toNumber(row.stay_days) || 0;
+      grouped[key].available_days += toNumber(row.available_days) || 0;
+      grouped[key].ordinary_beds += toNumber(row.ordinary_beds) || 0;
+      grouped[key].day_hospital_beds += toNumber(row.day_hospital_beds) || 0;
+      grouped[key].day_surgery_beds += toNumber(row.day_surgery_beds) || 0;
+      grouped[key].departments += 1;
+      if ((toNumber(row.discharges) || 0) > grouped[key].main_discipline_discharges) {
+        grouped[key].main_discipline = row.discipline;
+        grouped[key].main_discipline_discharges = toNumber(row.discharges) || 0;
+      }
+    });
+    return Object.keys(grouped).map(function (key) {
+      var row = grouped[key];
+      row.avg_los_days = row.discharges ? row.stay_days / row.discharges : null;
+      row.bed_utilization_percent = row.available_days ? (row.stay_days / row.available_days) * 100 : null;
+      return row;
+    }).sort(function (a, b) {
+      return (toNumber(b.discharges) || 0) - (toNumber(a.discharges) || 0);
+    });
+  }
+
+  function hospitalProfileStructureOptions() {
+    return hospitalProfileStructureRows().map(function (row) {
+      var place = STATE.hospitalProfileRegion === "Italia" ? " - " + row.region + " (" + row.province + ")" : (STATE.hospitalProfileProvince === "all" ? " (" + row.province + ")" : "");
+      return { value: row.key, label: compact(row.structure, 58) + place };
+    });
+  }
+
+  function refreshHospitalProfileStructureFilter() {
+    var options = hospitalProfileStructureOptions();
+    var node = byId("hiHospitalProfileStructureFilter");
+    if (!options.length) {
+      STATE.hospitalProfileStructure = "";
+      fillSelect("hiHospitalProfileStructureFilter", [{ value: "", label: "Nessun ospedale disponibile" }], "");
+      if (node) node.disabled = true;
+      return;
+    }
+    if (!STATE.hospitalProfileStructure || !options.some(function (option) { return option.value === STATE.hospitalProfileStructure; })) {
+      STATE.hospitalProfileStructure = options[0].value;
+    }
+    fillSelect("hiHospitalProfileStructureFilter", options, STATE.hospitalProfileStructure);
     if (node) node.disabled = false;
   }
 
@@ -2176,6 +2432,7 @@
       ["hiPharmaSeriesRegionFilter", "pharmaRegion"],
       ["hiHospitalRegionFilter", "hospitalRegion"],
       ["hiHospitalDepartmentRegionFilter", "hospitalDepartmentRegion"],
+      ["hiHospitalProfileRegionFilter", "hospitalProfileRegion"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
       ["hiMobilityHospitalRegionFilter", "mobilityHospitalRegion"],
       ["hiTableRegionFilter", "tableRegion"]
@@ -2239,6 +2496,7 @@
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
+    refreshHospitalProfileStructureFilter();
 
     var tableSelect = byId("hiTableSelect");
     if (tableSelect) {
@@ -2314,6 +2572,14 @@
       ["hiWaitingStructureMetricFilter", "waitingStructureMetric"],
       ["hiWaitingStructureLimitFilter", "waitingStructureLimit"],
       ["hiWaitingStructureFocusFilter", "waitingStructureFocus"],
+      ["hiWaitingCompareRegionAFilter", "waitingCompareRegionA"],
+      ["hiWaitingCompareStructureAFilter", "waitingCompareStructureA"],
+      ["hiWaitingCompareRegionBFilter", "waitingCompareRegionB"],
+      ["hiWaitingCompareStructureBFilter", "waitingCompareStructureB"],
+      ["hiWaitingCompareServiceTypeFilter", "waitingCompareServiceType"],
+      ["hiWaitingCompareServiceFilter", "waitingCompareService"],
+      ["hiWaitingComparePriorityFilter", "waitingComparePriority"],
+      ["hiWaitingCompareMetricFilter", "waitingCompareMetric"],
       ["hiHealthGroupFilter", "healthGroup"],
       ["hiHealthIndicatorFilter", "healthIndicator"],
       ["hiHealthYearFilter", "healthYear"],
@@ -2364,6 +2630,9 @@
       ["hiHospitalDepartmentStructureFilter", "hospitalDepartmentStructure"],
       ["hiHospitalDepartmentMetricFilter", "hospitalDepartmentMetric"],
       ["hiHospitalDepartmentLimitFilter", "hospitalDepartmentLimit"],
+      ["hiHospitalProfileRegionFilter", "hospitalProfileRegion"],
+      ["hiHospitalProfileProvinceFilter", "hospitalProfileProvince"],
+      ["hiHospitalProfileStructureFilter", "hospitalProfileStructure"],
       ["hiMobilityRatioFilter", "mobilityRatio"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
@@ -2392,6 +2661,8 @@
       });
     }
 
+    var share = byId("hiShareFiltersButton");
+    if (share) share.addEventListener("click", copyFilterUrl);
   }
 
   function renderKpis() {
@@ -2983,6 +3254,7 @@
   function renderWaitingLists() {
     renderWaitingRegionChart();
     renderWaitingStructureChart();
+    renderWaitingCompareChart();
     renderWaitingServiceChart();
     renderWaitingTrendChart();
   }
@@ -3005,6 +3277,110 @@
     parts.push("Istituzionale");
     parts.push("Primo accesso");
     return parts.join(", ") + ". " + extra;
+  }
+
+  function waitingCompareStructureName(region, structureCode) {
+    var row = waitingCompareRegionRows(region).find(function (item) {
+      return item.structure_code === structureCode;
+    });
+    return row && row.structure ? row.structure : structureCode;
+  }
+
+  function waitingCompareSummary(region, structureCode, sideLabel) {
+    var config = waitingMetricConfig(STATE.waitingCompareMetric);
+    var rows = waitingCompareRegionRows(region).filter(function (row) {
+      if (row.structure_code !== structureCode) return false;
+      if (STATE.waitingCompareServiceType !== "all" && row.service_type !== STATE.waitingCompareServiceType) return false;
+      if (STATE.waitingCompareService && row.service_id !== STATE.waitingCompareService) return false;
+      if (STATE.waitingComparePriority !== "all" && row.priority_label !== STATE.waitingComparePriority) return false;
+      return true;
+    });
+    var aggregated = aggregateWaitingRows(rows, function (row) {
+      return row.structure_code;
+    }, function (row) {
+      return row.structure;
+    })[0] || {};
+    var structureName = aggregated.label || waitingCompareStructureName(region, structureCode);
+    return Object.assign({
+      side: sideLabel,
+      region: region,
+      structure_code: structureCode,
+      structure: structureName,
+      label: sideLabel + " - " + structureName + " (" + region + ")"
+    }, aggregated, {
+      selected_value: toNumber(aggregated[config.field])
+    });
+  }
+
+  function renderWaitingCompareChart() {
+    var regions = unique([STATE.waitingCompareRegionA, STATE.waitingCompareRegionB].filter(Boolean));
+    var missingRegions = regions.filter(function (region) {
+      return !WAITING_STRUCTURE_CACHE[region];
+    });
+    var config = waitingMetricConfig(STATE.waitingCompareMetric);
+    var serviceText = waitingServiceText(STATE.waitingCompareService, STATE.waitingCompareServiceType);
+    var priorityText = waitingPriorityText(STATE.waitingComparePriority);
+    var title = byId("hiWaitingCompareTitle");
+    if (title) title.textContent = "Confronto strutture PNLA - " + config.label;
+    setSubtitle("hiWaitingCompareSubtitle", "Stessa prestazione, stessa priorita e stessa misura per le due strutture selezionate. Filtro: " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso.");
+    var compareYear = (STATE.payload.kpis || {}).pnla_structure_year || waitingLatestYear();
+    setTag("hiWaitingCompareTag", "PNLA " + asText(compareYear) + " - confronto diretto");
+
+    if (missingRegions.length) {
+      showEmptyChart("hiWaitingCompareChart", "Caricamento strutture per il confronto...");
+      createTable("hiWaitingCompareTable", [], [
+        ["side", "Lato"],
+        ["region", "Regione"],
+        ["structure", "Struttura"],
+        ["bookings", "Prenotazioni"],
+        ["mean_first_available_days", "Giorni prima disponibilita"]
+      ], 2);
+      setChartCredit("hiWaitingCompareNote", [
+        { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+      ], "Il confronto carica i file regionali necessari e poi applica gli stessi filtri a entrambe le strutture.");
+      Promise.all(missingRegions.map(function (region) {
+        return loadWaitingStructureRegion(region);
+      })).then(function () {
+        refreshWaitingCompareFilters();
+        renderWaitingCompareChart();
+        refreshSiteLanguage();
+      });
+      return;
+    }
+
+    var rows = [
+      waitingCompareSummary(STATE.waitingCompareRegionA, STATE.waitingCompareStructureA, "A"),
+      waitingCompareSummary(STATE.waitingCompareRegionB, STATE.waitingCompareStructureB, "B")
+    ];
+    var chartRows = rows.filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    if (!chartRows.length) {
+      showEmptyChart("hiWaitingCompareChart", "Nessun dato confrontabile per i filtri selezionati");
+    } else {
+      horizontalBar("hiWaitingCompareChart", chartRows, "label", "selected_value", {
+        limit: 2,
+        leftMargin: 380,
+        labelLength: 72,
+        xTitle: config.xTitle,
+        format: config.format,
+        colorFor: function (row) { return row.side === "A" ? COLORS[0] : COLORS[1]; },
+        hovertemplate: "%{y}<br>" + config.label + ": %{text}<br>Prenotazioni: %{customdata.bookings:,.0f}<extra></extra>"
+      });
+    }
+    createTable("hiWaitingCompareTable", rows, [
+      ["side", "Lato"],
+      ["region", "Regione"],
+      ["structure", "Struttura"],
+      ["bookings", "Prenotazioni"],
+      ["within_target_percent", "% entro soglia"],
+      ["accepted_within_target_percent", "% appuntamento"],
+      ["mean_first_available_days", "Giorni prima disponibilita"],
+      ["mean_accepted_wait_days", "Giorni appuntamento"]
+    ], 2);
+    setChartCredit("hiWaitingCompareNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], "Confronto diretto su " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso. La struttura indica la prima disponibilita proposta nel monitoraggio PNLA; leggere sempre i tempi insieme alle prenotazioni.");
   }
 
   function renderWaitingRegionChart() {
@@ -4153,6 +4529,142 @@
     });
     createTable("hiHospitalTable", rows, tableOption(tableName).columns, 80);
     renderHospitalDepartments();
+    renderHospitalProfile();
+  }
+
+  function selectedHospitalProfileSummary() {
+    return hospitalProfileStructureRows().find(function (row) {
+      return row.key === STATE.hospitalProfileStructure;
+    }) || null;
+  }
+
+  function selectedHospitalProfileDepartmentRows() {
+    return tableRows("hospital_activity_by_discipline").filter(function (row) {
+      return structureKey(row) === STATE.hospitalProfileStructure;
+    });
+  }
+
+  function renderHospitalProfileCards(summary) {
+    var container = byId("hiHospitalProfileCards");
+    clear(container);
+    if (!summary) return;
+    [
+      ["Dimissioni", formatNumber(summary.discharges), "attivita reparti " + asText(summary.year)],
+      ["Reparti", formatNumber(summary.departments), "discipline pubblicate"],
+      ["Posti letto ordinari", formatNumber(summary.ordinary_beds), "dotazione nel dataset reparti"],
+      ["Degenza media", formatDecimal(summary.avg_los_days) + " giorni", "giornate / dimissioni"],
+      ["Utilizzo PL", formatPercent(summary.bed_utilization_percent), "giornate su disponibilita"],
+      ["Disciplina principale", summary.main_discipline || MISSING, formatNumber(summary.main_discipline_discharges) + " dimissioni"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function hospitalProfilePsRows(summary) {
+    if (!summary) return [];
+    var structureName = normalizeLabel(summary.structure);
+    var municipality = normalizeLabel(summary.municipality);
+    var rows = tableRows("ps_structures").filter(function (row) {
+      if (row.region !== summary.region) return false;
+      if (summary.province && row.province !== summary.province) return false;
+      return true;
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      var psName = normalizeLabel(row.structure);
+      var sameCode = row.institute_code === summary.structure_code || row.structure_code === summary.structure_code;
+      var sameMunicipality = municipality && normalizeLabel(row.municipality) === municipality;
+      var nameOverlap = psName && structureName && structureName.split(" ").some(function (token) {
+        return token.length > 4 && psName.indexOf(token) >= 0;
+      });
+      copy.match_score = sameCode ? 3 : (sameMunicipality && nameOverlap ? 2 : (sameMunicipality ? 1 : 0));
+      copy.match_note = sameCode ? "codice struttura" : (sameMunicipality && nameOverlap ? "stesso comune e nome simile" : (sameMunicipality ? "stesso comune" : "stessa provincia"));
+      return copy;
+    }).filter(function (row) {
+      return row.match_score > 0;
+    }).sort(function (a, b) {
+      return (b.match_score - a.match_score) || ((toNumber(b.accesses_total) || 0) - (toNumber(a.accesses_total) || 0));
+    });
+    return rows.slice(0, 8);
+  }
+
+  function hospitalProfileWaitingRows(summary) {
+    if (!summary || !summary.region || !summary.structure_code) return [];
+    var cached = WAITING_STRUCTURE_CACHE[summary.region];
+    if (!cached) return null;
+    return toArray(cached.rows).filter(function (row) {
+      return row.structure_code === summary.structure_code;
+    }).sort(function (a, b) {
+      return (toNumber(b.bookings) || 0) - (toNumber(a.bookings) || 0);
+    }).slice(0, 20);
+  }
+
+  function renderHospitalProfile() {
+    var summary = selectedHospitalProfileSummary();
+    var title = byId("hiHospitalProfileTitle");
+    if (!summary) {
+      if (title) title.textContent = "Scheda ospedale";
+      clear(byId("hiHospitalProfileCards"));
+      showEmptyChart("hiHospitalProfileDepartmentsChart", "Seleziona un ospedale");
+      createTable("hiHospitalProfilePsTable", [], [["structure", "Pronto soccorso"], ["accesses_total", "Accessi"]], 8);
+      createTable("hiHospitalProfileWaitingTable", [], [["service", "Prestazione"], ["bookings", "Prenotazioni"]], 20);
+      return;
+    }
+    if (title) title.textContent = "Scheda ospedale - " + summary.structure;
+    setSubtitle("hiHospitalProfileSubtitle", summary.region + ", " + summary.province + " - " + asText(summary.municipality) + ". La scheda aggrega le informazioni disponibili senza stimare dati mancanti.");
+    setTag("hiHospitalProfileTag", "Ministero Salute " + asText(summary.year) + " - profilo struttura");
+    renderHospitalProfileCards(summary);
+
+    var departmentRows = sortDescending(selectedHospitalProfileDepartmentRows(), "discharges");
+    horizontalBar("hiHospitalProfileDepartmentsChart", departmentRows, "discipline", "discharges", {
+      limit: 12,
+      color: COLORS[1],
+      leftMargin: 230,
+      labelLength: 42,
+      xTitle: "dimissioni",
+      format: formatNumber,
+      hovertemplate: "%{y}<br>Dimissioni: %{text}<extra></extra>"
+    });
+
+    createTable("hiHospitalProfilePsTable", hospitalProfilePsRows(summary), [
+      ["match_note", "Collegamento"],
+      ["structure", "Pronto soccorso"],
+      ["municipality", "Comune"],
+      ["emergency_level", "Livello PS/DEA"],
+      ["accesses_total", "Accessi"],
+      ["mean_wait_hhmm", "Permanenza media"],
+      ["triage_codes_available", "Codici pubblicati"]
+    ], 8);
+
+    var waitingRows = hospitalProfileWaitingRows(summary);
+    if (waitingRows === null) {
+      createTable("hiHospitalProfileWaitingTable", [], [
+        ["service", "Prestazione"],
+        ["bookings", "Prenotazioni"],
+        ["mean_first_available_days", "Giorni prima disponibilita"]
+      ], 20);
+      loadWaitingStructureRegion(summary.region).then(function () {
+        renderHospitalProfile();
+        refreshSiteLanguage();
+      });
+    } else {
+      createTable("hiHospitalProfileWaitingTable", waitingRows, [
+        ["service", "Prestazione"],
+        ["priority_label", "Priorita"],
+        ["bookings", "Prenotazioni"],
+        ["within_target_percent", "% entro soglia"],
+        ["mean_first_available_days", "Giorni prima disponibilita"],
+        ["mean_accepted_wait_days", "Giorni appuntamento"]
+      ], 20);
+    }
+    setChartCredit("hiHospitalProfileNote", [
+      { id: "ministero_attivita_reparti", label: "Ministero della Salute, attivita dei reparti" },
+      { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" },
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], "I reparti sono della struttura selezionata. Il pronto soccorso e collegato quando risulta nello stesso codice, comune o provincia; non e un join clinico. Le liste PNLA sono mostrate solo quando il codice struttura coincide nel file AGENAS della prima disponibilita proposta.");
   }
 
   function hospitalDepartmentMetricConfig() {
@@ -4629,6 +5141,7 @@
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
+    refreshHospitalProfileStructureFilter();
     renderNationalCharts();
     renderPsEmergency();
     renderWaitingLists();
@@ -4643,6 +5156,7 @@
     renderHospitals();
     renderMobility();
     renderExplorer();
+    syncFilterUrl();
     refreshSiteLanguage();
   }
 
@@ -4685,6 +5199,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    applyUrlFilters();
     bindControls();
     loadPayload(0);
   });
