@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-quality-boxplots-4">
-  <script defer src="../../assets/theme.js?v=20260817-quality-boxplots-4"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-matrix-boxplots-2">
+  <script defer src="../../assets/theme.js?v=20260817-matrix-boxplots-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-quality-boxplots-4"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-matrix-boxplots-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -455,6 +455,18 @@
         <div class="hi-card-title"><h3 id="hiWaitingQualityTitle">Indice qualit&agrave; liste d'attesa</h3><span id="hiWaitingQualityTag">PNLA</span></div>
         <p id="hiWaitingQualitySubtitle" class="hi-card-subtitle">Boxplot territoriale con media nazionale, deviazione standard e aree oltre +/-1 DS.</p>
         <div class="hi-chart-controls" aria-label="Filtri indice qualit&agrave; liste d'attesa">
+          <label>Vista
+            <select id="hiWaitingQualityLayoutFilter">
+              <option value="region_service">Box regioni - punti prestazioni</option>
+              <option value="service_region">Box prestazioni - punti regioni</option>
+            </select>
+          </label>
+          <label>Livello punti
+            <select id="hiWaitingQualityGranularityFilter">
+              <option value="service_type">Tipologia prestazione</option>
+              <option value="service">Singola prestazione</option>
+            </select>
+          </label>
           <label>Anno
             <select id="hiWaitingQualityYearFilter"></select>
           </label>
@@ -483,6 +495,14 @@
           </label>
           <label>Focus
             <select id="hiWaitingQualityFocusFilter"></select>
+          </label>
+          <label>Numero box
+            <select id="hiWaitingQualityLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+              <option value="all">Tutti</option>
+            </select>
           </label>
         </div>
         <div id="hiWaitingQualitySummary" class="hi-profile-grid"></div>

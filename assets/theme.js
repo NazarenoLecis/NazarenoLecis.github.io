@@ -905,7 +905,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260817-quality-boxplots-4", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260817-matrix-boxplots-2", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

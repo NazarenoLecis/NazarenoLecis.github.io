@@ -3233,6 +3233,37 @@
     ["Boxplot PS by region", "Emergency-department box plot by region"],
     ["Boxplot PS", "ED box plots"],
     ["Boxplot attese", "Waiting-list box plots"],
+    ["Vista", "View"],
+    ["Livello punti", "Point level"],
+    ["Box regioni - punti prestazioni", "Region boxes - service points"],
+    ["Box prestazioni - punti regioni", "Service boxes - region points"],
+    ["Tipologia prestazione", "Service type"],
+    ["Singola prestazione", "Single service"],
+    ["Numero box", "Number of boxes"],
+    ["Punti nel boxplot", "Points in the box plot"],
+    ["Media punti", "Point mean"],
+    ["media semplice dei punti visualizzati", "simple mean of displayed points"],
+    ["Regione", "Region"],
+    ["Boxplot per regioni", "Box plot by region"],
+    ["Boxplot per prestazioni", "Box plot by service"],
+    ["punti tipologie di prestazione", "service-type points"],
+    ["punti prestazioni", "service points"],
+    ["punti regioni", "region points"],
+    ["Ogni box e una regione o provincia autonoma", "Each box is a region or autonomous province"],
+    ["Ogni box e una prestazione", "Each box is a service"],
+    ["Ogni box e una tipologia di prestazione", "Each box is a service type"],
+    ["ogni punto e una tipologia di prestazione", "each point is a service type"],
+    ["ogni punto e una prestazione", "each point is a service"],
+    ["ogni punto e una regione o provincia autonoma", "each point is a region or autonomous province"],
+    ["Il colore segnala chi sta almeno a +/-1 deviazione standard dalla media dei punti visualizzati", "Colour highlights points at least +/-1 standard deviation from the displayed-point mean"],
+    ["Boxplot incrociato", "Crossed box plot"],
+    ["sull'asse orizzontale", "on the horizontal axis"],
+    ["punti =", "points ="],
+    ["calcolato sui punti visualizzati", "calculated on displayed points"],
+    ["performance peggiore", "worse performance"],
+    ["area non presente nei filtri", "area not present in the filters"],
+    ["DS medio su", "average SD over"],
+    ["punti visualizzati", "displayed points"],
     ["Boxplot PS per struttura", "Emergency-department box plot by facility"],
     ["Boxplot PS by facility", "Emergency-department box plot by facility"],
     ["Boxplot strutture PNLA", "PNLA facility box plot"],
@@ -3379,9 +3410,11 @@
     output = output
       .split("almeno +1 SD indica tempi migliori della mean").join("at least +1 SD indicates better-than-average times")
       .split("almeno +1 SD indica performance migliore della mean").join("at least +1 SD indicates better-than-average performance")
+      .split("+1 SD o piu indica performance migliore della mean").join("+1 SD or more indicates better-than-average performance")
       .split("almeno +1 SD indica permanenze piu brevi della mean").join("at least +1 SD indicates shorter-than-average stays")
       .split("rispetto alla mean semplice delle facilities").join("against the simple mean of facilities")
       .split("almeno -1 SD performance peggiore").join("at least -1 SD indicates worse performance")
+      .split("-1 SD o meno worse performance").join("-1 SD or less indicates worse performance")
       .split("almeno -1 SD permanenze piu lunghe").join("at least -1 SD indicates longer stays")
       .split("AGENAS Trova Facilities").join("AGENAS Trova Strutture");
     return output !== key ? output : null;
