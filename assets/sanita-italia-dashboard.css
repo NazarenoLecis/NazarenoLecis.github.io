@@ -419,6 +419,10 @@
   color: var(--text);
 }
 
+.hi-chart-credit + .hi-table-wrap {
+  margin-top: 12px;
+}
+
 .hi-empty {
   min-height: 280px;
   display: grid;

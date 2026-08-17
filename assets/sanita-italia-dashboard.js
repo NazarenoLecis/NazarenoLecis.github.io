@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260817-ps-level-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-ps-level-1",
+    "../../data/sanita-italia/dashboard.json?v=20260817-pnla-notes-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-pnla-notes-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -3375,7 +3375,9 @@
 
   function waitingStructureSourceNote(extra) {
     var parts = ["Anno " + asText(waitingStructureYear()), "Regione: " + STATE.waitingStructureRegion];
-    if (STATE.waitingStructureService) parts.push(waitingServiceLabel(STATE.waitingStructureService));
+    if (STATE.waitingStructureService && STATE.waitingStructureService !== "all") parts.push(waitingServiceLabel(STATE.waitingStructureService));
+    else if (STATE.waitingStructureServiceType && STATE.waitingStructureServiceType !== "all") parts.push(STATE.waitingStructureServiceType);
+    else parts.push("tutte le prestazioni");
     if (STATE.waitingStructurePriority && STATE.waitingStructurePriority !== "all") parts.push(STATE.waitingStructurePriority);
     parts.push("Istituzionale");
     parts.push("Primo accesso");
@@ -3424,9 +3426,9 @@
     var serviceText = waitingServiceText(STATE.waitingCompareService, STATE.waitingCompareServiceType);
     var priorityText = waitingPriorityText(STATE.waitingComparePriority);
     var title = byId("hiWaitingCompareTitle");
-    if (title) title.textContent = "Confronto strutture PNLA - " + config.label;
-    setSubtitle("hiWaitingCompareSubtitle", "Stessa prestazione, stessa priorita e stessa misura per le due strutture selezionate. Filtro: " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso.");
     var compareYear = (STATE.payload.kpis || {}).pnla_structure_year || waitingLatestYear();
+    if (title) title.textContent = "Confronto tra due strutture - " + config.label;
+    setSubtitle("hiWaitingCompareSubtitle", "Le due barre confrontano la stessa prestazione e la stessa priorita nelle strutture selezionate. Filtro: " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso. Per leggere il confronto conta anche il numero di prenotazioni.");
     setTag("hiWaitingCompareTag", "PNLA " + asText(compareYear) + " - confronto diretto");
 
     if (missingRegions.length) {
@@ -3483,7 +3485,7 @@
     ], 2);
     setChartCredit("hiWaitingCompareNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], "Confronto diretto su " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso. La struttura indica la prima disponibilita proposta nel monitoraggio PNLA; leggere sempre i tempi insieme alle prenotazioni.");
+    ], "Confronto diretto su " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso. Le barre mostrano la misura selezionata per le due strutture; la tabella sotto aggiunge prenotazioni e quote entro soglia. La struttura indica la prima disponibilita proposta nel monitoraggio PNLA, non una matrice di mobilita sanitaria.");
   }
 
   function waitingQualityMetricConfig(metric) {
@@ -3616,9 +3618,12 @@
     var priorityText = waitingPriorityText(STATE.waitingQualityPriority);
     var title = byId("hiWaitingQualityTitle");
     if (title) title.textContent = "Indice qualita liste d'attesa - " + config.label;
-    setSubtitle("hiWaitingQualitySubtitle", "Distribuzione territoriale e score rispetto alla media nazionale. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingQualityRegime) + ", " + waitingAccessText(STATE.waitingQualityAccess) + ".");
+    setSubtitle("hiWaitingQualitySubtitle", "Ogni punto e una regione o provincia autonoma. Il boxplot mostra la distribuzione, la media delle aree e le soglie +/-1 deviazione standard. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingQualityRegime) + ", " + waitingAccessText(STATE.waitingQualityAccess) + ".");
     setTag("hiWaitingQualityTag", "PNLA " + asText(waitingYearValue(STATE.waitingQualityYear)) + " - +/-1 DS");
     renderWaitingQualitySummary(rows, config);
+    setChartCredit("hiWaitingQualityNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], waitingSourceNote(settings, "Indice descrittivo calcolato come z-score rispetto alla distribuzione delle regioni e province autonome: +1 DS o piu indica performance migliore della media per la misura scelta, -1 DS o meno indica performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. La tabella sotto riporta valori, media, deviazione standard e lettura per area. Non e un indicatore clinico risk-adjusted."));
 
     if (rows.length < 2) {
       showEmptyChart("hiWaitingQualityChart", "Servono almeno due aree confrontabili per calcolare deviazione standard e boxplot");
@@ -3712,9 +3717,6 @@
       ["quality_status", "Lettura"],
       ["bookings", "Prenotazioni"]
     ], 80);
-    setChartCredit("hiWaitingQualityNote", [
-      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingSourceNote(settings, "Indice descrittivo calcolato come z-score rispetto alla distribuzione delle regioni e province autonome: +1 DS o piu indica performance migliore della media per la misura scelta, -1 DS o meno indica performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. Non e un indicatore clinico risk-adjusted."));
   }
 
   function renderWaitingRegionChart() {
@@ -3742,8 +3744,8 @@
     var serviceText = waitingServiceText(STATE.waitingService, STATE.waitingServiceType);
     var priorityText = waitingPriorityText(STATE.waitingPriority);
     var title = byId("hiWaitingRegionTitle");
-    if (title) title.textContent = "Liste d'attesa per area - " + config.label;
-    setSubtitle("hiWaitingRegionSubtitle", "Confronto tra tutte le regioni e province autonome. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingRegime) + ", " + waitingAccessText(STATE.waitingAccess) + ".");
+    if (title) title.textContent = "Liste d'attesa per regione - " + config.label;
+    setSubtitle("hiWaitingRegionSubtitle", "Ogni barra e una regione o provincia autonoma. Il grafico confronta la stessa prestazione, priorita, regime e tipo accesso; se scegli 'tutte' le prestazioni l'aggregazione e pesata per numero di prenotazioni. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingRegime) + ", " + waitingAccessText(STATE.waitingAccess) + ".");
     setTag("hiWaitingRegionTag", "PNLA " + asText(waitingYearValue(STATE.waitingYear)) + " - " + priorityText);
     horizontalBar("hiWaitingRegionChart", rows, "region", "selected_value", {
       limit: 21,
@@ -3756,7 +3758,7 @@
     });
     setChartCredit("hiWaitingRegionNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingSourceNote(settings, "Dati estratti dalla dashboard PNLA AGENAS tramite endpoint pubblico. Le aggregazioni su piu prestazioni o priorita sono pesate per numero di prenotazioni. La prima disponibilita proposta e diversa dall'appuntamento accettato quando l'utente o l'offerta spostano la data."));
+    ], waitingSourceNote(settings, "La prima disponibilita proposta indica il primo slot rilevato dal sistema; l'appuntamento accettato e il tempo effettivamente scelto o assegnato. Le due misure possono divergere. Le aggregazioni su piu prestazioni o priorita sono pesate per numero di prenotazioni."));
   }
 
   function renderWaitingStructureChart() {
@@ -3766,7 +3768,7 @@
     var priorityText = waitingPriorityText(STATE.waitingStructurePriority);
     var title = byId("hiWaitingStructureTitle");
     if (title) title.textContent = "Strutture PNLA - " + region + " - " + config.label;
-    setSubtitle("hiWaitingStructureSubtitle", "Dettaglio per struttura della prima disponibilita proposta. Filtro: " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso.");
+    setSubtitle("hiWaitingStructureSubtitle", "Ogni barra e una struttura della regione selezionata. La misura mostra dove il sistema rileva la prima disponibilita proposta o l'appuntamento accettato per " + serviceText + ". Filtro: " + priorityText + ", Istituzionale, Primo accesso.");
     setTag("hiWaitingStructureTag", "PNLA " + asText(waitingStructureYear()) + " - " + priorityText);
 
     if (!region || !waitingStructureFile(region)) {
@@ -3843,7 +3845,7 @@
     ], structureLimit);
     setChartCredit("hiWaitingStructureNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingStructureSourceNote("La struttura indica dove il sistema ha rilevato la prima disponibilita proposta; non e una matrice di mobilita sanitaria e non coincide necessariamente con l'appuntamento accettato dal cittadino. I confronti ospedalieri vanno letti insieme ai volumi."));
+    ], waitingStructureSourceNote("Il grafico ordina le strutture secondo la misura scelta. La prima disponibilita proposta non coincide necessariamente con l'appuntamento accettato dal cittadino; la tabella sotto riporta anche prenotazioni e quote entro soglia. Non e una matrice di mobilita sanitaria: indica offerta rilevata, non origine-destinazione dei pazienti. I confronti ospedalieri vanno letti insieme ai volumi."));
   }
 
   function renderWaitingServiceChart() {
@@ -3872,7 +3874,7 @@
     var territory = STATE.waitingServiceRegion === "Italia" ? "Italia" : STATE.waitingServiceRegion;
     var title = byId("hiWaitingServiceTitle");
     if (title) title.textContent = "Prestazioni PNLA - " + territory + " - " + config.label;
-    setSubtitle("hiWaitingServiceSubtitle", "Territorio: " + territory + ". Filtro: " + waitingPriorityText(STATE.waitingServicePriority) + ", " + waitingRegimeText(STATE.waitingServiceRegime) + ", " + waitingAccessText(STATE.waitingServiceAccess) + ".");
+    setSubtitle("hiWaitingServiceSubtitle", "Ogni barra e una prestazione nel territorio selezionato. Il grafico serve a capire quali visite o esami risultano piu lenti, piu veloci o piu voluminosi con la misura scelta. Filtro: " + waitingPriorityText(STATE.waitingServicePriority) + ", " + waitingRegimeText(STATE.waitingServiceRegime) + ", " + waitingAccessText(STATE.waitingServiceAccess) + ".");
     setTag("hiWaitingServiceTag", "PNLA " + asText(waitingYearValue(STATE.waitingServiceYear)) + " - " + waitingPriorityText(STATE.waitingServicePriority));
     horizontalBar("hiWaitingServiceChart", rows, "service", "selected_value", {
       limit: chartLimit(STATE.waitingServiceLimit, 20),
@@ -3894,7 +3896,7 @@
     ], chartLimit(STATE.waitingServiceLimit, 20));
     setChartCredit("hiWaitingServiceNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingSourceNote(settings, "Dati estratti dalla dashboard PNLA AGENAS tramite endpoint pubblico. Il grafico ordina le prestazioni secondo la misura selezionata: per i giorni mostra le attese piu lunghe, per le percentuali mette in evidenza le quote piu basse di rispetto dei tempi."));
+    ], waitingSourceNote(settings, "Il grafico ordina le prestazioni secondo la misura selezionata: per i giorni mostra le attese piu lunghe, per le percentuali mette in evidenza le quote piu basse di rispetto dei tempi, per le prenotazioni mostra i volumi. La tabella sotto aggiunge prenotazioni, rispetto soglia e tempi medi."));
   }
 
   function renderWaitingTrendChart() {
@@ -3927,7 +3929,7 @@
     var title = byId("hiWaitingTrendTitle");
     if (title) title.textContent = "Serie mensile PNLA - " + STATE.waitingTrendRegion + " - " + serviceText;
     var trendYear = rows.length ? rows[0].year : waitingLatestYear();
-    setSubtitle("hiWaitingTrendSubtitle", "Andamento mensile " + asText(trendYear) + ". Filtro: " + serviceText + ", " + waitingPriorityText(STATE.waitingTrendPriority) + ", Istituzionale, Primo accesso.");
+    setSubtitle("hiWaitingTrendSubtitle", "Ogni punto e un mese dell'anno disponibile nel payload. La serie mostra direzione e oscillazioni della misura scelta per la stessa prestazione e priorita: " + serviceText + ", " + waitingPriorityText(STATE.waitingTrendPriority) + ", Istituzionale, Primo accesso.");
     setTag("hiWaitingTrendTag", "Istituzionale - primo accesso - " + waitingPriorityText(STATE.waitingTrendPriority));
     if (rows.length) {
       lineChart("hiWaitingTrendChart", [{
@@ -3947,7 +3949,7 @@
     }
     setChartCredit("hiWaitingTrendNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], "Dati estratti dalla dashboard PNLA AGENAS tramite endpoint pubblico. Serie mensile sull'ultimo anno disponibile nel payload, filtrata su Istituzionale e primo accesso. Serve a seguire la direzione nel tempo, non a stimare la mobilita sanitaria origine-destinazione.");
+    ], "Anno " + asText(trendYear) + ", Territorio: " + STATE.waitingTrendRegion + ", " + serviceText + ", " + waitingPriorityText(STATE.waitingTrendPriority) + ", Istituzionale, Primo accesso. La serie serve a seguire la direzione nel tempo, non a stimare la mobilita sanitaria origine-destinazione.");
   }
 
   function healthColor(group) {
