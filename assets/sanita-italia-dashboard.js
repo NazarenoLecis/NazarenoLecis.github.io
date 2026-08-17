@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260817-pnla-priority-note-2",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-pnla-priority-note-2",
+    "../../data/sanita-italia/dashboard.json?v=20260817-quality-boxplots-3",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-quality-boxplots-3",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -3205,7 +3205,9 @@
 
   function renderPsEmergency() {
     renderPsRegionChart();
+    renderPsRegionQualityChart();
     renderPsStructureChart();
+    renderPsStructureQualityChart();
   }
 
   function psRegionalStructureRows() {
@@ -3272,6 +3274,39 @@
       format: formatDurationMinutes,
       hovertemplate: "%{y}<br>Permanenza: %{text}<extra></extra>"
     });
+  }
+
+  function renderPsRegionQualityChart() {
+    var metric = STATE.psRegionMetric || "mean_wait_minutes";
+    var config = qualityDistributionConfig(psMetricLabel(metric), "selected_value", formatDurationMinutes, "minuti", true);
+    var triageText = STATE.psRegionTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psRegionTriage).toLowerCase();
+    var levelText = psLevelText(STATE.psRegionLevel);
+    var rows = applyQualityDistribution(psRegionalStructureRows().map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row[metric]);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    }), config);
+    var title = byId("hiPsRegionBoxTitle");
+    if (title) title.textContent = "Boxplot PS per regione - " + psMetricLabel(metric);
+    setSubtitle("hiPsRegionBoxSubtitle", "Ogni punto e una regione o provincia autonoma. Tempi piu bassi indicano una performance migliore rispetto alla media semplice delle aree. Filtro: " + triageText + ", " + levelText + ".");
+    setTag("hiPsRegionBoxTag", "2024 - " + triageText + " - +/-1 DS");
+    renderQualitySummary("hiPsRegionQualitySummary", rows, config, "region", "region", STATE.psRegion);
+    renderQualityBoxplot("hiPsRegionBoxChart", rows, config, "region", "region", STATE.psRegion, "Regioni");
+    setChartCredit("hiPsRegionBoxNote", [
+      { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
+    ], "Boxplot calcolato sui valori regionali della permanenza dal triage alla dimissione. L'indice qualita e uno z-score descrittivo: almeno +1 DS indica tempi migliori della media, almeno -1 DS indica tempi peggiori. Il confronto resta omogeneo solo se il filtro livello PS/DEA separa pronto soccorso, DEA di 1 livello e DEA di 2 livello.");
+    createTable("hiPsRegionQualityTable", rows, [
+      ["region", "Regione"],
+      ["selected_value_text", psMetricLabel(metric)],
+      ["quality_mean_text", "Media aree"],
+      ["quality_sd_text", "Deviazione standard"],
+      ["quality_score_text", "Indice qualita"],
+      ["quality_status", "Lettura"],
+      ["structures", "Strutture"],
+      ["accesses_total", "Accessi totali"]
+    ], 80);
   }
 
   function psWaitRowsForStructureChart() {
@@ -3351,6 +3386,64 @@
     setChartCredit("hiPsStructureNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
     ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. " + (selectedStructure ? "Nel dettaglio per codice triage la tabella non mostra gli accessi, perche la fonte pubblica solo gli accessi totali della struttura" + (structureAccesses !== null ? " (" + formatNumber(structureAccesses) + ")" : "") + (structureLevel ? " e il livello PS/DEA (" + structureLevel + ")" : "") + "." : "Accessi totali e livello PS/DEA sono riportati in tabella come dati della struttura, non del singolo codice triage. Il filtro livello PS/DEA serve a confrontare strutture dello stesso livello; scegliendo tutti i livelli la vista e aggregata e va letta come panoramica, non come graduatoria omogenea.") + " Gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
+  }
+
+  function psStructureDistributionRows() {
+    var rows;
+    if (STATE.psStructureTriage === "all") {
+      rows = psStructureRows().map(function (row) {
+        var copy = Object.assign({}, row);
+        copy.structure_key = psStructureKey(row);
+        copy.selected_value = toNumber(row.mean_wait_minutes);
+        return copy;
+      });
+    } else {
+      rows = tableRows("ps_wait_times_by_structure_triage").filter(function (row) {
+        if (STATE.psStructureRegion !== "Italia" && row.region !== STATE.psStructureRegion) return false;
+        if (STATE.psStructureProvince !== "all" && row.province !== STATE.psStructureProvince) return false;
+        if (row.triage_code !== STATE.psStructureTriage) return false;
+        if (!psLevelMatches(row, STATE.psStructureLevel)) return false;
+        return true;
+      }).map(function (row) {
+        var copy = Object.assign({}, row);
+        copy.structure_key = psStructureKey(row);
+        copy.selected_value = toNumber(row.wait_minutes);
+        return copy;
+      });
+    }
+    return rows.filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+  }
+
+  function renderPsStructureQualityChart() {
+    var config = qualityDistributionConfig("permanenza media", "selected_value", formatDurationMinutes, "minuti", true);
+    var triageText = STATE.psStructureTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psStructureTriage).toLowerCase();
+    var territory = territoryLabel(STATE.psStructureRegion, STATE.psStructureProvince);
+    var levelText = psLevelText(STATE.psStructureLevel);
+    var focusKey = STATE.psStructure !== "all" ? STATE.psStructure : "";
+    var rows = applyQualityDistribution(psStructureDistributionRows(), config);
+    var title = byId("hiPsStructureBoxTitle");
+    if (title) title.textContent = "Boxplot PS per struttura - " + territory;
+    setSubtitle("hiPsStructureBoxSubtitle", "Ogni punto e un pronto soccorso filtrato per territorio, livello PS/DEA e codice triage. Tempi piu bassi indicano una performance migliore. Filtro: " + triageText + ", " + levelText + ".");
+    setTag("hiPsStructureBoxTag", "2024 - " + triageText + " - +/-1 DS");
+    renderQualitySummary("hiPsStructureQualitySummary", rows, config, "structure", "structure_key", focusKey);
+    renderQualityBoxplot("hiPsStructureBoxChart", rows, config, "structure", "structure_key", focusKey, "Strutture");
+    setChartCredit("hiPsStructureBoxNote", [
+      { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
+    ], "Boxplot calcolato sulle strutture filtrate. L'indice qualita e uno z-score descrittivo rispetto alla media semplice delle strutture: almeno +1 DS indica permanenze piu brevi della media, almeno -1 DS permanenze piu lunghe. Con 'tutti i codici disponibili' il valore e la media dei codici pubblicati per la struttura, non pesata per accessi.");
+    createTable("hiPsStructureQualityTable", rows, [
+      ["structure", "Struttura"],
+      ["region", "Regione"],
+      ["province", "Provincia"],
+      ["emergency_level", "Livello PS/DEA"],
+      ["selected_value_text", "Permanenza"],
+      ["quality_mean_text", "Media strutture"],
+      ["quality_sd_text", "Deviazione standard"],
+      ["quality_score_text", "Indice qualita"],
+      ["quality_status", "Lettura"],
+      ["accesses_total", "Accessi totali"]
+    ], 120);
   }
 
   function renderWaitingLists() {
@@ -3544,6 +3637,7 @@
     var percentMetric = config.field.indexOf("percent") >= 0;
     return Object.assign({}, config, {
       higherIsBetter: percentMetric,
+      lowerBetter: !percentMetric,
       qualityDirection: percentMetric ? 1 : -1,
       spreadUnit: percentMetric ? "punti percentuali" : config.xTitle,
       qualityRule: percentMetric ? "valori piu alti sono migliori" : "valori piu bassi sono migliori"
@@ -3592,6 +3686,159 @@
     if (score >= 1) return COLORS[3];
     if (score <= -1) return COLORS[5];
     return COLORS[1];
+  }
+
+  function qualityDistributionConfig(label, field, format, xTitle, lowerBetter) {
+    return {
+      label: label,
+      field: field,
+      format: format || formatDecimal,
+      xTitle: xTitle || label,
+      lowerBetter: Boolean(lowerBetter),
+      qualityDirection: lowerBetter ? -1 : 1,
+      spreadUnit: xTitle || label
+    };
+  }
+
+  function applyQualityDistribution(rows, config) {
+    rows = toArray(rows).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(copy[config.field]);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    var values = rows.map(function (row) { return row.selected_value; });
+    var avg = mean(values);
+    var sd = standardDeviation(values, avg);
+    rows.forEach(function (row) {
+      var rawScore = sd ? (row.selected_value - avg) / sd : null;
+      var qualityScore = rawScore === null ? null : rawScore * config.qualityDirection;
+      row.quality_mean = avg;
+      row.quality_sd = sd;
+      row.quality_score = qualityScore;
+      row.quality_status = waitingQualityStatus(qualityScore);
+      row.selected_value_text = config.format(row.selected_value);
+      row.quality_mean_text = config.format(avg);
+      row.quality_sd_text = sd === null ? MISSING : config.format(sd);
+      row.quality_score_text = qualityScore === null ? MISSING : formatSignedDecimal(qualityScore) + " DS";
+    });
+    return rows.sort(function (a, b) {
+      var scoreA = toNumber(a.quality_score);
+      var scoreB = toNumber(b.quality_score);
+      if (scoreA === null && scoreB === null) return 0;
+      if (scoreA === null) return 1;
+      if (scoreB === null) return -1;
+      return scoreB - scoreA;
+    });
+  }
+
+  function renderQualitySummary(containerId, rows, config, labelField, focusField, focusValue) {
+    var container = byId(containerId);
+    clear(container);
+    rows = toArray(rows);
+    var focus = focusValue ? rows.find(function (row) { return asText(row[focusField]) === asText(focusValue); }) : null;
+    var avg = rows.length ? rows[0].quality_mean : null;
+    var sd = rows.length ? rows[0].quality_sd : null;
+    var better = rows.filter(function (row) { return toNumber(row.quality_score) !== null && row.quality_score >= 1; });
+    var worse = rows.filter(function (row) { return toNumber(row.quality_score) !== null && row.quality_score <= -1; }).sort(function (a, b) {
+      return (toNumber(a.quality_score) || 0) - (toNumber(b.quality_score) || 0);
+    });
+    function labelList(list) {
+      return list.slice(0, 3).map(function (row) { return compact(row[labelField], 34); }).join(", ");
+    }
+    [
+      ["Media", config.format(avg), "media semplice dei punti nel boxplot"],
+      ["Deviazione standard", sd === null ? MISSING : config.format(sd), "soglia descrittiva: almeno +/-1 DS"],
+      ["Meglio della media", formatNumber(better.length), labelList(better) || "nessun punto oltre +1 DS"],
+      ["Peggio della media", formatNumber(worse.length), labelList(worse) || "nessun punto sotto -1 DS"],
+      ["Focus", focus ? compact(focus[labelField], 42) : "nessun focus", focus ? focus.quality_score_text + " - " + focus.quality_status : "seleziona un punto da evidenziare"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function renderQualityBoxplot(chartId, rows, config, labelField, focusField, focusValue, groupLabel) {
+    rows = toArray(rows);
+    if (rows.length < 2) {
+      showEmptyChart(chartId, "Servono almeno due punti confrontabili per calcolare boxplot e deviazione standard");
+      return;
+    }
+    var avg = rows[0].quality_mean;
+    var sd = rows[0].quality_sd;
+    var values = rows.map(function (row) { return row.selected_value; });
+    var shapes = [];
+    var annotations = [];
+    function referenceLine(value, label, color, dash) {
+      if (toNumber(value) === null) return;
+      shapes.push({
+        type: "line",
+        xref: "paper",
+        x0: 0,
+        x1: 1,
+        y0: value,
+        y1: value,
+        line: { color: color, width: 2, dash: dash || "dash" }
+      });
+      annotations.push({
+        xref: "paper",
+        yref: "y",
+        x: 1,
+        y: value,
+        xanchor: "right",
+        yanchor: "bottom",
+        text: label,
+        showarrow: false,
+        font: { size: 11, color: color }
+      });
+    }
+    referenceLine(avg, "media", COLORS[0], "dash");
+    if (sd) {
+      referenceLine(avg + sd, config.lowerBetter ? "peggio: media +1 DS" : "meglio: media +1 DS", config.lowerBetter ? COLORS[5] : COLORS[3], "dot");
+      referenceLine(avg - sd, config.lowerBetter ? "meglio: media -1 DS" : "peggio: media -1 DS", config.lowerBetter ? COLORS[3] : COLORS[5], "dot");
+    }
+    plot(chartId, [
+      {
+        type: "box",
+        name: groupLabel || "Distribuzione",
+        x: values.map(function () { return groupLabel || "Distribuzione"; }),
+        y: values,
+        boxpoints: false,
+        fillcolor: "rgba(160,160,160,.16)",
+        line: { color: cssVar("--muted", "#b9b2aa") },
+        marker: { color: cssVar("--muted", "#b9b2aa") },
+        hoverinfo: "skip"
+      },
+      {
+        type: "scatter",
+        mode: "markers",
+        name: groupLabel || "Punti",
+        x: rows.map(function () { return groupLabel || "Distribuzione"; }),
+        y: values,
+        text: rows.map(function (row) { return row[labelField]; }),
+        customdata: rows.map(function (row) {
+          return [row.selected_value_text, row.quality_score_text, row.quality_status, row.quality_mean_text, row.quality_sd_text];
+        }),
+        marker: {
+          color: rows.map(function (row) { return focusValue && asText(row[focusField]) === asText(focusValue) ? COLORS[0] : waitingQualityColor(row.quality_score); }),
+          size: rows.map(function (row) { return focusValue && asText(row[focusField]) === asText(focusValue) ? 13 : 8; }),
+          opacity: .9,
+          line: { color: cssVar("--panel", "#090909"), width: 1 }
+        },
+        hovertemplate: "<b>%{text}</b><br>" + config.label + ": %{customdata[0]}<br>Indice qualita: %{customdata[1]}<br>Lettura: %{customdata[2]}<br>Media: %{customdata[3]}<br>Deviazione standard: %{customdata[4]}<extra></extra>"
+      }
+    ], {
+      showlegend: false,
+      margin: { t: 20, r: 36, b: 60, l: 86 },
+      xaxis: { title: "", showgrid: false },
+      yaxis: { title: config.xTitle },
+      shapes: shapes,
+      annotations: annotations
+    });
   }
 
   function waitingQualitySettings() {
@@ -3833,6 +4080,16 @@
       setChartCredit("hiWaitingStructureNote", [
         { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
       ], "Il dettaglio per struttura e disponibile per le regioni pubblicate nei file PNLA dell'ultimo anno.");
+      showEmptyChart("hiWaitingStructureBoxChart", "Seleziona una regione con dettaglio struttura");
+      clear(byId("hiWaitingStructureQualitySummary"));
+      createTable("hiWaitingStructureQualityTable", [], [
+        ["structure", "Struttura"],
+        ["selected_value_text", "Misura"],
+        ["quality_score_text", "Indice qualita"]
+      ], 20);
+      setChartCredit("hiWaitingStructureBoxNote", [
+        { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+      ], "Il boxplot per struttura richiede il file regionale PNLA con dettaglio struttura.");
       return;
     }
 
@@ -3845,6 +4102,16 @@
         ["mean_accepted_wait_days", "Giorni appuntamento"]
       ], 20);
       setChartCredit("hiWaitingStructureNote", [
+        { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+      ], "Sto caricando il file regionale con il dettaglio per struttura.");
+      showEmptyChart("hiWaitingStructureBoxChart", "Caricamento boxplot strutture...");
+      clear(byId("hiWaitingStructureQualitySummary"));
+      createTable("hiWaitingStructureQualityTable", [], [
+        ["structure", "Struttura"],
+        ["selected_value_text", "Misura"],
+        ["quality_score_text", "Indice qualita"]
+      ], 20);
+      setChartCredit("hiWaitingStructureBoxNote", [
         { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
       ], "Sto caricando il file regionale con il dettaglio per struttura.");
       loadWaitingStructureRegion(region).then(function () {
@@ -3905,6 +4172,58 @@
       regime: "institutional",
       access: "first"
     }, config)));
+    renderWaitingStructureQualityChart(rows, serviceText, priorityText);
+  }
+
+  function renderWaitingStructureQualityChart(rows, serviceText, priorityText) {
+    var title = byId("hiWaitingStructureBoxTitle");
+    if (title) title.textContent = "Boxplot strutture PNLA - " + STATE.waitingStructureRegion;
+    setSubtitle("hiWaitingStructureBoxSubtitle", "Ogni punto e una struttura della regione selezionata. La distribuzione usa la stessa prestazione, priorita e misura del grafico sopra: " + serviceText + ", " + priorityText + ".");
+    setTag("hiWaitingStructureBoxTag", "PNLA " + asText(waitingStructureYear()) + " - +/-1 DS");
+    if (STATE.waitingStructureMetric === "bookings") {
+      showEmptyChart("hiWaitingStructureBoxChart", "Le prenotazioni sono un volume, non una misura di performance");
+      clear(byId("hiWaitingStructureQualitySummary"));
+      createTable("hiWaitingStructureQualityTable", [], [
+        ["structure", "Struttura"],
+        ["bookings", "Prenotazioni"]
+      ], 20);
+      setChartCredit("hiWaitingStructureBoxNote", [
+        { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+      ], waitingStructureSourceNote("Per il boxplot qualita scegli una misura di tempo o di rispetto soglia. Le prenotazioni servono a leggere il volume, ma non indicano da sole una performance migliore o peggiore."));
+      return;
+    }
+    var config = waitingQualityMetricConfig(STATE.waitingStructureMetric);
+    var qualityRows = applyQualityDistribution(toArray(rows).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row[config.field]);
+      return copy;
+    }), config);
+    var focusKey = STATE.waitingStructureFocus !== "all" ? STATE.waitingStructureFocus : "";
+    renderQualitySummary("hiWaitingStructureQualitySummary", qualityRows, config, "structure", "structure_code", focusKey);
+    renderQualityBoxplot("hiWaitingStructureBoxChart", qualityRows, config, "structure", "structure_code", focusKey, "Strutture");
+    setChartCredit("hiWaitingStructureBoxNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], waitingStructureSourceNote("Boxplot calcolato sulle strutture filtrate. L'indice qualita e uno z-score descrittivo rispetto alla media semplice delle strutture: almeno +1 DS indica performance migliore della media, almeno -1 DS performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. " + waitingPriorityThresholdNote({
+      year: waitingStructureYear(),
+      region: STATE.waitingStructureRegion,
+      serviceType: STATE.waitingStructureServiceType,
+      service: STATE.waitingStructureService,
+      priority: STATE.waitingStructurePriority,
+      regime: "institutional",
+      access: "first"
+    }, config)));
+    createTable("hiWaitingStructureQualityTable", qualityRows, [
+      ["structure", "Struttura"],
+      ["bookings", "Prenotazioni"],
+      ["selected_value_text", config.label],
+      ["quality_mean_text", "Media strutture"],
+      ["quality_sd_text", "Deviazione standard"],
+      ["quality_score_text", "Indice qualita"],
+      ["quality_status", "Lettura"],
+      ["within_target_percent", "% entro soglia"],
+      ["mean_first_available_days", "Giorni prima disponibilita"],
+      ["mean_accepted_wait_days", "Giorni appuntamento"]
+    ], 120);
   }
 
   function renderWaitingServiceChart() {

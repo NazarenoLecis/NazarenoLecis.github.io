@@ -3229,6 +3229,56 @@
     ["La tabella sotto riporta valori, media, deviazione standard e lettura per area", "The table below reports values, mean, standard deviation and interpretation by area"],
     ["Le due barre confrontano la stessa prestazione e la stessa priorita nelle strutture selezionate", "The two bars compare the same service and priority in the selected facilities"],
     ["Per leggere il confronto conta anche il numero di prenotazioni", "To read the comparison, the number of bookings also matters"],
+    ["Boxplot PS per regione", "Emergency-department box plot by region"],
+    ["Boxplot PS by region", "Emergency-department box plot by region"],
+    ["Boxplot PS per struttura", "Emergency-department box plot by facility"],
+    ["Boxplot PS by facility", "Emergency-department box plot by facility"],
+    ["Boxplot strutture PNLA", "PNLA facility box plot"],
+    ["Boxplot facilities PNLA", "PNLA facility box plot"],
+    ["Distribuzione delle regioni rispetto alla media delle aree con evidenza di chi performa meglio o peggio di almeno una deviazione standard", "Distribution of regions against the area mean, highlighting those performing better or worse by at least one standard deviation"],
+    ["Distribuzione delle strutture filtrate per territorio, livello PS/DEA e codice triage", "Distribution of facilities filtered by area, ED/DEA level and triage code"],
+    ["la struttura selezionata viene evidenziata nel confronto", "the selected facility is highlighted in the comparison"],
+    ["Distribuzione delle strutture della regione selezionata per la stessa prestazione, priorita e misura", "Distribution of facilities in the selected region for the same service, priority and measure"],
+    ["Ogni punto e un pronto soccorso filtrato per territorio, livello PS/DEA e codice triage", "Each point is an emergency department filtered by area, ED/DEA level and triage code"],
+    ["Ogni punto e una struttura della regione selezionata", "Each point is a facility in the selected region"],
+    ["Tempi piu bassi indicano una performance migliore", "Lower times indicate better performance"],
+    ["rispetto alla media semplice delle aree", "against the simple mean of areas"],
+    ["media semplice dei punti nel boxplot", "simple mean of the points in the box plot"],
+    ["soglia descrittiva: almeno +/-1 DS", "descriptive threshold: at least +/-1 SD"],
+    ["nessun punto oltre +1 DS", "no point beyond +1 SD"],
+    ["nessun punto sotto -1 DS", "no point below -1 SD"],
+    ["nessun focus", "no focus"],
+    ["seleziona un punto da evidenziare", "select a point to highlight"],
+    ["Boxplot calcolato sui valori regionali della permanenza dal triage alla dimissione", "Box plot calculated on regional values for stay from triage to discharge"],
+    ["Boxplot calcolato sulle strutture filtrate", "Box plot calculated on the filtered facilities"],
+    ["Boxplot calcolato sulle facilities filtrate", "Box plot calculated on the filtered facilities"],
+    ["L'indice qualita e uno z-score descrittivo", "The quality index is a descriptive z-score"],
+    ["rispetto alla mean semplice delle facilities", "against the simple mean of facilities"],
+    ["almeno +1 DS indica tempi migliori della media", "at least +1 SD indicates better-than-average times"],
+    ["almeno +1 SD indica tempi migliori della mean", "at least +1 SD indicates better-than-average times"],
+    ["almeno -1 DS indica tempi peggiori", "at least -1 SD indicates worse times"],
+    ["almeno -1 SD indica tempi peggiori", "at least -1 SD indicates worse times"],
+    ["almeno +1 DS indica permanenze piu brevi della media", "at least +1 SD indicates shorter-than-average stays"],
+    ["almeno +1 SD indica permanenze piu brevi della mean", "at least +1 SD indicates shorter-than-average stays"],
+    ["almeno -1 DS permanenze piu lunghe", "at least -1 SD indicates longer stays"],
+    ["almeno -1 SD permanenze piu lunghe", "at least -1 SD indicates longer stays"],
+    ["almeno +1 DS indica performance migliore della media", "at least +1 SD indicates better-than-average performance"],
+    ["almeno +1 SD indica performance migliore della mean", "at least +1 SD indicates better-than-average performance"],
+    ["almeno -1 DS performance peggiore", "at least -1 SD indicates worse performance"],
+    ["almeno -1 SD performance peggiore", "at least -1 SD indicates worse performance"],
+    ["Il confronto resta omogeneo solo se il filtro livello PS/DEA separa pronto soccorso, DEA di 1 livello e DEA di 2 livello", "The comparison is homogeneous only if the ED/DEA level filter separates emergency departments, level-1 DEA and level-2 DEA"],
+    ["Con 'tutti i codici disponibili' il valore e la media dei codici pubblicati per la struttura, non pesata per accessi", "With 'all available codes', the value is the mean of the codes published for the facility, not weighted by accesses"],
+    ["Per il boxplot qualita scegli una misura di tempo o di rispetto soglia", "For the quality box plot, choose a time or within-threshold measure"],
+    ["Le prenotazioni servono a leggere il volume, ma non indicano da sole una performance migliore o peggiore", "Bookings help read volume, but alone they do not indicate better or worse performance"],
+    ["Le prenotazioni sono un volume, non una misura di performance", "Bookings are a volume, not a performance measure"],
+    ["Permanenza", "Stay"],
+    ["Media strutture", "Facility mean"],
+    ["Strutture", "Facilities"],
+    ["media", "mean"],
+    ["peggio: media +1 DS", "worse: mean +1 SD"],
+    ["meglio: media -1 DS", "better: mean -1 SD"],
+    ["meglio: media +1 DS", "better: mean +1 SD"],
+    ["peggio: media -1 DS", "worse: mean -1 SD"],
     ["Le barre mostrano la misura selezionata per le due strutture", "The bars show the selected measure for the two facilities"],
     ["la tabella sotto aggiunge prenotazioni e quote entro soglia", "the table below adds bookings and within-target shares"],
     ["Ogni barra e una struttura della regione selezionata", "Each bar is a facility in the selected region"],
@@ -3324,6 +3374,14 @@
     phraseText.forEach(function (pair) {
       output = output.split(pair[0]).join(pair[1]);
     });
+    output = output
+      .split("almeno +1 SD indica tempi migliori della mean").join("at least +1 SD indicates better-than-average times")
+      .split("almeno +1 SD indica performance migliore della mean").join("at least +1 SD indicates better-than-average performance")
+      .split("almeno +1 SD indica permanenze piu brevi della mean").join("at least +1 SD indicates shorter-than-average stays")
+      .split("rispetto alla mean semplice delle facilities").join("against the simple mean of facilities")
+      .split("almeno -1 SD performance peggiore").join("at least -1 SD indicates worse performance")
+      .split("almeno -1 SD permanenze piu lunghe").join("at least -1 SD indicates longer stays")
+      .split("AGENAS Trova Facilities").join("AGENAS Trova Strutture");
     return output !== key ? output : null;
   }
 

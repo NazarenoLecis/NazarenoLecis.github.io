@@ -905,7 +905,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260817-pnla-priority-note-2", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260817-quality-boxplots-3", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {
