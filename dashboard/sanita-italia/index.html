@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-quality-boxplots-3">
-  <script defer src="../../assets/theme.js?v=20260817-quality-boxplots-3"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-quality-boxplots-4">
+  <script defer src="../../assets/theme.js?v=20260817-quality-boxplots-4"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-quality-boxplots-3"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-quality-boxplots-4"></script>
 </head>
 <body>
   <header class="site-header">
@@ -78,7 +78,9 @@
       <a href="#tumori-recenti">Tumori recenti</a>
       <a href="#mortalita">Mortalit&agrave;</a>
       <a href="#pronto-soccorso">Pronto soccorso</a>
+      <a href="#hiPsRegionBoxTitle">Boxplot PS</a>
       <a href="#liste-attesa">Liste d'attesa</a>
+      <a href="#hiWaitingQualityTitle">Boxplot attese</a>
       <a href="#italia">Dimissioni</a>
       <a href="#strutture">Strutture</a>
       <a href="#regioni">Regioni</a>
@@ -396,13 +398,13 @@
         </div>
         <div id="hiPsStructureChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiPsStructureNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
-        <div id="hiPsStructureTable" class="hi-table-wrap"></div>
         <div class="hi-card-title hi-card-title-secondary"><h3 id="hiPsStructureBoxTitle">Boxplot PS per struttura</h3><span id="hiPsStructureBoxTag">+/-1 DS</span></div>
         <p id="hiPsStructureBoxSubtitle" class="hi-card-subtitle">Distribuzione delle strutture filtrate per territorio, livello PS/DEA e codice triage; la struttura selezionata viene evidenziata nel confronto.</p>
         <div id="hiPsStructureQualitySummary" class="hi-profile-grid"></div>
         <div id="hiPsStructureBoxChart" class="hi-chart"></div>
         <p id="hiPsStructureBoxNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
         <div id="hiPsStructureQualityTable" class="hi-table-wrap"></div>
+        <div id="hiPsStructureTable" class="hi-table-wrap"></div>
       </article>
     </section>
 
@@ -526,13 +528,13 @@
         </div>
         <div id="hiWaitingStructureChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiWaitingStructureNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
-        <div id="hiWaitingStructureTable" class="hi-table-wrap"></div>
         <div class="hi-card-title hi-card-title-secondary"><h3 id="hiWaitingStructureBoxTitle">Boxplot strutture PNLA</h3><span id="hiWaitingStructureBoxTag">+/-1 DS</span></div>
         <p id="hiWaitingStructureBoxSubtitle" class="hi-card-subtitle">Distribuzione delle strutture della regione selezionata per la stessa prestazione, priorit&agrave; e misura.</p>
         <div id="hiWaitingStructureQualitySummary" class="hi-profile-grid"></div>
         <div id="hiWaitingStructureBoxChart" class="hi-chart"></div>
         <p id="hiWaitingStructureBoxNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
         <div id="hiWaitingStructureQualityTable" class="hi-table-wrap"></div>
+        <div id="hiWaitingStructureTable" class="hi-table-wrap"></div>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiWaitingCompareTitle">Confronto strutture PNLA</h3><span id="hiWaitingCompareTag">PNLA</span></div>

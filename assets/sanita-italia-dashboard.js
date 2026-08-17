@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260817-quality-boxplots-3",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-quality-boxplots-3",
+    "../../data/sanita-italia/dashboard.json?v=20260817-quality-boxplots-4",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-quality-boxplots-4",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 

@@ -3231,6 +3231,8 @@
     ["Per leggere il confronto conta anche il numero di prenotazioni", "To read the comparison, the number of bookings also matters"],
     ["Boxplot PS per regione", "Emergency-department box plot by region"],
     ["Boxplot PS by region", "Emergency-department box plot by region"],
+    ["Boxplot PS", "ED box plots"],
+    ["Boxplot attese", "Waiting-list box plots"],
     ["Boxplot PS per struttura", "Emergency-department box plot by facility"],
     ["Boxplot PS by facility", "Emergency-department box plot by facility"],
     ["Boxplot strutture PNLA", "PNLA facility box plot"],
