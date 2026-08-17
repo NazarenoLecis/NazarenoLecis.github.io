@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260817-waiting-quality-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-waiting-quality-1",
+    "../../data/sanita-italia/dashboard.json?v=20260817-ps-level-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-ps-level-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -40,6 +40,8 @@
     psStructureProvince: "all",
     psStructure: "all",
     psStructureTriage: "verde",
+    psRegionLevel: "all",
+    psStructureLevel: "all",
     psStructureLimit: "20",
     waitingYear: "latest",
     waitingServiceType: "all",
@@ -159,7 +161,7 @@
     "nationalBedsRegion", "nationalBedsYear", "nationalBedsMetric", "nationalBedsRatio", "nationalBedsLimit",
     "dischargeRegion", "dischargeProvince", "dischargeStructure", "dischargeDiscipline", "dischargeDisciplineMetric",
     "dischargeHospitalRegion", "dischargeHospitalProvince", "dischargeHospitalCategory", "dischargeHospitalLimit",
-    "psRegion", "psRegionTriage", "psRegionMetric", "psStructureRegion", "psStructureProvince", "psStructure", "psStructureTriage", "psStructureLimit",
+    "psRegion", "psRegionTriage", "psRegionLevel", "psRegionMetric", "psStructureRegion", "psStructureProvince", "psStructure", "psStructureTriage", "psStructureLevel", "psStructureLimit",
     "waitingYear", "waitingServiceType", "waitingService", "waitingPriority", "waitingRegime", "waitingAccess", "waitingMetric", "waitingRegionFocus",
     "waitingQualityYear", "waitingQualityServiceType", "waitingQualityService", "waitingQualityPriority", "waitingQualityRegime", "waitingQualityAccess", "waitingQualityMetric", "waitingQualityFocus",
     "waitingServiceRegion", "waitingServiceYear", "waitingServiceType2", "waitingServicePriority", "waitingServiceRegime", "waitingServiceAccess", "waitingServiceMetric", "waitingServiceLimit",
@@ -1058,6 +1060,40 @@
     }).join(", ");
   }
 
+  function psLevelOrder(value) {
+    if (value === "PRONTO SOCCORSO") return 1;
+    if (value === "DEA DI 1° LIVELLO") return 2;
+    if (value === "DEA DI 2° LIVELLO") return 3;
+    return 99;
+  }
+
+  function psLevelOptions() {
+    var levels = unique(tableRows("ps_structures").map(function (row) {
+      return row.emergency_level;
+    }).filter(Boolean)).sort(function (a, b) {
+      return psLevelOrder(a) - psLevelOrder(b) || a.localeCompare(b);
+    });
+    return [{ value: "all", label: "Tutti i livelli" }].concat(levels.map(function (level) {
+      return { value: level, label: level };
+    }));
+  }
+
+  function psLevelText(level) {
+    return level && level !== "all" ? level : "tutti i livelli PS/DEA";
+  }
+
+  function psLevelMatches(row, level) {
+    return !level || level === "all" || row.emergency_level === level;
+  }
+
+  function refreshPsLevelFilter(id, stateKey) {
+    var options = psLevelOptions();
+    if (!options.some(function (option) { return option.value === STATE[stateKey]; })) {
+      STATE[stateKey] = "all";
+    }
+    fillSelect(id, options, STATE[stateKey]);
+  }
+
   function psStructureKey(row) {
     return asText(row.structure_code || row.institute_code || (asText(row.region) + "|" + asText(row.structure)), "");
   }
@@ -1065,7 +1101,9 @@
   function psStructureRows() {
     return tableRows("ps_structures").filter(function (row) {
       if (STATE.psStructureRegion !== "Italia" && row.region !== STATE.psStructureRegion) return false;
-      return STATE.psStructureProvince === "all" || row.province === STATE.psStructureProvince;
+      if (STATE.psStructureProvince !== "all" && row.province !== STATE.psStructureProvince) return false;
+      if (!psLevelMatches(row, STATE.psStructureLevel)) return false;
+      return true;
     });
   }
 
@@ -1107,8 +1145,8 @@
 
   function waitingStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260817-waiting-quality-1",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260817-waiting-quality-1",
+      "../../data/sanita-italia/" + path + "?v=20260817-ps-level-1",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260817-ps-level-1",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
@@ -2479,6 +2517,8 @@
     fillSelect("hiTableDisciplineFilter", disciplineOptionsWithAll, STATE.tableDiscipline);
     refreshPsTriageFilter("hiPsRegionTriageFilter", "psRegionTriage", true);
     refreshPsTriageFilter("hiPsStructureTriageFilter", "psStructureTriage", true);
+    refreshPsLevelFilter("hiPsRegionLevelFilter", "psRegionLevel");
+    refreshPsLevelFilter("hiPsStructureLevelFilter", "psStructureLevel");
     fillSelect("hiCostTypeFilter", costOptions, STATE.costType);
     var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
     fillSelect("hiNationalBedsYearFilter", [{ value: "latest", label: latestBedsYear ? "Ultimo anno (" + latestBedsYear + ")" : "Ultimo anno" }].concat(bedYears.filter(function (year) {
@@ -2571,11 +2611,13 @@
       ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
       ["hiPsRegionFilter", "psRegion"],
       ["hiPsRegionTriageFilter", "psRegionTriage"],
+      ["hiPsRegionLevelFilter", "psRegionLevel"],
       ["hiPsRegionMetricFilter", "psRegionMetric"],
       ["hiPsStructureRegionFilter", "psStructureRegion"],
       ["hiPsStructureProvinceFilter", "psStructureProvince"],
       ["hiPsStructureFilter", "psStructure"],
       ["hiPsStructureTriageFilter", "psStructureTriage"],
+      ["hiPsStructureLevelFilter", "psStructureLevel"],
       ["hiPsStructureLimitFilter", "psStructureLimit"],
       ["hiWaitingYearFilter", "waitingYear"],
       ["hiWaitingServiceTypeFilter", "waitingServiceType"],
@@ -3166,25 +3208,42 @@
     renderPsStructureChart();
   }
 
+  function psRegionalStructureRows() {
+    var triage = STATE.psRegionTriage;
+    var source = triage === "all" ? tableRows("ps_structures") : tableRows("ps_wait_times_by_structure_triage");
+    var valueField = triage === "all" ? "mean_wait_minutes" : "wait_minutes";
+    var grouped = {};
+    source.forEach(function (row) {
+      if (triage !== "all" && row.triage_code !== triage) return;
+      if (!psLevelMatches(row, STATE.psRegionLevel)) return;
+      var value = toNumber(row[valueField]);
+      if (value === null) return;
+      var key = row.region;
+      if (!grouped[key]) {
+        grouped[key] = {
+          region: row.region,
+          year: row.year,
+          values: [],
+          accesses_total: 0,
+          structures: 0
+        };
+      }
+      grouped[key].values.push(value);
+      grouped[key].accesses_total += toNumber(row.accesses_total) || 0;
+      grouped[key].structures += 1;
+    });
+    return Object.keys(grouped).map(function (key) {
+      var item = grouped[key];
+      item.mean_wait_minutes = mean(item.values);
+      item.median_wait_minutes = median(item.values);
+      delete item.values;
+      return item;
+    });
+  }
+
   function renderPsRegionChart() {
     var metric = STATE.psRegionMetric || "mean_wait_minutes";
-    var rows = tableRows("ps_wait_times_by_region_triage");
-    if (STATE.psRegionTriage !== "all") {
-      rows = rows.filter(function (row) { return row.triage_code === STATE.psRegionTriage; });
-    } else {
-      var grouped = {};
-      rows.forEach(function (row) {
-        var key = row.region;
-        if (!grouped[key]) grouped[key] = { region: row.region, year: row.year, triage_label: "Tutti i codici disponibili", values: [] };
-        var value = toNumber(row[metric]);
-        if (value !== null) grouped[key].values.push(value);
-      });
-      rows = Object.keys(grouped).map(function (key) {
-        var item = grouped[key];
-        item[metric] = item.values.length ? item.values.reduce(function (sum, value) { return sum + value; }, 0) / item.values.length : null;
-        return item;
-      });
-    }
+    var rows = psRegionalStructureRows();
     rows = rows.map(function (row) {
       var copy = Object.assign({}, row);
       copy.selected_value = toNumber(row[metric]);
@@ -3195,12 +3254,13 @@
     rows.sort(function (a, b) { return (toNumber(b.selected_value) || 0) - (toNumber(a.selected_value) || 0); });
     var title = byId("hiPsRegionTitle");
     var triageText = STATE.psRegionTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psRegionTriage).toLowerCase();
-    if (title) title.textContent = "Pronto soccorso: " + psMetricLabel(metric) + " - " + triageText;
-    setTag("hiPsRegionTag", "2024 - " + psMetricLabel(metric));
+    var levelText = psLevelText(STATE.psRegionLevel);
+    if (title) title.textContent = "Pronto soccorso: " + psMetricLabel(metric) + " - " + triageText + " - " + levelText;
+    setTag("hiPsRegionTag", "2024 - " + psMetricLabel(metric) + " - " + levelText);
     var unavailable = psUnavailableCodesText();
     setChartCredit("hiPsRegionNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Il tempo misura la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita. Il confronto regionale e non pesato per struttura. Il filtro mostra solo i codici con tempi pubblicati dall'endpoint: " + psAvailableCodesText() + "." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
+    ], "Il tempo misura la permanenza media dal triage alla dimissione, non solo l'attesa prima della visita. Il confronto regionale e calcolato sulle strutture e non e pesato per accessi. Il filtro livello PS/DEA evita di confrontare insieme pronto soccorso, DEA di 1 livello e DEA di 2 livello; con 'tutti i livelli' la vista resta volutamente aggregata. Il filtro mostra solo i codici con tempi pubblicati dall'endpoint: " + psAvailableCodesText() + "." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
     horizontalBar("hiPsRegionChart", rows, "region", "selected_value", {
       limit: 21,
       highlight: STATE.psRegion,
@@ -3220,6 +3280,7 @@
       if (STATE.psStructureProvince !== "all" && row.province !== STATE.psStructureProvince) return false;
       if (STATE.psStructure !== "all" && psStructureKey(row) !== STATE.psStructure) return false;
       if (STATE.psStructureTriage !== "all" && row.triage_code !== STATE.psStructureTriage) return false;
+      if (!psLevelMatches(row, STATE.psStructureLevel)) return false;
       return true;
     });
   }
@@ -3268,10 +3329,11 @@
     }
 
     var title = byId("hiPsStructureTitle");
+    var levelText = selectedStructure ? (structureLevel || psLevelText(STATE.psStructureLevel)) : psLevelText(STATE.psStructureLevel);
     if (title) {
-      title.textContent = selectedStructure ? "Pronto soccorso: codici triage - " + territory : "Pronto soccorso: permanenza per struttura - " + territory + " - " + triageText;
+      title.textContent = selectedStructure ? "Pronto soccorso: codici triage - " + territory + " - " + levelText : "Pronto soccorso: permanenza per struttura - " + territory + " - " + triageText + " - " + levelText;
     }
-    setTag("hiPsStructureTag", "2024 - " + (selectedStructure && structureAccesses !== null ? "accessi struttura: " + formatNumber(structureAccesses) : (selectedStructure ? territory : triageText)));
+    setTag("hiPsStructureTag", "2024 - " + (selectedStructure && structureAccesses !== null ? "accessi struttura: " + formatNumber(structureAccesses) : (selectedStructure ? territory : triageText + " - " + levelText)));
     rows = rows.filter(function (row) { return toNumber(row.selected_value) !== null; });
     horizontalBar("hiPsStructureChart", rows, labelField, "selected_value", {
       limit: selectedStructure ? 10 : chartLimit(STATE.psStructureLimit, 20),
@@ -3288,7 +3350,7 @@
     var unavailable = psUnavailableCodesText();
     setChartCredit("hiPsStructureNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. " + (selectedStructure ? "Nel dettaglio per codice triage la tabella non mostra gli accessi, perche la fonte pubblica solo gli accessi totali della struttura" + (structureAccesses !== null ? " (" + formatNumber(structureAccesses) + ")" : "") + (structureLevel ? " e il livello PS/DEA (" + structureLevel + ")" : "") + "." : "Accessi totali e livello PS/DEA sono riportati in tabella come dati della struttura, non del singolo codice triage.") + " Gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
+    ], "Il grafico usa il tempo medio di permanenza dal triage alla dimissione. " + (selectedStructure ? "Nel dettaglio per codice triage la tabella non mostra gli accessi, perche la fonte pubblica solo gli accessi totali della struttura" + (structureAccesses !== null ? " (" + formatNumber(structureAccesses) + ")" : "") + (structureLevel ? " e il livello PS/DEA (" + structureLevel + ")" : "") + "." : "Accessi totali e livello PS/DEA sono riportati in tabella come dati della struttura, non del singolo codice triage. Il filtro livello PS/DEA serve a confrontare strutture dello stesso livello; scegliendo tutti i livelli la vista e aggregata e va letta come panoramica, non come graduatoria omogenea.") + " Gli accessi non sono divisi per codice triage, quindi non vengono usati per pesare i tempi per colore." + (unavailable ? " I codici " + unavailable + " esistono nel modello triage a 5 codici, ma non sono pubblicati come tempi separati nell'endpoint corrente e quindi non sono mostrati come filtri grafico." : ""));
   }
 
   function renderWaitingLists() {
@@ -3442,6 +3504,17 @@
     }).map(toNumber);
     if (!values.length) return null;
     return values.reduce(function (total, value) { return total + value; }, 0) / values.length;
+  }
+
+  function median(values) {
+    values = toArray(values).filter(function (value) {
+      return toNumber(value) !== null;
+    }).map(toNumber).sort(function (a, b) {
+      return a - b;
+    });
+    if (!values.length) return null;
+    var middle = Math.floor(values.length / 2);
+    return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
   }
 
   function standardDeviation(values, avg) {

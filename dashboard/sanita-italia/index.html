@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-waiting-quality-1">
-  <script defer src="../../assets/theme.js?v=20260817-waiting-quality-1"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-ps-level-1">
+  <script defer src="../../assets/theme.js?v=20260817-ps-level-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-waiting-quality-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-ps-level-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -346,6 +346,9 @@
           <label>Codice triage
             <select id="hiPsRegionTriageFilter"></select>
           </label>
+          <label>Livello PS/DEA
+            <select id="hiPsRegionLevelFilter"></select>
+          </label>
           <label>Misura
             <select id="hiPsRegionMetricFilter">
               <option value="mean_wait_minutes">Media strutture</option>
@@ -367,6 +370,9 @@
           </label>
           <label>Provincia
             <select id="hiPsStructureProvinceFilter"></select>
+          </label>
+          <label>Livello PS/DEA
+            <select id="hiPsStructureLevelFilter"></select>
           </label>
           <label>Pronto soccorso
             <select id="hiPsStructureFilter"></select>
