@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260817-matrix-boxplots-2",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-matrix-boxplots-2",
+    "../../data/sanita-italia/dashboard.json?v=20260817-matrix-boxplots-4",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-matrix-boxplots-4",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -59,9 +59,10 @@
     waitingQualityAccess: "first",
     waitingQualityMetric: "mean_first_available_days",
     waitingQualityFocus: "Sardegna",
-    waitingQualityLayout: "region_service",
+    waitingQualityLayout: "region_service_type",
     waitingQualityGranularity: "service_type",
     waitingQualityLimit: "20",
+    waitingQualityStructureRegion: "Sardegna",
     waitingServiceRegion: "Italia",
     waitingServiceYear: "latest",
     waitingServiceType2: "all",
@@ -166,7 +167,7 @@
     "dischargeHospitalRegion", "dischargeHospitalProvince", "dischargeHospitalCategory", "dischargeHospitalLimit",
     "psRegion", "psRegionTriage", "psRegionLevel", "psRegionMetric", "psStructureRegion", "psStructureProvince", "psStructure", "psStructureTriage", "psStructureLevel", "psStructureLimit",
     "waitingYear", "waitingServiceType", "waitingService", "waitingPriority", "waitingRegime", "waitingAccess", "waitingMetric", "waitingRegionFocus",
-    "waitingQualityYear", "waitingQualityServiceType", "waitingQualityService", "waitingQualityPriority", "waitingQualityRegime", "waitingQualityAccess", "waitingQualityMetric", "waitingQualityFocus", "waitingQualityLayout", "waitingQualityGranularity", "waitingQualityLimit",
+    "waitingQualityYear", "waitingQualityServiceType", "waitingQualityService", "waitingQualityPriority", "waitingQualityRegime", "waitingQualityAccess", "waitingQualityMetric", "waitingQualityFocus", "waitingQualityLayout", "waitingQualityGranularity", "waitingQualityLimit", "waitingQualityStructureRegion",
     "waitingServiceRegion", "waitingServiceYear", "waitingServiceType2", "waitingServicePriority", "waitingServiceRegime", "waitingServiceAccess", "waitingServiceMetric", "waitingServiceLimit",
     "waitingTrendRegion", "waitingTrendService", "waitingTrendPriority", "waitingTrendMetric",
     "waitingStructureRegion", "waitingStructureServiceType", "waitingStructureService", "waitingStructurePriority", "waitingStructureMetric", "waitingStructureLimit", "waitingStructureFocus",
@@ -1194,6 +1195,17 @@
     return cached ? toArray(cached.rows) : [];
   }
 
+  function waitingStructureRowsForRegion(region) {
+    var cached = WAITING_STRUCTURE_CACHE[region];
+    return cached ? toArray(cached.rows) : [];
+  }
+
+  function waitingStructureYearForRegion(region) {
+    var cached = WAITING_STRUCTURE_CACHE[region];
+    var file = waitingStructureFile(region) || {};
+    return cached && cached.meta && cached.meta.year ? cached.meta.year : file.year;
+  }
+
   function waitingStructureMeta() {
     var cached = WAITING_STRUCTURE_CACHE[STATE.waitingStructureRegion];
     var file = waitingStructureFile(STATE.waitingStructureRegion) || {};
@@ -1523,6 +1535,7 @@
     fillSelect("hiWaitingServiceYearFilter", waitingYearOptions(), STATE.waitingServiceYear);
     fillSelect("hiWaitingServiceTypeFilter", waitingServiceTypeOptions(), STATE.waitingServiceType);
     fillSelect("hiWaitingQualityServiceTypeFilter", waitingServiceTypeOptions(), STATE.waitingQualityServiceType);
+    fillSelect("hiWaitingQualityStructureRegionFilter", waitingStructureRegionOptions(), STATE.waitingQualityStructureRegion);
     fillSelect("hiWaitingServiceType2Filter", waitingServiceTypeOptions(), STATE.waitingServiceType2);
     fillSelect("hiWaitingPriorityFilter", waitingPriorityOptions(true), STATE.waitingPriority);
     fillSelect("hiWaitingQualityPriorityFilter", waitingPriorityOptions(true), STATE.waitingQualityPriority);
@@ -1550,7 +1563,6 @@
     var simpleSelects = [
       ["hiWaitingMetricFilter", "waitingMetric"],
       ["hiWaitingQualityLayoutFilter", "waitingQualityLayout"],
-      ["hiWaitingQualityGranularityFilter", "waitingQualityGranularity"],
       ["hiWaitingQualityMetricFilter", "waitingQualityMetric"],
       ["hiWaitingQualityLimitFilter", "waitingQualityLimit"],
       ["hiWaitingServiceMetricFilter", "waitingServiceMetric"],
@@ -2642,8 +2654,8 @@
       ["hiWaitingQualityMetricFilter", "waitingQualityMetric"],
       ["hiWaitingQualityFocusFilter", "waitingQualityFocus"],
       ["hiWaitingQualityLayoutFilter", "waitingQualityLayout"],
-      ["hiWaitingQualityGranularityFilter", "waitingQualityGranularity"],
       ["hiWaitingQualityLimitFilter", "waitingQualityLimit"],
+      ["hiWaitingQualityStructureRegionFilter", "waitingQualityStructureRegion"],
       ["hiWaitingServiceRegionFilter", "waitingServiceRegion"],
       ["hiWaitingServiceYearFilter", "waitingServiceYear"],
       ["hiWaitingServiceType2Filter", "waitingServiceType2"],
@@ -3916,77 +3928,92 @@
     });
   }
 
-  function waitingQualityServiceDimension(row) {
-    if (STATE.waitingQualityGranularity === "service") {
-      return {
-        key: row.service_id,
-        label: row.service || waitingServiceLabel(row.service_id),
-        service_id: row.service_id,
-        service: row.service || waitingServiceLabel(row.service_id),
-        service_type: row.service_type
-      };
-    }
-    return {
-      key: row.service_type,
-      label: row.service_type,
-      service_id: "",
-      service: "",
-      service_type: row.service_type
-    };
+  function waitingQualityMode() {
+    return STATE.waitingQualityLayout || "region_service_type";
   }
 
-  function waitingQualityMatrixDimensions(row) {
-    var service = waitingQualityServiceDimension(row);
-    if (STATE.waitingQualityLayout === "service_region") {
-      return {
-        group: service,
-        point: { key: row.region, label: row.region, region: row.region }
-      };
-    }
-    return {
-      group: { key: row.region, label: row.region, region: row.region },
-      point: service
+  function waitingQualityModeSpec() {
+    var specs = {
+      region_service_type: { source: "summary", group: "region", point: "service_type", title: "Boxplot per regioni - punti tipologie", subtitle: "Ogni box e una regione o provincia autonoma; ogni punto e una tipologia di prestazione." },
+      region_service: { source: "summary", group: "region", point: "service", title: "Boxplot per regioni - punti prestazioni", subtitle: "Ogni box e una regione o provincia autonoma; ogni punto e una singola prestazione." },
+      service_type_region: { source: "summary", group: "service_type", point: "region", title: "Boxplot per tipologie - punti regioni", subtitle: "Ogni box e una tipologia di prestazione; ogni punto e una regione o provincia autonoma." },
+      service_region: { source: "summary", group: "service", point: "region", title: "Boxplot per prestazioni - punti regioni", subtitle: "Ogni box e una singola prestazione; ogni punto e una regione o provincia autonoma." },
+      service_type_structure: { source: "structure", group: "service_type", point: "structure", title: "Boxplot per tipologie - punti strutture", subtitle: "Ogni box e una tipologia di prestazione; ogni punto e una struttura della regione selezionata." },
+      service_structure: { source: "structure", group: "service", point: "structure", title: "Boxplot per prestazioni - punti strutture", subtitle: "Ogni box e una singola prestazione; ogni punto e una struttura della regione selezionata." }
     };
+    return specs[waitingQualityMode()] || specs.region_service_type;
   }
 
-  function waitingQualityMatrixLabels() {
-    var serviceLabel = STATE.waitingQualityGranularity === "service" ? "prestazioni" : "tipologie di prestazione";
-    if (STATE.waitingQualityLayout === "service_region") {
-      return {
-        group: STATE.waitingQualityGranularity === "service" ? "Prestazione" : "Tipologia prestazione",
-        point: "Regione",
-        title: "Boxplot per " + serviceLabel + " - punti regioni",
-        subtitle: "Ogni box e una " + (STATE.waitingQualityGranularity === "service" ? "prestazione" : "tipologia di prestazione") + "; ogni punto e una regione o provincia autonoma."
-      };
+  function waitingQualityDimension(row, dimension) {
+    if (dimension === "region") return { key: row.region, label: row.region, region: row.region };
+    if (dimension === "service_type") return { key: row.service_type, label: row.service_type, service_type: row.service_type };
+    if (dimension === "service") return { key: row.service_id, label: row.service || waitingServiceLabel(row.service_id), service_id: row.service_id, service: row.service || waitingServiceLabel(row.service_id), service_type: row.service_type };
+    if (dimension === "structure") return { key: row.structure_code || row.structure, label: row.structure || row.published_structure || row.structure_code, structure_code: row.structure_code, structure: row.structure || row.published_structure };
+    return { key: "", label: "" };
+  }
+
+  function waitingQualityDimensionLabel(dimension) {
+    if (dimension === "region") return "Regione";
+    if (dimension === "service_type") return "Tipologia prestazione";
+    if (dimension === "service") return "Prestazione";
+    if (dimension === "structure") return "Struttura";
+    return "Punto";
+  }
+
+  function waitingQualityStructureMode() {
+    return waitingQualityModeSpec().source === "structure";
+  }
+
+  function waitingQualitySourceRows(spec) {
+    if (spec.source === "structure") {
+      var year = waitingStructureYearForRegion(STATE.waitingQualityStructureRegion);
+      var selectedYear = waitingYearValue(STATE.waitingQualityYear);
+      if (selectedYear && year && selectedYear !== year) return [];
+      return waitingStructureRowsForRegion(STATE.waitingQualityStructureRegion).filter(function (row) {
+        if (STATE.waitingQualityServiceType !== "all" && row.service_type !== STATE.waitingQualityServiceType) return false;
+        if (STATE.waitingQualityService && STATE.waitingQualityService !== "all" && row.service_id !== STATE.waitingQualityService) return false;
+        if (STATE.waitingQualityPriority !== "all" && row.priority_label !== STATE.waitingQualityPriority) return false;
+        if (STATE.waitingQualityRegime !== "all" && row.regime !== STATE.waitingQualityRegime) return false;
+        if (STATE.waitingQualityAccess !== "all" && row.access_type !== STATE.waitingQualityAccess) return false;
+        return true;
+      });
     }
+    return filterWaitingRows(waitingQualitySettings());
+  }
+
+  function waitingQualityLabels(spec) {
     return {
-      group: "Regione",
-      point: STATE.waitingQualityGranularity === "service" ? "Prestazione" : "Tipologia prestazione",
-      title: "Boxplot per regioni - punti " + serviceLabel,
-      subtitle: "Ogni box e una regione o provincia autonoma; ogni punto e una " + (STATE.waitingQualityGranularity === "service" ? "prestazione" : "tipologia di prestazione") + "."
+      group: waitingQualityDimensionLabel(spec.group),
+      point: waitingQualityDimensionLabel(spec.point),
+      title: spec.title,
+      subtitle: spec.subtitle
     };
   }
 
   function waitingQualityMatrixRows(config) {
+    var spec = waitingQualityModeSpec();
     var metadata = {};
-    var rows = aggregateWaitingRows(filterWaitingRows(waitingQualitySettings()), function (row) {
-      var dimensions = waitingQualityMatrixDimensions(row);
-      var key = dimensions.group.key + "||" + dimensions.point.key;
+    var rows = aggregateWaitingRows(waitingQualitySourceRows(spec), function (row) {
+      var group = waitingQualityDimension(row, spec.group);
+      var point = waitingQualityDimension(row, spec.point);
+      var key = group.key + "||" + point.key;
       if (!metadata[key]) {
         metadata[key] = {
-          group_key: dimensions.group.key,
-          group_label: dimensions.group.label,
-          point_key: dimensions.point.key,
-          point_label: dimensions.point.label,
-          region: dimensions.group.region || dimensions.point.region || row.region,
-          service_type: dimensions.group.service_type || dimensions.point.service_type || row.service_type,
-          service_id: dimensions.group.service_id || dimensions.point.service_id || row.service_id,
-          service: dimensions.group.service || dimensions.point.service || row.service
+          group_key: group.key,
+          group_label: group.label,
+          point_key: point.key,
+          point_label: point.label,
+          region: group.region || point.region || row.region,
+          service_type: group.service_type || point.service_type || row.service_type,
+          service_id: group.service_id || point.service_id || row.service_id,
+          service: group.service || point.service || row.service,
+          structure_code: group.structure_code || point.structure_code || row.structure_code,
+          structure: group.structure || point.structure || row.structure
         };
       }
       return key;
     }, function (row) {
-      return waitingQualityMatrixDimensions(row).group.label;
+      return waitingQualityDimension(row, spec.group).label;
     }).map(function (row) {
       var item = Object.assign({}, row, metadata[row.key] || {});
       item.selected_value = toNumber(item[config.field]);
@@ -4014,7 +4041,7 @@
       if (bv === null) return -1;
       return config.lowerBetter ? bv - av : av - bv;
     });
-    var limit = STATE.waitingQualityLayout === "region_service" ? groups.length : chartLimit(STATE.waitingQualityLimit, 20);
+    var limit = spec.group === "region" ? groups.length : chartLimit(STATE.waitingQualityLimit, 20);
     if (STATE.waitingQualityLimit === "all") limit = groups.length;
     var groupOrder = groups.slice(0, limit).map(function (group) { return group.key; });
     var allowed = {};
@@ -4063,38 +4090,39 @@
       return;
     }
     var groupLabels = rows.groupLabels || unique(rows.map(function (row) { return row.group_label; }));
-    var values = rows.map(function (row) { return row.selected_value; });
-    plot("hiWaitingQualityChart", [
-      {
+    var traces = groupLabels.map(function (label) {
+      var groupRows = rows.filter(function (row) { return row.group_label === label; });
+      return {
         type: "box",
-        name: labels.group,
-        x: rows.map(function (row) { return row.group_label; }),
-        y: values,
+        name: compact(label, 32),
+        x: groupRows.map(function () { return label; }),
+        y: groupRows.map(function (row) { return row.selected_value; }),
         boxpoints: false,
         fillcolor: "rgba(160,160,160,.16)",
         line: { color: cssVar("--muted", "#b9b2aa") },
         marker: { color: cssVar("--muted", "#b9b2aa") },
         hoverinfo: "skip"
+      };
+    });
+    traces.push({
+      type: "scatter",
+      mode: "markers",
+      name: labels.point,
+      x: rows.map(function (row) { return row.group_label; }),
+      y: rows.map(function (row) { return row.selected_value; }),
+      text: rows.map(function (row) { return row.point_label; }),
+      customdata: rows.map(function (row) {
+        return [row.group_label, row.point_label, row.region, row.service || row.service_type, row.structure || "", row.selected_value_text, row.quality_score_text, row.quality_status, row.bookings];
+      }),
+      marker: {
+        color: rows.map(function (row) { return row.region === STATE.waitingQualityFocus ? COLORS[0] : waitingQualityColor(row.quality_score); }),
+        size: rows.map(function (row) { return row.region === STATE.waitingQualityFocus ? 12 : 7; }),
+        opacity: .88,
+        line: { color: cssVar("--panel", "#090909"), width: 1 }
       },
-      {
-        type: "scatter",
-        mode: "markers",
-        name: labels.point,
-        x: rows.map(function (row) { return row.group_label; }),
-        y: values,
-        text: rows.map(function (row) { return row.point_label; }),
-        customdata: rows.map(function (row) {
-          return [row.group_label, row.point_label, row.region, row.service || row.service_type, row.selected_value_text, row.quality_score_text, row.quality_status, row.bookings];
-        }),
-        marker: {
-          color: rows.map(function (row) { return row.region === STATE.waitingQualityFocus ? COLORS[0] : waitingQualityColor(row.quality_score); }),
-          size: rows.map(function (row) { return row.region === STATE.waitingQualityFocus ? 12 : 7; }),
-          opacity: .88,
-          line: { color: cssVar("--panel", "#090909"), width: 1 }
-        },
-        hovertemplate: "<b>%{customdata[0]}</b><br>" + labels.point + ": %{customdata[1]}<br>Regione: %{customdata[2]}<br>Prestazione: %{customdata[3]}<br>" + config.label + ": %{customdata[4]}<br>Indice qualita: %{customdata[5]}<br>Lettura: %{customdata[6]}<br>Prenotazioni: %{customdata[7]:,.0f}<extra></extra>"
-      }
-    ], {
+      hovertemplate: "<b>%{customdata[0]}</b><br>" + labels.point + ": %{customdata[1]}<br>Regione: %{customdata[2]}<br>Prestazione: %{customdata[3]}<br>Struttura: %{customdata[4]}<br>" + config.label + ": %{customdata[5]}<br>Indice qualita: %{customdata[6]}<br>Lettura: %{customdata[7]}<br>Prenotazioni: %{customdata[8]:,.0f}<extra></extra>"
+    });
+    plot("hiWaitingQualityChart", traces, {
       showlegend: false,
       margin: { t: 20, r: 30, b: 126, l: 86 },
       xaxis: {
@@ -4108,21 +4136,141 @@
     });
   }
 
+  function waitingQualityHistoryTerritory(spec) {
+    if (spec && spec.source === "structure") return STATE.waitingQualityStructureRegion;
+    return STATE.waitingQualityFocus;
+  }
+
+  function waitingQualityHistorySeries(region, config) {
+    var settings = Object.assign({}, waitingQualitySettings(), {
+      year: null,
+      region: region
+    });
+    return aggregateWaitingRows(filterWaitingRows(settings), function (row) {
+      return String(row.year);
+    }, function (row) {
+      return String(row.year);
+    }).map(function (row) {
+      row.year = toNumber(row.key);
+      row.selected_value = toNumber(row[config.field]);
+      row.selected_value_text = config.format(row.selected_value);
+      return row;
+    }).filter(function (row) {
+      return row.year !== null && row.selected_value !== null;
+    }).sort(function (a, b) {
+      return a.year - b.year;
+    });
+  }
+
+  function renderWaitingQualityHistoryChart(spec, config) {
+    var territory = waitingQualityHistoryTerritory(spec);
+    var nationalRows = waitingQualityHistorySeries("Italia", config);
+    var territoryRows = territory && territory !== "Italia" ? waitingQualityHistorySeries(territory, config) : [];
+    var years = unique(nationalRows.concat(territoryRows).map(function (row) { return row.year; })).sort(function (a, b) { return a - b; });
+    var serviceText = waitingServiceText(STATE.waitingQualityService, STATE.waitingQualityServiceType);
+    var priorityText = waitingPriorityText(STATE.waitingQualityPriority);
+    var title = byId("hiWaitingQualityHistoryTitle");
+    if (title) title.textContent = "Storico PNLA - " + (territory && territory !== "Italia" ? territory + " vs Italia" : "Italia") + " - " + config.label;
+    setSubtitle("hiWaitingQualityHistorySubtitle", "Serie annua della stessa selezione del boxplot: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingQualityRegime) + ", " + waitingAccessText(STATE.waitingQualityAccess) + ". Il filtro Anno sopra cambia il boxplot, mentre questo grafico usa tutti gli anni disponibili.");
+    setTag("hiWaitingQualityHistoryTag", years.length ? years[0] + "-" + years[years.length - 1] : "PNLA");
+
+    var traces = [];
+    if (nationalRows.length) {
+      traces.push({
+        x: nationalRows.map(function (row) { return row.year; }),
+        y: nationalRows.map(function (row) { return row.selected_value; }),
+        text: nationalRows.map(function (row) { return row.selected_value_text; }),
+        customdata: nationalRows.map(function (row) { return row.bookings; }),
+        type: "scatter",
+        mode: "lines+markers",
+        name: "Italia",
+        line: { color: COLORS[1], width: 3 },
+        marker: { size: 8 },
+        hovertemplate: "%{x}<br>Italia<br>" + config.label + ": %{text}<br>Prenotazioni: %{customdata:,.0f}<extra></extra>"
+      });
+    }
+    if (territoryRows.length) {
+      traces.push({
+        x: territoryRows.map(function (row) { return row.year; }),
+        y: territoryRows.map(function (row) { return row.selected_value; }),
+        text: territoryRows.map(function (row) { return row.selected_value_text; }),
+        customdata: territoryRows.map(function (row) { return row.bookings; }),
+        type: "scatter",
+        mode: "lines+markers",
+        name: territory,
+        line: { color: COLORS[0], width: 3 },
+        marker: { size: 8 },
+        hovertemplate: "%{x}<br>" + territory + "<br>" + config.label + ": %{text}<br>Prenotazioni: %{customdata:,.0f}<extra></extra>"
+      });
+    }
+
+    if (!traces.length) {
+      showEmptyChart("hiWaitingQualityHistoryChart", "Nessuno storico disponibile per questa selezione");
+    } else {
+      lineChart("hiWaitingQualityHistoryChart", traces, {
+        yTitle: config.xTitle,
+        xAxis: {
+          tickmode: "array",
+          tickvals: years,
+          ticktext: years.map(String)
+        }
+      });
+    }
+
+    setChartCredit("hiWaitingQualityHistoryNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], "Storico annuo disponibile nel dataset aggregato PNLA: " + (years.length ? years.join(", ") : "nessun anno nella selezione") + ". Le serie sono aggregate e pesate per prenotazioni quando si selezionano piu prestazioni o priorita. Il dettaglio PNLA per struttura e disponibile solo per il 2026: nelle viste con punti struttura lo storico resta quindi regionale, non ospedaliero.");
+  }
+
   function renderWaitingQualityChart() {
     var config = waitingQualityMetricConfig(STATE.waitingQualityMetric);
     var settings = waitingQualitySettings();
+    var spec = waitingQualityModeSpec();
+    var labels = waitingQualityLabels(spec);
+    var structureRegion = STATE.waitingQualityStructureRegion;
+    if (spec.source === "structure" && (!structureRegion || !waitingStructureFile(structureRegion))) {
+      showEmptyChart("hiWaitingQualityChart", "Seleziona una regione con dettaglio strutture PNLA");
+      clear(byId("hiWaitingQualitySummary"));
+      createTable("hiWaitingQualityTable", [], [
+        ["group_label", labels.group],
+        ["point_label", labels.point],
+        ["selected_value_text", config.label]
+      ], 20);
+      setChartCredit("hiWaitingQualityNote", [
+        { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+      ], "La vista con strutture usa i file regionali PNLA dell'ultimo anno disponibile.");
+      return;
+    }
+    if (spec.source === "structure" && !WAITING_STRUCTURE_CACHE[structureRegion]) {
+      showEmptyChart("hiWaitingQualityChart", "Caricamento strutture PNLA per " + structureRegion + "...");
+      clear(byId("hiWaitingQualitySummary"));
+      createTable("hiWaitingQualityTable", [], [
+        ["group_label", labels.group],
+        ["point_label", labels.point],
+        ["selected_value_text", config.label]
+      ], 20);
+      setChartCredit("hiWaitingQualityNote", [
+        { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+      ], "Sto caricando il dettaglio strutture per costruire il boxplot.");
+      loadWaitingStructureRegion(structureRegion).then(function () {
+        renderWaitingQualityChart();
+        refreshSiteLanguage();
+      });
+      return;
+    }
     var rows = waitingQualityMatrixRows(config);
-    var labels = waitingQualityMatrixLabels();
     var serviceText = waitingServiceText(STATE.waitingQualityService, STATE.waitingQualityServiceType);
     var priorityText = waitingPriorityText(STATE.waitingQualityPriority);
+    var sourceSettings = spec.source === "structure" ? Object.assign({}, settings, { year: waitingStructureYearForRegion(structureRegion), region: structureRegion }) : settings;
     var title = byId("hiWaitingQualityTitle");
     if (title) title.textContent = labels.title + " - " + config.label;
-    setSubtitle("hiWaitingQualitySubtitle", labels.subtitle + " Il colore segnala chi sta almeno a +/-1 deviazione standard dalla media dei punti visualizzati. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingQualityRegime) + ", " + waitingAccessText(STATE.waitingQualityAccess) + ".");
+    setSubtitle("hiWaitingQualitySubtitle", labels.subtitle + " Il colore segnala chi sta almeno a +/-1 deviazione standard dalla media dei punti visualizzati. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingQualityRegime) + ", " + waitingAccessText(STATE.waitingQualityAccess) + (spec.source === "structure" ? ", regione strutture: " + structureRegion : "") + ".");
     setTag("hiWaitingQualityTag", "PNLA " + asText(waitingYearValue(STATE.waitingQualityYear)) + " - " + labels.group + " / " + labels.point);
     renderWaitingQualityMatrixSummary(rows, config, labels);
     setChartCredit("hiWaitingQualityNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingSourceNote(settings, "Boxplot incrociato: " + labels.group + " sull'asse orizzontale, punti = " + labels.point + ". L'indice qualita e uno z-score descrittivo calcolato sui punti visualizzati: +1 DS o piu indica performance migliore della media, -1 DS o meno performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. Non e un indicatore clinico risk-adjusted. " + waitingPriorityThresholdNote(settings, config)));
+    ], waitingSourceNote(sourceSettings, "Boxplot incrociato: " + labels.group + " sull'asse orizzontale, punti = " + labels.point + ". Ogni box e una traccia separata e il filtro Vista decide come costruirlo. L'indice qualita e uno z-score descrittivo calcolato sui punti visualizzati: +1 DS o piu indica performance migliore della media, -1 DS o meno performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. Non e un indicatore clinico risk-adjusted. " + (spec.source === "structure" ? "I file PNLA struttura non pubblicano la provincia; per questo il livello disponibile qui e la struttura della prima disponibilita proposta. " : "") + waitingPriorityThresholdNote(sourceSettings, config)));
+    renderWaitingQualityHistoryChart(spec, config);
 
     if (rows.length < 2) {
       showEmptyChart("hiWaitingQualityChart", "Servono almeno due punti confrontabili per calcolare deviazione standard e boxplot");
@@ -4143,6 +4291,7 @@
       ["region", "Regione"],
       ["service_type", "Tipo prestazione"],
       ["service", "Prestazione"],
+      ["structure", "Struttura"],
       ["selected_value_text", config.label],
       ["quality_mean_text", "Media punti"],
       ["quality_sd_text", "Deviazione standard"],

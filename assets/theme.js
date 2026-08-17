@@ -892,11 +892,17 @@
 
   function start() {
     var saved = null;
+    var requested = null;
     try {
       saved = localStorage.getItem("theme");
     } catch (error) {}
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var theme = params.get("theme");
+      if (theme === "light" || theme === "dark") requested = theme;
+    } catch (error) {}
 
-    apply(saved || "dark");
+    apply(requested || saved || "dark");
     ensureFavicon();
     injectSocialStyle();
     injectWideContentFitStyle();
@@ -905,7 +911,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260817-matrix-boxplots-2", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260817-matrix-boxplots-4", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

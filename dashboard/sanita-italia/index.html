@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-matrix-boxplots-2">
-  <script defer src="../../assets/theme.js?v=20260817-matrix-boxplots-2"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-matrix-boxplots-4">
+  <script defer src="../../assets/theme.js?v=20260817-matrix-boxplots-4"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-matrix-boxplots-2"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-matrix-boxplots-4"></script>
 </head>
 <body>
   <header class="site-header">
@@ -457,18 +457,19 @@
         <div class="hi-chart-controls" aria-label="Filtri indice qualit&agrave; liste d'attesa">
           <label>Vista
             <select id="hiWaitingQualityLayoutFilter">
+              <option value="region_service_type">Box regioni - punti tipologie</option>
               <option value="region_service">Box regioni - punti prestazioni</option>
+              <option value="service_type_region">Box tipologie - punti regioni</option>
               <option value="service_region">Box prestazioni - punti regioni</option>
-            </select>
-          </label>
-          <label>Livello punti
-            <select id="hiWaitingQualityGranularityFilter">
-              <option value="service_type">Tipologia prestazione</option>
-              <option value="service">Singola prestazione</option>
+              <option value="service_type_structure">Box tipologie - punti strutture</option>
+              <option value="service_structure">Box prestazioni - punti strutture</option>
             </select>
           </label>
           <label>Anno
             <select id="hiWaitingQualityYearFilter"></select>
+          </label>
+          <label>Regione strutture
+            <select id="hiWaitingQualityStructureRegionFilter"></select>
           </label>
           <label>Tipo prestazione
             <select id="hiWaitingQualityServiceTypeFilter"></select>
@@ -508,6 +509,10 @@
         <div id="hiWaitingQualitySummary" class="hi-profile-grid"></div>
         <div id="hiWaitingQualityChart" class="hi-chart"></div>
         <p id="hiWaitingQualityNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
+        <div class="hi-card-title hi-card-title-secondary"><h3 id="hiWaitingQualityHistoryTitle">Storico della selezione</h3><span id="hiWaitingQualityHistoryTag">PNLA</span></div>
+        <p id="hiWaitingQualityHistorySubtitle" class="hi-card-subtitle">Confronto annuo della stessa selezione tra Italia e territorio evidenziato.</p>
+        <div id="hiWaitingQualityHistoryChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiWaitingQualityHistoryNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
         <div id="hiWaitingQualityTable" class="hi-table-wrap"></div>
       </article>
       <article class="hi-card hi-chart-block">

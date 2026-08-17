@@ -3235,8 +3235,13 @@
     ["Boxplot attese", "Waiting-list box plots"],
     ["Vista", "View"],
     ["Livello punti", "Point level"],
+    ["Regione strutture", "Facility region"],
+    ["Box regioni - punti tipologie", "Region boxes - service-type points"],
     ["Box regioni - punti prestazioni", "Region boxes - service points"],
+    ["Box tipologie - punti regioni", "Service-type boxes - region points"],
     ["Box prestazioni - punti regioni", "Service boxes - region points"],
+    ["Box tipologie - punti strutture", "Service-type boxes - facility points"],
+    ["Box prestazioni - punti strutture", "Service boxes - facility points"],
     ["Tipologia prestazione", "Service type"],
     ["Singola prestazione", "Single service"],
     ["Numero box", "Number of boxes"],
@@ -3245,20 +3250,32 @@
     ["media semplice dei punti visualizzati", "simple mean of displayed points"],
     ["Regione", "Region"],
     ["Boxplot per regioni", "Box plot by region"],
+    ["Boxplot per tipologie", "Box plot by service type"],
     ["Boxplot per prestazioni", "Box plot by service"],
+    ["punti tipologie", "service-type points"],
     ["punti tipologie di prestazione", "service-type points"],
     ["punti prestazioni", "service points"],
     ["punti regioni", "region points"],
+    ["punti strutture", "facility points"],
+    ["punti facilities", "facility points"],
     ["Ogni box e una regione o provincia autonoma", "Each box is a region or autonomous province"],
     ["Ogni box e una prestazione", "Each box is a service"],
     ["Ogni box e una tipologia di prestazione", "Each box is a service type"],
+    ["Ogni box e una singola prestazione", "Each box is a single service"],
     ["ogni punto e una tipologia di prestazione", "each point is a service type"],
     ["ogni punto e una prestazione", "each point is a service"],
+    ["ogni punto e una singola prestazione", "each point is a single service"],
     ["ogni punto e una regione o provincia autonoma", "each point is a region or autonomous province"],
+    ["ogni punto e una struttura della regione selezionata", "each point is a facility in the selected region"],
+    ["regione strutture", "facility region"],
+    ["regione facilities", "facility region"],
     ["Il colore segnala chi sta almeno a +/-1 deviazione standard dalla media dei punti visualizzati", "Colour highlights points at least +/-1 standard deviation from the displayed-point mean"],
     ["Boxplot incrociato", "Crossed box plot"],
     ["sull'asse orizzontale", "on the horizontal axis"],
     ["punti =", "points ="],
+    ["Ogni box e una traccia separata e il filtro Vista decide come costruirlo", "Each box is a separate trace and the View filter decides how to build it"],
+    ["I file PNLA struttura non pubblicano la provincia; per questo il livello disponibile qui e la struttura della prima disponibilita proposta", "PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability"],
+    ["I file PNLA Structure non pubblicano la provincia; per questo il livello disponibile qui e la Structure della prima disponibilita proposta", "PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability"],
     ["calcolato sui punti visualizzati", "calculated on displayed points"],
     ["performance peggiore", "worse performance"],
     ["area non presente nei filtri", "area not present in the filters"],
@@ -3268,6 +3285,16 @@
     ["Boxplot PS by facility", "Emergency-department box plot by facility"],
     ["Boxplot strutture PNLA", "PNLA facility box plot"],
     ["Boxplot facilities PNLA", "PNLA facility box plot"],
+    ["Storico della selezione", "Selection history"],
+    ["Confronto annuo della stessa selezione tra Italia e territorio evidenziato", "Annual comparison of the same selection between Italy and the highlighted area"],
+    ["Storico PNLA", "PNLA history"],
+    ["Serie annua della stessa selezione del boxplot", "Annual series for the same box-plot selection"],
+    ["Il filtro Anno sopra cambia il boxplot, mentre questo grafico usa tutti gli anni disponibili", "The Year filter above changes the box plot, while this chart uses all available years"],
+    ["Storico annuo disponibile nel dataset aggregato PNLA", "Annual history available in the aggregated PNLA dataset"],
+    ["Le serie sono aggregate e pesate per prenotazioni quando si selezionano piu prestazioni o priorita", "Series are aggregated and weighted by bookings when multiple services or priorities are selected"],
+    ["Il dettaglio PNLA per struttura e disponibile solo per il 2026", "PNLA facility detail is available only for 2026"],
+    ["nelle viste con punti struttura lo storico resta quindi regionale, non ospedaliero", "in views with facility points, the history therefore remains regional, not hospital-level"],
+    ["Nessuno storico disponibile per questa selezione", "No history available for this selection"],
     ["Distribuzione delle regioni rispetto alla media delle aree con evidenza di chi performa meglio o peggio di almeno una deviazione standard", "Distribution of regions against the area mean, highlighting those performing better or worse by at least one standard deviation"],
     ["Distribuzione delle strutture filtrate per territorio, livello PS/DEA e codice triage", "Distribution of facilities filtered by area, ED/DEA level and triage code"],
     ["la struttura selezionata viene evidenziata nel confronto", "the selected facility is highlighted in the comparison"],
@@ -3416,6 +3443,15 @@
       .split("almeno -1 SD performance peggiore").join("at least -1 SD indicates worse performance")
       .split("-1 SD o meno worse performance").join("-1 SD or less indicates worse performance")
       .split("almeno -1 SD permanenze piu lunghe").join("at least -1 SD indicates longer stays")
+      .split("Box prestazioni - facility points").join("Service boxes - facility points")
+      .split("Box tipologie - facility points").join("Service-type boxes - facility points")
+      .split("Box prestazioni - region points").join("Service boxes - region points")
+      .split("Box tipologie - region points").join("Service-type boxes - region points")
+      .split("points = Struttura").join("points = Facility")
+      .split("Ogni box e una traccia separata e il filtro View decide come costruirlo").join("Each box is a separate trace and the View filter decides how to build it")
+      .split("I file PNLA struttura non pubblicano la provincia; per questo il livello disponibile qui e la struttura della first proposed availability").join("PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability")
+      .split("Il filtro Year sopra cambia il boxplot, mentre questo grafico usa tutti gli anni disponibili").join("The Year filter above changes the box plot, while this chart uses all available years")
+      .split("Le serie sono aggregate e pesate per bookings quando si selezionano piu prestazioni o priorita").join("Series are aggregated and weighted by bookings when multiple services or priorities are selected")
       .split("AGENAS Trova Facilities").join("AGENAS Trova Strutture");
     return output !== key ? output : null;
   }
