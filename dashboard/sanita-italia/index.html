@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260814-direct-compare-1">
-  <script defer src="../../assets/theme.js?v=20260814-direct-compare-1"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-waiting-quality-1">
+  <script defer src="../../assets/theme.js?v=20260817-waiting-quality-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260814-direct-compare-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-waiting-quality-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -430,6 +430,45 @@
         </div>
         <div id="hiWaitingRegionChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiWaitingRegionNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiWaitingQualityTitle">Indice qualit&agrave; liste d'attesa</h3><span id="hiWaitingQualityTag">PNLA</span></div>
+        <p id="hiWaitingQualitySubtitle" class="hi-card-subtitle">Boxplot territoriale con media nazionale, deviazione standard e aree oltre +/-1 DS.</p>
+        <div class="hi-chart-controls" aria-label="Filtri indice qualit&agrave; liste d'attesa">
+          <label>Anno
+            <select id="hiWaitingQualityYearFilter"></select>
+          </label>
+          <label>Tipo prestazione
+            <select id="hiWaitingQualityServiceTypeFilter"></select>
+          </label>
+          <label>Prestazione
+            <select id="hiWaitingQualityServiceFilter"></select>
+          </label>
+          <label>Priorit&agrave;
+            <select id="hiWaitingQualityPriorityFilter"></select>
+          </label>
+          <label>Regime
+            <select id="hiWaitingQualityRegimeFilter"></select>
+          </label>
+          <label>Tipo accesso
+            <select id="hiWaitingQualityAccessFilter"></select>
+          </label>
+          <label>Misura qualit&agrave;
+            <select id="hiWaitingQualityMetricFilter">
+              <option value="mean_first_available_days">Giorni medi alla prima disponibilit&agrave;</option>
+              <option value="mean_accepted_wait_days">Giorni medi all'appuntamento accettato</option>
+              <option value="within_target_percent">% entro soglia - prima disponibilit&agrave;</option>
+              <option value="accepted_within_target_percent">% entro soglia - appuntamento</option>
+            </select>
+          </label>
+          <label>Focus
+            <select id="hiWaitingQualityFocusFilter"></select>
+          </label>
+        </div>
+        <div id="hiWaitingQualitySummary" class="hi-profile-grid"></div>
+        <div id="hiWaitingQualityChart" class="hi-chart"></div>
+        <div id="hiWaitingQualityTable" class="hi-table-wrap"></div>
+        <p id="hiWaitingQualityNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiWaitingStructureTitle">Liste d'attesa per struttura</h3><span id="hiWaitingStructureTag">PNLA</span></div>

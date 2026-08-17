@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260814-direct-compare-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260814-direct-compare-1",
+    "../../data/sanita-italia/dashboard.json?v=20260817-waiting-quality-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-waiting-quality-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -49,6 +49,14 @@
     waitingAccess: "first",
     waitingMetric: "mean_first_available_days",
     waitingRegionFocus: "Italia",
+    waitingQualityYear: "latest",
+    waitingQualityServiceType: "all",
+    waitingQualityService: "33 - ESOFAGOGASTRODUODENOSCOPIA [EGDS]",
+    waitingQualityPriority: "B - Breve (10 giorni)",
+    waitingQualityRegime: "institutional",
+    waitingQualityAccess: "first",
+    waitingQualityMetric: "mean_first_available_days",
+    waitingQualityFocus: "Sardegna",
     waitingServiceRegion: "Italia",
     waitingServiceYear: "latest",
     waitingServiceType2: "all",
@@ -153,6 +161,7 @@
     "dischargeHospitalRegion", "dischargeHospitalProvince", "dischargeHospitalCategory", "dischargeHospitalLimit",
     "psRegion", "psRegionTriage", "psRegionMetric", "psStructureRegion", "psStructureProvince", "psStructure", "psStructureTriage", "psStructureLimit",
     "waitingYear", "waitingServiceType", "waitingService", "waitingPriority", "waitingRegime", "waitingAccess", "waitingMetric", "waitingRegionFocus",
+    "waitingQualityYear", "waitingQualityServiceType", "waitingQualityService", "waitingQualityPriority", "waitingQualityRegime", "waitingQualityAccess", "waitingQualityMetric", "waitingQualityFocus",
     "waitingServiceRegion", "waitingServiceYear", "waitingServiceType2", "waitingServicePriority", "waitingServiceRegime", "waitingServiceAccess", "waitingServiceMetric", "waitingServiceLimit",
     "waitingTrendRegion", "waitingTrendService", "waitingTrendPriority", "waitingTrendMetric",
     "waitingStructureRegion", "waitingStructureServiceType", "waitingStructureService", "waitingStructurePriority", "waitingStructureMetric", "waitingStructureLimit", "waitingStructureFocus",
@@ -709,6 +718,13 @@
     return number.toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   }
 
+  function formatSignedDecimal(value) {
+    var number = toNumber(value);
+    if (number === null) return MISSING;
+    var formatted = Math.abs(number).toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return (number > 0 ? "+" : (number < 0 ? "-" : "")) + formatted;
+  }
+
   function formatDurationMinutes(value) {
     var number = toNumber(value);
     if (number === null) return MISSING;
@@ -777,6 +793,7 @@
     if (/percent$/i.test(column)) return formatPercent(value);
     if (/denominator/i.test(column)) return denominatorLabel(value);
     if (/mean_.*days/i.test(column)) return formatDecimal(value);
+    if (column === "quality_score" || column === "z_score" || column === "national_sd") return formatSignedDecimal(value);
     if (column === "selected_value" || column === "value") return formatDecimal(value);
     if (/per_1000|avg_los|share|change|utilization/i.test(column)) return formatDecimal(value);
     if (/population|beds|discharges|cases|prevalence|days|total|structures|deaths|transfers|masked|year/i.test(column)) return formatNumber(value);
@@ -1090,8 +1107,8 @@
 
   function waitingStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260814-direct-compare-1",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260814-direct-compare-1",
+      "../../data/sanita-italia/" + path + "?v=20260817-waiting-quality-1",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260817-waiting-quality-1",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
@@ -1461,31 +1478,46 @@
 
   function refreshWaitingFilters(regionOptions) {
     fillSelect("hiWaitingYearFilter", waitingYearOptions(), STATE.waitingYear);
+    fillSelect("hiWaitingQualityYearFilter", waitingYearOptions(), STATE.waitingQualityYear);
     fillSelect("hiWaitingServiceYearFilter", waitingYearOptions(), STATE.waitingServiceYear);
     fillSelect("hiWaitingServiceTypeFilter", waitingServiceTypeOptions(), STATE.waitingServiceType);
+    fillSelect("hiWaitingQualityServiceTypeFilter", waitingServiceTypeOptions(), STATE.waitingQualityServiceType);
     fillSelect("hiWaitingServiceType2Filter", waitingServiceTypeOptions(), STATE.waitingServiceType2);
     fillSelect("hiWaitingPriorityFilter", waitingPriorityOptions(true), STATE.waitingPriority);
+    fillSelect("hiWaitingQualityPriorityFilter", waitingPriorityOptions(true), STATE.waitingQualityPriority);
     fillSelect("hiWaitingServicePriorityFilter", waitingPriorityOptions(true), STATE.waitingServicePriority);
     fillSelect("hiWaitingTrendPriorityFilter", waitingPriorityOptions(true), STATE.waitingTrendPriority);
     fillSelect("hiWaitingRegimeFilter", waitingRegimeOptions(), STATE.waitingRegime);
+    fillSelect("hiWaitingQualityRegimeFilter", waitingRegimeOptions(), STATE.waitingQualityRegime);
     fillSelect("hiWaitingServiceRegimeFilter", waitingRegimeOptions(), STATE.waitingServiceRegime);
     fillSelect("hiWaitingAccessFilter", waitingAccessOptions(), STATE.waitingAccess);
+    fillSelect("hiWaitingQualityAccessFilter", waitingAccessOptions(), STATE.waitingQualityAccess);
     fillSelect("hiWaitingServiceAccessFilter", waitingAccessOptions(), STATE.waitingServiceAccess);
     fillSelect("hiWaitingRegionFocusFilter", regionOptions, STATE.waitingRegionFocus);
+    var waitingQualityFocusOptions = regionOptions.filter(function (option) { return option.value !== "Italia"; });
+    if (!waitingQualityFocusOptions.some(function (option) { return option.value === STATE.waitingQualityFocus; })) {
+      STATE.waitingQualityFocus = waitingQualityFocusOptions[0] ? waitingQualityFocusOptions[0].value : "";
+    }
+    fillSelect("hiWaitingQualityFocusFilter", waitingQualityFocusOptions, STATE.waitingQualityFocus);
     fillSelect("hiWaitingServiceRegionFilter", regionOptions, STATE.waitingServiceRegion);
     fillSelect("hiWaitingTrendRegionFilter", regionOptions, STATE.waitingTrendRegion);
     refreshWaitingServiceFilter("hiWaitingServiceFilter", "waitingService", STATE.waitingServiceType, true);
+    refreshWaitingServiceFilter("hiWaitingQualityServiceFilter", "waitingQualityService", STATE.waitingQualityServiceType, true);
     refreshWaitingServiceFilter("hiWaitingTrendServiceFilter", "waitingTrendService", "all", true);
     refreshWaitingStructureFilters();
     refreshWaitingCompareFilters();
     var simpleSelects = [
       ["hiWaitingMetricFilter", "waitingMetric"],
+      ["hiWaitingQualityMetricFilter", "waitingQualityMetric"],
       ["hiWaitingServiceMetricFilter", "waitingServiceMetric"],
       ["hiWaitingServiceLimitFilter", "waitingServiceLimit"],
       ["hiWaitingTrendMetricFilter", "waitingTrendMetric"]
     ];
     simpleSelects.forEach(function (item) {
       var node = byId(item[0]);
+      if (node && item[1] === "waitingQualityMetric" && !Array.prototype.some.call(node.options, function (option) { return option.value === STATE.waitingQualityMetric; })) {
+        STATE.waitingQualityMetric = "mean_first_available_days";
+      }
       if (node) node.value = STATE[item[1]];
     });
   }
@@ -2553,6 +2585,14 @@
       ["hiWaitingAccessFilter", "waitingAccess"],
       ["hiWaitingMetricFilter", "waitingMetric"],
       ["hiWaitingRegionFocusFilter", "waitingRegionFocus"],
+      ["hiWaitingQualityYearFilter", "waitingQualityYear"],
+      ["hiWaitingQualityServiceTypeFilter", "waitingQualityServiceType"],
+      ["hiWaitingQualityServiceFilter", "waitingQualityService"],
+      ["hiWaitingQualityPriorityFilter", "waitingQualityPriority"],
+      ["hiWaitingQualityRegimeFilter", "waitingQualityRegime"],
+      ["hiWaitingQualityAccessFilter", "waitingQualityAccess"],
+      ["hiWaitingQualityMetricFilter", "waitingQualityMetric"],
+      ["hiWaitingQualityFocusFilter", "waitingQualityFocus"],
       ["hiWaitingServiceRegionFilter", "waitingServiceRegion"],
       ["hiWaitingServiceYearFilter", "waitingServiceYear"],
       ["hiWaitingServiceType2Filter", "waitingServiceType2"],
@@ -3253,6 +3293,7 @@
 
   function renderWaitingLists() {
     renderWaitingRegionChart();
+    renderWaitingQualityChart();
     renderWaitingStructureChart();
     renderWaitingCompareChart();
     renderWaitingServiceChart();
@@ -3381,6 +3422,226 @@
     setChartCredit("hiWaitingCompareNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
     ], "Confronto diretto su " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso. La struttura indica la prima disponibilita proposta nel monitoraggio PNLA; leggere sempre i tempi insieme alle prenotazioni.");
+  }
+
+  function waitingQualityMetricConfig(metric) {
+    if (metric === "bookings") metric = "mean_first_available_days";
+    var config = waitingMetricConfig(metric);
+    var percentMetric = config.field.indexOf("percent") >= 0;
+    return Object.assign({}, config, {
+      higherIsBetter: percentMetric,
+      qualityDirection: percentMetric ? 1 : -1,
+      spreadUnit: percentMetric ? "punti percentuali" : config.xTitle,
+      qualityRule: percentMetric ? "valori piu alti sono migliori" : "valori piu bassi sono migliori"
+    });
+  }
+
+  function mean(values) {
+    values = toArray(values).filter(function (value) {
+      return toNumber(value) !== null;
+    }).map(toNumber);
+    if (!values.length) return null;
+    return values.reduce(function (total, value) { return total + value; }, 0) / values.length;
+  }
+
+  function standardDeviation(values, avg) {
+    values = toArray(values).filter(function (value) {
+      return toNumber(value) !== null;
+    }).map(toNumber);
+    if (values.length < 2 || avg === null) return null;
+    var variance = values.reduce(function (total, value) {
+      return total + Math.pow(value - avg, 2);
+    }, 0) / values.length;
+    return Math.sqrt(variance);
+  }
+
+  function waitingQualityStatus(score) {
+    if (toNumber(score) === null) return "non valutabile";
+    if (score >= 1) return "meglio della media";
+    if (score <= -1) return "peggio della media";
+    return "in linea";
+  }
+
+  function waitingQualityColor(score) {
+    if (toNumber(score) === null) return COLORS[7];
+    if (score >= 1) return COLORS[3];
+    if (score <= -1) return COLORS[5];
+    return COLORS[1];
+  }
+
+  function waitingQualitySettings() {
+    return {
+      year: STATE.waitingQualityYear,
+      serviceType: STATE.waitingQualityServiceType,
+      service: STATE.waitingQualityService,
+      priority: STATE.waitingQualityPriority,
+      regime: STATE.waitingQualityRegime,
+      access: STATE.waitingQualityAccess
+    };
+  }
+
+  function waitingQualityRows(config) {
+    var rows = aggregateWaitingRows(filterWaitingRows(waitingQualitySettings()), function (row) {
+      return row.region;
+    }, function (row) {
+      return row.region;
+    }).map(function (row) {
+      row.region = row.label;
+      row.selected_value = toNumber(row[config.field]);
+      return row;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+    var values = rows.map(function (row) { return row.selected_value; });
+    var avg = mean(values);
+    var sd = standardDeviation(values, avg);
+    rows.forEach(function (row) {
+      var rawScore = sd ? (row.selected_value - avg) / sd : null;
+      var qualityScore = rawScore === null ? null : rawScore * config.qualityDirection;
+      row.national_mean = avg;
+      row.national_sd = sd;
+      row.quality_score = qualityScore;
+      row.quality_status = waitingQualityStatus(qualityScore);
+      row.selected_value_text = config.format(row.selected_value);
+      row.national_mean_text = config.format(avg);
+      row.national_sd_text = sd === null ? MISSING : (formatDecimal(sd) + " " + config.spreadUnit);
+      row.quality_score_text = qualityScore === null ? MISSING : formatSignedDecimal(qualityScore) + " DS";
+    });
+    return rows.sort(function (a, b) {
+      return (toNumber(b.quality_score) || -99) - (toNumber(a.quality_score) || -99);
+    });
+  }
+
+  function renderWaitingQualitySummary(rows, config) {
+    var container = byId("hiWaitingQualitySummary");
+    clear(container);
+    var focus = rows.find(function (row) { return row.region === STATE.waitingQualityFocus; });
+    var avg = rows.length ? rows[0].national_mean : null;
+    var sd = rows.length ? rows[0].national_sd : null;
+    var better = rows.filter(function (row) { return toNumber(row.quality_score) !== null && row.quality_score >= 1; });
+    var worse = rows.filter(function (row) { return toNumber(row.quality_score) !== null && row.quality_score <= -1; });
+    [
+      ["Media aree", config.format(avg), "media semplice tra regioni e province autonome"],
+      ["Deviazione standard", sd === null ? MISSING : formatDecimal(sd) + " " + config.spreadUnit, "soglia outlier: almeno +/-1 DS"],
+      ["Meglio della media", formatNumber(better.length), better.slice(0, 3).map(function (row) { return row.region; }).join(", ") || "nessuna area oltre +1 DS"],
+      ["Peggio della media", formatNumber(worse.length), worse.slice(-3).map(function (row) { return row.region; }).join(", ") || "nessuna area sotto -1 DS"],
+      ["Focus", focus ? focus.region : asText(STATE.waitingQualityFocus), focus ? focus.quality_score_text + " - " + focus.quality_status : "area non disponibile nei filtri"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function renderWaitingQualityChart() {
+    var config = waitingQualityMetricConfig(STATE.waitingQualityMetric);
+    var settings = waitingQualitySettings();
+    var rows = waitingQualityRows(config);
+    var serviceText = waitingServiceText(STATE.waitingQualityService, STATE.waitingQualityServiceType);
+    var priorityText = waitingPriorityText(STATE.waitingQualityPriority);
+    var title = byId("hiWaitingQualityTitle");
+    if (title) title.textContent = "Indice qualita liste d'attesa - " + config.label;
+    setSubtitle("hiWaitingQualitySubtitle", "Distribuzione territoriale e score rispetto alla media nazionale. Filtro: " + serviceText + ", " + priorityText + ", " + waitingRegimeText(STATE.waitingQualityRegime) + ", " + waitingAccessText(STATE.waitingQualityAccess) + ".");
+    setTag("hiWaitingQualityTag", "PNLA " + asText(waitingYearValue(STATE.waitingQualityYear)) + " - +/-1 DS");
+    renderWaitingQualitySummary(rows, config);
+
+    if (rows.length < 2) {
+      showEmptyChart("hiWaitingQualityChart", "Servono almeno due aree confrontabili per calcolare deviazione standard e boxplot");
+      createTable("hiWaitingQualityTable", rows, [
+        ["region", "Area"],
+        ["selected_value_text", config.label],
+        ["bookings", "Prenotazioni"]
+      ], 80);
+      return;
+    }
+
+    var avg = rows[0].national_mean;
+    var sd = rows[0].national_sd;
+    var values = rows.map(function (row) { return row.selected_value; });
+    var shapes = [];
+    var annotations = [];
+    function referenceLine(value, label, color, dash) {
+      if (toNumber(value) === null) return;
+      shapes.push({
+        type: "line",
+        xref: "paper",
+        x0: 0,
+        x1: 1,
+        y0: value,
+        y1: value,
+        line: { color: color, width: 2, dash: dash || "dash" }
+      });
+      annotations.push({
+        xref: "paper",
+        yref: "y",
+        x: 1,
+        y: value,
+        xanchor: "right",
+        yanchor: "bottom",
+        text: label,
+        showarrow: false,
+        font: { size: 11, color: color }
+      });
+    }
+    referenceLine(avg, "media", COLORS[0], "dash");
+    if (sd) {
+      referenceLine(avg + sd, "+1 DS", COLORS[5], "dot");
+      referenceLine(avg - sd, "-1 DS", COLORS[3], "dot");
+    }
+
+    plot("hiWaitingQualityChart", [
+      {
+        type: "box",
+        name: "Distribuzione aree",
+        x: values.map(function () { return "Aree"; }),
+        y: values,
+        boxpoints: false,
+        fillcolor: "rgba(160,160,160,.16)",
+        line: { color: cssVar("--muted", "#b9b2aa") },
+        marker: { color: cssVar("--muted", "#b9b2aa") },
+        hoverinfo: "skip"
+      },
+      {
+        type: "scatter",
+        mode: "markers",
+        name: "Aree",
+        x: rows.map(function () { return "Aree"; }),
+        y: values,
+        text: rows.map(function (row) { return row.region; }),
+        customdata: rows.map(function (row) {
+          return [row.selected_value_text, row.quality_score_text, row.quality_status, row.bookings];
+        }),
+        marker: {
+          color: rows.map(function (row) { return row.region === STATE.waitingQualityFocus ? COLORS[0] : waitingQualityColor(row.quality_score); }),
+          size: rows.map(function (row) { return row.region === STATE.waitingQualityFocus ? 12 : 8; }),
+          opacity: .9,
+          line: { color: cssVar("--panel", "#090909"), width: 1 }
+        },
+        hovertemplate: "<b>%{text}</b><br>" + config.label + ": %{customdata[0]}<br>Indice qualita: %{customdata[1]}<br>Esito: %{customdata[2]}<br>Prenotazioni: %{customdata[3]:,.0f}<extra></extra>"
+      }
+    ], {
+      showlegend: false,
+      margin: { t: 20, r: 36, b: 60, l: 86 },
+      xaxis: { title: "", showgrid: false },
+      yaxis: { title: config.xTitle },
+      shapes: shapes,
+      annotations: annotations
+    });
+
+    createTable("hiWaitingQualityTable", rows, [
+      ["region", "Area"],
+      ["selected_value_text", config.label],
+      ["national_mean_text", "Media aree"],
+      ["national_sd_text", "Deviazione standard"],
+      ["quality_score_text", "Indice qualita"],
+      ["quality_status", "Lettura"],
+      ["bookings", "Prenotazioni"]
+    ], 80);
+    setChartCredit("hiWaitingQualityNote", [
+      { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
+    ], waitingSourceNote(settings, "Indice descrittivo calcolato come z-score rispetto alla distribuzione delle regioni e province autonome: +1 DS o piu indica performance migliore della media per la misura scelta, -1 DS o meno indica performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. Non e un indicatore clinico risk-adjusted."));
   }
 
   function renderWaitingRegionChart() {
