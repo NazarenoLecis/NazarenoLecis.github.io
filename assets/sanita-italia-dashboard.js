@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260817-pnla-notes-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-pnla-notes-1",
+    "../../data/sanita-italia/dashboard.json?v=20260817-pnla-priority-note-2",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-pnla-priority-note-2",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -3373,6 +3373,56 @@
     return parts.join(", ") + ". " + extra;
   }
 
+  function waitingPriorityTargetDays(label) {
+    if (!label) return null;
+    if (label.indexOf("U -") === 0) return 3;
+    if (label.indexOf("B -") === 0) return 10;
+    if (label.indexOf("D - Differita prime visite") === 0) return 30;
+    if (label.indexOf("D -") === 0) return 60;
+    if (label.indexOf("P -") === 0) return 120;
+    return null;
+  }
+
+  function waitingPriorityThresholdNote(settings, config) {
+    var base = "Le soglie tra parentesi nelle priorita PNLA sono obiettivi massimi, non tempi medi garantiti: U=3 giorni, B=10 giorni, D=30/60 giorni, P=120 giorni.";
+    if (!settings || !config || config.field.indexOf("days") === -1 || !settings.service || settings.service === "all") return base;
+    var comparisonSettings = Object.assign({}, settings, { priority: "all" });
+    var rows = aggregateWaitingRows(filterWaitingRows(comparisonSettings), function (row) {
+      return row.priority_label;
+    }, function (row) {
+      return row.priority_label;
+    }).map(function (row) {
+      row.priority_label = row.label;
+      row.target_days = waitingPriorityTargetDays(row.label);
+      row.selected_value = toNumber(row[config.field]);
+      return row;
+    }).filter(function (row) {
+      return row.target_days !== null && toNumber(row.selected_value) !== null;
+    }).sort(function (a, b) {
+      return a.target_days - b.target_days;
+    });
+    var inversions = [];
+    rows.forEach(function (urgent) {
+      rows.forEach(function (lessUrgent) {
+        if (urgent.target_days >= lessUrgent.target_days) return;
+        if (urgent.selected_value <= lessUrgent.selected_value + 0.05) return;
+        inversions.push({
+          urgent: urgent,
+          lessUrgent: lessUrgent,
+          gap: urgent.selected_value - lessUrgent.selected_value
+        });
+      });
+    });
+    if (!inversions.length) return base;
+    var selectedPriority = settings.priority && settings.priority !== "all" ? settings.priority : "";
+    var chosen = inversions.find(function (item) {
+      return item.urgent.priority_label === selectedPriority || item.lessUrgent.priority_label === selectedPriority;
+    }) || inversions.sort(function (a, b) {
+      return b.gap - a.gap;
+    })[0];
+    return base + " In questa selezione " + chosen.urgent.priority_label + " risulta " + config.format(chosen.urgent.selected_value) + " contro " + chosen.lessUrgent.priority_label + ": " + config.format(chosen.lessUrgent.selected_value) + ". Non e un'inversione del filtro, ma il tempo medio osservato nella fonte. Leggere sempre insieme a prenotazioni e percentuale entro soglia.";
+  }
+
   function waitingStructureSourceNote(extra) {
     var parts = ["Anno " + asText(waitingStructureYear()), "Regione: " + STATE.waitingStructureRegion];
     if (STATE.waitingStructureService && STATE.waitingStructureService !== "all") parts.push(waitingServiceLabel(STATE.waitingStructureService));
@@ -3485,7 +3535,7 @@
     ], 2);
     setChartCredit("hiWaitingCompareNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], "Confronto diretto su " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso. Le barre mostrano la misura selezionata per le due strutture; la tabella sotto aggiunge prenotazioni e quote entro soglia. La struttura indica la prima disponibilita proposta nel monitoraggio PNLA, non una matrice di mobilita sanitaria.");
+    ], "Confronto diretto su " + serviceText + ", " + priorityText + ", Istituzionale, Primo accesso. Le barre mostrano la misura selezionata per le due strutture; la tabella sotto aggiunge prenotazioni e quote entro soglia. La struttura indica la prima disponibilita proposta nel monitoraggio PNLA, non una matrice di mobilita sanitaria. " + waitingPriorityThresholdNote(null, config));
   }
 
   function waitingQualityMetricConfig(metric) {
@@ -3623,7 +3673,7 @@
     renderWaitingQualitySummary(rows, config);
     setChartCredit("hiWaitingQualityNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingSourceNote(settings, "Indice descrittivo calcolato come z-score rispetto alla distribuzione delle regioni e province autonome: +1 DS o piu indica performance migliore della media per la misura scelta, -1 DS o meno indica performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. La tabella sotto riporta valori, media, deviazione standard e lettura per area. Non e un indicatore clinico risk-adjusted."));
+    ], waitingSourceNote(settings, "Indice descrittivo calcolato come z-score rispetto alla distribuzione delle regioni e province autonome: +1 DS o piu indica performance migliore della media per la misura scelta, -1 DS o meno indica performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. La tabella sotto riporta valori, media, deviazione standard e lettura per area. Non e un indicatore clinico risk-adjusted. " + waitingPriorityThresholdNote(settings, config)));
 
     if (rows.length < 2) {
       showEmptyChart("hiWaitingQualityChart", "Servono almeno due aree confrontabili per calcolare deviazione standard e boxplot");
@@ -3756,9 +3806,10 @@
       color: config.field.indexOf("percent") !== -1 ? COLORS[3] : COLORS[1],
       hovertemplate: "%{y}<br>" + config.label + ": %{text}<br>Prenotazioni: %{customdata.bookings:,.0f}<extra></extra>"
     });
+    var noteSettings = Object.assign({}, settings, { region: STATE.waitingRegionFocus });
     setChartCredit("hiWaitingRegionNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingSourceNote(settings, "La prima disponibilita proposta indica il primo slot rilevato dal sistema; l'appuntamento accettato e il tempo effettivamente scelto o assegnato. Le due misure possono divergere. Le aggregazioni su piu prestazioni o priorita sono pesate per numero di prenotazioni."));
+    ], waitingSourceNote(settings, "La prima disponibilita proposta indica il primo slot rilevato dal sistema; l'appuntamento accettato e il tempo effettivamente scelto o assegnato. Le due misure possono divergere. Le aggregazioni su piu prestazioni o priorita sono pesate per numero di prenotazioni. La nota sulle soglie legge il territorio evidenziato: " + STATE.waitingRegionFocus + ". " + waitingPriorityThresholdNote(noteSettings, config)));
   }
 
   function renderWaitingStructureChart() {
@@ -3845,7 +3896,15 @@
     ], structureLimit);
     setChartCredit("hiWaitingStructureNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingStructureSourceNote("Il grafico ordina le strutture secondo la misura scelta. La prima disponibilita proposta non coincide necessariamente con l'appuntamento accettato dal cittadino; la tabella sotto riporta anche prenotazioni e quote entro soglia. Non e una matrice di mobilita sanitaria: indica offerta rilevata, non origine-destinazione dei pazienti. I confronti ospedalieri vanno letti insieme ai volumi."));
+    ], waitingStructureSourceNote("Il grafico ordina le strutture secondo la misura scelta. La prima disponibilita proposta non coincide necessariamente con l'appuntamento accettato dal cittadino; la tabella sotto riporta anche prenotazioni e quote entro soglia. Non e una matrice di mobilita sanitaria: indica offerta rilevata, non origine-destinazione dei pazienti. I confronti ospedalieri vanno letti insieme ai volumi. " + waitingPriorityThresholdNote({
+      year: waitingStructureYear(),
+      region: STATE.waitingStructureRegion,
+      serviceType: STATE.waitingStructureServiceType,
+      service: STATE.waitingStructureService,
+      priority: STATE.waitingStructurePriority,
+      regime: "institutional",
+      access: "first"
+    }, config)));
   }
 
   function renderWaitingServiceChart() {
@@ -3896,7 +3955,7 @@
     ], chartLimit(STATE.waitingServiceLimit, 20));
     setChartCredit("hiWaitingServiceNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], waitingSourceNote(settings, "Il grafico ordina le prestazioni secondo la misura selezionata: per i giorni mostra le attese piu lunghe, per le percentuali mette in evidenza le quote piu basse di rispetto dei tempi, per le prenotazioni mostra i volumi. La tabella sotto aggiunge prenotazioni, rispetto soglia e tempi medi."));
+    ], waitingSourceNote(settings, "Il grafico ordina le prestazioni secondo la misura selezionata: per i giorni mostra le attese piu lunghe, per le percentuali mette in evidenza le quote piu basse di rispetto dei tempi, per le prenotazioni mostra i volumi. La tabella sotto aggiunge prenotazioni, rispetto soglia e tempi medi. " + waitingPriorityThresholdNote(settings, config)));
   }
 
   function renderWaitingTrendChart() {
@@ -3949,7 +4008,14 @@
     }
     setChartCredit("hiWaitingTrendNote", [
       { id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }
-    ], "Anno " + asText(trendYear) + ", Territorio: " + STATE.waitingTrendRegion + ", " + serviceText + ", " + waitingPriorityText(STATE.waitingTrendPriority) + ", Istituzionale, Primo accesso. La serie serve a seguire la direzione nel tempo, non a stimare la mobilita sanitaria origine-destinazione.");
+    ], "Anno " + asText(trendYear) + ", Territorio: " + STATE.waitingTrendRegion + ", " + serviceText + ", " + waitingPriorityText(STATE.waitingTrendPriority) + ", Istituzionale, Primo accesso. La serie serve a seguire la direzione nel tempo, non a stimare la mobilita sanitaria origine-destinazione. " + waitingPriorityThresholdNote({
+      year: trendYear,
+      region: STATE.waitingTrendRegion,
+      service: serviceId,
+      priority: STATE.waitingTrendPriority,
+      regime: "institutional",
+      access: "first"
+    }, config));
   }
 
   function healthColor(group) {
