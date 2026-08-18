@@ -3295,6 +3295,40 @@
     ["Il dettaglio PNLA per struttura e disponibile solo per il 2026", "PNLA facility detail is available only for 2026"],
     ["nelle viste con punti struttura lo storico resta quindi regionale, non ospedaliero", "in views with facility points, the history therefore remains regional, not hospital-level"],
     ["Nessuno storico disponibile per questa selezione", "No history available for this selection"],
+    ["Indice mortalita per causa", "Mortality index by cause"],
+    ["Indice mortalità per causa", "Mortality index by cause"],
+    ["Boxplot dei tassi standardizzati: scegli se costruire box per regione o box per causa", "Box plot of standardised rates: choose whether to build boxes by region or by cause"],
+    ["Filtri indice mortalita Eurostat", "Eurostat mortality-index filters"],
+    ["Box regioni - punti cause", "Region boxes - cause points"],
+    ["Box cause - punti regioni", "Cause boxes - region points"],
+    ["Tutte le cause del gruppo", "All causes in the group"],
+    ["Indice mortalita", "Mortality index"],
+    ["Indice mortalità", "Mortality index"],
+    ["Tasso standardizzato", "Standardised rate"],
+    ["Diff. Italia", "Diff. Italy"],
+    ["ICD-10", "ICD-10"],
+    ["Indice mortalita - box regioni, punti cause", "Mortality index - region boxes, cause points"],
+    ["Indice mortalita - box cause, punti regioni", "Mortality index - cause boxes, region points"],
+    ["Ogni box e una causa ICD-10", "Each box is an ICD-10 cause"],
+    ["Ogni box e una regione o provincia autonoma", "Each box is a region or autonomous province"],
+    ["ogni punto e una causa ICD-10 del gruppo selezionato", "each point is an ICD-10 cause in the selected group"],
+    ["ogni punto e una regione o provincia autonoma", "each point is a region or autonomous province"],
+    ["L'indice confronta ogni punto con la media regionale della stessa causa nello stesso anno", "The index compares each point with the regional mean for the same cause in the same year"],
+    ["valori positivi indicano tassi piu bassi della media", "positive values indicate rates below the mean"],
+    ["valori negativi tassi piu alti", "negative values indicate higher rates"],
+    ["indice mortalita (deviazioni standard)", "mortality index (standard deviations)"],
+    ["meglio: +1 DS", "better: +1 SD"],
+    ["peggio: -1 DS", "worse: -1 SD"],
+    ["Indice medio", "Mean index"],
+    ["media degli indici visualizzati", "mean of displayed indices"],
+    ["dispersione degli indici visualizzati", "dispersion of displayed indices"],
+    ["regioni x cause visualizzate", "displayed regions x causes"],
+    ["territorio non presente nei filtri", "area not present in the filters"],
+    ["tutte le cause del gruppo", "all causes in the group"],
+    ["L'indice e uno z-score descrittivo calcolato separatamente per ogni causa sui territori regionali disponibili", "The index is a descriptive z-score calculated separately for each cause across the available regional areas"],
+    ["+1 DS o piu indica un tasso almeno una deviazione standard sotto la media regionale della stessa causa", "+1 SD or more indicates a rate at least one standard deviation below the regional mean for the same cause"],
+    ["-1 DS o meno indica un tasso sopra la media", "-1 SD or less indicates a rate above the mean"],
+    ["La fonte misura mortalita per residenza e causa ICD-10, non mortalita post-intervento PNE, non qualita clinica risk-adjusted dell'ospedale e non flussi di pazienti", "The source measures mortality by residence and ICD-10 cause, not PNE post-intervention mortality, not risk-adjusted hospital clinical quality and not patient flows"],
     ["Distribuzione delle regioni rispetto alla media delle aree con evidenza di chi performa meglio o peggio di almeno una deviazione standard", "Distribution of regions against the area mean, highlighting those performing better or worse by at least one standard deviation"],
     ["Distribuzione delle strutture filtrate per territorio, livello PS/DEA e codice triage", "Distribution of facilities filtered by area, ED/DEA level and triage code"],
     ["la struttura selezionata viene evidenziata nel confronto", "the selected facility is highlighted in the comparison"],
@@ -3447,6 +3481,19 @@
       .split("Box tipologie - facility points").join("Service-type boxes - facility points")
       .split("Box prestazioni - region points").join("Service boxes - region points")
       .split("Box tipologie - region points").join("Service-type boxes - region points")
+      .split("Box cause - region points").join("Cause boxes - region points")
+      .split("Box regioni - cause points").join("Region boxes - cause points")
+      .split("Mortality index - box regioni, punti cause").join("Mortality index - region boxes, cause points")
+      .split("Mortality index - box cause, punti regioni").join("Mortality index - cause boxes, region points")
+      .split("Mortality index - box cause, region points").join("Mortality index - cause boxes, region points")
+      .split("Mortality index - box regioni, cause points").join("Mortality index - region boxes, cause points")
+      .split("box regioni, punti cause").join("region boxes, cause points")
+      .split("box cause, punti regioni").join("cause boxes, region points")
+      .split("indice mortalita (deviazioni standard)").join("mortality index (standard deviations)")
+      .split("gruppo:").join("group:")
+      .split("causa:").join("cause:")
+      .split("+1 SD o piu indica un tasso almeno una deviazione standard sotto la mean regionale della stessa causa").join("+1 SD or more indicates a rate at least one standard deviation below the regional mean for the same cause")
+      .split("-1 SD o meno indica un tasso sopra la mean").join("-1 SD or less indicates a rate above the mean")
       .split("points = Struttura").join("points = Facility")
       .split("Ogni box e una traccia separata e il filtro View decide come costruirlo").join("Each box is a separate trace and the View filter decides how to build it")
       .split("I file PNLA struttura non pubblicano la provincia; per questo il livello disponibile qui e la struttura della first proposed availability").join("PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability")

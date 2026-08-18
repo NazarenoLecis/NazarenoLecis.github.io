@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260817-matrix-boxplots-4">
-  <script defer src="../../assets/theme.js?v=20260817-matrix-boxplots-4"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-mortality-quality-1">
+  <script defer src="../../assets/theme.js?v=20260818-mortality-quality-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260817-matrix-boxplots-4"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-mortality-quality-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -317,6 +317,41 @@
         <div id="hiMortalityDetailChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiMortalityDetailNote" class="hi-chart-credit">Fonte: Eurostat hlth_cd_asdr2. Elaborazione di Nazareno Lecis.</p>
         <div id="hiMortalityDetailTable" class="hi-table-wrap"></div>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiMortalityQualityTitle">Indice mortalit&agrave; per causa</h3><span id="hiMortalityQualityTag">Eurostat</span></div>
+        <p id="hiMortalityQualitySubtitle" class="hi-card-subtitle">Boxplot dei tassi standardizzati: scegli se costruire box per regione o box per causa.</p>
+        <div class="hi-chart-controls" aria-label="Filtri indice mortalita Eurostat">
+          <label>Vista
+            <select id="hiMortalityQualityLayoutFilter">
+              <option value="region_cause">Box regioni - punti cause</option>
+              <option value="cause_region">Box cause - punti regioni</option>
+            </select>
+          </label>
+          <label>Gruppo
+            <select id="hiMortalityQualityGroupFilter"></select>
+          </label>
+          <label>Causa
+            <select id="hiMortalityQualityCauseFilter"></select>
+          </label>
+          <label>Anno
+            <select id="hiMortalityQualityYearFilter"></select>
+          </label>
+          <label>Focus
+            <select id="hiMortalityQualityFocusFilter"></select>
+          </label>
+          <label>Numero box
+            <select id="hiMortalityQualityLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="all">Tutti</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiMortalityQualitySummary" class="hi-profile-grid"></div>
+        <div id="hiMortalityQualityChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiMortalityQualityNote" class="hi-chart-credit">Fonte: Eurostat hlth_cd_asdr2. Elaborazione di Nazareno Lecis.</p>
+        <div id="hiMortalityQualityTable" class="hi-table-wrap"></div>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiMortalityDetailTrendTitle">Serie storica mortalit&agrave; dettagliata</h3><span id="hiMortalityDetailTrendTag">Eurostat</span></div>

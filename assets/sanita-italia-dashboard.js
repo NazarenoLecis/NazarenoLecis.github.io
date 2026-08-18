@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260817-matrix-boxplots-4",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260817-matrix-boxplots-4",
+    "../../data/sanita-italia/dashboard.json?v=20260818-mortality-quality-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-mortality-quality-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -119,6 +119,12 @@
     mortalityDetailTrendTerritory: "Italia",
     mortalityDetailTrendGroup: "cancer_detail",
     mortalityDetailTrendCause: "C25",
+    mortalityQualityLayout: "region_cause",
+    mortalityQualityGroup: "cancer_detail",
+    mortalityQualityCause: "all",
+    mortalityQualityYear: "latest",
+    mortalityQualityFocus: "Sardegna",
+    mortalityQualityLimit: "20",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -176,6 +182,7 @@
     "cancerRecentMetric", "cancerRecentSite",
     "mortalityGroup", "mortalityIndicator", "mortalityYear", "mortalityTerritoryFocus", "mortalityProfileTerritory", "mortalityProfileGroup", "mortalityProfileYear", "mortalityTrendTerritory", "mortalityTrendGroup", "mortalityTrendIndicator",
     "mortalityDetailGroup", "mortalityDetailCause", "mortalityDetailYear", "mortalityDetailTerritoryFocus", "mortalityDetailTrendTerritory", "mortalityDetailTrendGroup", "mortalityDetailTrendCause",
+    "mortalityQualityLayout", "mortalityQualityGroup", "mortalityQualityCause", "mortalityQualityYear", "mortalityQualityFocus", "mortalityQualityLimit",
     "disciplineRegion", "disciplineProvince", "disciplineMetric", "denominator",
     "costRegion", "costRatio", "costType", "costCompositionRegion", "bedsSeriesRegion", "bedsSeriesMetric", "bedsSeriesRatio", "pharmaRegion", "pharmaLabel",
     "hospitalRegion", "hospitalProvince", "hospitalDiscipline", "hospitalDepartmentRegion", "hospitalDepartmentProvince", "hospitalDepartmentStructure", "hospitalDepartmentMetric", "hospitalDepartmentLimit",
@@ -825,6 +832,18 @@
   function clear(node) {
     if (!node) return;
     while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function currentLanguageIsEnglish() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get("lang") === "en") return true;
+      if (params.get("lang") === "it") return false;
+    } catch (error) {}
+    try {
+      return localStorage.getItem("siteLanguage") === "en";
+    } catch (error) {}
+    return document.documentElement.lang === "en";
   }
 
   function create(tag, className, text) {
@@ -2361,9 +2380,39 @@
     return toNumber(value);
   }
 
+  function mortalityQualityCauseOptions(group) {
+    return [{ value: "all", label: "Tutte le cause del gruppo" }].concat(mortalityDetailCauseOptions(group));
+  }
+
+  function mortalityQualityYears(group, causeCode) {
+    var years = unique(mortalityDetailRows().filter(function (row) {
+      if (row.territory_type !== "region") return false;
+      if (group && row.group !== group) return false;
+      if (causeCode && causeCode !== "all" && row.cause_code !== causeCode) return false;
+      return true;
+    }).map(function (row) { return row.year; })).sort(function (a, b) { return b - a; });
+    return years;
+  }
+
+  function mortalityQualityYearOptions(group, causeCode) {
+    var years = mortalityQualityYears(group, causeCode);
+    return [{ value: "latest", label: "Ultimo anno con regioni" }].concat(years.map(function (year) {
+      return { value: String(year), label: String(year) };
+    }));
+  }
+
+  function mortalityQualityYearValue(value, group, causeCode) {
+    if (value === "latest") {
+      var years = mortalityQualityYears(group, causeCode);
+      return years.length ? years[0] : null;
+    }
+    return toNumber(value);
+  }
+
   function refreshMortalityDetailFilters() {
     var groupOptions = mortalityDetailGroups();
     var territoryOptions = mortalityDetailTerritoryOptions();
+    var regionOptions = territoryOptions.filter(function (option) { return option.value !== "Italia"; });
     if (!groupOptions.some(function (option) { return option.value === STATE.mortalityDetailGroup; })) {
       STATE.mortalityDetailGroup = groupOptions[0] ? groupOptions[0].value : "cancer_detail";
     }
@@ -2383,6 +2432,11 @@
     if (!territoryOptions.some(function (option) { return option.value === STATE.mortalityDetailTerritoryFocus; })) STATE.mortalityDetailTerritoryFocus = "Italia";
     if (!territoryOptions.some(function (option) { return option.value === STATE.mortalityDetailTrendTerritory; })) STATE.mortalityDetailTrendTerritory = "Italia";
     if (!mortalityDetailYearOptions(STATE.mortalityDetailCause, true).some(function (option) { return option.value === STATE.mortalityDetailYear; })) STATE.mortalityDetailYear = "latest";
+    if (!groupOptions.some(function (option) { return option.value === STATE.mortalityQualityGroup; })) STATE.mortalityQualityGroup = "cancer_detail";
+    var qualityCauseOptions = mortalityQualityCauseOptions(STATE.mortalityQualityGroup);
+    if (!qualityCauseOptions.some(function (option) { return option.value === STATE.mortalityQualityCause; })) STATE.mortalityQualityCause = "all";
+    if (!mortalityQualityYearOptions(STATE.mortalityQualityGroup, STATE.mortalityQualityCause).some(function (option) { return option.value === STATE.mortalityQualityYear; })) STATE.mortalityQualityYear = "latest";
+    if (!regionOptions.some(function (option) { return option.value === STATE.mortalityQualityFocus; })) STATE.mortalityQualityFocus = regionOptions[0] ? regionOptions[0].value : "";
 
     fillSelect("hiMortalityDetailGroupFilter", groupOptions, STATE.mortalityDetailGroup);
     fillSelect("hiMortalityDetailCauseFilter", causeOptions, STATE.mortalityDetailCause);
@@ -2391,6 +2445,17 @@
     fillSelect("hiMortalityDetailTrendTerritoryFilter", territoryOptions, STATE.mortalityDetailTrendTerritory);
     fillSelect("hiMortalityDetailTrendGroupFilter", groupOptions, STATE.mortalityDetailTrendGroup);
     fillSelect("hiMortalityDetailTrendCauseFilter", trendCauseOptions, STATE.mortalityDetailTrendCause);
+    fillSelect("hiMortalityQualityGroupFilter", groupOptions, STATE.mortalityQualityGroup);
+    fillSelect("hiMortalityQualityCauseFilter", qualityCauseOptions, STATE.mortalityQualityCause);
+    fillSelect("hiMortalityQualityYearFilter", mortalityQualityYearOptions(STATE.mortalityQualityGroup, STATE.mortalityQualityCause), STATE.mortalityQualityYear);
+    fillSelect("hiMortalityQualityFocusFilter", regionOptions, STATE.mortalityQualityFocus);
+    [
+      ["hiMortalityQualityLayoutFilter", "mortalityQualityLayout"],
+      ["hiMortalityQualityLimitFilter", "mortalityQualityLimit"]
+    ].forEach(function (item) {
+      var node = byId(item[0]);
+      if (node) node.value = STATE[item[1]];
+    });
   }
 
   function formatMortalityDetailValue(value) {
@@ -2712,6 +2777,12 @@
       ["hiMortalityDetailTrendTerritoryFilter", "mortalityDetailTrendTerritory"],
       ["hiMortalityDetailTrendGroupFilter", "mortalityDetailTrendGroup"],
       ["hiMortalityDetailTrendCauseFilter", "mortalityDetailTrendCause"],
+      ["hiMortalityQualityLayoutFilter", "mortalityQualityLayout"],
+      ["hiMortalityQualityGroupFilter", "mortalityQualityGroup"],
+      ["hiMortalityQualityCauseFilter", "mortalityQualityCause"],
+      ["hiMortalityQualityYearFilter", "mortalityQualityYear"],
+      ["hiMortalityQualityFocusFilter", "mortalityQualityFocus"],
+      ["hiMortalityQualityLimitFilter", "mortalityQualityLimit"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -4879,7 +4950,269 @@
 
   function renderMortalityDetail() {
     renderMortalityDetailTerritoryChart();
+    renderMortalityQualityChart();
     renderMortalityDetailTrendChart();
+  }
+
+  function mortalityQualitySpec() {
+    if (STATE.mortalityQualityLayout === "cause_region") {
+      return {
+        group: "cause",
+        point: "region",
+        groupLabel: "Causa",
+        pointLabel: "Regione",
+        title: "Indice mortalita - box cause, punti regioni",
+        subtitle: "Ogni box e una causa ICD-10; ogni punto e una regione o provincia autonoma."
+      };
+    }
+    return {
+      group: "region",
+      point: "cause",
+      groupLabel: "Regione",
+      pointLabel: "Causa",
+      title: "Indice mortalita - box regioni, punti cause",
+      subtitle: "Ogni box e una regione o provincia autonoma; ogni punto e una causa ICD-10 del gruppo selezionato."
+    };
+  }
+
+  function mortalityQualityPlotCopy(spec) {
+    var english = currentLanguageIsEnglish();
+    return {
+      groupLabel: english ? (spec.group === "cause" ? "Cause" : "Region") : spec.groupLabel,
+      pointLabel: english ? (spec.point === "cause" ? "Cause" : "Region") : spec.pointLabel,
+      yTitle: english ? "mortality index (standard deviations)" : "indice mortalita (deviazioni standard)",
+      better: english ? "better: +1 SD" : "meglio: +1 DS",
+      worse: english ? "worse: -1 SD" : "peggio: -1 DS",
+      territory: english ? "Area" : "Territorio",
+      cause: english ? "Cause" : "Causa",
+      rate: english ? "Rate" : "Tasso",
+      italy: english ? "Italy" : "Italia",
+      diffItaly: english ? "Diff. Italy" : "Diff. Italia",
+      index: english ? "Mortality index" : "Indice mortalita",
+      reading: english ? "Reading" : "Lettura"
+    };
+  }
+
+  function mortalityQualityDimension(row, dimension) {
+    if (dimension === "region") return { key: row.territory, label: row.territory, territory: row.territory };
+    if (dimension === "cause") return { key: row.cause_code, label: row.cause, cause_code: row.cause_code, cause: row.cause };
+    return { key: "", label: "" };
+  }
+
+  function mortalityQualitySelectedCauseLabel() {
+    if (STATE.mortalityQualityCause === "all") return "tutte le cause del gruppo";
+    var cause = mortalityDetailCauseByCode(STATE.mortalityQualityCause);
+    return cause ? cause.label : asText(STATE.mortalityQualityCause);
+  }
+
+  function mortalityQualitySourceRows() {
+    var year = mortalityQualityYearValue(STATE.mortalityQualityYear, STATE.mortalityQualityGroup, STATE.mortalityQualityCause);
+    return mortalityDetailRows().filter(function (row) {
+      if (row.territory_type !== "region") return false;
+      if (row.year !== year) return false;
+      if (STATE.mortalityQualityGroup !== "all" && row.group !== STATE.mortalityQualityGroup) return false;
+      if (STATE.mortalityQualityCause !== "all" && row.cause_code !== STATE.mortalityQualityCause) return false;
+      return true;
+    });
+  }
+
+  function mortalityQualityRows() {
+    var spec = mortalityQualitySpec();
+    var year = mortalityQualityYearValue(STATE.mortalityQualityYear, STATE.mortalityQualityGroup, STATE.mortalityQualityCause);
+    var italyByCause = {};
+    mortalityDetailRows().forEach(function (row) {
+      if (row.territory !== "Italia" || row.year !== year) return;
+      italyByCause[row.cause_code] = toNumber(row.value);
+    });
+    var causeStats = {};
+    mortalityQualitySourceRows().forEach(function (row) {
+      if (!causeStats[row.cause_code]) causeStats[row.cause_code] = { values: [] };
+      var value = toNumber(row.value);
+      if (value !== null) causeStats[row.cause_code].values.push(value);
+    });
+    Object.keys(causeStats).forEach(function (code) {
+      causeStats[code].mean = mean(causeStats[code].values);
+      causeStats[code].sd = standardDeviation(causeStats[code].values, causeStats[code].mean);
+    });
+
+    var rows = mortalityQualitySourceRows().map(function (row) {
+      var stats = causeStats[row.cause_code] || {};
+      var rate = toNumber(row.value);
+      var score = rate !== null && stats.sd ? (stats.mean - rate) / stats.sd : null;
+      var italy = italyByCause[row.cause_code];
+      var group = mortalityQualityDimension(row, spec.group);
+      var point = mortalityQualityDimension(row, spec.point);
+      return Object.assign({}, row, {
+        group_key: group.key,
+        group_label: group.label,
+        point_key: point.key,
+        point_label: point.label,
+        rate_value: rate,
+        italy_value: italy,
+        difference_from_italy: rate !== null && toNumber(italy) !== null ? rate - italy : null,
+        index_mean: stats.mean,
+        index_sd: stats.sd,
+        selected_value: score,
+        selected_value_text: score === null ? MISSING : formatSignedDecimal(score) + " DS",
+        rate_value_text: formatMortalityDetailValue(rate),
+        italy_value_text: toNumber(italy) === null ? MISSING : formatMortalityDetailValue(italy),
+        difference_from_italy_text: rate !== null && toNumber(italy) !== null ? formatSignedDecimal(rate - italy) : MISSING,
+        quality_score: score,
+        quality_score_text: score === null ? MISSING : formatSignedDecimal(score) + " DS",
+        quality_status: waitingQualityStatus(score)
+      });
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+
+    var groupStats = {};
+    rows.forEach(function (row) {
+      if (!groupStats[row.group_key]) groupStats[row.group_key] = { key: row.group_key, label: row.group_label, values: [] };
+      groupStats[row.group_key].values.push(row.selected_value);
+    });
+    var groups = Object.keys(groupStats).map(function (key) {
+      var group = groupStats[key];
+      group.mean_value = mean(group.values);
+      group.spread_value = standardDeviation(group.values, group.mean_value) || 0;
+      return group;
+    }).sort(function (a, b) {
+      if (spec.group === "cause") return b.spread_value - a.spread_value || a.label.localeCompare(b.label);
+      return (toNumber(a.mean_value) || 0) - (toNumber(b.mean_value) || 0);
+    });
+    var limit = spec.group === "region" ? groups.length : chartLimit(STATE.mortalityQualityLimit, 20);
+    if (STATE.mortalityQualityLimit === "all") limit = groups.length;
+    var groupOrder = groups.slice(0, limit).map(function (group) { return group.key; });
+    var allowed = {};
+    groupOrder.forEach(function (key) { allowed[key] = true; });
+    rows = rows.filter(function (row) { return allowed[row.group_key]; });
+    rows.groupLabels = groups.filter(function (group) { return allowed[group.key]; }).map(function (group) { return group.label; });
+    return rows;
+  }
+
+  function renderMortalityQualitySummary(rows) {
+    var container = byId("hiMortalityQualitySummary");
+    clear(container);
+    rows = toArray(rows);
+    var values = rows.map(function (row) { return row.selected_value; });
+    var avg = mean(values);
+    var sd = standardDeviation(values, avg);
+    var better = rows.filter(function (row) { return toNumber(row.selected_value) !== null && row.selected_value >= 1; });
+    var worse = rows.filter(function (row) { return toNumber(row.selected_value) !== null && row.selected_value <= -1; }).sort(function (a, b) {
+      return (toNumber(a.selected_value) || 0) - (toNumber(b.selected_value) || 0);
+    });
+    var focusRows = rows.filter(function (row) { return row.territory === STATE.mortalityQualityFocus; });
+    var focusScore = mean(focusRows.map(function (row) { return row.selected_value; }));
+    function labelList(list) {
+      return list.slice(0, 3).map(function (row) {
+        return compact(row.territory + " / " + row.cause, 46);
+      }).join(", ");
+    }
+    [
+      ["Punti nel boxplot", formatNumber(rows.length), "regioni x cause visualizzate"],
+      ["Indice medio", avg === null ? MISSING : formatSignedDecimal(avg) + " DS", "media degli indici visualizzati"],
+      ["Deviazione standard", sd === null ? MISSING : formatDecimal(sd) + " DS", "dispersione degli indici visualizzati"],
+      ["Meglio della media", formatNumber(better.length), labelList(better) || "nessun punto oltre +1 DS"],
+      ["Peggio della media", formatNumber(worse.length), labelList(worse) || "nessun punto sotto -1 DS"],
+      ["Focus", STATE.mortalityQualityFocus, focusRows.length ? formatSignedDecimal(focusScore) + " DS medio su " + formatNumber(focusRows.length) + " punti" : "territorio non presente nei filtri"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function renderMortalityQualityBoxplot(rows, spec) {
+    rows = toArray(rows);
+    if (rows.length < 2) {
+      showEmptyChart("hiMortalityQualityChart", "Servono almeno due punti confrontabili per calcolare il boxplot");
+      return;
+    }
+    var copy = mortalityQualityPlotCopy(spec);
+    var groupLabels = rows.groupLabels || unique(rows.map(function (row) { return row.group_label; }));
+    var traces = groupLabels.map(function (label) {
+      var groupRows = rows.filter(function (row) { return row.group_label === label; });
+      return {
+        type: "box",
+        name: compact(label, 32),
+        x: groupRows.map(function () { return label; }),
+        y: groupRows.map(function (row) { return row.selected_value; }),
+        boxpoints: false,
+        fillcolor: "rgba(160,160,160,.16)",
+        line: { color: cssVar("--muted", "#b9b2aa") },
+        marker: { color: cssVar("--muted", "#b9b2aa") },
+        hoverinfo: "skip"
+      };
+    });
+    traces.push({
+      type: "scatter",
+      mode: "markers",
+      name: copy.pointLabel,
+      x: rows.map(function (row) { return row.group_label; }),
+      y: rows.map(function (row) { return row.selected_value; }),
+      text: rows.map(function (row) { return row.point_label; }),
+      customdata: rows.map(function (row) {
+        return [row.group_label, row.point_label, row.territory, row.cause, row.cause_code, row.rate_value_text, row.italy_value_text, row.difference_from_italy_text, row.quality_score_text, row.quality_status];
+      }),
+      marker: {
+        color: rows.map(function (row) { return row.territory === STATE.mortalityQualityFocus ? COLORS[0] : waitingQualityColor(row.selected_value); }),
+        size: rows.map(function (row) { return row.territory === STATE.mortalityQualityFocus ? 12 : 7; }),
+        opacity: .88,
+        line: { color: cssVar("--panel", "#090909"), width: 1 }
+      },
+      hovertemplate: "<b>%{customdata[0]}</b><br>" + copy.pointLabel + ": %{customdata[1]}<br>" + copy.territory + ": %{customdata[2]}<br>" + copy.cause + ": %{customdata[3]} (%{customdata[4]})<br>" + copy.rate + ": %{customdata[5]}<br>" + copy.italy + ": %{customdata[6]}<br>" + copy.diffItaly + ": %{customdata[7]}<br>" + copy.index + ": %{customdata[8]}<br>" + copy.reading + ": %{customdata[9]}<extra></extra>"
+    });
+    plot("hiMortalityQualityChart", traces, {
+      showlegend: false,
+      margin: { t: 20, r: 30, b: 126, l: 86 },
+      xaxis: {
+        title: copy.groupLabel,
+        tickangle: -35,
+        automargin: true,
+        categoryorder: "array",
+        categoryarray: groupLabels
+      },
+      yaxis: { title: copy.yTitle },
+      shapes: [
+        { type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: { color: COLORS[0], width: 2, dash: "dash" } },
+        { type: "line", xref: "paper", x0: 0, x1: 1, y0: 1, y1: 1, line: { color: COLORS[3], width: 2, dash: "dot" } },
+        { type: "line", xref: "paper", x0: 0, x1: 1, y0: -1, y1: -1, line: { color: COLORS[5], width: 2, dash: "dot" } }
+      ],
+      annotations: [
+        { xref: "paper", yref: "y", x: 1, y: 1, xanchor: "right", yanchor: "bottom", text: copy.better, showarrow: false, font: { size: 11, color: COLORS[3] } },
+        { xref: "paper", yref: "y", x: 1, y: -1, xanchor: "right", yanchor: "top", text: copy.worse, showarrow: false, font: { size: 11, color: COLORS[5] } }
+      ]
+    });
+  }
+
+  function renderMortalityQualityChart() {
+    var spec = mortalityQualitySpec();
+    var year = mortalityQualityYearValue(STATE.mortalityQualityYear, STATE.mortalityQualityGroup, STATE.mortalityQualityCause);
+    var rows = mortalityQualityRows();
+    var groupLabel = mortalityDetailGroups().find(function (group) { return group.value === STATE.mortalityQualityGroup; });
+    var title = byId("hiMortalityQualityTitle");
+    if (title) title.textContent = spec.title + " - " + (groupLabel ? groupLabel.label : STATE.mortalityQualityGroup);
+    setSubtitle("hiMortalityQualitySubtitle", spec.subtitle + " L'indice confronta ogni punto con la media regionale della stessa causa nello stesso anno: valori positivi indicano tassi piu bassi della media, valori negativi tassi piu alti. Filtro: " + mortalityQualitySelectedCauseLabel() + ".");
+    setTag("hiMortalityQualityTag", "Eurostat " + asText(year) + " - +/-1 DS");
+    renderMortalityQualitySummary(rows);
+    renderMortalityQualityBoxplot(rows, spec);
+    createTable("hiMortalityQualityTable", rows, [
+      ["group_label", spec.groupLabel],
+      ["point_label", spec.pointLabel],
+      ["territory", "Territorio"],
+      ["cause", "Causa"],
+      ["cause_code", "ICD-10"],
+      ["year", "Anno"],
+      ["rate_value_text", "Tasso standardizzato"],
+      ["italy_value_text", "Italia"],
+      ["difference_from_italy_text", "Diff. Italia"],
+      ["quality_score_text", "Indice mortalita"],
+      ["quality_status", "Lettura"]
+    ], 160);
+    setChartCredit("hiMortalityQualityNote", [
+      { id: "eurostat_mortality_detail", label: "Eurostat hlth_cd_asdr2" }
+    ], "Anno " + asText(year) + ", gruppo: " + (groupLabel ? groupLabel.label : STATE.mortalityQualityGroup) + ", causa: " + mortalityQualitySelectedCauseLabel() + ". L'indice e uno z-score descrittivo calcolato separatamente per ogni causa sui territori regionali disponibili: +1 DS o piu indica un tasso almeno una deviazione standard sotto la media regionale della stessa causa; -1 DS o meno indica un tasso sopra la media. La fonte misura mortalita per residenza e causa ICD-10, non mortalita post-intervento PNE, non qualita clinica risk-adjusted dell'ospedale e non flussi di pazienti.");
   }
 
   function renderMortalityDetailTerritoryChart() {
@@ -6144,6 +6477,7 @@
     refreshWaitingFilters(regionOptions);
     refreshHealthFilters();
     refreshMortalityFilters();
+    refreshMortalityDetailFilters();
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
