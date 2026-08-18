@@ -526,6 +526,35 @@
   color: var(--text);
 }
 
+.hi-table-actions {
+  min-width: 860px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .86rem;
+}
+
+.hi-table-toggle {
+  border: 1px solid var(--orange);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--orange);
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hi-table-toggle:hover,
+.hi-table-toggle:focus-visible {
+  background: rgba(255, 90, 31, .12);
+  outline: none;
+}
+
 .hi-table-toolbar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));

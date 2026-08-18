@@ -911,7 +911,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260818-pne-outcomes-1", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260818-ps-box-tables-1", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

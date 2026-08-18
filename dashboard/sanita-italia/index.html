@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-pne-outcomes-1">
-  <script defer src="../../assets/theme.js?v=20260818-pne-outcomes-1"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-ps-box-tables-1">
+  <script defer src="../../assets/theme.js?v=20260818-ps-box-tables-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-pne-outcomes-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-ps-box-tables-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -547,6 +547,16 @@
         <p id="hiPsStructureNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
         <div class="hi-card-title hi-card-title-secondary"><h3 id="hiPsStructureBoxTitle">Boxplot PS per struttura</h3><span id="hiPsStructureBoxTag">+/-1 DS</span></div>
         <p id="hiPsStructureBoxSubtitle" class="hi-card-subtitle">Distribuzione delle strutture filtrate per territorio, livello PS/DEA e codice triage; la struttura selezionata viene evidenziata nel confronto.</p>
+        <div class="hi-chart-controls" aria-label="Filtri boxplot pronto soccorso per struttura">
+          <label>Vista boxplot
+            <select id="hiPsStructureBoxLayoutFilter">
+              <option value="level_structure">Box livelli PS/DEA - punti strutture</option>
+              <option value="region_structure">Box regioni - punti strutture</option>
+              <option value="triage_structure">Box codici triage - punti strutture</option>
+              <option value="structure_triage">Box strutture - punti codici triage</option>
+            </select>
+          </label>
+        </div>
         <div id="hiPsStructureQualitySummary" class="hi-profile-grid"></div>
         <div id="hiPsStructureBoxChart" class="hi-chart"></div>
         <p id="hiPsStructureBoxNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
