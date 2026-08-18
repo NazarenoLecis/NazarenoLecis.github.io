@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260818-mortality-quality-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-mortality-quality-1",
+    "../../data/sanita-italia/dashboard.json?v=20260818-pne-outcomes-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-pne-outcomes-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -125,6 +125,19 @@
     mortalityQualityYear: "latest",
     mortalityQualityFocus: "Sardegna",
     mortalityQualityLimit: "20",
+    pneOutcomeIndicator: "727",
+    pneOutcomeRegion: "Italia",
+    pneOutcomeMetric: "success_rate_adjusted_percent",
+    pneOutcomeMinCases: "50",
+    pneOutcomeLimit: "20",
+    pneOutcomeFocusStructure: "all",
+    pneQualityLayout: "region_structure",
+    pneQualityIndicator: "727",
+    pneQualityRegion: "Italia",
+    pneQualityMetric: "success_rate_adjusted_percent",
+    pneQualityMinCases: "50",
+    pneQualityLimit: "20",
+    pneQualityFocusStructure: "all",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -183,6 +196,8 @@
     "mortalityGroup", "mortalityIndicator", "mortalityYear", "mortalityTerritoryFocus", "mortalityProfileTerritory", "mortalityProfileGroup", "mortalityProfileYear", "mortalityTrendTerritory", "mortalityTrendGroup", "mortalityTrendIndicator",
     "mortalityDetailGroup", "mortalityDetailCause", "mortalityDetailYear", "mortalityDetailTerritoryFocus", "mortalityDetailTrendTerritory", "mortalityDetailTrendGroup", "mortalityDetailTrendCause",
     "mortalityQualityLayout", "mortalityQualityGroup", "mortalityQualityCause", "mortalityQualityYear", "mortalityQualityFocus", "mortalityQualityLimit",
+    "pneOutcomeIndicator", "pneOutcomeRegion", "pneOutcomeMetric", "pneOutcomeMinCases", "pneOutcomeLimit", "pneOutcomeFocusStructure",
+    "pneQualityLayout", "pneQualityIndicator", "pneQualityRegion", "pneQualityMetric", "pneQualityMinCases", "pneQualityLimit", "pneQualityFocusStructure",
     "disciplineRegion", "disciplineProvince", "disciplineMetric", "denominator",
     "costRegion", "costRatio", "costType", "costCompositionRegion", "bedsSeriesRegion", "bedsSeriesMetric", "bedsSeriesRatio", "pharmaRegion", "pharmaLabel",
     "hospitalRegion", "hospitalProvince", "hospitalDiscipline", "hospitalDepartmentRegion", "hospitalDepartmentProvince", "hospitalDepartmentStructure", "hospitalDepartmentMetric", "hospitalDepartmentLimit",
@@ -628,6 +643,53 @@
         ["latest_year", "Ultimo anno"],
         ["unit_label", "Unita"],
         ["definition", "Definizione"]
+      ]
+    },
+    {
+      id: "pne_hospital_outcomes",
+      label: "Esiti ospedalieri PNE",
+      columns: [
+        ["edition", "Edizione"],
+        ["indicator_code", "Indicatore"],
+        ["indicator_short_label", "Esito"],
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["city", "Comune"],
+        ["structure", "Struttura"],
+        ["year", "Anno"],
+        ["cases", "Casi/coorte"],
+        ["events", "Eventi"],
+        ["mortality_raw_percent", "Mortalita grezza"],
+        ["mortality_adjusted_percent", "Mortalita aggiustata"],
+        ["success_rate_adjusted_percent", "Successo aggiustato"],
+        ["annual_volume_latest", "Volume annuo"],
+        ["annual_volume_latest_year", "Anno volume"]
+      ]
+    },
+    {
+      id: "pne_hospital_outcome_volume_trend",
+      label: "Storico volumi PNE",
+      columns: [
+        ["indicator_code", "Indicatore"],
+        ["indicator_short_label", "Prestazione"],
+        ["region", "Regione"],
+        ["province", "Provincia"],
+        ["city", "Comune"],
+        ["structure", "Struttura"],
+        ["year", "Anno"],
+        ["annual_volume", "Ricoveri"]
+      ]
+    },
+    {
+      id: "pne_outcome_indicators",
+      label: "Indicatori esiti PNE",
+      columns: [
+        ["indicator_code", "Codice"],
+        ["indicator_label", "Indicatore"],
+        ["edition", "Edizione"],
+        ["source_url", "Scheda PNE"],
+        ["protocol_url", "Protocollo"],
+        ["rationale_url", "Razionale"]
       ]
     },
     {
@@ -2458,6 +2520,181 @@
     });
   }
 
+  function pneRows() {
+    return tableRows("pne_hospital_outcomes");
+  }
+
+  function pneVolumeTrendRows() {
+    return tableRows("pne_hospital_outcome_volume_trend");
+  }
+
+  function pneIndicators() {
+    return tableRows("pne_outcome_indicators");
+  }
+
+  function pneIndicatorByCode(code) {
+    return pneIndicators().find(function (row) {
+      return String(row.indicator_code) === String(code);
+    }) || null;
+  }
+
+  function pneIndicatorOptions(includeAll) {
+    var rows = pneIndicators().slice().sort(function (a, b) {
+      return (toNumber(a.indicator_code) || 0) - (toNumber(b.indicator_code) || 0);
+    }).map(function (row) {
+      return {
+        value: String(row.indicator_code),
+        label: row.indicator_code + " - " + compact(row.indicator_label, 82)
+      };
+    });
+    return includeAll ? [{ value: "all", label: "Tutti gli indicatori PNE" }].concat(rows) : rows;
+  }
+
+  function pneRegionOptions() {
+    var regions = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.pne_regions);
+    if (!regions.length) {
+      regions = unique(pneRows().map(function (row) { return row.region; })).sort();
+    }
+    return [{ value: "Italia", label: "Italia" }].concat(regions.filter(Boolean).map(function (region) {
+      return { value: region, label: region };
+    }));
+  }
+
+  function pneStructureOptions(rows, includeAll) {
+    var seen = {};
+    var options = [];
+    toArray(rows).forEach(function (row) {
+      var id = asText(row.structure_id);
+      if (!id || seen[id]) return;
+      seen[id] = true;
+      var place = [row.city, row.province, row.region].filter(Boolean).join(", ");
+      options.push({
+        value: id,
+        label: compact(row.structure + (place ? " - " + place : ""), 94)
+      });
+    });
+    options.sort(function (a, b) { return a.label.localeCompare(b.label); });
+    return includeAll ? [{ value: "all", label: "Nessuna struttura evidenziata" }].concat(options) : options;
+  }
+
+  function pneMetricConfig(metric) {
+    var configs = {
+      success_rate_adjusted_percent: {
+        label: "Successo aggiustato",
+        field: "success_rate_adjusted_percent",
+        xTitle: "% senza decesso/evento aggiustata",
+        format: formatPercent,
+        lowerBetter: false,
+        availableField: "mortality_adjusted_percent",
+        note: "derivato come 100 meno la mortalita aggiustata PNE"
+      },
+      mortality_adjusted_percent: {
+        label: "Mortalita aggiustata",
+        field: "mortality_adjusted_percent",
+        xTitle: "% decessi/eventi aggiustata",
+        format: formatPercent,
+        lowerBetter: true,
+        availableField: "mortality_adjusted_percent",
+        note: "mortalita risk-adjusted pubblicata da PNE"
+      },
+      success_rate_raw_percent: {
+        label: "Successo grezzo",
+        field: "success_rate_raw_percent",
+        xTitle: "% senza decesso/evento grezza",
+        format: formatPercent,
+        lowerBetter: false,
+        availableField: "mortality_raw_percent",
+        note: "derivato come 100 meno la mortalita grezza, non aggiustata per rischio"
+      },
+      mortality_raw_percent: {
+        label: "Mortalita grezza",
+        field: "mortality_raw_percent",
+        xTitle: "% decessi/eventi grezza",
+        format: formatPercent,
+        lowerBetter: true,
+        availableField: "mortality_raw_percent",
+        note: "mortalita osservata, non aggiustata per rischio"
+      },
+      cases: {
+        label: "Casi nella coorte",
+        field: "cases",
+        xTitle: "ricoveri nella coorte PNE",
+        format: formatNumber,
+        lowerBetter: false,
+        availableField: "cases",
+        note: "denominatore della coorte usata per l'esito"
+      },
+      events: {
+        label: "Eventi osservati",
+        field: "events",
+        xTitle: "decessi/eventi osservati",
+        format: formatNumber,
+        lowerBetter: true,
+        availableField: "events",
+        note: "numeratore osservato nella coorte, non aggiustato per rischio"
+      }
+    };
+    return configs[metric] || configs.success_rate_adjusted_percent;
+  }
+
+  function pneQualityMetricConfig(metric) {
+    var config = pneMetricConfig(metric);
+    if (config.field === "cases" || config.field === "events") return pneMetricConfig("mortality_adjusted_percent");
+    return config;
+  }
+
+  function refreshPneFilters() {
+    var indicatorOptions = pneIndicatorOptions(false);
+    var indicatorOptionsWithAll = pneIndicatorOptions(true);
+    var regionOptions = pneRegionOptions();
+    if (!indicatorOptions.some(function (option) { return option.value === STATE.pneOutcomeIndicator; })) {
+      var pancreas = indicatorOptions.find(function (option) { return option.value === "727"; });
+      STATE.pneOutcomeIndicator = pancreas ? pancreas.value : (indicatorOptions[0] ? indicatorOptions[0].value : "");
+    }
+    if (!indicatorOptionsWithAll.some(function (option) { return option.value === STATE.pneQualityIndicator; })) {
+      STATE.pneQualityIndicator = "727";
+    }
+    if (!regionOptions.some(function (option) { return option.value === STATE.pneOutcomeRegion; })) STATE.pneOutcomeRegion = "Italia";
+    if (!regionOptions.some(function (option) { return option.value === STATE.pneQualityRegion; })) STATE.pneQualityRegion = "Italia";
+
+    var outcomeStructureRows = pneRows().filter(function (row) {
+      return String(row.indicator_code) === String(STATE.pneOutcomeIndicator) &&
+        (STATE.pneOutcomeRegion === "Italia" || row.region === STATE.pneOutcomeRegion);
+    });
+    var outcomeStructureOptions = pneStructureOptions(outcomeStructureRows, true);
+    if (!outcomeStructureOptions.some(function (option) { return option.value === STATE.pneOutcomeFocusStructure; })) {
+      STATE.pneOutcomeFocusStructure = "all";
+    }
+
+    var qualityStructureRows = pneRows().filter(function (row) {
+      return (STATE.pneQualityIndicator === "all" || String(row.indicator_code) === String(STATE.pneQualityIndicator)) &&
+        (STATE.pneQualityRegion === "Italia" || row.region === STATE.pneQualityRegion);
+    });
+    var qualityStructureOptions = pneStructureOptions(qualityStructureRows, true);
+    if (!qualityStructureOptions.some(function (option) { return option.value === STATE.pneQualityFocusStructure; })) {
+      STATE.pneQualityFocusStructure = "all";
+    }
+
+    fillSelect("hiPneOutcomeIndicatorFilter", indicatorOptions, STATE.pneOutcomeIndicator);
+    fillSelect("hiPneOutcomeRegionFilter", regionOptions, STATE.pneOutcomeRegion);
+    fillSelect("hiPneOutcomeFocusStructureFilter", outcomeStructureOptions, STATE.pneOutcomeFocusStructure);
+    fillSelect("hiPneQualityIndicatorFilter", indicatorOptionsWithAll, STATE.pneQualityIndicator);
+    fillSelect("hiPneQualityRegionFilter", regionOptions, STATE.pneQualityRegion);
+    fillSelect("hiPneQualityFocusStructureFilter", qualityStructureOptions, STATE.pneQualityFocusStructure);
+    [
+      ["hiPneOutcomeMetricFilter", "pneOutcomeMetric"],
+      ["hiPneOutcomeMinCasesFilter", "pneOutcomeMinCases"],
+      ["hiPneOutcomeLimitFilter", "pneOutcomeLimit"],
+      ["hiPneQualityLayoutFilter", "pneQualityLayout"],
+      ["hiPneQualityMetricFilter", "pneQualityMetric"],
+      ["hiPneQualityMinCasesFilter", "pneQualityMinCases"],
+      ["hiPneQualityLimitFilter", "pneQualityLimit"]
+    ].forEach(function (item) {
+      var node = byId(item[0]);
+      if (node) node.value = STATE[item[1]];
+    });
+  }
+
   function formatMortalityDetailValue(value) {
     return formatDecimal(value);
   }
@@ -2648,6 +2885,7 @@
     refreshRecentCancerFilters();
     refreshMortalityFilters();
     refreshMortalityDetailFilters();
+    refreshPneFilters();
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
@@ -2783,6 +3021,19 @@
       ["hiMortalityQualityYearFilter", "mortalityQualityYear"],
       ["hiMortalityQualityFocusFilter", "mortalityQualityFocus"],
       ["hiMortalityQualityLimitFilter", "mortalityQualityLimit"],
+      ["hiPneOutcomeIndicatorFilter", "pneOutcomeIndicator"],
+      ["hiPneOutcomeRegionFilter", "pneOutcomeRegion"],
+      ["hiPneOutcomeMetricFilter", "pneOutcomeMetric"],
+      ["hiPneOutcomeMinCasesFilter", "pneOutcomeMinCases"],
+      ["hiPneOutcomeLimitFilter", "pneOutcomeLimit"],
+      ["hiPneOutcomeFocusStructureFilter", "pneOutcomeFocusStructure"],
+      ["hiPneQualityLayoutFilter", "pneQualityLayout"],
+      ["hiPneQualityIndicatorFilter", "pneQualityIndicator"],
+      ["hiPneQualityRegionFilter", "pneQualityRegion"],
+      ["hiPneQualityMetricFilter", "pneQualityMetric"],
+      ["hiPneQualityMinCasesFilter", "pneQualityMinCases"],
+      ["hiPneQualityLimitFilter", "pneQualityLimit"],
+      ["hiPneQualityFocusStructureFilter", "pneQualityFocusStructure"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -5496,6 +5747,507 @@
     ], healthNoteForIndicator(indicator, "La serie usa solo gli anni pubblicati da ISTAT per questa causa."));
   }
 
+  function pneSourceId(code) {
+    return "agenas_pne_indicator_" + asText(code);
+  }
+
+  function pneIndicatorLabel(code) {
+    var indicator = pneIndicatorByCode(code);
+    return indicator ? indicator.indicator_label : "indicatore PNE " + asText(code);
+  }
+
+  function pneDisplayIndicatorLabel(code) {
+    if (currentLanguageIsEnglish() && String(code) === "727") {
+      return "Pancreatic cancer resection surgery: 90-day mortality";
+    }
+    return pneIndicatorLabel(code);
+  }
+
+  function pneShortIndicatorLabel(code) {
+    var indicator = pneIndicatorByCode(code);
+    return indicator ? indicator.indicator_short_label : pneIndicatorLabel(code);
+  }
+
+  function pneMetricLabel(config) {
+    if (!currentLanguageIsEnglish()) return config.label;
+    var labels = {
+      success_rate_adjusted_percent: "Adjusted success",
+      mortality_adjusted_percent: "Adjusted mortality",
+      success_rate_raw_percent: "Crude success",
+      mortality_raw_percent: "Crude mortality",
+      cases: "Cases in cohort",
+      events: "Observed events"
+    };
+    return labels[config.field] || config.label;
+  }
+
+  function pneMetricNoteText(config) {
+    if (!currentLanguageIsEnglish()) return config.note;
+    var notes = {
+      success_rate_adjusted_percent: "derived as 100 minus PNE adjusted mortality",
+      mortality_adjusted_percent: "risk-adjusted mortality published by PNE",
+      success_rate_raw_percent: "derived as 100 minus crude mortality, not risk-adjusted",
+      mortality_raw_percent: "observed mortality, not risk-adjusted",
+      cases: "the denominator of the cohort used for the outcome",
+      events: "the observed numerator in the cohort, not risk-adjusted"
+    };
+    return notes[config.field] || config.note;
+  }
+
+  function pneSelectedRows(indicatorCode, region, minCases) {
+    var minValue = toNumber(minCases);
+    return pneRows().filter(function (row) {
+      if (indicatorCode !== "all" && String(row.indicator_code) !== String(indicatorCode)) return false;
+      if (region && region !== "Italia" && row.region !== region) return false;
+      if (minValue !== null && (toNumber(row.cases) || 0) < minValue) return false;
+      return true;
+    });
+  }
+
+  function pneRowsWithMetric(rows, config) {
+    return toArray(rows).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row[config.field]);
+      copy.selected_value_text = config.format(copy.selected_value);
+      copy.mortality_adjusted_text = formatPercent(row.mortality_adjusted_percent);
+      copy.mortality_raw_text = formatPercent(row.mortality_raw_percent);
+      copy.success_adjusted_text = formatPercent(row.success_rate_adjusted_percent);
+      copy.success_raw_text = formatPercent(row.success_rate_raw_percent);
+      copy.cases_text = formatNumber(row.cases);
+      copy.events_text = formatNumber(row.events);
+      copy.annual_volume_text = toNumber(row.annual_volume_latest) === null ? MISSING : formatNumber(row.annual_volume_latest);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null;
+    });
+  }
+
+  function sortPneMetricRows(rows, config) {
+    return toArray(rows).sort(function (a, b) {
+      var av = toNumber(a.selected_value);
+      var bv = toNumber(b.selected_value);
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return config.lowerBetter ? av - bv : bv - av;
+    });
+  }
+
+  function ensureFocusRow(rows, allRows, focusStructure, limit) {
+    var chartRows = rows.slice(0, limit);
+    if (!focusStructure || focusStructure === "all") return chartRows;
+    var focus = allRows.find(function (row) { return asText(row.structure_id) === asText(focusStructure); });
+    if (!focus || toNumber(focus.selected_value) === null) return chartRows;
+    if (chartRows.some(function (row) { return asText(row.structure_id) === asText(focusStructure); })) return chartRows;
+    if (chartRows.length >= limit && chartRows.length) chartRows[chartRows.length - 1] = focus;
+    else chartRows.push(focus);
+    return chartRows;
+  }
+
+  function renderPneOutcomeSummary(rows, baseRows, config) {
+    var container = byId("hiPneOutcomeSummary");
+    clear(container);
+    rows = toArray(rows);
+    baseRows = toArray(baseRows);
+    var best = rows[0] || null;
+    var worst = rows.length ? rows[rows.length - 1] : null;
+    var focus = STATE.pneOutcomeFocusStructure === "all" ? null : baseRows.find(function (row) {
+      return asText(row.structure_id) === asText(STATE.pneOutcomeFocusStructure);
+    });
+    function focusValue() {
+      if (!focus) return "nessuna";
+      var value = toNumber(focus[config.field]);
+      if (value === null) return "ND per la misura";
+      return config.format(value);
+    }
+    [
+      ["Strutture confrontate", formatNumber(rows.length), "con dato disponibile per " + config.label],
+      ["Migliore", best ? compact(best.structure, 40) : MISSING, best ? config.format(best.selected_value) + " - " + best.region : "nessun dato"],
+      ["Peggiore", worst ? compact(worst.structure, 40) : MISSING, worst ? config.format(worst.selected_value) + " - " + worst.region : "nessun dato"],
+      ["Focus struttura", focus ? compact(focus.structure, 40) : "nessuna", focus ? focusValue() + "; casi " + formatNumber(focus.cases) : "seleziona una struttura"],
+      ["Casi minimi", STATE.pneOutcomeMinCases === "0" ? "nessuna soglia" : formatNumber(STATE.pneOutcomeMinCases), "soglia sul denominatore della coorte PNE"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function pneOutcomeNote(indicator, config, rows) {
+    var parts = [];
+    var english = currentLanguageIsEnglish();
+    if (english) {
+      parts.push("PNE edition " + asText(indicator && indicator.edition) + ", indicator " + asText(indicator && indicator.indicator_code) + ": " + pneDisplayIndicatorLabel(indicator && indicator.indicator_code) + ".");
+      parts.push("The chart uses " + pneMetricNoteText(config) + " and shows only facilities with at least " + (STATE.pneOutcomeMinCases === "0" ? "one case" : formatNumber(STATE.pneOutcomeMinCases) + " cases") + " in the cohort.");
+      if (indicator && String(indicator.indicator_code) === "727") {
+        parts.push("For pancreatic resection, PNE 2025 measures 90-day mortality on a three-year cohort; the annual volume, where shown, comes from PNE indicator 728.");
+      }
+      parts.push("Missing or unpublished adjusted values are not treated as zero. Outcomes are attributed to the PNE facility, not to the patient's region of residence.");
+      if (!rows.length) parts.push("The current selection has no comparable points: lower the case threshold or choose a crude measure.");
+      return parts.join(" ");
+    }
+    parts.push("Edizione PNE " + asText(indicator && indicator.edition) + ", indicatore " + asText(indicator && indicator.indicator_code) + ": " + asText(indicator && indicator.indicator_label) + ".");
+    parts.push("Il grafico usa " + config.note + " e mostra solo strutture con almeno " + (STATE.pneOutcomeMinCases === "0" ? "un caso" : formatNumber(STATE.pneOutcomeMinCases) + " casi") + " nella coorte.");
+    if (indicator && String(indicator.indicator_code) === "727") {
+      parts.push("Per la resezione pancreatica PNE 2025 misura la mortalita a 90 giorni su coorte triennale; il volume annuo, dove mostrato, viene dall'indicatore PNE 728.");
+    }
+    parts.push("Valori aggiustati mancanti o non pubblicabili non sono trattati come zero. Gli esiti sono attribuiti alla struttura PNE, non alla regione di residenza del paziente.");
+    if (!rows.length) parts.push("La selezione corrente non ha punti confrontabili: abbassa la soglia casi o scegli una misura grezza.");
+    return parts.join(" ");
+  }
+
+  function renderPneOutcomeChart() {
+    var indicator = pneIndicatorByCode(STATE.pneOutcomeIndicator);
+    var config = pneMetricConfig(STATE.pneOutcomeMetric);
+    var baseRows = pneSelectedRows(STATE.pneOutcomeIndicator, STATE.pneOutcomeRegion, STATE.pneOutcomeMinCases);
+    var metricRows = sortPneMetricRows(pneRowsWithMetric(baseRows, config), config);
+    var limit = chartLimit(STATE.pneOutcomeLimit, 20);
+    if (STATE.pneOutcomeLimit === "all") limit = metricRows.length;
+    var chartRows = ensureFocusRow(metricRows, metricRows, STATE.pneOutcomeFocusStructure, limit);
+    var english = currentLanguageIsEnglish();
+    var metricLabel = pneMetricLabel(config);
+    var title = byId("hiPneOutcomeTitle");
+    if (title) title.textContent = (english ? "PNE hospital outcomes - " : "Esiti ospedalieri PNE - ") + metricLabel;
+    setSubtitle("hiPneOutcomeSubtitle", english ?
+      "Facility ranking. Indicator: " + pneDisplayIndicatorLabel(STATE.pneOutcomeIndicator) + ". Region: " + (STATE.pneOutcomeRegion === "Italia" ? "Italy" : STATE.pneOutcomeRegion) + ". The case threshold avoids fragile comparisons on very small volumes." :
+      "Ranking per struttura: " + pneIndicatorLabel(STATE.pneOutcomeIndicator) + ". Regione: " + STATE.pneOutcomeRegion + ". La soglia casi evita confronti fragili su volumi molto piccoli.");
+    setTag("hiPneOutcomeTag", "PNE " + asText(indicator && indicator.edition) + " - " + (english ? "indicator " : "indicatore ") + STATE.pneOutcomeIndicator);
+    renderPneOutcomeSummary(metricRows, baseRows, config);
+    if (chartRows.length) {
+      horizontalBar("hiPneOutcomeChart", chartRows, "structure", "selected_value", {
+        limit: chartRows.length,
+        color: config.lowerBetter ? COLORS[5] : COLORS[3],
+        highlightField: "structure_id",
+        highlight: STATE.pneOutcomeFocusStructure,
+        leftMargin: 250,
+        labelLength: 46,
+        xTitle: config.xTitle,
+        format: config.format,
+        hovertemplate: "%{customdata.structure}<br>%{customdata.city} (%{customdata.province}) - %{customdata.region}<br>" + config.label + ": %{text}<br>Casi: %{customdata.cases_text}<br>Eventi: %{customdata.events_text}<br>Mortalita agg.: %{customdata.mortality_adjusted_text}<br>Mortalita grezza: %{customdata.mortality_raw_text}<extra></extra>"
+      });
+    } else {
+      showEmptyChart("hiPneOutcomeChart", "Nessuna struttura con dato disponibile per questa selezione");
+    }
+    setChartCredit("hiPneOutcomeNote", [
+      { id: pneSourceId(STATE.pneOutcomeIndicator), label: "AGENAS PNE indicatore " + STATE.pneOutcomeIndicator }
+    ], pneOutcomeNote(indicator, config, metricRows));
+    createTable("hiPneOutcomeTable", metricRows, [
+      ["indicator_code", "Indicatore"],
+      ["indicator_short_label", "Esito"],
+      ["region", "Regione"],
+      ["province", "Provincia"],
+      ["city", "Comune"],
+      ["structure", "Struttura"],
+      ["year", "Anno"],
+      ["cases", "Casi/coorte"],
+      ["events", "Eventi"],
+      ["mortality_adjusted_percent", "Mortalita aggiustata"],
+      ["success_rate_adjusted_percent", "Successo aggiustato"],
+      ["mortality_raw_percent", "Mortalita grezza"],
+      ["annual_volume_latest", "Volume annuo"]
+    ], 120);
+  }
+
+  function pneQualitySpec() {
+    if (STATE.pneQualityLayout === "indicator_structure") {
+      return {
+        group: "indicator",
+        point: "structure",
+        groupLabel: "Indicatore",
+        pointLabel: "Struttura",
+        title: "Indice PNE - box indicatori, punti strutture",
+        subtitle: "Ogni box e un indicatore PNE; ogni punto e una struttura della regione selezionata o dell'Italia."
+      };
+    }
+    if (STATE.pneQualityLayout === "structure_indicator") {
+      return {
+        group: "structure",
+        point: "indicator",
+        groupLabel: "Struttura",
+        pointLabel: "Indicatore",
+        title: "Indice PNE - box strutture, punti indicatori",
+        subtitle: "Ogni box e una struttura; ogni punto e un indicatore PNE disponibile per quella struttura."
+      };
+    }
+    return {
+      group: "region",
+      point: "structure",
+      groupLabel: "Regione",
+      pointLabel: "Struttura",
+      title: "Indice PNE - box regioni, punti strutture",
+      subtitle: "Ogni box e una regione; ogni punto e una struttura per l'indicatore PNE selezionato."
+    };
+  }
+
+  function pneQualityDimension(row, dimension) {
+    if (dimension === "region") return { key: row.region, label: row.region };
+    if (dimension === "indicator") return { key: String(row.indicator_code), label: row.indicator_short_label || row.indicator_label };
+    if (dimension === "structure") return { key: row.structure_id, label: row.structure + (row.city ? " - " + row.city : "") };
+    return { key: "", label: "" };
+  }
+
+  function pneQualityRows() {
+    var config = pneQualityMetricConfig(STATE.pneQualityMetric);
+    var spec = pneQualitySpec();
+    var baseRows = pneSelectedRows(STATE.pneQualityIndicator, STATE.pneQualityRegion, STATE.pneQualityMinCases);
+    var metricRows = pneRowsWithMetric(baseRows, config);
+    var statsByIndicator = {};
+    metricRows.forEach(function (row) {
+      var key = String(row.indicator_code);
+      if (!statsByIndicator[key]) statsByIndicator[key] = { values: [] };
+      if (toNumber(row.selected_value) !== null) statsByIndicator[key].values.push(row.selected_value);
+    });
+    Object.keys(statsByIndicator).forEach(function (key) {
+      var stats = statsByIndicator[key];
+      stats.mean = mean(stats.values);
+      stats.sd = standardDeviation(stats.values, stats.mean);
+    });
+    var rows = metricRows.map(function (row) {
+      var stats = statsByIndicator[String(row.indicator_code)] || {};
+      var raw = toNumber(row.selected_value);
+      var rawScore = raw !== null && stats.sd ? (raw - stats.mean) / stats.sd : null;
+      var score = rawScore === null ? null : rawScore * (config.lowerBetter ? -1 : 1);
+      var group = pneQualityDimension(row, spec.group);
+      var point = pneQualityDimension(row, spec.point);
+      return Object.assign({}, row, {
+        group_key: group.key,
+        group_label: group.label,
+        point_key: point.key,
+        point_label: point.label,
+        raw_value: raw,
+        raw_value_text: config.format(raw),
+        indicator_mean: stats.mean,
+        indicator_sd: stats.sd,
+        selected_value: score,
+        selected_value_text: score === null ? MISSING : formatSignedDecimal(score) + " DS",
+        quality_score: score,
+        quality_score_text: score === null ? MISSING : formatSignedDecimal(score) + " DS",
+        quality_status: waitingQualityStatus(score)
+      });
+    }).filter(function (row) {
+      return toNumber(row.selected_value) !== null && row.group_key;
+    });
+
+    var groupStats = {};
+    rows.forEach(function (row) {
+      if (!groupStats[row.group_key]) groupStats[row.group_key] = { key: row.group_key, label: row.group_label, values: [] };
+      groupStats[row.group_key].values.push(row.selected_value);
+    });
+    var groups = Object.keys(groupStats).map(function (key) {
+      var group = groupStats[key];
+      group.mean_value = mean(group.values);
+      group.count = group.values.length;
+      return group;
+    }).sort(function (a, b) {
+      return (toNumber(b.mean_value) || 0) - (toNumber(a.mean_value) || 0) || b.count - a.count || a.label.localeCompare(b.label);
+    });
+    var limit = chartLimit(STATE.pneQualityLimit, 20);
+    if (STATE.pneQualityLimit === "all") limit = groups.length;
+    if (spec.group === "region" && STATE.pneQualityRegion === "Italia") limit = groups.length;
+    var allowed = {};
+    groups.slice(0, limit).forEach(function (group) { allowed[group.key] = true; });
+    rows = rows.filter(function (row) { return allowed[row.group_key]; });
+    rows.groupLabels = groups.filter(function (group) { return allowed[group.key]; }).map(function (group) { return group.label; });
+    return rows;
+  }
+
+  function renderPneQualitySummary(rows) {
+    var container = byId("hiPneQualitySummary");
+    clear(container);
+    rows = toArray(rows);
+    var better = rows.filter(function (row) { return toNumber(row.selected_value) !== null && row.selected_value >= 1; });
+    var worse = rows.filter(function (row) { return toNumber(row.selected_value) !== null && row.selected_value <= -1; }).sort(function (a, b) {
+      return (toNumber(a.selected_value) || 0) - (toNumber(b.selected_value) || 0);
+    });
+    var focusRows = STATE.pneQualityFocusStructure === "all" ? [] : rows.filter(function (row) {
+      return asText(row.structure_id) === asText(STATE.pneQualityFocusStructure);
+    });
+    var focusScore = mean(focusRows.map(function (row) { return row.selected_value; }));
+    function labelList(list) {
+      return list.slice(0, 3).map(function (row) {
+        return compact(row.structure + " / " + row.indicator_short_label, 54);
+      }).join(", ");
+    }
+    [
+      ["Punti nel boxplot", formatNumber(rows.length), "strutture x indicatori visualizzati"],
+      ["Meglio della media", formatNumber(better.length), labelList(better) || "nessun punto oltre +1 DS"],
+      ["Peggio della media", formatNumber(worse.length), labelList(worse) || "nessun punto sotto -1 DS"],
+      ["Focus struttura", STATE.pneQualityFocusStructure === "all" ? "nessuna" : (focusRows[0] ? compact(focusRows[0].structure, 42) : "non presente"), focusRows.length ? formatSignedDecimal(focusScore) + " DS medio su " + formatNumber(focusRows.length) + " punti" : "seleziona una struttura"],
+      ["Casi minimi", STATE.pneQualityMinCases === "0" ? "nessuna soglia" : formatNumber(STATE.pneQualityMinCases), "soglia sul denominatore della coorte PNE"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function renderPneQualityBoxplot(rows, spec) {
+    rows = toArray(rows);
+    if (rows.length < 2) {
+      showEmptyChart("hiPneQualityChart", "Servono almeno due punti confrontabili per calcolare il boxplot PNE");
+      return;
+    }
+    var groupLabels = rows.groupLabels || unique(rows.map(function (row) { return row.group_label; }));
+    var traces = groupLabels.map(function (label) {
+      var groupRows = rows.filter(function (row) { return row.group_label === label; });
+      return {
+        type: "box",
+        name: compact(label, 32),
+        x: groupRows.map(function () { return label; }),
+        y: groupRows.map(function (row) { return row.selected_value; }),
+        boxpoints: false,
+        fillcolor: "rgba(160,160,160,.16)",
+        line: { color: cssVar("--muted", "#b9b2aa") },
+        marker: { color: cssVar("--muted", "#b9b2aa") },
+        hoverinfo: "skip"
+      };
+    });
+    traces.push({
+      type: "scatter",
+      mode: "markers",
+      name: spec.pointLabel,
+      x: rows.map(function (row) { return row.group_label; }),
+      y: rows.map(function (row) { return row.selected_value; }),
+      text: rows.map(function (row) { return row.point_label; }),
+      customdata: rows.map(function (row) {
+        return [row.group_label, row.point_label, row.structure, row.city, row.region, row.indicator_short_label, row.raw_value_text, row.quality_score_text, row.quality_status, row.cases_text, row.events_text];
+      }),
+      marker: {
+        color: rows.map(function (row) { return STATE.pneQualityFocusStructure !== "all" && asText(row.structure_id) === asText(STATE.pneQualityFocusStructure) ? COLORS[0] : waitingQualityColor(row.selected_value); }),
+        size: rows.map(function (row) { return STATE.pneQualityFocusStructure !== "all" && asText(row.structure_id) === asText(STATE.pneQualityFocusStructure) ? 12 : 7; }),
+        opacity: .88,
+        line: { color: cssVar("--panel", "#090909"), width: 1 }
+      },
+      hovertemplate: "<b>%{customdata[0]}</b><br>" + spec.pointLabel + ": %{customdata[1]}<br>Struttura: %{customdata[2]} - %{customdata[3]}<br>Regione: %{customdata[4]}<br>Indicatore: %{customdata[5]}<br>Valore: %{customdata[6]}<br>Indice PNE: %{customdata[7]}<br>Lettura: %{customdata[8]}<br>Casi: %{customdata[9]}<br>Eventi: %{customdata[10]}<extra></extra>"
+    });
+    plot("hiPneQualityChart", traces, {
+      showlegend: false,
+      margin: { t: 20, r: 30, b: 126, l: 86 },
+      xaxis: {
+        title: spec.groupLabel,
+        tickangle: -35,
+        automargin: true,
+        categoryorder: "array",
+        categoryarray: groupLabels
+      },
+      yaxis: { title: "indice PNE (deviazioni standard)" },
+      shapes: [
+        { type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0, line: { color: COLORS[0], width: 2, dash: "dash" } },
+        { type: "line", xref: "paper", x0: 0, x1: 1, y0: 1, y1: 1, line: { color: COLORS[3], width: 2, dash: "dot" } },
+        { type: "line", xref: "paper", x0: 0, x1: 1, y0: -1, y1: -1, line: { color: COLORS[5], width: 2, dash: "dot" } }
+      ],
+      annotations: [
+        { xref: "paper", yref: "y", x: 1, y: 1, xanchor: "right", yanchor: "bottom", text: "meglio: +1 DS", showarrow: false, font: { size: 11, color: COLORS[3] } },
+        { xref: "paper", yref: "y", x: 1, y: -1, xanchor: "right", yanchor: "top", text: "peggio: -1 DS", showarrow: false, font: { size: 11, color: COLORS[5] } }
+      ]
+    });
+  }
+
+  function renderPneQualityChart() {
+    var spec = pneQualitySpec();
+    var config = pneQualityMetricConfig(STATE.pneQualityMetric);
+    var rows = pneQualityRows();
+    var title = byId("hiPneQualityTitle");
+    if (title) title.textContent = spec.title + " - " + config.label;
+    setSubtitle("hiPneQualitySubtitle", spec.subtitle + " L'indice e calcolato separatamente per ogni indicatore: valori positivi indicano performance migliore della media dello stesso indicatore, valori negativi peggiore.");
+    setTag("hiPneQualityTag", "PNE 2025 - +/-1 DS");
+    renderPneQualitySummary(rows);
+    renderPneQualityBoxplot(rows, spec);
+    createTable("hiPneQualityTable", rows, [
+      ["group_label", spec.groupLabel],
+      ["point_label", spec.pointLabel],
+      ["region", "Regione"],
+      ["province", "Provincia"],
+      ["city", "Comune"],
+      ["structure", "Struttura"],
+      ["indicator_short_label", "Indicatore"],
+      ["raw_value_text", config.label],
+      ["cases", "Casi/coorte"],
+      ["events", "Eventi"],
+      ["quality_score_text", "Indice PNE"],
+      ["quality_status", "Lettura"]
+    ], 160);
+    setChartCredit("hiPneQualityNote", [
+      { id: "agenas_pne_outcomes", label: "AGENAS PNE" }
+    ], "Vista: " + spec.groupLabel + " / " + spec.pointLabel + ". Misura: " + config.label + ". L'indice e uno z-score descrittivo sui dati PNE disponibili: +1 DS o piu indica performance migliore della media dello stesso indicatore; -1 DS o meno performance peggiore. I confronti restano descrittivi e vanno letti con casi, eventi, intervalli di confidenza e protocollo PNE.");
+  }
+
+  function renderPneVolumeTrendChart() {
+    var trendRows = pneVolumeTrendRows().filter(function (row) {
+      return String(row.indicator_code) === "728";
+    });
+    if (!trendRows.length) {
+      showEmptyChart("hiPneVolumeTrendChart", "Storico volumi PNE non disponibile nel dataset");
+      return;
+    }
+    var national = {};
+    trendRows.forEach(function (row) {
+      var year = toNumber(row.year);
+      if (year === null) return;
+      if (!national[year]) national[year] = { year: year, annual_volume: 0 };
+      national[year].annual_volume += toNumber(row.annual_volume) || 0;
+    });
+    var nationalRows = Object.keys(national).map(function (year) { return national[year]; }).sort(function (a, b) { return a.year - b.year; });
+    var focusRows = STATE.pneOutcomeFocusStructure === "all" ? [] : trendRows.filter(function (row) {
+      return asText(row.structure_id) === asText(STATE.pneOutcomeFocusStructure);
+    }).sort(function (a, b) { return a.year - b.year; });
+    var focusName = focusRows[0] ? focusRows[0].structure : "";
+    var traces = [{
+      type: "scatter",
+      mode: "lines+markers",
+      name: "Italia",
+      x: nationalRows.map(function (row) { return row.year; }),
+      y: nationalRows.map(function (row) { return toNumber(row.annual_volume); }),
+      text: nationalRows.map(function (row) { return formatNumber(row.annual_volume); }),
+      line: { color: COLORS[1], width: 3 },
+      marker: { size: 8 },
+      hovertemplate: "%{x}<br>Italia: %{text} ricoveri<extra></extra>"
+    }];
+    if (focusRows.length) {
+      traces.push({
+        type: "scatter",
+        mode: "lines+markers",
+        name: focusName,
+        x: focusRows.map(function (row) { return row.year; }),
+        y: focusRows.map(function (row) { return toNumber(row.annual_volume); }),
+        text: focusRows.map(function (row) { return formatNumber(row.annual_volume); }),
+        line: { color: COLORS[0], width: 3 },
+        marker: { size: 8 },
+        hovertemplate: "%{x}<br>" + focusName + ": %{text} ricoveri<extra></extra>"
+      });
+    }
+    var years = nationalRows.map(function (row) { return row.year; });
+    var title = byId("hiPneVolumeTrendTitle");
+    if (title) title.textContent = "Storico PNE volumi pancreas" + (focusName ? " - " + focusName : "");
+    setSubtitle("hiPneVolumeTrendSubtitle", "Ricoveri annui dell'indicatore PNE 728 per resezione pancreatica per tumore maligno. Il confronto con la struttura evidenziata appare quando selezioni una struttura nel grafico sopra.");
+    setTag("hiPneVolumeTrendTag", years.length ? Math.min.apply(null, years) + "-" + Math.max.apply(null, years) : "PNE");
+    lineChart("hiPneVolumeTrendChart", traces, {
+      yTitle: "ricoveri annui",
+      xAxis: { title: "anno", tickmode: "linear", dtick: 1 }
+    });
+    setChartCredit("hiPneVolumeTrendNote", [
+      { id: "agenas_pne_indicator_728", label: "AGENAS PNE indicatore 728" }
+    ], "La serie storica e sui volumi annui di ricoveri per resezione pancreatica per tumore maligno; non misura direttamente mortalita, successo clinico o mobilita sanitaria origine-destinazione.");
+    var tableRowsValue = focusRows.length ? focusRows : nationalRows.map(function (row) {
+      return { year: row.year, structure: "Italia", annual_volume: row.annual_volume };
+    });
+    createTable("hiPneVolumeTrendTable", tableRowsValue, [
+      ["year", "Anno"],
+      ["structure", "Struttura"],
+      ["annual_volume", "Ricoveri"]
+    ], 80);
+  }
+
+  function renderPneOutcomes() {
+    renderPneOutcomeChart();
+    renderPneQualityChart();
+    renderPneVolumeTrendChart();
+  }
+
   function ratioMode() {
     return STATE.ratioMode || "auto";
   }
@@ -6478,6 +7230,7 @@
     refreshHealthFilters();
     refreshMortalityFilters();
     refreshMortalityDetailFilters();
+    refreshPneFilters();
     refreshDischargeStructureFilter();
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
@@ -6487,6 +7240,7 @@
     renderWaitingLists();
     renderHealth();
     renderMortality();
+    renderPneOutcomes();
     renderRegionalRank();
     renderRegionProfile();
     renderRegionalSummaryTable();

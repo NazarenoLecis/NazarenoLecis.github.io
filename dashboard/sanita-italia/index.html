@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-mortality-quality-1">
-  <script defer src="../../assets/theme.js?v=20260818-mortality-quality-1"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-pne-outcomes-1">
+  <script defer src="../../assets/theme.js?v=20260818-pne-outcomes-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-mortality-quality-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-pne-outcomes-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -77,6 +77,7 @@
       <a href="#salute">Salute</a>
       <a href="#tumori-recenti">Tumori recenti</a>
       <a href="#mortalita">Mortalit&agrave;</a>
+      <a href="#esiti-pne">Esiti PNE</a>
       <a href="#pronto-soccorso">Pronto soccorso</a>
       <a href="#hiPsRegionBoxTitle">Boxplot PS</a>
       <a href="#liste-attesa">Liste d'attesa</a>
@@ -96,7 +97,7 @@
       <p id="hiStatus" class="hi-status">Caricamento dati in corso ...</p>
       <button id="hiShareFiltersButton" class="hi-share-button" type="button">Copia link con filtri</button>
     </div>
-    <p class="hi-note"><strong>Perimetro:</strong> la dashboard combina stato di salute ISTAT Health for All, dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale e per struttura della prima disponibilit&agrave; proposta.</p>
+    <p class="hi-note"><strong>Perimetro:</strong> la dashboard combina stato di salute ISTAT Health for All, mortalit&agrave; per causa, esiti ospedalieri PNE per struttura, dimissioni/ricoveri ospedalieri per disciplina, tempi medi di permanenza in pronto soccorso per struttura e codice triage, e liste d'attesa PNLA per prime visite ed esami diagnostici a livello regionale e per struttura della prima disponibilit&agrave; proposta.</p>
 
     <section id="indicatori" class="dashboard-section">
       <div class="section-head">
@@ -369,6 +370,117 @@
         </div>
         <div id="hiMortalityDetailTrendChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiMortalityDetailTrendNote" class="hi-chart-credit">Fonte: Eurostat hlth_cd_asdr2. Elaborazione di Nazareno Lecis.</p>
+      </article>
+    </section>
+
+    <section id="esiti-pne" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Esiti ospedalieri PNE</span>
+        <div><h2>Qualit&agrave; e mortalit&agrave; post-intervento per struttura</h2><p>Indicatori AGENAS PNE attribuiti alla struttura che ha trattato il paziente: mortalit&agrave; grezza, mortalit&agrave; aggiustata, successo derivato e volumi/casi della coorte.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiPneOutcomeTitle">Esiti ospedalieri PNE</h3><span id="hiPneOutcomeTag">PNE</span></div>
+        <p id="hiPneOutcomeSubtitle" class="hi-card-subtitle">Ranking per struttura sugli indicatori PNE selezionati.</p>
+        <div class="hi-chart-controls" aria-label="Filtri esiti ospedalieri PNE">
+          <label>Indicatore
+            <select id="hiPneOutcomeIndicatorFilter"></select>
+          </label>
+          <label>Regione
+            <select id="hiPneOutcomeRegionFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiPneOutcomeMetricFilter">
+              <option value="success_rate_adjusted_percent">Successo aggiustato</option>
+              <option value="mortality_adjusted_percent">Mortalit&agrave; aggiustata</option>
+              <option value="success_rate_raw_percent">Successo grezzo</option>
+              <option value="mortality_raw_percent">Mortalit&agrave; grezza</option>
+              <option value="cases">Casi nella coorte</option>
+              <option value="events">Eventi osservati</option>
+            </select>
+          </label>
+          <label>Casi minimi
+            <select id="hiPneOutcomeMinCasesFilter">
+              <option value="0">Nessuna soglia</option>
+              <option value="10">Almeno 10</option>
+              <option value="30">Almeno 30</option>
+              <option value="50" selected>Almeno 50</option>
+              <option value="100">Almeno 100</option>
+            </select>
+          </label>
+          <label>Numero strutture
+            <select id="hiPneOutcomeLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+              <option value="all">Tutte</option>
+            </select>
+          </label>
+          <label>Struttura in evidenza
+            <select id="hiPneOutcomeFocusStructureFilter"></select>
+          </label>
+        </div>
+        <div id="hiPneOutcomeSummary" class="hi-profile-grid"></div>
+        <div id="hiPneOutcomeChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiPneOutcomeNote" class="hi-chart-credit">Fonte: AGENAS PNE. Elaborazione di Nazareno Lecis.</p>
+        <div id="hiPneOutcomeTable" class="hi-table-wrap"></div>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiPneQualityTitle">Indice PNE per struttura</h3><span id="hiPneQualityTag">+/-1 DS</span></div>
+        <p id="hiPneQualitySubtitle" class="hi-card-subtitle">Boxplot con z-score calcolato separatamente per ogni indicatore PNE.</p>
+        <div class="hi-chart-controls" aria-label="Filtri boxplot esiti PNE">
+          <label>Vista
+            <select id="hiPneQualityLayoutFilter">
+              <option value="region_structure">Box regioni - punti strutture</option>
+              <option value="indicator_structure">Box indicatori - punti strutture</option>
+              <option value="structure_indicator">Box strutture - punti indicatori</option>
+            </select>
+          </label>
+          <label>Indicatore
+            <select id="hiPneQualityIndicatorFilter"></select>
+          </label>
+          <label>Regione
+            <select id="hiPneQualityRegionFilter"></select>
+          </label>
+          <label>Misura qualit&agrave;
+            <select id="hiPneQualityMetricFilter">
+              <option value="success_rate_adjusted_percent">Successo aggiustato</option>
+              <option value="mortality_adjusted_percent">Mortalit&agrave; aggiustata</option>
+              <option value="success_rate_raw_percent">Successo grezzo</option>
+              <option value="mortality_raw_percent">Mortalit&agrave; grezza</option>
+            </select>
+          </label>
+          <label>Casi minimi
+            <select id="hiPneQualityMinCasesFilter">
+              <option value="0">Nessuna soglia</option>
+              <option value="10">Almeno 10</option>
+              <option value="30">Almeno 30</option>
+              <option value="50" selected>Almeno 50</option>
+              <option value="100">Almeno 100</option>
+            </select>
+          </label>
+          <label>Numero box
+            <select id="hiPneQualityLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+              <option value="all">Tutti</option>
+            </select>
+          </label>
+          <label>Struttura focus
+            <select id="hiPneQualityFocusStructureFilter"></select>
+          </label>
+        </div>
+        <div id="hiPneQualitySummary" class="hi-profile-grid"></div>
+        <div id="hiPneQualityChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiPneQualityNote" class="hi-chart-credit">Fonte: AGENAS PNE. Elaborazione di Nazareno Lecis.</p>
+        <div id="hiPneQualityTable" class="hi-table-wrap"></div>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiPneVolumeTrendTitle">Storico PNE volumi pancreas</h3><span id="hiPneVolumeTrendTag">PNE</span></div>
+        <p id="hiPneVolumeTrendSubtitle" class="hi-card-subtitle">Serie annua dei ricoveri per resezione pancreatica per tumore maligno.</p>
+        <div id="hiPneVolumeTrendChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiPneVolumeTrendNote" class="hi-chart-credit">Fonte: AGENAS PNE. Elaborazione di Nazareno Lecis.</p>
+        <div id="hiPneVolumeTrendTable" class="hi-table-wrap"></div>
       </article>
     </section>
 
