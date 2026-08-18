@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260818-pnla-box-2",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-pnla-box-2",
+    "../../data/sanita-italia/dashboard.json?v=20260818-pnla-box-3",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-pnla-box-3",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -4884,13 +4884,16 @@
       return;
     }
     var groupLabels = rows.groupLabels || unique(rows.map(function (row) { return row.group_label; }));
+    var chartNode = byId("hiWaitingQualityChart");
+    if (chartNode) chartNode.style.height = Math.max(520, Math.min(1400, 150 + groupLabels.length * 34)) + "px";
     var traces = groupLabels.map(function (label) {
       var groupRows = rows.filter(function (row) { return row.group_label === label; });
       return {
         type: "box",
         name: compact(label, 32),
-        x: groupRows.map(function () { return label; }),
-        y: groupRows.map(function (row) { return row.selected_value; }),
+        orientation: "h",
+        x: groupRows.map(function (row) { return row.selected_value; }),
+        y: groupRows.map(function () { return compact(label, 48); }),
         boxpoints: false,
         fillcolor: "rgba(160,160,160,.16)",
         line: { color: cssVar("--muted", "#b9b2aa") },
@@ -4902,8 +4905,8 @@
       type: "scatter",
       mode: "markers",
       name: labels.point,
-      x: rows.map(function (row) { return row.group_label; }),
-      y: rows.map(function (row) { return row.selected_value; }),
+      x: rows.map(function (row) { return row.selected_value; }),
+      y: rows.map(function (row) { return compact(row.group_label, 48); }),
       text: rows.map(function (row) { return row.point_label; }),
       customdata: rows.map(function (row) {
         return [row.group_label, row.point_label, row.region, row.service || row.service_type, row.structure || "", row.selected_value_text, row.quality_score_text, row.quality_status, row.bookings];
@@ -4918,15 +4921,18 @@
     });
     plot("hiWaitingQualityChart", traces, {
       showlegend: false,
-      margin: { t: 20, r: 30, b: 126, l: 86 },
+      margin: { t: 20, r: 30, b: 62, l: 300 },
       xaxis: {
+        title: config.xTitle,
+        automargin: true
+      },
+      yaxis: {
         title: labels.group,
-        tickangle: -35,
         automargin: true,
         categoryorder: "array",
-        categoryarray: groupLabels
-      },
-      yaxis: { title: config.xTitle }
+        categoryarray: groupLabels.map(function (label) { return compact(label, 48); }),
+        autorange: "reversed"
+      }
     });
   }
 
