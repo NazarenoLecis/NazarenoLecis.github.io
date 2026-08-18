@@ -3252,9 +3252,13 @@
     ["Box prestazioni - punti regioni", "Service boxes - region points"],
     ["Box tipologie - punti strutture", "Service-type boxes - facility points"],
     ["Box prestazioni - punti strutture", "Service boxes - facility points"],
+    ["Box strutture - punti prestazioni", "Facility boxes - service points"],
     ["Tipologia prestazione", "Service type"],
     ["Singola prestazione", "Single service"],
     ["Numero box", "Number of boxes"],
+    ["Ambito territoriale", "Territorial scope"],
+    ["Misura qualita", "Quality measure"],
+    ["Misura qualità", "Quality measure"],
     ["Punti nel boxplot", "Points in the box plot"],
     ["Media punti", "Point mean"],
     ["media semplice dei punti visualizzati", "simple mean of displayed points"],
@@ -3262,6 +3266,10 @@
     ["Boxplot per regioni", "Box plot by region"],
     ["Boxplot per tipologie", "Box plot by service type"],
     ["Boxplot per prestazioni", "Box plot by service"],
+    ["Boxplot PNLA per regioni", "PNLA box plot by region"],
+    ["Boxplot PNLA per prestazioni", "PNLA box plot by service"],
+    ["Boxplot PNLA per tipologia", "PNLA box plot by service type"],
+    ["Boxplot PNLA per strutture", "PNLA box plot by facility"],
     ["punti tipologie", "service-type points"],
     ["punti tipologie di prestazione", "service-type points"],
     ["punti prestazioni", "service points"],
@@ -3271,12 +3279,16 @@
     ["Ogni box e una regione o provincia autonoma", "Each box is a region or autonomous province"],
     ["Ogni box e una prestazione", "Each box is a service"],
     ["Ogni box e una tipologia di prestazione", "Each box is a service type"],
+    ["Ogni box e una struttura", "Each box is a facility"],
     ["Ogni box e una singola prestazione", "Each box is a single service"],
     ["ogni punto e una tipologia di prestazione", "each point is a service type"],
     ["ogni punto e una prestazione", "each point is a service"],
     ["ogni punto e una singola prestazione", "each point is a single service"],
     ["ogni punto e una regione o provincia autonoma", "each point is a region or autonomous province"],
     ["ogni punto e una struttura della regione selezionata", "each point is a facility in the selected region"],
+    ["ogni punto e una struttura con dato disponibile", "each point is a facility with available data"],
+    ["ogni punto e una prestazione filtrata", "each point is a filtered service"],
+    ["ogni punto e una prestazione aggregata sulle strutture", "each point is a service aggregated across facilities"],
     ["regione strutture", "facility region"],
     ["regione facilities", "facility region"],
     ["Il colore segnala chi sta almeno a +/-1 deviazione standard dalla media dei punti visualizzati", "Colour highlights points at least +/-1 standard deviation from the displayed-point mean"],
@@ -3284,8 +3296,19 @@
     ["sull'asse orizzontale", "on the horizontal axis"],
     ["punti =", "points ="],
     ["Ogni box e una traccia separata e il filtro Vista decide come costruirlo", "Each box is a separate trace and the View filter decides how to build it"],
+    ["Boxplot calcolato sui punti selezionati dai filtri del boxplot, non dai filtri del grafico a barre sopra. L'indice qualita e uno z-score descrittivo calcolato dentro ogni box: almeno +1 DS indica performance migliore della media del proprio box, almeno -1 DS performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. I file struttura PNLA non pubblicano la provincia, quindi non e disponibile il box per province.", "Box plot calculated on the points selected by the box-plot filters, not by the bar-chart filters above. The quality index is a descriptive z-score calculated within each box: at least +1 SD indicates better-than-average performance within that box, while -1 SD or below indicates worse performance. For day metrics, lower values are better; for percentages, higher values are better. PNLA facility files do not publish province detail, so a province-level box plot is not available."],
+    ["Boxplot calcolato sui punti selezionati dai filtri del boxplot, non dai filtri del grafico a barre sopra", "Box plot calculated on the points selected by the box-plot filters, not by the bar-chart filters above"],
+    ["calcolato dentro ogni box", "calculated within each box"],
+    ["del proprio box", "within that box"],
+    ["almeno -1 SD worse performance", "at least -1 SD indicates worse performance"],
+    ["quindi a province-level box plot is not available", "so a province-level box plot is not available"],
     ["I file PNLA struttura non pubblicano la provincia; per questo il livello disponibile qui e la struttura della prima disponibilita proposta", "PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability"],
     ["I file PNLA Structure non pubblicano la provincia; per questo il livello disponibile qui e la Structure della prima disponibilita proposta", "PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability"],
+    ["La fonte PNLA disponibile qui pubblica il confronto territoriale per regione/provincia autonoma; il dettaglio province NUTS3 non e presente, quindi non viene mostrato un filtro provincia", "The PNLA source available here publishes territorial comparisons by region/autonomous province; NUTS3 province detail is not present, so a province filter is not shown"],
+    ["I file struttura PNLA non pubblicano la provincia", "PNLA facility files do not publish the province"],
+    ["non e disponibile il box per province", "a province-level box plot is not available"],
+    ["Filtri autonomi del boxplot", "Independent box-plot filters"],
+    ["tutte le regioni disponibili", "all available regions"],
     ["calcolato sui punti visualizzati", "calculated on displayed points"],
     ["performance peggiore", "worse performance"],
     ["area non presente nei filtri", "area not present in the filters"],
@@ -3324,6 +3347,8 @@
     ["righe", "rows"],
     ["Boxplot strutture PNLA", "PNLA facility box plot"],
     ["Boxplot facilities PNLA", "PNLA facility box plot"],
+    ["Boxplot liste d'attesa PNLA", "PNLA waiting-list box plot"],
+    ["Confronto configurabile delle distribuzioni PNLA per regione, tipologia, prestazione e struttura", "Configurable comparison of PNLA distributions by region, service type, service and facility"],
     ["Storico della selezione", "Selection history"],
     ["Confronto annuo della stessa selezione tra Italia e territorio evidenziato", "Annual comparison of the same selection between Italy and the highlighted area"],
     ["Storico PNLA", "PNLA history"],
@@ -3573,8 +3598,10 @@
       .split("almeno +1 SD indica permanenze piu brevi della mean").join("at least +1 SD indicates shorter-than-average stays")
       .split("rispetto alla mean semplice delle facilities").join("against the simple mean of facilities")
       .split("almeno -1 SD performance peggiore").join("at least -1 SD indicates worse performance")
+      .split("almeno -1 SD worse performance").join("at least -1 SD indicates worse performance")
       .split("-1 SD o meno worse performance").join("-1 SD or less indicates worse performance")
       .split("almeno -1 SD permanenze piu lunghe").join("at least -1 SD indicates longer stays")
+      .split("quindi a province-level box plot is not available").join("so a province-level box plot is not available")
       .split("Box prestazioni - facility points").join("Service boxes - facility points")
       .split("Box tipologie - facility points").join("Service-type boxes - facility points")
       .split("Box prestazioni - region points").join("Service boxes - region points")

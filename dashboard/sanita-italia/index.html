@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-ps-box-all-2">
-  <script defer src="../../assets/theme.js?v=20260818-ps-box-all-2"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-pnla-box-1">
+  <script defer src="../../assets/theme.js?v=20260818-pnla-box-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-ps-box-all-2"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-pnla-box-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -735,8 +735,48 @@
         </div>
         <div id="hiWaitingStructureChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiWaitingStructureNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
-        <div class="hi-card-title hi-card-title-secondary"><h3 id="hiWaitingStructureBoxTitle">Boxplot strutture PNLA</h3><span id="hiWaitingStructureBoxTag">+/-1 DS</span></div>
-        <p id="hiWaitingStructureBoxSubtitle" class="hi-card-subtitle">Distribuzione delle strutture della regione selezionata per la stessa prestazione, priorit&agrave; e misura.</p>
+        <div class="hi-card-title hi-card-title-secondary"><h3 id="hiWaitingStructureBoxTitle">Boxplot liste d'attesa PNLA</h3><span id="hiWaitingStructureBoxTag">+/-1 DS</span></div>
+        <p id="hiWaitingStructureBoxSubtitle" class="hi-card-subtitle">Confronto configurabile delle distribuzioni PNLA per regione, tipologia, prestazione e struttura.</p>
+        <div class="hi-chart-controls" aria-label="Filtri boxplot liste d'attesa PNLA per struttura">
+          <label>Vista boxplot
+            <select id="hiWaitingStructureBoxLayoutFilter">
+              <option value="region_structure">Box regioni - punti strutture</option>
+              <option value="service_structure" selected>Box prestazioni - punti strutture</option>
+              <option value="service_type_structure">Box tipologie - punti strutture</option>
+              <option value="structure_service">Box strutture - punti prestazioni</option>
+              <option value="region_service">Box regioni - punti prestazioni</option>
+              <option value="service_region">Box prestazioni - punti regioni</option>
+            </select>
+          </label>
+          <label>Ambito territoriale
+            <select id="hiWaitingStructureBoxRegionFilter"></select>
+          </label>
+          <label>Tipo prestazione
+            <select id="hiWaitingStructureBoxServiceTypeFilter"></select>
+          </label>
+          <label>Prestazione
+            <select id="hiWaitingStructureBoxServiceFilter"></select>
+          </label>
+          <label>Priorit&agrave;
+            <select id="hiWaitingStructureBoxPriorityFilter"></select>
+          </label>
+          <label>Misura qualit&agrave;
+            <select id="hiWaitingStructureBoxMetricFilter">
+              <option value="mean_first_available_days">Giorni medi alla prima disponibilit&agrave;</option>
+              <option value="mean_accepted_wait_days">Giorni medi all'appuntamento accettato</option>
+              <option value="within_target_percent">% entro soglia - prima disponibilit&agrave;</option>
+              <option value="accepted_within_target_percent">% entro soglia - appuntamento</option>
+            </select>
+          </label>
+          <label>Numero box
+            <select id="hiWaitingStructureBoxLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+              <option value="all">Tutti</option>
+            </select>
+          </label>
+        </div>
         <div id="hiWaitingStructureQualitySummary" class="hi-profile-grid"></div>
         <div id="hiWaitingStructureBoxChart" class="hi-chart"></div>
         <p id="hiWaitingStructureBoxNote" class="hi-chart-credit">Fonte: AGENAS PNLA. Elaborazione di Nazareno Lecis.</p>
