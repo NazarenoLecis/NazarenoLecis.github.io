@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260818-ps-box-tables-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-ps-box-tables-1",
+    "../../data/sanita-italia/dashboard.json?v=20260818-ps-box-all-2",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-ps-box-all-2",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
 
@@ -36,6 +36,11 @@
     psRegion: "Italia",
     psRegionTriage: "verde",
     psRegionMetric: "mean_wait_minutes",
+    psRegionBoxLayout: "level_region",
+    psRegionBoxTriage: "all",
+    psRegionBoxLevel: "all",
+    psRegionBoxMetric: "mean_wait_minutes",
+    psRegionBoxFocus: "Italia",
     psStructureRegion: "Italia",
     psStructureProvince: "all",
     psStructure: "all",
@@ -186,7 +191,7 @@
     "nationalBedsRegion", "nationalBedsYear", "nationalBedsMetric", "nationalBedsRatio", "nationalBedsLimit",
     "dischargeRegion", "dischargeProvince", "dischargeStructure", "dischargeDiscipline", "dischargeDisciplineMetric",
     "dischargeHospitalRegion", "dischargeHospitalProvince", "dischargeHospitalCategory", "dischargeHospitalLimit",
-    "psRegion", "psRegionTriage", "psRegionLevel", "psRegionMetric", "psStructureRegion", "psStructureProvince", "psStructure", "psStructureTriage", "psStructureLevel", "psStructureLimit", "psStructureBoxLayout",
+    "psRegion", "psRegionTriage", "psRegionLevel", "psRegionMetric", "psRegionBoxLayout", "psRegionBoxTriage", "psRegionBoxLevel", "psRegionBoxMetric", "psRegionBoxFocus", "psStructureRegion", "psStructureProvince", "psStructure", "psStructureTriage", "psStructureLevel", "psStructureLimit", "psStructureBoxLayout",
     "waitingYear", "waitingServiceType", "waitingService", "waitingPriority", "waitingRegime", "waitingAccess", "waitingMetric", "waitingRegionFocus",
     "waitingQualityYear", "waitingQualityServiceType", "waitingQualityService", "waitingQualityPriority", "waitingQualityRegime", "waitingQualityAccess", "waitingQualityMetric", "waitingQualityFocus", "waitingQualityLayout", "waitingQualityGranularity", "waitingQualityLimit", "waitingQualityStructureRegion",
     "waitingServiceRegion", "waitingServiceYear", "waitingServiceType2", "waitingServicePriority", "waitingServiceRegime", "waitingServiceAccess", "waitingServiceMetric", "waitingServiceLimit",
@@ -2816,6 +2821,7 @@
       ["hiDischargeRegionFilter", "dischargeRegion"],
       ["hiDischargeHospitalRegionFilter", "dischargeHospitalRegion"],
       ["hiPsRegionFilter", "psRegion"],
+      ["hiPsRegionBoxFocusFilter", "psRegionBoxFocus"],
       ["hiPsStructureRegionFilter", "psStructureRegion"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiCostRegionFilter", "costRegion"],
@@ -2838,8 +2844,10 @@
     fillSelect("hiHospitalDisciplineFilter", disciplineOptionsWithAll, STATE.hospitalDiscipline);
     fillSelect("hiTableDisciplineFilter", disciplineOptionsWithAll, STATE.tableDiscipline);
     refreshPsTriageFilter("hiPsRegionTriageFilter", "psRegionTriage", true);
+    refreshPsTriageFilter("hiPsRegionBoxTriageFilter", "psRegionBoxTriage", true);
     refreshPsTriageFilter("hiPsStructureTriageFilter", "psStructureTriage", true);
     refreshPsLevelFilter("hiPsRegionLevelFilter", "psRegionLevel");
+    refreshPsLevelFilter("hiPsRegionBoxLevelFilter", "psRegionBoxLevel");
     refreshPsLevelFilter("hiPsStructureLevelFilter", "psStructureLevel");
     fillSelect("hiCostTypeFilter", costOptions, STATE.costType);
     var latestBedsYear = STATE.payload.kpis && STATE.payload.kpis.beds_latest_year;
@@ -2869,6 +2877,8 @@
       ["hiDischargeHospitalCategoryFilter", "dischargeHospitalCategory"],
       ["hiDischargeHospitalLimitFilter", "dischargeHospitalLimit"],
       ["hiPsRegionMetricFilter", "psRegionMetric"],
+      ["hiPsRegionBoxLayoutFilter", "psRegionBoxLayout"],
+      ["hiPsRegionBoxMetricFilter", "psRegionBoxMetric"],
       ["hiPsStructureLimitFilter", "psStructureLimit"],
       ["hiDischargeDisciplineMetricFilter", "dischargeDisciplineMetric"],
       ["hiHospitalDepartmentMetricFilter", "hospitalDepartmentMetric"],
@@ -2936,6 +2946,11 @@
       ["hiPsRegionTriageFilter", "psRegionTriage"],
       ["hiPsRegionLevelFilter", "psRegionLevel"],
       ["hiPsRegionMetricFilter", "psRegionMetric"],
+      ["hiPsRegionBoxLayoutFilter", "psRegionBoxLayout"],
+      ["hiPsRegionBoxTriageFilter", "psRegionBoxTriage"],
+      ["hiPsRegionBoxLevelFilter", "psRegionBoxLevel"],
+      ["hiPsRegionBoxMetricFilter", "psRegionBoxMetric"],
+      ["hiPsRegionBoxFocusFilter", "psRegionBoxFocus"],
       ["hiPsStructureRegionFilter", "psStructureRegion"],
       ["hiPsStructureProvinceFilter", "psStructureProvince"],
       ["hiPsStructureFilter", "psStructure"],
@@ -3622,37 +3637,242 @@
     });
   }
 
-  function renderPsRegionQualityChart() {
-    var metric = STATE.psRegionMetric || "mean_wait_minutes";
-    var config = qualityDistributionConfig(psMetricLabel(metric), "selected_value", formatDurationMinutes, "minuti", true);
-    var triageText = STATE.psRegionTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psRegionTriage).toLowerCase();
-    var levelText = psLevelText(STATE.psRegionLevel);
-    var rows = applyQualityDistribution(psRegionalStructureRows().map(function (row) {
-      var copy = Object.assign({}, row);
-      copy.selected_value = toNumber(row[metric]);
-      return copy;
+  function psRegionBoxSpec() {
+    if (STATE.psRegionBoxLayout === "triage_region") {
+      return {
+        group: "triage",
+        point: "region",
+        title: "Boxplot PS per codice triage",
+        groupLabel: "Codice triage",
+        pointLabel: "Regione",
+        subtitle: "Ogni box e un codice triage; ogni punto e una regione o provincia autonoma."
+      };
+    }
+    if (STATE.psRegionBoxLayout === "region_level") {
+      return {
+        group: "region",
+        point: "level",
+        title: "Boxplot PS per regione",
+        groupLabel: "Regione",
+        pointLabel: "Livello PS/DEA",
+        subtitle: "Ogni box e una regione; ogni punto e un livello PS/DEA pubblicato per quella regione."
+      };
+    }
+    if (STATE.psRegionBoxLayout === "region_triage") {
+      return {
+        group: "region",
+        point: "triage",
+        title: "Boxplot PS per regione",
+        groupLabel: "Regione",
+        pointLabel: "Codice triage",
+        subtitle: "Ogni box e una regione; ogni punto e un codice triage pubblicato per quella regione."
+      };
+    }
+    return {
+      group: "level",
+      point: "region",
+      title: "Boxplot PS per livello",
+      groupLabel: "Livello PS/DEA",
+      pointLabel: "Regione",
+      subtitle: "Ogni box e un livello PS/DEA; ogni punto e una regione o provincia autonoma."
+    };
+  }
+
+  function psRegionBoxDimension(row, dimension) {
+    if (dimension === "region") return { key: row.region, label: row.region };
+    if (dimension === "level") return { key: row.emergency_level || "Non classificato", label: row.emergency_level || "Non classificato" };
+    if (dimension === "triage") return { key: row.triage_code || "all", label: row.triage_label || triageLabel(row.triage_code || "all") };
+    return { key: "", label: "" };
+  }
+
+  function psRegionBoxRows(spec, config, metric) {
+    var grouped = {};
+    tableRows("ps_wait_times_by_structure_triage").forEach(function (row) {
+      if (!psLevelMatches(row, STATE.psRegionBoxLevel)) return;
+      if (STATE.psRegionBoxTriage !== "all" && row.triage_code !== STATE.psRegionBoxTriage) return;
+      var value = toNumber(row.wait_minutes);
+      if (value === null) return;
+      var group = psRegionBoxDimension(row, spec.group);
+      var point = psRegionBoxDimension(row, spec.point);
+      if (!group.key || !point.key) return;
+      var key = group.key + "||" + point.key;
+      if (!grouped[key]) {
+        grouped[key] = {
+          group_key: group.key,
+          group_label: group.label,
+          point_key: point.key,
+          point_label: point.label,
+          region: row.region,
+          emergency_level: row.emergency_level || "Non classificato",
+          triage_code: row.triage_code || "all",
+          triage_label: row.triage_label || triageLabel(row.triage_code || "all"),
+          values: [],
+          accesses_map: {},
+          structures_map: {}
+        };
+      }
+      grouped[key].values.push(value);
+      grouped[key].structures_map[psStructureKey(row)] = true;
+      grouped[key].accesses_map[psStructureKey(row)] = toNumber(row.accesses_total) || 0;
+    });
+    var rows = Object.keys(grouped).map(function (key) {
+      var item = grouped[key];
+      item.mean_wait_minutes = mean(item.values);
+      item.median_wait_minutes = median(item.values);
+      item.selected_value = toNumber(item[metric]) !== null ? toNumber(item[metric]) : item.mean_wait_minutes;
+      item.structures = Object.keys(item.structures_map).length;
+      item.accesses_total = Object.keys(item.accesses_map).reduce(function (total, structureKey) {
+        return total + (toNumber(item.accesses_map[structureKey]) || 0);
+      }, 0);
+      delete item.values;
+      delete item.structures_map;
+      delete item.accesses_map;
+      return item;
     }).filter(function (row) {
       return toNumber(row.selected_value) !== null;
-    }), config);
+    });
+    rows = applyGroupedQualityDistribution(rows, config);
+    var groupStats = {};
+    rows.forEach(function (row) {
+      if (!groupStats[row.group_key]) groupStats[row.group_key] = { key: row.group_key, label: row.group_label, values: [], order: 99 };
+      groupStats[row.group_key].values.push(row.selected_value);
+      if (spec.group === "level") groupStats[row.group_key].order = psLevelOrder(row.group_key);
+      if (spec.group === "triage") groupStats[row.group_key].order = triageOrder(row.group_key);
+      if (spec.group === "region") groupStats[row.group_key].order = 10;
+    });
+    var groups = Object.keys(groupStats).map(function (key) {
+      var group = groupStats[key];
+      group.mean_value = mean(group.values);
+      return group;
+    }).sort(function (a, b) {
+      if (spec.group === "region") return (toNumber(b.mean_value) || 0) - (toNumber(a.mean_value) || 0) || a.label.localeCompare(b.label);
+      return a.order - b.order || a.label.localeCompare(b.label);
+    });
+    var limit = spec.group === "region" ? 21 : groups.length;
+    var allowed = {};
+    groups.slice(0, limit).forEach(function (group) { allowed[group.key] = true; });
+    rows = rows.filter(function (row) { return allowed[row.group_key]; });
+    rows.groupLabels = groups.filter(function (group) { return allowed[group.key]; }).map(function (group) { return group.label; });
+    return rows;
+  }
+
+  function renderPsRegionBoxSummary(rows, spec) {
+    var container = byId("hiPsRegionQualitySummary");
+    clear(container);
+    rows = toArray(rows);
+    var better = rows.filter(function (row) { return toNumber(row.quality_score) !== null && row.quality_score >= 1; });
+    var worse = rows.filter(function (row) { return toNumber(row.quality_score) !== null && row.quality_score <= -1; }).sort(function (a, b) {
+      return (toNumber(a.quality_score) || 0) - (toNumber(b.quality_score) || 0);
+    });
+    var focusRows = STATE.psRegionBoxFocus === "Italia" ? [] : rows.filter(function (row) {
+      return asText(row.region) === asText(STATE.psRegionBoxFocus);
+    });
+    var focusScore = mean(focusRows.map(function (row) { return row.quality_score; }));
+    function labelList(list) {
+      return list.slice(0, 3).map(function (row) {
+        return compact(row.region + " / " + row.group_label, 48);
+      }).join(", ");
+    }
+    [
+      ["Box nel grafico", formatNumber((rows.groupLabels || []).length), spec.groupLabel],
+      ["Punti confrontati", formatNumber(rows.length), spec.pointLabel + " con dato disponibile"],
+      ["Meglio della media", formatNumber(better.length), labelList(better) || "nessun punto oltre +1 DS"],
+      ["Peggio della media", formatNumber(worse.length), labelList(worse) || "nessun punto sotto -1 DS"],
+      ["Focus", focusRows.length ? compact(STATE.psRegionBoxFocus, 42) : "nessun focus", focusRows.length ? formatSignedDecimal(focusScore) + " DS medio su " + formatNumber(focusRows.length) + " punti" : "seleziona una regione da evidenziare"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function renderPsRegionGroupedBoxplot(rows, spec) {
+    rows = toArray(rows);
+    if (rows.length < 2) {
+      showEmptyChart("hiPsRegionBoxChart", "Servono almeno due punti confrontabili per calcolare il boxplot");
+      return;
+    }
+    var groupLabels = rows.groupLabels || unique(rows.map(function (row) { return row.group_label; }));
+    var traces = groupLabels.map(function (label) {
+      var groupRows = rows.filter(function (row) { return row.group_label === label; });
+      return {
+        type: "box",
+        name: compact(label, 32),
+        x: groupRows.map(function () { return label; }),
+        y: groupRows.map(function (row) { return row.selected_value; }),
+        boxpoints: false,
+        fillcolor: "rgba(160,160,160,.16)",
+        line: { color: cssVar("--muted", "#b9b2aa") },
+        marker: { color: cssVar("--muted", "#b9b2aa") },
+        hoverinfo: "skip"
+      };
+    });
+    traces.push({
+      type: "scatter",
+      mode: "markers",
+      name: spec.pointLabel,
+      x: rows.map(function (row) { return row.group_label; }),
+      y: rows.map(function (row) { return row.selected_value; }),
+      text: rows.map(function (row) { return row.point_label; }),
+      customdata: rows.map(function (row) {
+        return [row.group_label, row.point_label, row.region, row.emergency_level, row.triage_label, row.selected_value_text, row.quality_score_text, row.quality_status, row.structures, row.accesses_total];
+      }),
+      marker: {
+        color: rows.map(function (row) { return STATE.psRegionBoxFocus !== "Italia" && row.region === STATE.psRegionBoxFocus ? COLORS[0] : waitingQualityColor(row.quality_score); }),
+        size: rows.map(function (row) { return STATE.psRegionBoxFocus !== "Italia" && row.region === STATE.psRegionBoxFocus ? 12 : 7; }),
+        opacity: .88,
+        line: { color: cssVar("--panel", "#090909"), width: 1 }
+      },
+      hovertemplate: "<b>%{customdata[0]}</b><br>" + spec.pointLabel + ": %{customdata[1]}<br>Regione: %{customdata[2]}<br>Livello: %{customdata[3]}<br>Codice: %{customdata[4]}<br>Permanenza: %{customdata[5]}<br>Indice qualita: %{customdata[6]}<br>Lettura: %{customdata[7]}<br>Strutture: %{customdata[8]:,.0f}<br>Accessi totali strutture: %{customdata[9]:,.0f}<extra></extra>"
+    });
+    plot("hiPsRegionBoxChart", traces, {
+      showlegend: false,
+      margin: { t: 20, r: 30, b: 126, l: 86 },
+      xaxis: {
+        title: spec.groupLabel,
+        tickangle: -35,
+        automargin: true,
+        categoryorder: "array",
+        categoryarray: groupLabels
+      },
+      yaxis: { title: "minuti" }
+    });
+  }
+
+  function renderPsRegionQualityChart() {
+    var layoutNode = byId("hiPsRegionBoxLayoutFilter");
+    if (layoutNode) layoutNode.value = STATE.psRegionBoxLayout;
+    var metric = STATE.psRegionBoxMetric || "mean_wait_minutes";
+    var config = qualityDistributionConfig(psMetricLabel(metric), "selected_value", formatDurationMinutes, "minuti", true);
+    var spec = psRegionBoxSpec();
+    var triageText = STATE.psRegionBoxTriage === "all" ? "tutti i codici disponibili" : triageLabel(STATE.psRegionBoxTriage).toLowerCase();
+    var levelText = psLevelText(STATE.psRegionBoxLevel);
+    var rows = psRegionBoxRows(spec, config, metric);
     var title = byId("hiPsRegionBoxTitle");
-    if (title) title.textContent = "Boxplot PS per regione - " + psMetricLabel(metric);
-    setSubtitle("hiPsRegionBoxSubtitle", "Ogni punto e una regione o provincia autonoma. Tempi piu bassi indicano una performance migliore rispetto alla media semplice delle aree. Filtro: " + triageText + ", " + levelText + ".");
-    setTag("hiPsRegionBoxTag", "2024 - " + triageText + " - +/-1 DS");
-    renderQualitySummary("hiPsRegionQualitySummary", rows, config, "region", "region", STATE.psRegion);
-    renderQualityBoxplot("hiPsRegionBoxChart", rows, config, "region", "region", STATE.psRegion, "Regioni");
+    if (title) title.textContent = spec.title + " - " + psMetricLabel(metric);
+    setSubtitle("hiPsRegionBoxSubtitle", spec.subtitle + " Tempi piu bassi indicano una performance migliore dentro il proprio box. Filtro: " + triageText + ", " + levelText + ".");
+    setTag("hiPsRegionBoxTag", "2024 - " + spec.groupLabel + " / " + spec.pointLabel);
+    renderPsRegionBoxSummary(rows, spec);
+    renderPsRegionGroupedBoxplot(rows, spec);
     setChartCredit("hiPsRegionBoxNote", [
       { id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture, Pronto Soccorso" }
-    ], "Boxplot calcolato sui valori regionali della permanenza dal triage alla dimissione. L'indice qualita e uno z-score descrittivo: almeno +1 DS indica tempi migliori della media, almeno -1 DS indica tempi peggiori. Il confronto resta omogeneo solo se il filtro livello PS/DEA separa pronto soccorso, DEA di 1 livello e DEA di 2 livello.");
+    ], "Boxplot calcolato sui punti filtrati. L'indice qualita e uno z-score descrittivo calcolato dentro ogni box: almeno +1 DS indica permanenze piu brevi della media del proprio box, almeno -1 DS permanenze piu lunghe. Il filtro Vista decide se il confronto e costruito per livello PS/DEA, codice triage o regione; gli accessi sono totali di struttura e non sono pubblicati per singolo codice triage.");
     createTable("hiPsRegionQualityTable", rows, [
+      ["group_label", spec.groupLabel],
+      ["point_label", spec.pointLabel],
       ["region", "Regione"],
+      ["emergency_level", "Livello PS/DEA"],
+      ["triage_label", "Codice triage"],
       ["selected_value_text", psMetricLabel(metric)],
-      ["quality_mean_text", "Media aree"],
+      ["quality_mean_text", "Media box"],
       ["quality_sd_text", "Deviazione standard"],
       ["quality_score_text", "Indice qualita"],
       ["quality_status", "Lettura"],
       ["structures", "Strutture"],
       ["accesses_total", "Accessi totali"]
-    ], 80);
+    ], 120);
   }
 
   function psWaitRowsForStructureChart() {

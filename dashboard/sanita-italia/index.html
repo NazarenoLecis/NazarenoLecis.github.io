@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-ps-box-tables-1">
-  <script defer src="../../assets/theme.js?v=20260818-ps-box-tables-1"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-ps-box-all-2">
+  <script defer src="../../assets/theme.js?v=20260818-ps-box-all-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-ps-box-tables-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-ps-box-all-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -512,6 +512,31 @@
         <p id="hiPsRegionNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
         <div class="hi-card-title hi-card-title-secondary"><h3 id="hiPsRegionBoxTitle">Boxplot PS per regione</h3><span id="hiPsRegionBoxTag">+/-1 DS</span></div>
         <p id="hiPsRegionBoxSubtitle" class="hi-card-subtitle">Distribuzione delle regioni rispetto alla media delle aree con evidenza di chi performa meglio o peggio di almeno una deviazione standard.</p>
+        <div class="hi-chart-controls" aria-label="Filtri boxplot pronto soccorso per regione">
+          <label>Vista boxplot
+            <select id="hiPsRegionBoxLayoutFilter">
+              <option value="level_region">Box livelli PS/DEA - punti regioni</option>
+              <option value="triage_region">Box codici triage - punti regioni</option>
+              <option value="region_level">Box regioni - punti livelli PS/DEA</option>
+              <option value="region_triage">Box regioni - punti codici triage</option>
+            </select>
+          </label>
+          <label>Codice triage
+            <select id="hiPsRegionBoxTriageFilter"></select>
+          </label>
+          <label>Livello PS/DEA
+            <select id="hiPsRegionBoxLevelFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiPsRegionBoxMetricFilter">
+              <option value="mean_wait_minutes">Media strutture</option>
+              <option value="median_wait_minutes">Mediana strutture</option>
+            </select>
+          </label>
+          <label>Focus
+            <select id="hiPsRegionBoxFocusFilter"></select>
+          </label>
+        </div>
         <div id="hiPsRegionQualitySummary" class="hi-profile-grid"></div>
         <div id="hiPsRegionBoxChart" class="hi-chart"></div>
         <p id="hiPsRegionBoxNote" class="hi-chart-credit">Fonte: AGENAS Trova Strutture, indicatori Pronto Soccorso. Elaborazione di Nazareno Lecis.</p>
