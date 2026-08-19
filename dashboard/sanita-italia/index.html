@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260818-pnla-box-3">
-  <script defer src="../../assets/theme.js?v=20260818-pnla-box-3"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260819-map-asl-1">
+  <script defer src="../../assets/theme.js?v=20260819-map-asl-1"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260818-pnla-box-3"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260819-map-asl-1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -73,6 +73,7 @@
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard sanit&agrave;">
       <a href="#indicatori">Indicatori</a>
+      <a href="#mappe">Mappe</a>
       <a href="#copertura">Dati disponibili</a>
       <a href="#salute">Salute</a>
       <a href="#tumori-recenti">Tumori recenti</a>
@@ -107,6 +108,31 @@
       <div id="hiKpis" class="hi-kpi-grid" aria-label="Indicatori principali"></div>
     </section>
 
+    <section id="mappe" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Mappe regionali</span>
+        <div><h2>Confronti geografici rapidi</h2><p>La mappa serve per vedere subito dove un valore regionale &egrave; alto o basso prima di entrare nei confronti per ASL, provincia, struttura o disciplina.</p></div>
+      </div>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiRegionalMapTitle">Mappa regionale</h3><span id="hiRegionalMapTag">regioni</span></div>
+        <p id="hiRegionalMapSubtitle" class="hi-card-subtitle">Scegli un ambito e un indicatore: la mappa mostra solo dati regionali pubblicati o aggregati in modo trasparente.</p>
+        <div class="hi-chart-controls" aria-label="Filtri mappa regionale">
+          <label>Ambito
+            <select id="hiRegionalMapTopicFilter"></select>
+          </label>
+          <label>Indicatore
+            <select id="hiRegionalMapMetricFilter"></select>
+          </label>
+          <label>Anno
+            <select id="hiRegionalMapYearFilter"></select>
+          </label>
+        </div>
+        <div id="hiRegionalMapChart" class="hi-chart hi-chart-wide hi-map-chart"></div>
+        <p id="hiRegionalMapNote" class="hi-chart-credit">Fonte: fonti sanitarie citate nel grafico. Elaborazione di Nazareno Lecis.</p>
+        <div id="hiRegionalMapTable" class="hi-table-wrap"></div>
+      </article>
+    </section>
+
     <section id="copertura" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Dati disponibili</span>
@@ -115,8 +141,8 @@
       <div class="hi-coverage-list hi-coverage-grid" aria-label="Copertura informativa dei dati sanitari">
         <div class="hi-coverage-item">
           <strong>Dimissioni e attivit&agrave; dei reparti</strong>
-          <span>Disponibili per disciplina, regione, provincia e struttura ospedaliera. Misure: dimissioni, giornate di degenza, posti letto, degenza media e utilizzo dei posti letto.</span>
-          <em>Italia / regione / provincia / ospedale / disciplina</em>
+          <span>Disponibili per disciplina, regione, ASL, provincia e struttura ospedaliera. Misure: dimissioni, giornate di degenza, posti letto, degenza media e utilizzo dei posti letto.</span>
+          <em>Italia / regione / ASL / provincia / ospedale / disciplina</em>
         </div>
         <div class="hi-coverage-item">
           <strong>Tipologia amministrativa della dimissione</strong>
@@ -1057,6 +1083,39 @@
         </div>
         <div id="hiHospitalChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiHospitalNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis. La numerosit&agrave; non misura automaticamente qualit&agrave; o appropriatezza.</p>
+      </article>
+      <article class="hi-card hi-chart-block">
+        <div class="hi-card-title"><h3 id="hiAslTitle">Attivit&agrave; ospedaliera per ASL</h3><span id="hiAslTag">Ministero Salute, 2022</span></div>
+        <p id="hiAslSubtitle" class="hi-card-subtitle">Confronto delle ASL sulla misura selezionata. Se scegli una disciplina, il grafico mostra quella disciplina dentro ciascuna ASL.</p>
+        <div class="hi-chart-controls" aria-label="Filtri ASL">
+          <label>Regione
+            <select id="hiAslRegionFilter"></select>
+          </label>
+          <label>Disciplina
+            <select id="hiAslDisciplineFilter"></select>
+          </label>
+          <label>Misura
+            <select id="hiAslMetricFilter">
+              <option value="discharges">Dimissioni</option>
+              <option value="stay_days">Giornate di degenza</option>
+              <option value="ordinary_beds">Posti letto ordinari</option>
+              <option value="used_beds">Posti letto utilizzati</option>
+              <option value="avg_los_days">Degenza media</option>
+              <option value="bed_utilization_percent">Utilizzo posti letto</option>
+            </select>
+          </label>
+          <label>Numero ASL
+            <select id="hiAslLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20">Top 20</option>
+              <option value="25" selected>Top 25</option>
+              <option value="all">Tutte</option>
+            </select>
+          </label>
+        </div>
+        <div id="hiAslChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiAslNote" class="hi-chart-credit">Fonte: Ministero della Salute, dati di attivit&agrave; dei reparti. Elaborazione di Nazareno Lecis.</p>
+        <div id="hiAslTable" class="hi-table-wrap"></div>
       </article>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiHospitalProfileTitle">Scheda ospedale</h3><span id="hiHospitalProfileTag">profilo struttura</span></div>

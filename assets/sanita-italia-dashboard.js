@@ -2,10 +2,11 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260818-pnla-box-3",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260818-pnla-box-3",
+    "../../data/sanita-italia/dashboard.json?v=20260819-map-asl-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260819-map-asl-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
+  var REGIONAL_GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
 
   var STATE = {
     payload: null,
@@ -14,6 +15,9 @@
     discipline: "",
     metric: "discharges",
     ratioMode: "population_total",
+    regionalMapTopic: "overview",
+    regionalMapMetric: "overview_discharges_per_1000",
+    regionalMapYear: "latest",
     nationalActivityRegion: "Italia",
     nationalActivityProvince: "all",
     nationalActivityMetric: "discharges",
@@ -175,6 +179,10 @@
     hospitalProfileRegion: "Sardegna",
     hospitalProfileProvince: "all",
     hospitalProfileStructure: "",
+    aslRegion: "Italia",
+    aslDiscipline: "all",
+    aslMetric: "discharges",
+    aslLimit: "25",
     mobilityRatio: "absolute",
     mobilitySeriesRegion: "Italia",
     mobilitySeriesRatio: "absolute",
@@ -190,10 +198,13 @@
 
   var WAITING_STRUCTURE_CACHE = {};
   var WAITING_STRUCTURE_LOADING = {};
+  var REGIONAL_GEOJSON_CACHE = null;
+  var REGIONAL_GEOJSON_LOADING = null;
   var TABLE_EXPANDED = {};
 
   var URL_STATE_KEYS = [
     "region", "discipline", "metric", "ratioMode",
+    "regionalMapTopic", "regionalMapMetric", "regionalMapYear",
     "nationalActivityRegion", "nationalActivityProvince", "nationalActivityMetric", "nationalActivityRatio", "nationalActivityLimit",
     "nationalBedsRegion", "nationalBedsYear", "nationalBedsMetric", "nationalBedsRatio", "nationalBedsLimit",
     "dischargeRegion", "dischargeProvince", "dischargeStructure", "dischargeDiscipline", "dischargeDisciplineMetric",
@@ -217,6 +228,7 @@
     "costRegion", "costRatio", "costType", "costCompositionRegion", "bedsSeriesRegion", "bedsSeriesMetric", "bedsSeriesRatio", "pharmaRegion", "pharmaLabel",
     "hospitalRegion", "hospitalProvince", "hospitalDiscipline", "hospitalDepartmentRegion", "hospitalDepartmentProvince", "hospitalDepartmentStructure", "hospitalDepartmentMetric", "hospitalDepartmentLimit",
     "hospitalProfileRegion", "hospitalProfileProvince", "hospitalProfileStructure",
+    "aslRegion", "aslDiscipline", "aslMetric", "aslLimit",
     "mobilityRatio", "mobilitySeriesRegion", "mobilitySeriesRatio", "mobilityHospitalRegion", "mobilityHospitalLimit", "mobilitySankeyMin",
     "tableRegion", "tableProvince", "tableDiscipline", "table"
   ];
@@ -310,6 +322,39 @@
         ["relevant_denominator", "Denominatore"],
         ["avg_los_days", "Degenza media"],
         ["bed_utilization_percent", "Utilizzo PL"]
+      ]
+    },
+    {
+      id: "activity_by_asl",
+      label: "Attivita per ASL",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["asl", "ASL"],
+        ["discharges", "Dimissioni"],
+        ["stay_days", "Giornate degenza"],
+        ["ordinary_beds", "Posti letto ordinari"],
+        ["used_beds", "Posti letto utilizzati"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo PL"],
+        ["structures", "Strutture"]
+      ]
+    },
+    {
+      id: "activity_by_asl_discipline",
+      label: "Attivita per ASL e disciplina",
+      columns: [
+        ["year", "Anno"],
+        ["region", "Regione"],
+        ["asl", "ASL"],
+        ["discipline", "Disciplina"],
+        ["discharges", "Dimissioni"],
+        ["stay_days", "Giornate degenza"],
+        ["ordinary_beds", "Posti letto ordinari"],
+        ["used_beds", "Posti letto utilizzati"],
+        ["avg_los_days", "Degenza media"],
+        ["bed_utilization_percent", "Utilizzo PL"],
+        ["structures", "Strutture"]
       ]
     },
     {
@@ -1041,6 +1086,376 @@
     return region || "Italia";
   }
 
+  function regionalMapTopicOptions() {
+    return [
+      { value: "overview", label: "Quadro generale" },
+      { value: "activity", label: "Ricoveri e posti letto" },
+      { value: "ps", label: "Pronto soccorso" },
+      { value: "waiting", label: "Liste d'attesa PNLA" },
+      { value: "health", label: "Salute" },
+      { value: "mortality", label: "Mortalita" },
+      { value: "pne", label: "Esiti PNE" },
+      { value: "costs", label: "Spesa e mobilita" }
+    ];
+  }
+
+  function regionalMapMetricOptions(topic) {
+    var metrics = {
+      overview: [
+        { value: "overview_discharges_per_1000", label: "Dimissioni per 1.000 residenti" },
+        { value: "overview_beds_per_1000", label: "Posti letto per 1.000 residenti" },
+        { value: "overview_cost_per_capita", label: "Costo SSN per abitante" },
+        { value: "overview_mobility_per_capita", label: "Saldo mobilita per abitante" }
+      ],
+      activity: [
+        { value: "activity_discharges", label: "Dimissioni" },
+        { value: "activity_avg_los", label: "Degenza media" },
+        { value: "activity_bed_utilization", label: "Utilizzo posti letto" }
+      ],
+      ps: [
+        { value: "ps_rosso_wait", label: "PS - permanenza codice rosso" },
+        { value: "ps_giallo_wait", label: "PS - permanenza codice giallo" },
+        { value: "ps_verde_wait", label: "PS - permanenza codice verde" },
+        { value: "ps_bianco_wait", label: "PS - permanenza codice bianco" },
+        { value: "ps_all_wait", label: "PS - permanenza media tutti i codici disponibili" }
+      ],
+      waiting: [
+        { value: "waiting_mean_first", label: "PNLA - giorni alla prima disponibilita" },
+        { value: "waiting_within_target", label: "PNLA - % entro soglia" },
+        { value: "waiting_bookings", label: "PNLA - prenotazioni" }
+      ],
+      health: [
+        { value: "health_selected", label: "Indicatore salute selezionato" }
+      ],
+      mortality: [
+        { value: "mortality_detail_selected", label: "Causa di mortalita selezionata" }
+      ],
+      pne: [
+        { value: "pne_selected", label: "Indicatore PNE selezionato" }
+      ],
+      costs: [
+        { value: "cost_total", label: "Costo SSN totale" },
+        { value: "cost_percent_gdp", label: "Costo SSN / PIL" },
+        { value: "mobility_balance_million", label: "Saldo mobilita netto" }
+      ]
+    };
+    return metrics[topic] || metrics.overview;
+  }
+
+  function refreshRegionalMapFilters() {
+    var topicOptions = regionalMapTopicOptions();
+    if (!topicOptions.some(function (option) { return option.value === STATE.regionalMapTopic; })) {
+      STATE.regionalMapTopic = "overview";
+    }
+    var metricOptions = regionalMapMetricOptions(STATE.regionalMapTopic);
+    if (!metricOptions.some(function (option) { return option.value === STATE.regionalMapMetric; })) {
+      STATE.regionalMapMetric = metricOptions[0] ? metricOptions[0].value : "overview_discharges_per_1000";
+    }
+    var yearOptions = regionalMapYearOptions(STATE.regionalMapMetric);
+    if (!yearOptions.some(function (option) { return option.value === STATE.regionalMapYear; })) {
+      STATE.regionalMapYear = "latest";
+    }
+    fillSelect("hiRegionalMapTopicFilter", topicOptions, STATE.regionalMapTopic);
+    fillSelect("hiRegionalMapMetricFilter", metricOptions, STATE.regionalMapMetric);
+    fillSelect("hiRegionalMapYearFilter", yearOptions, STATE.regionalMapYear);
+    var yearNode = byId("hiRegionalMapYearFilter");
+    if (yearNode) yearNode.disabled = yearOptions.length <= 1;
+  }
+
+  function regionalMapYearOptions(metric) {
+    if (metric === "waiting_mean_first" || metric === "waiting_within_target" || metric === "waiting_bookings") {
+      return waitingYearOptions();
+    }
+    if (metric === "health_selected") {
+      return healthYearOptions(STATE.healthIndicator, STATE.healthGroup, true);
+    }
+    if (metric === "mortality_detail_selected") {
+      return mortalityDetailYearOptions(STATE.mortalityDetailCause, true);
+    }
+    return [{ value: "latest", label: "Ultimo anno disponibile" }];
+  }
+
+  function regionalMapYearValue(metric) {
+    if (metric === "waiting_mean_first" || metric === "waiting_within_target" || metric === "waiting_bookings") {
+      return waitingYearValue(STATE.regionalMapYear);
+    }
+    if (metric === "health_selected") {
+      return healthYearValue(STATE.regionalMapYear, STATE.healthIndicator, true);
+    }
+    if (metric === "mortality_detail_selected") {
+      return mortalityDetailYearValue(STATE.regionalMapYear, STATE.mortalityDetailCause, true);
+    }
+    return null;
+  }
+
+  function regionalMapSourceRows(field, yearField, detail, weightField) {
+    return tableRows("regional_summary").map(function (row) {
+      return {
+        region: row.region,
+        value: toNumber(row[field]),
+        year: row[yearField] || row.activity_year || row.year,
+        detail: detail || "",
+        weight: weightField ? toNumber(row[weightField]) : toNumber(row.population_total)
+      };
+    });
+  }
+
+  function regionalMapPsRows(triageCode) {
+    var rows = tableRows("ps_wait_times_by_region_triage").filter(function (row) {
+      if (triageCode !== "all" && row.triage_code !== triageCode) return false;
+      return true;
+    });
+    var latest = Math.max.apply(null, rows.map(function (row) { return toNumber(row.year) || 0; }));
+    rows = rows.filter(function (row) { return row.year === latest; });
+    if (triageCode !== "all") {
+      return rows.map(function (row) {
+        return {
+          region: row.region,
+          value: toNumber(row.mean_wait_minutes),
+          year: row.year,
+          detail: row.triage_label + ", " + formatNumber(row.structures) + " PS/DEA",
+          weight: toNumber(row.structures)
+        };
+      });
+    }
+    var grouped = {};
+    rows.forEach(function (row) {
+      var item = grouped[row.region] || { region: row.region, values: [], year: row.year, structures: 0 };
+      var value = toNumber(row.mean_wait_minutes);
+      var weight = toNumber(row.structures) || 1;
+      if (value !== null) item.values.push({ value: value, weight: weight });
+      item.structures += weight;
+      grouped[row.region] = item;
+    });
+    return Object.keys(grouped).map(function (region) {
+      var item = grouped[region];
+      var total = 0;
+      var weightTotal = 0;
+      item.values.forEach(function (point) {
+        total += point.value * point.weight;
+        weightTotal += point.weight;
+      });
+      return {
+        region: region,
+        value: weightTotal ? total / weightTotal : null,
+        year: item.year,
+        detail: "media dei codici disponibili, " + formatNumber(item.structures) + " punti PS/DEA",
+        weight: item.structures
+      };
+    });
+  }
+
+  function regionalMapWaitingRows(metric) {
+    var settings = {
+      year: STATE.regionalMapYear,
+      region: "Italia",
+      serviceType: STATE.waitingServiceType,
+      service: STATE.waitingService,
+      priority: STATE.waitingPriority === "all" ? "B - Breve (10 giorni)" : STATE.waitingPriority,
+      regime: STATE.waitingRegime,
+      access: STATE.waitingAccess
+    };
+    var config = waitingMetricConfig(metric === "waiting_within_target" ? "within_target_percent" : (metric === "waiting_bookings" ? "bookings" : "mean_first_available_days"));
+    return aggregateWaitingRows(filterWaitingRows(settings), function (row) { return row.region; }, function (row) { return row.region; }).map(function (row) {
+      return {
+        region: row.label,
+        value: toNumber(row[config.field]),
+        year: regionalMapYearValue(metric),
+        detail: waitingScopeText(settings) + ", " + formatNumber(row.bookings) + " prenotazioni",
+        weight: toNumber(row.bookings)
+      };
+    });
+  }
+
+  function regionalMapHealthRows() {
+    var indicator = healthIndicatorById(STATE.healthIndicator);
+    var year = regionalMapYearValue("health_selected");
+    return healthRows().filter(function (row) {
+      return row.territory_type === "region" && row.indicator_id === STATE.healthIndicator && row.year === year;
+    }).map(function (row) {
+      return {
+        region: row.territory,
+        value: toNumber(row.value),
+        year: row.year,
+        detail: indicator ? indicator.label : row.indicator,
+        weight: 1
+      };
+    });
+  }
+
+  function regionalMapMortalityRows() {
+    var cause = mortalityDetailCauseByCode(STATE.mortalityDetailCause);
+    var year = regionalMapYearValue("mortality_detail_selected");
+    return mortalityDetailRows().filter(function (row) {
+      return row.territory_type === "region" && row.cause_code === STATE.mortalityDetailCause && row.year === year;
+    }).map(function (row) {
+      return {
+        region: row.territory,
+        value: toNumber(row.value),
+        year: row.year,
+        detail: cause ? cause.label + " (" + cause.cause_code + ")" : row.cause,
+        weight: 1
+      };
+    });
+  }
+
+  function regionalMapPneRows() {
+    var config = pneMetricConfig(STATE.pneOutcomeMetric);
+    var indicator = pneIndicatorByCode(STATE.pneOutcomeIndicator);
+    var grouped = {};
+    pneRowsWithMetric(pneSelectedRows(STATE.pneOutcomeIndicator, "Italia", STATE.pneOutcomeMinCases), config).forEach(function (row) {
+      if (!row.region) return;
+      var item = grouped[row.region] || { region: row.region, rows: [], cases: 0, valueTotal: 0, weightTotal: 0, year: row.year };
+      var value = toNumber(row.selected_value);
+      var cases = toNumber(row.cases) || 1;
+      if (value !== null) {
+        if (config.field === "cases" || config.field === "events" || config.field === "annual_volume_latest") {
+          item.valueTotal += value;
+          item.weightTotal = 1;
+        } else {
+          item.valueTotal += value * cases;
+          item.weightTotal += cases;
+        }
+      }
+      item.cases += toNumber(row.cases) || 0;
+      item.rows.push(row);
+      grouped[row.region] = item;
+    });
+    return Object.keys(grouped).map(function (region) {
+      var item = grouped[region];
+      return {
+        region: region,
+        value: item.weightTotal ? item.valueTotal / item.weightTotal : null,
+        year: item.year,
+        detail: (indicator ? compact(indicator.indicator_short_label || indicator.indicator_label, 80) : "Indicatore PNE") + ", " + formatNumber(item.rows.length) + " strutture",
+        weight: item.cases || item.rows.length
+      };
+    });
+  }
+
+  function regionalMapMetricConfig(metric) {
+    var baseSources = [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }];
+    if (metric === "overview_beds_per_1000") return { label: "Posti letto per 1.000 residenti", tag: "posti letto", format: formatDecimal, unit: "posti letto per 1.000", rows: function () { return regionalMapSourceRows("beds_per_1000", "beds_year", "posti letto totali", "population_total"); }, sources: [{ id: "ministero_posti_letto_2023", label: "Ministero Salute" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Valore regionale rapportato alla popolazione residente. Trento e Bolzano sono aggregati solo in mappa per coerenza con la geometria regionale disponibile." };
+    if (metric === "overview_cost_per_capita") return { label: "Costo SSN per abitante", tag: "spesa", format: formatEuroDecimal, unit: "euro per abitante", rows: function () { return regionalMapSourceRows("ssn_cost_per_capita_eur", "cost_year", "conto economico Enti SSN", "population_total"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Dati contabili regionali: non sono costi della singola prestazione clinica." };
+    if (metric === "overview_mobility_per_capita") return { label: "Saldo mobilita per abitante", tag: "mobilita", format: formatEuroDecimal, unit: "euro per abitante", signed: true, rows: function () { return regionalMapSourceRows("mobility_balance_per_capita_eur", "cost_year", "saldo economico netto mobilita", "population_total"); }, sources: [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Saldo economico netto: valori positivi indicano credito netto, valori negativi debito netto. Non e una matrice paziente origine-destinazione." };
+    if (metric === "activity_discharges") return { label: "Dimissioni ospedaliere", tag: "attivita", format: formatNumber, unit: "dimissioni", aggregate: "sum", rows: function () { return regionalMapSourceRows("discharges", "activity_year", "tutte le discipline"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Volumi ospedalieri regionali; la numerosita non misura da sola qualita o appropriatezza." };
+    if (metric === "activity_avg_los") return { label: "Degenza media", tag: "attivita", format: function (value) { return formatDecimal(value) + " giorni"; }, unit: "giorni", rows: function () { return regionalMapSourceRows("avg_los_days", "activity_year", "media regionale", "discharges"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Media regionale calcolata come giornate di degenza diviso dimissioni." };
+    if (metric === "activity_bed_utilization") return { label: "Utilizzo posti letto", tag: "attivita", format: formatPercent, unit: "%", rows: function () { return regionalMapSourceRows("bed_utilization_percent", "activity_year", "giornate degenza / giornate disponibili", "total_beds"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Indicatore di utilizzo della dotazione dichiarata, non misura personale o accessibilita reale." };
+    if (metric === "cost_total") return { label: "Costo SSN totale", tag: "spesa", format: formatEuroCompact, unit: "euro", aggregate: "sum", rows: function () { return regionalMapSourceRows("ssn_cost_eur", "cost_year", "conto economico Enti SSN"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }], note: "Dati di conto economico degli Enti del SSN, consuntivo regionale." };
+    if (metric === "cost_percent_gdp") return { label: "Costo SSN sul PIL regionale", tag: "spesa", format: formatPercent, unit: "% PIL", rows: function () { return regionalMapSourceRows("ssn_cost_percent_gdp", "cost_year", "conto economico Enti SSN / PIL Eurostat", "gdp_million_eur"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "eurostat_gdp_nuts2", label: "Eurostat PIL" }], note: "Rapporto tra costo SSN regionale e PIL regionale: aiuta a leggere il peso economico relativo." };
+    if (metric === "mobility_balance_million") return { label: "Saldo mobilita netto", tag: "mobilita", format: formatMillionEuro, unit: "milioni di euro", signed: true, aggregate: "sum", rows: function () { return regionalMapSourceRows("mobility_balance_million_eur", "cost_year", "compensazioni economiche nette"); }, sources: [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti" }], note: "Saldo economico netto 2024: non mostra i flussi paziente origine-destinazione." };
+    if (metric.indexOf("ps_") === 0) {
+      var triage = metric === "ps_all_wait" ? "all" : metric.replace("ps_", "").replace("_wait", "");
+      return { label: triage === "all" ? "Permanenza media PS" : "Permanenza PS " + triageLabel(triage).toLowerCase(), tag: "pronto soccorso", format: formatDurationMinutes, unit: "ore:minuti", rows: function () { return regionalMapPsRows(triage); }, sources: [{ id: "agenas_trova_strutture_ps", label: "AGENAS Trova Strutture" }], note: "Media regionale dei tempi pubblicati per struttura/codice triage; gli accessi per singolo codice non sono disponibili nell'endpoint usato." };
+    }
+    if (metric === "waiting_mean_first" || metric === "waiting_within_target" || metric === "waiting_bookings") {
+      var waitingMetric = metric === "waiting_within_target" ? "within_target_percent" : (metric === "waiting_bookings" ? "bookings" : "mean_first_available_days");
+      var waitingConfig = waitingMetricConfig(waitingMetric);
+      return { label: "PNLA - " + waitingConfig.label, tag: "liste attesa", format: waitingConfig.format, unit: waitingConfig.xTitle, rows: function () { return regionalMapWaitingRows(metric); }, sources: [{ id: "agenas_liste_attesa_pnla", label: "AGENAS PNLA" }], note: "Aggregazione regionale delle prestazioni PNLA filtrate. La fonte PNLA non pubblica nel payload corrente una ASL affidabile per questa vista." };
+    }
+    if (metric === "health_selected") {
+      var healthIndicator = healthIndicatorById(STATE.healthIndicator);
+      return { label: healthIndicator ? healthIndicator.label : "Indicatore salute", tag: "salute", format: function (value) { return formatHealthValue(value, healthIndicator); }, unit: healthUnitTitle(healthIndicator), rows: regionalMapHealthRows, sources: [{ id: "istat_health_for_all", label: "ISTAT Health for All" }], note: "La mappa usa l'indicatore selezionato nella sezione Salute e solo territori regionali disponibili nella fonte." };
+    }
+    if (metric === "mortality_detail_selected") {
+      var cause = mortalityDetailCauseByCode(STATE.mortalityDetailCause);
+      return { label: cause ? "Mortalita - " + cause.label : "Mortalita per causa", tag: "mortalita", format: formatMortalityDetailValue, unit: "decessi per 100.000, tasso standardizzato", rows: regionalMapMortalityRows, sources: [{ id: "eurostat_mortality_detail", label: "Eurostat" }], note: "Tasso standardizzato per eta, sesso totale e tutte le eta. La mappa usa la causa ICD-10 selezionata nella sezione Mortalita." };
+    }
+    if (metric === "pne_selected") {
+      var pneConfig = pneMetricConfig(STATE.pneOutcomeMetric);
+      return { label: "PNE - " + pneMetricLabel(pneConfig), tag: "esiti PNE", format: pneConfig.format, unit: pneConfig.xTitle, rows: regionalMapPneRows, sources: [{ id: "agenas_pne_outcomes", label: "AGENAS PNE" }], note: "Aggregazione regionale delle strutture PNE filtrate. Per percentuali ed esiti usa media ponderata sui casi disponibili, non una graduatoria clinica definitiva." };
+    }
+    return { label: "Dimissioni per 1.000 residenti", tag: "quadro generale", format: formatDecimal, unit: "dimissioni per 1.000", rows: function () { return regionalMapSourceRows("discharges_per_1000", "activity_year", "tutte le discipline", "population_total"); }, sources: baseSources, note: "Valore regionale rapportato alla popolazione residente. Trento e Bolzano sono aggregati solo in mappa per coerenza con la geometria regionale disponibile." };
+  }
+
+  function regionalMapRegionInfo(region) {
+    if (region === "P.A. Bolzano" || region === "P.A. Trento" || region === "Trentino-Alto Adige") {
+      return { slug: "trentino_alto_adige_sudtirol", label: "Trentino-Alto Adige" };
+    }
+    if (region === "Valle d'Aosta") {
+      return { slug: "valle_d_aosta_vallee_d_aoste", label: "Valle d'Aosta" };
+    }
+    var slug = plainKey(region).replace(/\s+/g, "_");
+    return { slug: slug, label: region };
+  }
+
+  function combineRegionalMapRows(rows, config) {
+    var grouped = {};
+    toArray(rows).forEach(function (row) {
+      if (!row || !row.region || row.region === "Italia") return;
+      var value = toNumber(row.value);
+      if (value === null) return;
+      var info = regionalMapRegionInfo(row.region);
+      var item = grouped[info.slug] || { slug: info.slug, label: info.label, regions: [], values: [], sum: 0, weightTotal: 0, weightedTotal: 0, years: [], details: [] };
+      item.regions.push(row.region);
+      item.years.push(row.year);
+      if (row.detail) item.details.push(row.detail);
+      if (config.aggregate === "sum") {
+        item.sum += value;
+      } else {
+        var weight = toNumber(row.weight) || 1;
+        item.weightedTotal += value * weight;
+        item.weightTotal += weight;
+        item.values.push(value);
+      }
+      grouped[info.slug] = item;
+    });
+    return Object.keys(grouped).map(function (slug) {
+      var item = grouped[slug];
+      var value = config.aggregate === "sum"
+        ? item.sum
+        : (item.weightTotal ? item.weightedTotal / item.weightTotal : item.values.reduce(function (total, point) { return total + point; }, 0) / item.values.length);
+      var distinctYears = unique(item.years.filter(Boolean)).sort(function (a, b) { return b - a; });
+      var regionLabel = unique(item.regions).length > 1 ? item.label + " (P.A. Trento + P.A. Bolzano)" : item.label;
+      return {
+        slug: slug,
+        region: regionLabel,
+        value: value,
+        value_text: config.format(value),
+        year: distinctYears.join(", "),
+        detail: unique(item.details).slice(0, 2).join("; ")
+      };
+    }).sort(function (a, b) {
+      return (toNumber(b.value) || 0) - (toNumber(a.value) || 0);
+    });
+  }
+
+  function loadRegionalGeojson() {
+    if (REGIONAL_GEOJSON_CACHE) return Promise.resolve(REGIONAL_GEOJSON_CACHE);
+    if (REGIONAL_GEOJSON_LOADING) return REGIONAL_GEOJSON_LOADING;
+    REGIONAL_GEOJSON_LOADING = fetchJson(REGIONAL_GEOJSON_URL).then(function (geojson) {
+      REGIONAL_GEOJSON_CACHE = geojson;
+      return geojson;
+    }).catch(function () {
+      REGIONAL_GEOJSON_LOADING = null;
+      throw new Error("GeoJSON regionale non disponibile");
+    });
+    return REGIONAL_GEOJSON_LOADING;
+  }
+
+  function aslMetricConfig(metric) {
+    if (metric === "stay_days") return { label: "Giornate di degenza", field: "stay_days", xTitle: "giornate", format: formatNumber };
+    if (metric === "ordinary_beds") return { label: "Posti letto ordinari", field: "ordinary_beds", xTitle: "posti letto ordinari", format: formatNumber };
+    if (metric === "used_beds") return { label: "Posti letto utilizzati", field: "used_beds", xTitle: "posti letto utilizzati", format: formatNumber };
+    if (metric === "avg_los_days") return { label: "Degenza media", field: "avg_los_days", xTitle: "giorni", format: function (value) { return formatDecimal(value) + " giorni"; } };
+    if (metric === "bed_utilization_percent") return { label: "Utilizzo posti letto", field: "bed_utilization_percent", xTitle: "% utilizzo", format: formatPercent };
+    return { label: "Dimissioni", field: "discharges", xTitle: "dimissioni", format: formatNumber };
+  }
+
+  function refreshAslFilters(regionOptions, disciplineOptionsWithAll) {
+    if (!regionOptions.some(function (option) { return option.value === STATE.aslRegion; })) STATE.aslRegion = "Italia";
+    if (!disciplineOptionsWithAll.some(function (option) { return option.value === STATE.aslDiscipline; })) STATE.aslDiscipline = "all";
+    fillSelect("hiAslRegionFilter", regionOptions, STATE.aslRegion);
+    fillSelect("hiAslDisciplineFilter", disciplineOptionsWithAll, STATE.aslDiscipline);
+    [
+      ["hiAslMetricFilter", "aslMetric"],
+      ["hiAslLimitFilter", "aslLimit"]
+    ].forEach(function (item) {
+      var node = byId(item[0]);
+      if (node) node.value = STATE[item[1]];
+    });
+  }
+
   function provinceOptions(region) {
     var rows = toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.provinces).filter(function (row) {
       return region !== "Italia" && row.region === region;
@@ -1245,8 +1660,8 @@
 
   function waitingStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260817-ps-level-1",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260817-ps-level-1",
+      "../../data/sanita-italia/" + path + "?v=20260819-map-asl-1",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260819-map-asl-1",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
@@ -2871,6 +3286,7 @@
       ["hiHospitalRegionFilter", "hospitalRegion"],
       ["hiHospitalDepartmentRegionFilter", "hospitalDepartmentRegion"],
       ["hiHospitalProfileRegionFilter", "hospitalProfileRegion"],
+      ["hiAslRegionFilter", "aslRegion"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
       ["hiMobilityHospitalRegionFilter", "mobilityHospitalRegion"],
       ["hiTableRegionFilter", "tableRegion"]
@@ -2878,11 +3294,13 @@
       fillSelect(item[0], regionOptions, STATE[item[1]]);
     });
     refreshProvinceFilters();
+    refreshRegionalMapFilters();
 
     fillSelect("hiDisciplineFilter", disciplineOptions, STATE.discipline);
     fillSelect("hiDischargeDisciplineFilter", disciplineOptionsWithAll, STATE.dischargeDiscipline);
     fillSelect("hiHospitalDisciplineFilter", disciplineOptionsWithAll, STATE.hospitalDiscipline);
     fillSelect("hiTableDisciplineFilter", disciplineOptionsWithAll, STATE.tableDiscipline);
+    refreshAslFilters(regionOptions, disciplineOptionsWithAll);
     refreshPsTriageFilter("hiPsRegionTriageFilter", "psRegionTriage", true);
     refreshPsTriageFilter("hiPsRegionBoxTriageFilter", "psRegionBoxTriage", true);
     refreshPsTriageFilter("hiPsStructureTriageFilter", "psStructureTriage", true);
@@ -2927,7 +3345,9 @@
       ["hiBedsSeriesRatioFilter", "bedsSeriesRatio"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
       ["hiMobilityHospitalLimitFilter", "mobilityHospitalLimit"],
-      ["hiMobilitySankeyMinFilter", "mobilitySankeyMin"]
+      ["hiMobilitySankeyMinFilter", "mobilitySankeyMin"],
+      ["hiAslMetricFilter", "aslMetric"],
+      ["hiAslLimitFilter", "aslLimit"]
     ].forEach(function (item) {
       var node = byId(item[0]);
       if (node) node.value = STATE[item[1]];
@@ -2963,6 +3383,9 @@
       ["hiDisciplineFilter", "discipline"],
       ["hiMetricFilter", "metric"],
       ["hiRatioFilter", "ratioMode"],
+      ["hiRegionalMapTopicFilter", "regionalMapTopic"],
+      ["hiRegionalMapMetricFilter", "regionalMapMetric"],
+      ["hiRegionalMapYearFilter", "regionalMapYear"],
       ["hiNationalActivityRegionFilter", "nationalActivityRegion"],
       ["hiNationalActivityProvinceFilter", "nationalActivityProvince"],
       ["hiNationalActivityMetricFilter", "nationalActivityMetric"],
@@ -3123,6 +3546,10 @@
       ["hiHospitalProfileRegionFilter", "hospitalProfileRegion"],
       ["hiHospitalProfileProvinceFilter", "hospitalProfileProvince"],
       ["hiHospitalProfileStructureFilter", "hospitalProfileStructure"],
+      ["hiAslRegionFilter", "aslRegion"],
+      ["hiAslDisciplineFilter", "aslDiscipline"],
+      ["hiAslMetricFilter", "aslMetric"],
+      ["hiAslLimitFilter", "aslLimit"],
       ["hiMobilityRatioFilter", "mobilityRatio"],
       ["hiMobilitySeriesRegionFilter", "mobilitySeriesRegion"],
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
@@ -3155,6 +3582,129 @@
     if (share) share.addEventListener("click", copyFilterUrl);
   }
 
+  function renderRegionalMap() {
+    refreshRegionalMapFilters();
+    var config = regionalMapMetricConfig(STATE.regionalMapMetric);
+    var rawRows = toArray(config.rows ? config.rows() : []);
+    var rows = combineRegionalMapRows(rawRows, config);
+    setTag("hiRegionalMapTag", asText(config.tag, "regioni"));
+    var title = byId("hiRegionalMapTitle");
+    var subtitle = byId("hiRegionalMapSubtitle");
+    if (title) title.textContent = config.label + " per regione";
+    if (subtitle) {
+      subtitle.textContent = "Ogni area mostra il valore regionale di " + config.label.toLowerCase() +
+        ". Indicatore: " + asText(config.unit, "valore") + ".";
+    }
+    setChartCredit("hiRegionalMapNote", config.sources, config.note);
+    if (!rows.length) {
+      showEmptyChart("hiRegionalMapChart", "Nessun dato regionale disponibile per il filtro selezionato");
+      createTable("hiRegionalMapTable", [], [["region", "Regione"], ["value_text", "Valore"], ["year", "Anno"], ["detail", "Dettaglio"]], 30);
+      return;
+    }
+    if (!REGIONAL_GEOJSON_CACHE) {
+      showEmptyChart("hiRegionalMapChart", "Caricamento mappa regionale ...");
+      loadRegionalGeojson().then(function () {
+        renderRegionalMap();
+      }).catch(function () {
+        showEmptyChart("hiRegionalMapChart", "Mappa regionale non disponibile");
+      });
+      createTable("hiRegionalMapTable", rows, [["region", "Regione"], ["value_text", "Valore"], ["year", "Anno"], ["detail", "Dettaglio"]], 30);
+      return;
+    }
+    var values = rows.map(function (row) { return toNumber(row.value) || 0; });
+    var maxAbs = Math.max.apply(null, values.map(function (value) { return Math.abs(value); }));
+    var trace = {
+      type: "choropleth",
+      geojson: REGIONAL_GEOJSON_CACHE,
+      featureidkey: "properties.slug",
+      locations: rows.map(function (row) { return row.slug; }),
+      z: values,
+      text: rows.map(function (row) { return row.region; }),
+      customdata: rows.map(function (row) { return [row.value_text, row.year || MISSING, row.detail || ""]; }),
+      colorscale: config.signed
+        ? [[0, "#d96666"], [0.5, "#f2efe9"], [1, "#65a96b"]]
+        : [[0, "#f6e2c6"], [0.45, "#d9ad48"], [1, "#ff5a1f"]],
+      zmid: config.signed ? 0 : undefined,
+      zmin: config.signed && maxAbs ? -maxAbs : undefined,
+      zmax: config.signed && maxAbs ? maxAbs : undefined,
+      marker: { line: { color: cssVar("--bg", "#050505"), width: 0.8 } },
+      colorbar: { title: asText(config.unit, "valore"), thickness: 12 },
+      hovertemplate: "<b>%{text}</b><br>" + escapeHtml(config.label) + ": %{customdata[0]}<br>Anno: %{customdata[1]}<br>%{customdata[2]}<extra></extra>"
+    };
+    plot("hiRegionalMapChart", [trace], {
+      margin: { t: 8, r: 20, b: 8, l: 20 },
+      geo: {
+        fitbounds: "locations",
+        visible: false,
+        bgcolor: "rgba(0,0,0,0)",
+        lakecolor: "rgba(0,0,0,0)",
+        landcolor: "rgba(0,0,0,0)",
+        subunitcolor: "rgba(0,0,0,0)"
+      }
+    });
+    createTable("hiRegionalMapTable", rows, [["region", "Regione"], ["value_text", "Valore"], ["year", "Anno"], ["detail", "Dettaglio"]], 30);
+  }
+
+  function renderAslActivity() {
+    var config = aslMetricConfig(STATE.aslMetric);
+    var useDiscipline = STATE.aslDiscipline && STATE.aslDiscipline !== "all";
+    var tableName = useDiscipline ? "activity_by_asl_discipline" : "activity_by_asl";
+    var rows = tableRows(tableName).filter(function (row) {
+      if (!row.asl) return false;
+      if (STATE.aslRegion !== "Italia" && row.region !== STATE.aslRegion) return false;
+      if (useDiscipline && row.discipline !== STATE.aslDiscipline) return false;
+      return toNumber(row[config.field]) !== null;
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.asl_label = STATE.aslRegion === "Italia" ? row.region + " - " + row.asl : row.asl;
+      copy.selected_value = toNumber(row[config.field]);
+      copy.selected_value_text = config.format(copy.selected_value);
+      return copy;
+    }).sort(function (a, b) {
+      return (toNumber(b.selected_value) || 0) - (toNumber(a.selected_value) || 0);
+    });
+    var limit = STATE.aslLimit === "all" ? rows.length : (toNumber(STATE.aslLimit) || 25);
+    var chartRows = rows.slice(0, limit);
+    var territory = STATE.aslRegion === "Italia" ? "Italia" : STATE.aslRegion;
+    var discipline = useDiscipline ? STATE.aslDiscipline : "tutte le discipline";
+    var years = unique(rows.map(function (row) { return row.year; })).sort(function (a, b) { return b - a; });
+    setTag("hiAslTag", "Ministero Salute" + (years[0] ? ", " + years[0] : ""));
+    var title = byId("hiAslTitle");
+    var subtitle = byId("hiAslSubtitle");
+    if (title) title.textContent = config.label + " per ASL - " + territory;
+    if (subtitle) {
+      subtitle.textContent = "Confronto ASL su " + config.label.toLowerCase() + " per " + discipline +
+        ". Le ASL sono quelle riportate nei dati di attivita dei reparti ospedalieri.";
+    }
+    setChartCredit("hiAslNote", [{ id: "ministero_attivita_reparti", label: "Ministero della Salute" }], "Livello ASL disponibile nella fonte attivita reparti. Non viene esteso artificialmente a PNLA, PS o PNE quando la fonte non pubblica una ASL affidabile.");
+    if (!rows.length) {
+      showEmptyChart("hiAslChart", "Nessun dato ASL disponibile per il filtro selezionato");
+      createTable("hiAslTable", [], [["region", "Regione"], ["asl", "ASL"], ["discipline", "Disciplina"], ["selected_value_text", "Valore"], ["discharges", "Dimissioni"], ["structures", "Strutture"]], 80);
+      return;
+    }
+    horizontalBar("hiAslChart", chartRows, "asl_label", "selected_value", {
+      limit: chartRows.length,
+      color: COLORS[2],
+      xTitle: config.xTitle,
+      format: config.format,
+      labelLength: STATE.aslRegion === "Italia" ? 54 : 46,
+      leftMargin: STATE.aslRegion === "Italia" ? 260 : 220,
+      hovertemplate: "%{customdata.asl}<br>%{customdata.region}<br>" + config.label + ": %{customdata.selected_value_text}<extra></extra>"
+    });
+    createTable("hiAslTable", rows, [
+      ["region", "Regione"],
+      ["asl", "ASL"],
+      ["discipline", "Disciplina"],
+      ["selected_value_text", "Valore"],
+      ["discharges", "Dimissioni"],
+      ["stay_days", "Giornate"],
+      ["ordinary_beds", "PL ordinari"],
+      ["avg_los_days", "Degenza media"],
+      ["bed_utilization_percent", "Utilizzo PL"],
+      ["structures", "Strutture"]
+    ], 120);
+  }
+
   function renderKpis() {
     var payload = STATE.payload;
     var national = payload.national || {};
@@ -3172,6 +3722,7 @@
       ["Costo SSN", formatEuroCompact(costs.amount_eur), "conto economico " + asText(costs.year), formatEuroDecimal(costs.cost_per_capita_eur) + " pro capite; " + formatPercent(costs.cost_percent_gdp) + " del PIL"],
       ["Popolazione 65+", pop.population_65_plus, "ISTAT 2026", formatPercent(pop.elderly_65_share_percent) + " della popolazione"],
       ["Strutture", kpis.structures, "pubbliche ed equiparate", "nel dataset attivita reparti"],
+      ["ASL", kpis.asls, "attivita reparti", "aggregazioni disponibili per ASL e disciplina"],
       ["Pronto soccorso", kpis.ps_structures, "AGENAS " + asText(kpis.ps_year), "tempi per struttura e codice triage"],
       ["Liste d'attesa", kpis.pnla_bookings_latest, "PNLA " + asText(kpis.pnla_year), formatNumber(kpis.pnla_services) + " prestazioni; " + formatNumber(kpis.pnla_structure_rows) + " righe struttura"],
       ["Salute italiani", kpis.health_status_indicators || kpis.health_indicators, "ISTAT HFA", "fattori, condizioni, limitazioni e tumori non-mortalita"],
@@ -7949,7 +8500,13 @@
     var regionOptions = [{ value: "Italia", label: "Italia" }].concat(toArray(filters.regions).map(function (region) {
       return { value: region, label: region };
     }));
+    var disciplineRows = sortDescending(tableRows("activity_by_discipline"), "discharges");
+    var disciplineOptionsWithAll = [{ value: "all", label: "Tutte" }].concat(disciplineRows.map(function (row) {
+      return { value: row.discipline, label: row.discipline };
+    }));
     refreshProvinceFilters();
+    refreshRegionalMapFilters();
+    refreshAslFilters(regionOptions, disciplineOptionsWithAll);
     refreshWaitingFilters(regionOptions);
     refreshHealthFilters();
     refreshMortalityFilters();
@@ -7959,6 +8516,7 @@
     refreshPsStructureFilter();
     refreshHospitalDepartmentStructureFilter();
     refreshHospitalProfileStructureFilter();
+    renderRegionalMap();
     renderNationalCharts();
     renderPsEmergency();
     renderWaitingLists();
@@ -7972,6 +8530,7 @@
     renderCosts();
     renderSeries();
     renderHospitals();
+    renderAslActivity();
     renderMobility();
     renderExplorer();
     syncFilterUrl();

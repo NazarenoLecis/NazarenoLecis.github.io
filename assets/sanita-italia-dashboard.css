@@ -390,6 +390,10 @@
   min-height: 500px;
 }
 
+.hi-map-chart {
+  min-height: 560px;
+}
+
 .hi-chart-credit {
   margin: 10px 0 0;
   padding-top: 10px;
@@ -727,7 +731,8 @@
   }
 
   .hi-chart,
-  .hi-chart-wide {
+  .hi-chart-wide,
+  .hi-map-chart {
     min-height: 360px;
   }
 
