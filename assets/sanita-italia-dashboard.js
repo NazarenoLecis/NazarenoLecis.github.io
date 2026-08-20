@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260819-map-asl-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260819-map-asl-1",
+    "../../data/sanita-italia/dashboard.json?v=20260820-map-extra-1",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260820-map-extra-1",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
   var REGIONAL_GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
@@ -1103,14 +1103,33 @@
     var metrics = {
       overview: [
         { value: "overview_discharges_per_1000", label: "Dimissioni per 1.000 residenti" },
+        { value: "overview_discharges_per_1000_over65", label: "Dimissioni per 1.000 residenti 65+" },
+        { value: "overview_discharges_per_1000_over75", label: "Dimissioni per 1.000 residenti 75+" },
         { value: "overview_beds_per_1000", label: "Posti letto per 1.000 residenti" },
+        { value: "overview_beds_per_1000_over65", label: "Posti letto per 1.000 residenti 65+" },
+        { value: "overview_beds_per_1000_over75", label: "Posti letto per 1.000 residenti 75+" },
         { value: "overview_cost_per_capita", label: "Costo SSN per abitante" },
-        { value: "overview_mobility_per_capita", label: "Saldo mobilita per abitante" }
+        { value: "overview_cost_per_over65", label: "Costo SSN per residente 65+" },
+        { value: "overview_cost_per_over75", label: "Costo SSN per residente 75+" },
+        { value: "overview_cost_per_discharge", label: "Costo SSN per dimissione" },
+        { value: "overview_cost_percent_gdp", label: "Costo SSN / PIL regionale" },
+        { value: "overview_mobility_per_capita", label: "Saldo mobilita per abitante" },
+        { value: "overview_mobility_per_over65", label: "Saldo mobilita per residente 65+" },
+        { value: "overview_mobility_per_over75", label: "Saldo mobilita per residente 75+" },
+        { value: "overview_mobility_percent_gdp", label: "Saldo mobilita / PIL regionale" },
+        { value: "overview_elderly_65_share", label: "Quota popolazione 65+" },
+        { value: "overview_elderly_75_share", label: "Quota popolazione 75+" },
+        { value: "overview_gdp_per_capita", label: "PIL regionale per abitante" }
       ],
       activity: [
         { value: "activity_discharges", label: "Dimissioni" },
+        { value: "activity_stay_days", label: "Giornate di degenza" },
         { value: "activity_avg_los", label: "Degenza media" },
-        { value: "activity_bed_utilization", label: "Utilizzo posti letto" }
+        { value: "activity_bed_utilization", label: "Utilizzo posti letto" },
+        { value: "activity_hospital_structures", label: "Strutture ospedaliere" },
+        { value: "activity_hospital_disciplines", label: "Discipline con dimissioni" },
+        { value: "activity_discharges_per_billion_gdp", label: "Dimissioni per miliardo di PIL" },
+        { value: "activity_beds_per_billion_gdp", label: "Posti letto per miliardo di PIL" }
       ],
       ps: [
         { value: "ps_rosso_wait", label: "PS - permanenza codice rosso" },
@@ -1135,7 +1154,16 @@
       ],
       costs: [
         { value: "cost_total", label: "Costo SSN totale" },
+        { value: "cost_per_capita", label: "Costo SSN per abitante" },
+        { value: "cost_per_over65", label: "Costo SSN per residente 65+" },
+        { value: "cost_per_over75", label: "Costo SSN per residente 75+" },
+        { value: "cost_per_discharge", label: "Costo SSN per dimissione" },
         { value: "cost_percent_gdp", label: "Costo SSN / PIL" },
+        { value: "cost_change_percent", label: "Variazione costo SSN" },
+        { value: "mobility_per_capita", label: "Saldo mobilita per abitante" },
+        { value: "mobility_per_over65", label: "Saldo mobilita per residente 65+" },
+        { value: "mobility_per_over75", label: "Saldo mobilita per residente 75+" },
+        { value: "mobility_percent_gdp", label: "Saldo mobilita / PIL" },
         { value: "mobility_balance_million", label: "Saldo mobilita netto" }
       ]
     };
@@ -1193,6 +1221,18 @@
       return {
         region: row.region,
         value: toNumber(row[field]),
+        year: row[yearField] || row.activity_year || row.year,
+        detail: detail || "",
+        weight: weightField ? toNumber(row[weightField]) : toNumber(row.population_total)
+      };
+    });
+  }
+
+  function regionalMapDerivedRows(valueFn, yearField, detail, weightField) {
+    return tableRows("regional_summary").map(function (row) {
+      return {
+        region: row.region,
+        value: valueFn(row),
         year: row[yearField] || row.activity_year || row.year,
         detail: detail || "",
         weight: weightField ? toNumber(row[weightField]) : toNumber(row.population_total)
@@ -1335,14 +1375,38 @@
 
   function regionalMapMetricConfig(metric) {
     var baseSources = [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }];
+    var populationSources = [{ id: "istat_posas_2026", label: "ISTAT popolazione" }];
+    var costSources = [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }];
+    var costPopulationSources = [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }];
+    var mobilityPopulationSources = [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }];
+    if (metric === "overview_discharges_per_1000_over65") return { label: "Dimissioni per 1.000 residenti 65+", tag: "quadro generale", format: formatDecimal, unit: "dimissioni per 1.000 residenti 65+", rows: function () { return regionalMapSourceRows("discharges_per_1000_over65", "activity_year", "dimissioni rapportate alla popolazione 65+", "population_65_plus"); }, sources: baseSources, note: "Rapporto tra dimissioni ospedaliere e residenti di 65 anni e oltre; non significa che tutte le dimissioni riguardino over 65." };
+    if (metric === "overview_discharges_per_1000_over75") return { label: "Dimissioni per 1.000 residenti 75+", tag: "quadro generale", format: formatDecimal, unit: "dimissioni per 1.000 residenti 75+", rows: function () { return regionalMapSourceRows("discharges_per_1000_over75", "activity_year", "dimissioni rapportate alla popolazione 75+", "population_75_plus"); }, sources: baseSources, note: "Rapporto tra dimissioni ospedaliere e residenti di 75 anni e oltre; utile per leggere la pressione relativa nei territori piu anziani." };
     if (metric === "overview_beds_per_1000") return { label: "Posti letto per 1.000 residenti", tag: "posti letto", format: formatDecimal, unit: "posti letto per 1.000", rows: function () { return regionalMapSourceRows("beds_per_1000", "beds_year", "posti letto totali", "population_total"); }, sources: [{ id: "ministero_posti_letto_2023", label: "Ministero Salute" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Valore regionale rapportato alla popolazione residente. Trento e Bolzano sono aggregati solo in mappa per coerenza con la geometria regionale disponibile." };
+    if (metric === "overview_beds_per_1000_over65") return { label: "Posti letto per 1.000 residenti 65+", tag: "posti letto", format: formatDecimal, unit: "posti letto per 1.000 residenti 65+", rows: function () { return regionalMapSourceRows("beds_per_1000_over65", "beds_year", "posti letto rapportati alla popolazione 65+", "population_65_plus"); }, sources: [{ id: "ministero_posti_letto_2023", label: "Ministero Salute" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Dotazione di posti letto rapportata alla popolazione anziana; non misura personale disponibile o tempi di accesso." };
+    if (metric === "overview_beds_per_1000_over75") return { label: "Posti letto per 1.000 residenti 75+", tag: "posti letto", format: formatDecimal, unit: "posti letto per 1.000 residenti 75+", rows: function () { return regionalMapSourceRows("beds_per_1000_over75", "beds_year", "posti letto rapportati alla popolazione 75+", "population_75_plus"); }, sources: [{ id: "ministero_posti_letto_2023", label: "Ministero Salute" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Dotazione di posti letto rapportata alla popolazione 75+; utile nei confronti tra territori con strutture demografiche diverse." };
     if (metric === "overview_cost_per_capita") return { label: "Costo SSN per abitante", tag: "spesa", format: formatEuroDecimal, unit: "euro per abitante", rows: function () { return regionalMapSourceRows("ssn_cost_per_capita_eur", "cost_year", "conto economico Enti SSN", "population_total"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Dati contabili regionali: non sono costi della singola prestazione clinica." };
-    if (metric === "overview_mobility_per_capita") return { label: "Saldo mobilita per abitante", tag: "mobilita", format: formatEuroDecimal, unit: "euro per abitante", signed: true, rows: function () { return regionalMapSourceRows("mobility_balance_per_capita_eur", "cost_year", "saldo economico netto mobilita", "population_total"); }, sources: [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Saldo economico netto: valori positivi indicano credito netto, valori negativi debito netto. Non e una matrice paziente origine-destinazione." };
+    if (metric === "overview_cost_per_over65" || metric === "cost_per_over65") return { label: "Costo SSN per residente 65+", tag: "spesa", format: formatEuroDecimal, unit: "euro per residente 65+", rows: function () { return regionalMapSourceRows("ssn_cost_per_over65_eur", "cost_year", "conto economico Enti SSN / popolazione 65+", "population_65_plus"); }, sources: costPopulationSources, note: "Rapporto contabile tra costo SSN regionale e popolazione 65+. Non significa costo sostenuto solo per gli over 65." };
+    if (metric === "overview_cost_per_over75" || metric === "cost_per_over75") return { label: "Costo SSN per residente 75+", tag: "spesa", format: formatEuroDecimal, unit: "euro per residente 75+", rows: function () { return regionalMapSourceRows("ssn_cost_per_over75_eur", "cost_year", "conto economico Enti SSN / popolazione 75+", "population_75_plus"); }, sources: costPopulationSources, note: "Rapporto contabile tra costo SSN regionale e popolazione 75+. Serve a confrontare territori con peso degli anziani diverso." };
+    if (metric === "overview_cost_per_discharge" || metric === "cost_per_discharge") return { label: "Costo SSN per dimissione", tag: "spesa", format: formatEuroDecimal, unit: "euro per dimissione", rows: function () { return regionalMapSourceRows("ssn_cost_per_discharge_eur", "cost_year", "costo SSN totale / dimissioni", "discharges"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Rapporto sintetico tra costo SSN regionale complessivo e dimissioni ospedaliere: non e il costo medio clinico di una prestazione." };
+    if (metric === "overview_cost_percent_gdp" || metric === "cost_percent_gdp") return { label: "Costo SSN sul PIL regionale", tag: "spesa", format: formatPercent, unit: "% PIL", rows: function () { return regionalMapSourceRows("ssn_cost_percent_gdp", "cost_year", "conto economico Enti SSN / PIL Eurostat", "gdp_million_eur"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "eurostat_gdp_nuts2", label: "Eurostat PIL" }], note: "Rapporto tra costo SSN regionale e PIL regionale: aiuta a leggere il peso economico relativo." };
+    if (metric === "overview_mobility_per_capita" || metric === "mobility_per_capita") return { label: "Saldo mobilita per abitante", tag: "mobilita", format: formatEuroDecimal, unit: "euro per abitante", signed: true, rows: function () { return regionalMapSourceRows("mobility_balance_per_capita_eur", "cost_year", "saldo economico netto mobilita", "population_total"); }, sources: mobilityPopulationSources, note: "Saldo economico netto: valori positivi indicano credito netto, valori negativi debito netto. Non e una matrice paziente origine-destinazione." };
+    if (metric === "overview_mobility_per_over65" || metric === "mobility_per_over65") return { label: "Saldo mobilita per residente 65+", tag: "mobilita", format: formatEuroDecimal, unit: "euro per residente 65+", signed: true, rows: function () { return regionalMapSourceRows("mobility_balance_per_over65_eur", "cost_year", "saldo economico netto / popolazione 65+", "population_65_plus"); }, sources: mobilityPopulationSources, note: "Normalizzazione del saldo economico netto sulla popolazione 65+. Non descrive il numero di pazienti anziani che si spostano." };
+    if (metric === "overview_mobility_per_over75" || metric === "mobility_per_over75") return { label: "Saldo mobilita per residente 75+", tag: "mobilita", format: formatEuroDecimal, unit: "euro per residente 75+", signed: true, rows: function () { return regionalMapSourceRows("mobility_balance_per_over75_eur", "cost_year", "saldo economico netto / popolazione 75+", "population_75_plus"); }, sources: mobilityPopulationSources, note: "Normalizzazione del saldo economico netto sulla popolazione 75+. Non descrive il numero di pazienti 75+ che si spostano." };
+    if (metric === "overview_mobility_percent_gdp" || metric === "mobility_percent_gdp") return { label: "Saldo mobilita sul PIL regionale", tag: "mobilita", format: formatPercent, unit: "% PIL", signed: true, rows: function () { return regionalMapSourceRows("mobility_balance_percent_gdp", "cost_year", "saldo economico netto / PIL regionale", "gdp_million_eur"); }, sources: [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti" }, { id: "eurostat_gdp_nuts2", label: "Eurostat PIL" }], note: "Saldo economico netto rapportato al PIL regionale; valori positivi indicano credito netto, negativi debito netto." };
+    if (metric === "overview_elderly_65_share") return { label: "Quota popolazione 65+", tag: "demografia", format: formatPercent, unit: "% residenti", rows: function () { return regionalMapSourceRows("elderly_65_share_percent", "population_year", "residenti 65+ / residenti totali", "population_total"); }, sources: populationSources, note: "Quota di residenti di 65 anni e oltre; aiuta a interpretare domanda sanitaria e confronti pro capite." };
+    if (metric === "overview_elderly_75_share") return { label: "Quota popolazione 75+", tag: "demografia", format: formatPercent, unit: "% residenti", rows: function () { return regionalMapSourceRows("elderly_75_share_percent", "population_year", "residenti 75+ / residenti totali", "population_total"); }, sources: populationSources, note: "Quota di residenti di 75 anni e oltre; utile per leggere territori con popolazione molto anziana." };
+    if (metric === "overview_gdp_per_capita") return { label: "PIL regionale per abitante", tag: "contesto", format: formatEuroDecimal, unit: "euro per abitante", rows: function () { return regionalMapDerivedRows(function (row) { var gdp = toNumber(row.gdp_million_eur); var pop = toNumber(row.population_total); return gdp && pop ? (gdp * 1000000) / pop : null; }, "gdp_year", "PIL regionale / popolazione residente", "population_total"); }, sources: [{ id: "eurostat_gdp_nuts2", label: "Eurostat PIL" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }], note: "Indicatore di contesto economico usato per leggere i rapporti sanitari sul PIL; non misura spesa sanitaria." };
     if (metric === "activity_discharges") return { label: "Dimissioni ospedaliere", tag: "attivita", format: formatNumber, unit: "dimissioni", aggregate: "sum", rows: function () { return regionalMapSourceRows("discharges", "activity_year", "tutte le discipline"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Volumi ospedalieri regionali; la numerosita non misura da sola qualita o appropriatezza." };
+    if (metric === "activity_stay_days") return { label: "Giornate di degenza", tag: "attivita", format: formatNumber, unit: "giornate", aggregate: "sum", rows: function () { return regionalMapSourceRows("stay_days", "activity_year", "tutte le discipline"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Volume complessivo di giornate di degenza; dipende da case mix, durata dei ricoveri e organizzazione dell'offerta." };
     if (metric === "activity_avg_los") return { label: "Degenza media", tag: "attivita", format: function (value) { return formatDecimal(value) + " giorni"; }, unit: "giorni", rows: function () { return regionalMapSourceRows("avg_los_days", "activity_year", "media regionale", "discharges"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Media regionale calcolata come giornate di degenza diviso dimissioni." };
     if (metric === "activity_bed_utilization") return { label: "Utilizzo posti letto", tag: "attivita", format: formatPercent, unit: "%", rows: function () { return regionalMapSourceRows("bed_utilization_percent", "activity_year", "giornate degenza / giornate disponibili", "total_beds"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Indicatore di utilizzo della dotazione dichiarata, non misura personale o accessibilita reale." };
+    if (metric === "activity_hospital_structures") return { label: "Strutture ospedaliere", tag: "attivita", format: formatNumber, unit: "strutture", aggregate: "sum", rows: function () { return regionalMapSourceRows("hospital_structures", "activity_year", "strutture con attivita reparti pubblicata"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Numero di strutture nel dataset di attivita dei reparti; non misura dimensione, complessita o qualita." };
+    if (metric === "activity_hospital_disciplines") return { label: "Discipline con dimissioni", tag: "attivita", format: formatNumber, unit: "discipline", aggregate: "max", rows: function () { return regionalMapSourceRows("hospital_disciplines", "activity_year", "discipline con dimissioni maggiori di zero"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }], note: "Numero di discipline ospedaliere con dimissioni pubblicate nella regione; per Trento/Bolzano la mappa usa il valore massimo tra le due P.A." };
+    if (metric === "activity_discharges_per_billion_gdp") return { label: "Dimissioni per miliardo di PIL", tag: "attivita", format: formatDecimal, unit: "dimissioni per mld euro PIL", rows: function () { return regionalMapSourceRows("discharges_per_billion_gdp", "activity_year", "dimissioni / PIL regionale", "gdp_million_eur"); }, sources: [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }, { id: "eurostat_gdp_nuts2", label: "Eurostat PIL" }], note: "Rapporto tra volume di dimissioni e PIL regionale; indicatore di intensita relativa, non di qualita." };
+    if (metric === "activity_beds_per_billion_gdp") return { label: "Posti letto per miliardo di PIL", tag: "posti letto", format: formatDecimal, unit: "posti letto per mld euro PIL", rows: function () { return regionalMapSourceRows("beds_per_billion_gdp", "beds_year", "posti letto / PIL regionale", "gdp_million_eur"); }, sources: [{ id: "ministero_posti_letto_2023", label: "Ministero Salute" }, { id: "eurostat_gdp_nuts2", label: "Eurostat PIL" }], note: "Rapporto tra dotazione di posti letto e PIL regionale; indicatore di contesto, non di accessibilita effettiva." };
     if (metric === "cost_total") return { label: "Costo SSN totale", tag: "spesa", format: formatEuroCompact, unit: "euro", aggregate: "sum", rows: function () { return regionalMapSourceRows("ssn_cost_eur", "cost_year", "conto economico Enti SSN"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }], note: "Dati di conto economico degli Enti del SSN, consuntivo regionale." };
-    if (metric === "cost_percent_gdp") return { label: "Costo SSN sul PIL regionale", tag: "spesa", format: formatPercent, unit: "% PIL", rows: function () { return regionalMapSourceRows("ssn_cost_percent_gdp", "cost_year", "conto economico Enti SSN / PIL Eurostat", "gdp_million_eur"); }, sources: [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "eurostat_gdp_nuts2", label: "Eurostat PIL" }], note: "Rapporto tra costo SSN regionale e PIL regionale: aiuta a leggere il peso economico relativo." };
+    if (metric === "cost_per_capita") return regionalMapMetricConfig("overview_cost_per_capita");
+    if (metric === "cost_change_percent") return { label: "Variazione costo SSN", tag: "spesa", format: function (value) { return formatSignedDecimal(value) + "%"; }, unit: "variazione %", rows: function () { return regionalMapSourceRows("ssn_cost_change_percent", "cost_year", "variazione annua del costo SSN", "ssn_cost_eur"); }, sources: costSources, note: "Variazione annua del costo SSN regionale nel conto economico; leggere insieme al valore assoluto e alla popolazione." };
     if (metric === "mobility_balance_million") return { label: "Saldo mobilita netto", tag: "mobilita", format: formatMillionEuro, unit: "milioni di euro", signed: true, aggregate: "sum", rows: function () { return regionalMapSourceRows("mobility_balance_million_eur", "cost_year", "compensazioni economiche nette"); }, sources: [{ id: "corte_conti_mobilita_2024", label: "Corte dei conti" }], note: "Saldo economico netto 2024: non mostra i flussi paziente origine-destinazione." };
     if (metric.indexOf("ps_") === 0) {
       var triage = metric === "ps_all_wait" ? "all" : metric.replace("ps_", "").replace("_wait", "");
@@ -1392,6 +1456,8 @@
       if (row.detail) item.details.push(row.detail);
       if (config.aggregate === "sum") {
         item.sum += value;
+      } else if (config.aggregate === "max") {
+        item.max = item.max === undefined ? value : Math.max(item.max, value);
       } else {
         var weight = toNumber(row.weight) || 1;
         item.weightedTotal += value * weight;
@@ -1402,9 +1468,14 @@
     });
     return Object.keys(grouped).map(function (slug) {
       var item = grouped[slug];
-      var value = config.aggregate === "sum"
-        ? item.sum
-        : (item.weightTotal ? item.weightedTotal / item.weightTotal : item.values.reduce(function (total, point) { return total + point; }, 0) / item.values.length);
+      var value = null;
+      if (config.aggregate === "sum") {
+        value = item.sum;
+      } else if (config.aggregate === "max") {
+        value = item.max;
+      } else {
+        value = item.weightTotal ? item.weightedTotal / item.weightTotal : item.values.reduce(function (total, point) { return total + point; }, 0) / item.values.length;
+      }
       var distinctYears = unique(item.years.filter(Boolean)).sort(function (a, b) { return b - a; });
       var regionLabel = unique(item.regions).length > 1 ? item.label + " (P.A. Trento + P.A. Bolzano)" : item.label;
       return {
@@ -1660,8 +1731,8 @@
 
   function waitingStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260819-map-asl-1",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260819-map-asl-1",
+      "../../data/sanita-italia/" + path + "?v=20260820-map-extra-1",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260820-map-extra-1",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
