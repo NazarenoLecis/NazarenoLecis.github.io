@@ -2572,7 +2572,11 @@
     [/^(.+?)\s+nei paesi$/i, "$1 across countries"],
     [/^(.+?)\s+per classe dimensionale$/i, "$1 by size class"],
     [/^(.+?)\s+-\s+Italia\s+-\s+non e il PIL$/i, "$1 - Italy - not GDP"],
-    [/^(.+?)\s+-\s+Italia\s+-\s+non è il PIL$/i, "$1 - Italy - not GDP"]
+    [/^(.+?)\s+-\s+Italia\s+-\s+non è il PIL$/i, "$1 - Italy - not GDP"],
+    [/^Mostrate le prime\s+(.+?)\s+di\s+(.+?)\s+righe$/i, "Showing first $1 of $2 rows"],
+    [/^Mostrate\s+(.+?)\s+di\s+(.+?)\s+righe$/i, "Showing $1 of $2 rows"],
+    [/^Showing first\s+(.+?)\s+di\s+(.+?)\s+rows$/i, "Showing first $1 of $2 rows"],
+    [/^([+-]?[0-9.,]+)\s+(?:DS|SD) medio su\s+(.+?)\s+punti$/i, "$1 SD average across $2 points"]
   ];
 
   var phraseText = [
@@ -2599,10 +2603,13 @@
     ["media semplice tra regioni e province autonome", "simple mean across regions and autonomous provinces"],
     ["Deviazione standard", "Standard deviation"],
     ["soglia outlier: almeno +/-1 DS", "outlier threshold: at least +/-1 SD"],
+    ["soglia outlier: almeno +/-1 SD", "outlier threshold: at least +/-1 SD"],
     ["Meglio della media", "Better than average"],
     ["Peggio della media", "Worse than average"],
     ["nessuna area oltre +1 DS", "no area beyond +1 SD"],
+    ["nessuna area oltre +1 SD", "no area beyond +1 SD"],
     ["nessuna area sotto -1 DS", "no area below -1 SD"],
+    ["nessuna area sotto -1 SD", "no area below -1 SD"],
     ["area non disponibile nei filtri", "area not available with these filters"],
     ["Indice qualita", "Quality index"],
     ["Lettura", "Reading"],
@@ -2612,7 +2619,9 @@
     ["non valutabile", "not assessable"],
     ["Indice descrittivo calcolato come z-score rispetto alla distribuzione delle regioni e province autonome", "Descriptive index calculated as a z-score against the distribution of regions and autonomous provinces"],
     ["+1 DS o piu indica performance migliore della media per la misura scelta", "+1 SD or more indicates better-than-average performance for the selected measure"],
+    ["+1 SD o piu indica performance migliore della media per la misura scelta", "+1 SD or more indicates better-than-average performance for the selected measure"],
     ["-1 DS o meno indica performance peggiore", "-1 SD or less indicates worse performance"],
+    ["-1 SD o meno indica performance peggiore", "-1 SD or less indicates worse performance"],
     ["Per i giorni valori piu bassi sono migliori", "For day metrics, lower values are better"],
     ["per le percentuali valori piu alti sono migliori", "for percentages, higher values are better"],
     ["Non e un indicatore clinico risk-adjusted", "It is not a risk-adjusted clinical indicator"],
@@ -3301,6 +3310,7 @@
     ["Ogni box e una traccia separata e il filtro Vista decide come costruirlo", "Each box is a separate trace and the View filter decides how to build it"],
     ["Boxplot calcolato sui punti selezionati dai filtri del boxplot, non dai filtri del grafico a barre sopra. L'indice qualita e uno z-score descrittivo calcolato dentro ogni box: almeno +1 DS indica performance migliore della media del proprio box, almeno -1 DS performance peggiore. Per i giorni valori piu bassi sono migliori; per le percentuali valori piu alti sono migliori. I file struttura PNLA non pubblicano la provincia, quindi non e disponibile il box per province.", "Box plot calculated on the points selected by the box-plot filters, not by the bar-chart filters above. The quality index is a descriptive z-score calculated within each box: at least +1 SD indicates better-than-average performance within that box, while -1 SD or below indicates worse performance. For day metrics, lower values are better; for percentages, higher values are better. PNLA facility files do not publish province detail, so a province-level box plot is not available."],
     ["Boxplot calcolato sui punti selezionati dai filtri del boxplot, non dai filtri del grafico a barre sopra", "Box plot calculated on the points selected by the box-plot filters, not by the bar-chart filters above"],
+    ["Boxplot calcolato sui punti filtrati", "Box plot calculated on filtered points"],
     ["calcolato dentro ogni box", "calculated within each box"],
     ["del proprio box", "within that box"],
     ["almeno -1 SD worse performance", "at least -1 SD indicates worse performance"],
@@ -3308,6 +3318,8 @@
     ["I file PNLA struttura non pubblicano la provincia; per questo il livello disponibile qui e la struttura della prima disponibilita proposta", "PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability"],
     ["I file PNLA Structure non pubblicano la provincia; per questo il livello disponibile qui e la Structure della prima disponibilita proposta", "PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability"],
     ["La fonte PNLA disponibile qui pubblica il confronto territoriale per regione/provincia autonoma; il dettaglio province NUTS3 non e presente, quindi non viene mostrato un filtro provincia", "The PNLA source available here publishes territorial comparisons by region/autonomous province; NUTS3 province detail is not present, so a province filter is not shown"],
+    ["La fonte PNLA disponibile qui pubblica il confronto territoriale by region/provincia autonoma; il dettaglio province NUTS3 non e presente, quindi non viene mostrato un filtro provincia", "The PNLA source available here publishes territorial comparisons by region/autonomous province; NUTS3 province detail is not present, so a province filter is not shown"],
+    ["La fonte PNLA disponibile qui pubblica il confronto territoriale by region/autonomous province; il dettaglio province NUTS3 non e presente, quindi non viene mostrato un filtro provincia", "The PNLA source available here publishes territorial comparisons by region/autonomous province; NUTS3 province detail is not present, so a province filter is not shown"],
     ["I file struttura PNLA non pubblicano la provincia", "PNLA facility files do not publish the province"],
     ["non e disponibile il box per province", "a province-level box plot is not available"],
     ["Filtri autonomi del boxplot", "Independent box-plot filters"],
@@ -3316,6 +3328,7 @@
     ["performance peggiore", "worse performance"],
     ["area non presente nei filtri", "area not present in the filters"],
     ["DS medio su", "average SD over"],
+    ["SD medio su", "SD average over"],
     ["punti visualizzati", "displayed points"],
     ["Boxplot PS per struttura", "Emergency-department box plot by facility"],
     ["Boxplot PS by facility", "Emergency-department box plot by facility"],
@@ -3453,7 +3466,9 @@
     ["tutte le cause del gruppo", "all causes in the group"],
     ["L'indice e uno z-score descrittivo calcolato separatamente per ogni causa sui territori regionali disponibili", "The index is a descriptive z-score calculated separately for each cause across the available regional areas"],
     ["+1 DS o piu indica un tasso almeno una deviazione standard sotto la media regionale della stessa causa", "+1 SD or more indicates a rate at least one standard deviation below the regional mean for the same cause"],
+    ["+1 SD o piu indica un tasso almeno una deviazione standard sotto la media regionale della stessa causa", "+1 SD or more indicates a rate at least one standard deviation below the regional mean for the same cause"],
     ["-1 DS o meno indica un tasso sopra la media", "-1 SD or less indicates a rate above the mean"],
+    ["-1 SD o meno indica un tasso sopra la media", "-1 SD or less indicates a rate above the mean"],
     ["La fonte misura mortalita per residenza e causa ICD-10, non mortalita post-intervento PNE, non qualita clinica risk-adjusted dell'ospedale e non flussi di pazienti", "The source measures mortality by residence and ICD-10 cause, not PNE post-intervention mortality, not risk-adjusted hospital clinical quality and not patient flows"],
     ["Distribuzione delle regioni rispetto alla media delle aree con evidenza di chi performa meglio o peggio di almeno una deviazione standard", "Distribution of regions against the area mean, highlighting those performing better or worse by at least one standard deviation"],
     ["Distribuzione delle strutture filtrate per territorio, livello PS/DEA e codice triage", "Distribution of facilities filtered by area, ED/DEA level and triage code"],
@@ -3465,27 +3480,34 @@
     ["rispetto alla media semplice delle aree", "against the simple mean of areas"],
     ["media semplice dei punti nel boxplot", "simple mean of the points in the box plot"],
     ["soglia descrittiva: almeno +/-1 DS", "descriptive threshold: at least +/-1 SD"],
+    ["soglia descrittiva: almeno +/-1 SD", "descriptive threshold: at least +/-1 SD"],
     ["nessun punto oltre +1 DS", "no point beyond +1 SD"],
+    ["nessun punto oltre +1 SD", "no point beyond +1 SD"],
     ["nessun punto sotto -1 DS", "no point below -1 SD"],
+    ["nessun punto sotto -1 SD", "no point below -1 SD"],
     ["nessun focus", "no focus"],
     ["seleziona un punto da evidenziare", "select a point to highlight"],
     ["Boxplot calcolato sui valori regionali della permanenza dal triage alla dimissione", "Box plot calculated on regional values for stay from triage to discharge"],
     ["Boxplot calcolato sulle strutture filtrate", "Box plot calculated on the filtered facilities"],
     ["Boxplot calcolato sulle facilities filtrate", "Box plot calculated on the filtered facilities"],
     ["L'indice qualita e uno z-score descrittivo", "The quality index is a descriptive z-score"],
-    ["rispetto alla mean semplice delle facilities", "against the simple mean of facilities"],
     ["almeno +1 DS indica tempi migliori della media", "at least +1 SD indicates better-than-average times"],
-    ["almeno +1 SD indica tempi migliori della mean", "at least +1 SD indicates better-than-average times"],
+    ["almeno +1 SD indica tempi migliori della media", "at least +1 SD indicates better-than-average times"],
     ["almeno -1 DS indica tempi peggiori", "at least -1 SD indicates worse times"],
     ["almeno -1 SD indica tempi peggiori", "at least -1 SD indicates worse times"],
     ["almeno +1 DS indica permanenze piu brevi della media", "at least +1 SD indicates shorter-than-average stays"],
-    ["almeno +1 SD indica permanenze piu brevi della mean", "at least +1 SD indicates shorter-than-average stays"],
+    ["almeno +1 SD indica permanenze piu brevi della media", "at least +1 SD indicates shorter-than-average stays"],
     ["almeno -1 DS permanenze piu lunghe", "at least -1 SD indicates longer stays"],
     ["almeno -1 SD permanenze piu lunghe", "at least -1 SD indicates longer stays"],
     ["almeno +1 DS indica performance migliore della media", "at least +1 SD indicates better-than-average performance"],
-    ["almeno +1 SD indica performance migliore della mean", "at least +1 SD indicates better-than-average performance"],
+    ["almeno +1 SD indica performance migliore della media", "at least +1 SD indicates better-than-average performance"],
     ["almeno -1 DS performance peggiore", "at least -1 SD indicates worse performance"],
     ["almeno -1 SD performance peggiore", "at least -1 SD indicates worse performance"],
+    ["Il filtro Vista decide se il confronto e costruito per livello PS/DEA, codice triage o regione; gli accessi sono totali di struttura e non sono pubblicati per singolo codice triage", "The View filter decides whether the comparison is built by ED/DEA level, triage code or region; accesses are facility totals and are not published by individual triage code"],
+    ["Il filtro View decide se il confronto e costruito per livello PS/DEA, codice triage o regione; gli accessi sono totali di facility e non sono pubblicati per singolo codice triage", "The View filter decides whether the comparison is built by ED/DEA level, triage code or region; accesses are facility totals and are not published by individual triage code"],
+    ["La vista per livello separa pronto soccorso, DEA di 1 livello e DEA di 2 livello; con altre viste il filtro livello PS/DEA resta disponibile per evitare confronti non omogenei", "The level view separates emergency departments, level-1 DEA and level-2 DEA; with other views the ED/DEA level filter remains available to avoid non-homogeneous comparisons"],
+    ["Con 'tutti i codici disponibili' il valore per struttura e la media semplice dei codici pubblicati, non pesata per accessi", "With 'all available codes', the facility value is the simple mean of published codes, not weighted by accesses"],
+    ["Con 'all available codes' il valore per facility e la media semplice dei codici pubblicati, non pesata per accessi", "With 'all available codes', the facility value is the simple mean of published codes, not weighted by accesses"],
     ["Il confronto resta omogeneo solo se il filtro livello PS/DEA separa pronto soccorso, DEA di 1 livello e DEA di 2 livello", "The comparison is homogeneous only if the ED/DEA level filter separates emergency departments, level-1 DEA and level-2 DEA"],
     ["Con 'tutti i codici disponibili' il valore e la media dei codici pubblicati per la struttura, non pesata per accessi", "With 'all available codes', the value is the mean of the codes published for the facility, not weighted by accesses"],
     ["Per il boxplot qualita scegli una misura di tempo o di rispetto soglia", "For the quality box plot, choose a time or within-threshold measure"],
@@ -3625,11 +3647,6 @@
       output = replacePhrase(output, pair[0], pair[1]);
     });
     output = output
-      .split("almeno +1 SD indica tempi migliori della mean").join("at least +1 SD indicates better-than-average times")
-      .split("almeno +1 SD indica performance migliore della mean").join("at least +1 SD indicates better-than-average performance")
-      .split("+1 SD o piu indica performance migliore della mean").join("+1 SD or more indicates better-than-average performance")
-      .split("almeno +1 SD indica permanenze piu brevi della mean").join("at least +1 SD indicates shorter-than-average stays")
-      .split("rispetto alla mean semplice delle facilities").join("against the simple mean of facilities")
       .split("almeno -1 SD performance peggiore").join("at least -1 SD indicates worse performance")
       .split("almeno -1 SD worse performance").join("at least -1 SD indicates worse performance")
       .split("-1 SD o meno worse performance").join("-1 SD or less indicates worse performance")
@@ -3650,14 +3667,16 @@
       .split("indice mortalita (deviazioni standard)").join("mortality index (standard deviations)")
       .split("gruppo:").join("group:")
       .split("causa:").join("cause:")
-      .split("+1 SD o piu indica un tasso almeno una deviazione standard sotto la mean regionale della stessa causa").join("+1 SD or more indicates a rate at least one standard deviation below the regional mean for the same cause")
-      .split("-1 SD o meno indica un tasso sopra la mean").join("-1 SD or less indicates a rate above the mean")
       .split("points = Struttura").join("points = Facility")
       .split("Ogni box e una traccia separata e il filtro View decide come costruirlo").join("Each box is a separate trace and the View filter decides how to build it")
       .split("I file PNLA struttura non pubblicano la provincia; per questo il livello disponibile qui e la struttura della first proposed availability").join("PNLA facility files do not publish the province; the available level here is therefore the facility of the first proposed availability")
       .split("Il filtro Year sopra cambia il boxplot, mentre questo grafico usa tutti gli anni disponibili").join("The Year filter above changes the box plot, while this chart uses all available years")
       .split("Le serie sono aggregate e pesate per bookings quando si selezionano piu prestazioni o priorita").join("Series are aggregated and weighted by bookings when multiple services or priorities are selected")
-      .split("AGENAS Trova Facilities").join("AGENAS Trova Strutture");
+      .split("AGENAS Trova Facilities").join("AGENAS Trova Strutture")
+      .replace(/\bShowing first\s+(.+?)\s+di\s+(.+?)\s+rows\b/gi, "Showing first $1 of $2 rows")
+      .replace(/\bShowing\s+(.+?)\s+di\s+(.+?)\s+rows\b/gi, "Showing $1 of $2 rows")
+      .replace(/\b([+-]?[0-9.,]+)\s+SD\s+(?:medio su|average over)\s+(.+?)\s+punti\b/gi, "$1 SD average across $2 points")
+      .replace(/\bCon 'all available codes' il valore per facility e la media semplice dei codici pubblicati, non pesata per accessi\b/gi, "With 'all available codes', the facility value is the simple mean of published codes, not weighted by accesses");
     return output !== key ? output : null;
   }
 

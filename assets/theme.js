@@ -685,6 +685,17 @@
     }
   }
 
+  function refreshDashboardCreditTranslation(element) {
+    if (!window.SiteLanguage || typeof window.SiteLanguage.refresh !== "function") return;
+    if (element.dataset.dashboardCreditRefreshing === "1") return;
+    element.dataset.dashboardCreditRefreshing = "1";
+    try {
+      window.SiteLanguage.refresh(element);
+    } finally {
+      delete element.dataset.dashboardCreditRefreshing;
+    }
+  }
+
   function isDashboardCreditElement(element) {
     var className = element.className || "";
     if (typeof className !== "string") return false;
@@ -703,6 +714,7 @@
     if (!signature || element.dataset.dashboardCreditLast === signature) return;
     if (element.querySelector(".dashboard-credit-source")) {
       syncDashboardCreditLanguage(element);
+      refreshDashboardCreditTranslation(element);
       linkDashboardCreditSources(element);
       element.dataset.dashboardCreditLast = element.innerHTML.trim();
       return;
@@ -715,6 +727,7 @@
     }
     element.innerHTML = formatted;
     syncDashboardCreditLanguage(element);
+    refreshDashboardCreditTranslation(element);
     linkDashboardCreditSources(element);
     element.dataset.dashboardCreditLast = element.innerHTML.trim();
   }
@@ -911,7 +924,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260821-media-fix-1", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20260821-media-fix-2", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {
