@@ -19,6 +19,11 @@
     "/media/index.html",
     "/about/index.html"
   ];
+  var pageText = {
+    "/dashboard/sanita-italia/": {
+      "Struttura": "Facility"
+    }
+  };
   var text = {
     "Articoli": "Articles",
     "Leggi gli articoli": "Read the articles",
@@ -83,7 +88,7 @@
     "Caricamento dati demografici ...": "Loading demographic data ...",
     "Perimetro:": "Scope:",
     "Italia, territori NUTS2/NUTS3, serie osservate Eurostat e scenario base EUROPOP dove disponibile. Gli indicatori possono avere anni diversi; ogni grafico riporta la fonte nel credito.": "Italy, NUTS2/NUTS3 territories, Eurostat observed series and the EUROPOP baseline scenario where available. Indicators can have different years; each chart reports its source in the credit.",
-    "Quadro rapido": "Quick view",
+    "Quadro rapido": "Quick overview",
     "Indicatori principali": "Main indicators",
     "Ultimi valori disponibili per popolazione, età, dipendenza anziani, fecondità, saldo migratorio e istruzione.": "Latest available values for population, age, old-age dependency, fertility, migration balance and education.",
     "Ultimi valori disponibili per popolazione, età, dipendenza giovanile, carico demografico, speranza di vita, fecondità, saldo migratorio e istruzione.": "Latest available values for population, age, youth dependency, demographic load, life expectancy, fertility, migration balance and education.",
@@ -1123,7 +1128,7 @@
     "Pensioni per classe d'importo": "Pensions by amount class",
     "Eta' dei pensionati": "Age of pensioners",
     "Eta' alla decorrenza e pensioni liquidate": "Age at start date and newly awarded pensions",
-    "Eta' media alla decorrenza": "Average age at start date",
+    "Eta' media alla decorrenza": "Average age at pension start",
     "Pensioni liquidate per eta'": "Newly awarded pensions by age",
     "Gestioni": "Schemes",
     "Prestazioni per gestione previdenziale di provenienza": "Benefits by original pension scheme",
@@ -1381,7 +1386,7 @@
     "Filtro:": "Filter:",
     "Lato": "Side",
     "Struttura in evidenza": "Highlighted facility",
-    "Struttura": "Facility",
+    "Struttura": "Structure",
     "Prestazioni piu lente o veloci": "Slowest or fastest services",
     "Prestazioni PNLA": "PNLA services",
     "Classifica delle prestazioni PNLA nel territorio selezionato, ordinata con la misura scelta.": "Ranking of PNLA services in the selected area, ordered by the chosen measure.",
@@ -1452,7 +1457,7 @@
     "Posti letto totali": "Total beds",
     "Posti letto day hospital": "Day-hospital beds",
     "Posti letto day surgery": "Day-surgery beds",
-    "Degenza ordinaria": "Ordinary care",
+    "Degenza ordinaria": "Ordinary inpatient care",
     "Tutte le discipline": "all disciplines",
     "tutte le discipline": "all disciplines",
     "tutte le voci": "all items",
@@ -1480,7 +1485,7 @@
     "Conti nazionali, dipendenti per branca, PIL, statistiche strutturali d'impresa, Business Demography e valore aggiunto regionale.": "National accounts, employees by branch, GDP, structural business statistics, Business Demography and regional value added.",
     "Repository valore aggiunto imprese": "Business value added repository",
     "Settori": "Sectors",
-    "Dimensione": "Size",
+    "Dimensione": "Dimension",
     "Micro": "Micro",
     "Come leggere la dashboard:": "How to read the dashboard:",
     "Parti dai settori": "Start from sectors",
@@ -1665,11 +1670,11 @@
     "Ministero Salute, 2022": "Ministry of Health, 2022",
     "Ministero Salute, 2023": "Ministry of Health, 2023",
     "Dimissioni": "Discharges",
-    "Giornate di degenza": "Days of stay",
+    "Giornate di degenza": "Inpatient days",
     "Posti letto ordinari": "Ordinary beds",
     "Degenza media": "Average length of stay",
-    "Utilizzo posti letto": "Bed utilisation",
-    "Rapporta a": "Scale by",
+    "Utilizzo posti letto": "Bed occupancy",
+    "Rapporta a": "Normalize by",
     "Popolazione totale": "Total population",
     "Popolazione 65+": "Population 65+",
     "Popolazione 75+": "Population 75+",
@@ -1690,7 +1695,7 @@
     "quota e variazione": "share and change",
     "Voce": "Item",
     "Top strutture": "Top facilities",
-    "Disciplina principale": "Main discipline",
+    "Disciplina principale": "Main specialty",
     "Mostra flussi sopra": "Show flows above",
     "10 mln euro": "10 mn euros",
     "50 mln euro": "50 mn euros",
@@ -1734,7 +1739,7 @@
     "Importo medio lordo della pensione": "Average gross pension amount",
     "Spesa complessiva lorda": "Total gross spending",
     "Quota su popolazione residente": "Share of resident population",
-    "Spesa sul PIL regionale": "Spending over regional GDP",
+    "Spesa sul PIL regionale": "Spending as a share of regional GDP",
 
     "Metodo e dati nel": "Method and data in the",
     "repository pensioni": "pensions repository",
@@ -1906,7 +1911,7 @@
     "Contribuenti": "Taxpayers",
     "Quota contribuenti": "Taxpayer share",
     "IRPEF": "Personal income tax",
-    "Quota IRPEF": "Personal income tax share",
+    "Quota IRPEF": "Personal income-tax share",
     "Trend nel tempo": "Trend over time",
     "Milioni di euro": "Million euros",
     "OpenBDAP/FET": "OpenBDAP/FET",
@@ -1926,7 +1931,7 @@
     "Equivalente mensile lordo": "Gross monthly equivalent",
     "Gestione": "Scheme",
     "Fondo lavoratori dipendenti": "Employees' Pension Fund",
-    "Numero pensioni per decorrenza": "Number of pensions by start date",
+    "Numero pensioni per decorrenza": "Number of pensions by start year",
     "Fonte: INPS, Appendice statistica XXV Rapporto annuale, Tavole 3.15a e 3.15b. Elaborazione di Nazareno Lecis.": "Source: INPS, statistical appendix to the 25th Annual Report, Tables 3.15a and 3.15b. Processing by Nazareno Lecis.",
     "Gestione dipendenti pubblici": "Public employees' scheme",
     "Con categoria Totale il primo indicatore conta le persone pensionate; con IVS, vecchiaia, invalidita' previdenziale, superstiti, indennitarie o assistenziali conta le singole prestazioni della categoria. Gli anni disponibili cambiano per perimetro.": "With the Total category, the first indicator counts pensioned people; with IVS, old-age, social-security disability, survivors, indemnity or welfare categories, it counts individual benefits in the category. Available years change by scope.",
@@ -2201,7 +2206,6 @@
     "Annuale": "Annual",
     "Mensile": "Monthly",
     "Oraria": "Hourly",
-    "Media": "Mean",
     "Mediana": "Median",
     "Totale in equivalenti full-time": "Total in full-time equivalents",
     "Totale industria": "Total industry",
@@ -3054,7 +3058,6 @@
     ["Slovacchia", "Slovakia"],
     ["Spagna", "Spain"],
     ["Italia", "Italy"],
-    ["Italyn", "Italian"],
     ["Sardegna", "Sardinia"],
     ["Mediana", "Median"],
     ["Media nazionale", "National mean"],
@@ -3491,7 +3494,6 @@
     ["Permanenza", "Stay"],
     ["Media strutture", "Facility mean"],
     ["Strutture", "Facilities"],
-    ["media", "mean"],
     ["peggio: media +1 DS", "worse: mean +1 SD"],
     ["meglio: media -1 DS", "better: mean -1 SD"],
     ["meglio: media +1 DS", "better: mean +1 SD"],
@@ -3578,6 +3580,37 @@
     return match ? match[0] : "";
   }
 
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function isSingleWordPhrase(value) {
+    return /^[A-Za-zÀ-ÖØ-öø-ÿ'’]+$/.test(value);
+  }
+
+  function replacePhrase(output, source, target) {
+    if (!isSingleWordPhrase(source)) return output.split(source).join(target);
+    return output.replace(
+      new RegExp("(^|[^A-Za-zÀ-ÖØ-öø-ÿ])" + escapeRegExp(source) + "(?=$|[^A-Za-zÀ-ÖØ-öø-ÿ])", "g"),
+      function (match, prefix) {
+        return prefix + target;
+      }
+    );
+  }
+
+  function pageTranslation(key) {
+    var path = normalisedPathname();
+    var pages = Object.keys(pageText);
+    var i;
+    for (i = 0; i < pages.length; i += 1) {
+      if (path.indexOf(pages[i]) < 0) continue;
+      if (Object.prototype.hasOwnProperty.call(pageText[pages[i]], key)) {
+        return pageText[pages[i]][key];
+      }
+    }
+    return null;
+  }
+
   function translateDynamicValue(key) {
     var translated = null;
     dynamicText.some(function (rule) {
@@ -3589,7 +3622,7 @@
 
     var output = key;
     phraseText.forEach(function (pair) {
-      output = output.split(pair[0]).join(pair[1]);
+      output = replacePhrase(output, pair[0], pair[1]);
     });
     output = output
       .split("almeno +1 SD indica tempi migliori della mean").join("at least +1 SD indicates better-than-average times")
@@ -3632,7 +3665,8 @@
     if (language !== "en") return value;
     var key = normalise(value);
     if (!key) return value;
-    var translated = text[key] || translateDynamicValue(key);
+    if (key.toLowerCase() === "media") return leadingSpace(value) + "Media" + trailingSpace(value);
+    var translated = pageTranslation(key) || text[key] || translateDynamicValue(key);
     if (!translated) return value;
     return leadingSpace(value) + translated + trailingSpace(value);
   }
