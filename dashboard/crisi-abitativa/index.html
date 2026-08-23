@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-fonti-granularita">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-livelli-dati">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
@@ -18,7 +18,7 @@
   <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-fonti-granularita"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-livelli-dati"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js?v=20260721-1"></script>
 </head>
 <body>
@@ -126,9 +126,9 @@
         <span class="eyebrow">Eurostat · livello paese / EU27</span>
         <h2>Serie storiche e snapshot confrontabili</h2>
           <p>Eurostat permette di confrontare paesi con definizioni armonizzate. La sezione separa le serie storiche dagli snapshot: le prime mostrano dinamiche nel tempo, i secondi fotografano struttura del mercato, stock occupato/non occupato e altri dati censuari comparabili tra paesi.</p>
-        <div class="granularity-chips" aria-label="Granularità confronto Eurostat">
-          <span>Granularità: paese</span>
-          <span>Aggregato: EU27</span>
+        <div class="granularity-chips" aria-label="Livello dati confronto Eurostat">
+          <span>Livello dati: paese</span>
+          <span>Filtro reale: paesi + EU27</span>
           <span>Tempo: serie storiche + snapshot</span>
         </div>
       </div>
@@ -172,10 +172,10 @@
         <span class="eyebrow">Eurostat · snapshot paese / EU27</span>
         <h2>Struttura del mercato e stock attivabile</h2>
         <p>Questi indicatori non sono piu' isolati in un blocco nazionale: proprieta'/affitto e stock occupato/non occupato sono confrontabili tra paesi, quindi restano dentro Eurostat e usano filtri paese.</p>
-        <div class="granularity-chips" aria-label="Granularità snapshot Eurostat">
-          <span>Granularità: paese</span>
-          <span>Aggregato: EU27</span>
-          <span>Dataset: Eurostat / Census 2021</span>
+        <div class="granularity-chips" aria-label="Livello dati snapshot Eurostat">
+          <span>Livello dati: paese</span>
+          <span>Filtro reale: paesi + EU27</span>
+          <span>Grafico statico nel tempo</span>
         </div>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri snapshot Eurostat">
@@ -217,9 +217,9 @@
         <span class="eyebrow">Eurostat Census · livello paese / EU27</span>
         <h2>Eta' del patrimonio immobiliare</h2>
         <p>I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione tra i paesi selezionati.</p>
-        <div class="granularity-chips" aria-label="Granularità stock abitativo">
-          <span>Granularità: paese</span>
-          <span>Aggregato: EU27</span>
+        <div class="granularity-chips" aria-label="Livello dati stock abitativo">
+          <span>Livello dati: paese</span>
+          <span>Filtro reale: paesi + EU27</span>
           <span>Tempo: censimento 2021</span>
         </div>
       </div>
@@ -254,11 +254,11 @@
       <div class="section-head">
         <span class="eyebrow">Italia · livello nazionale</span>
         <h2>ERP e social housing</h2>
-        <p>L'offerta pubblica e sociale misura la capacita' di dare una risposta fuori dal mercato libero. Il grafico confronta il peso del social rental housing, mentre i KPI mostrano il patrimonio ERP gestito e la quota che resta bloccata per manutenzione o irregolarita'.</p>
-        <div class="granularity-chips" aria-label="Granularità ERP e social housing">
-          <span>Granularità: nazionale</span>
-          <span>Confronto: Italia / EU / OECD</span>
-          <span>Fonti: OECD, Federcasa-Nomisma</span>
+        <p>L'offerta pubblica e sociale misura la capacita' di dare una risposta fuori dal mercato libero. Il grafico confronta il peso del social rental housing, mentre i KPI mostrano il patrimonio ERP gestito e la quota che resta bloccata per manutenzione o irregolarita'. Qui il dato e' nazionale: non e' un drill-down regionale o comunale.</p>
+        <div class="granularity-chips" aria-label="Livello dati ERP e social housing">
+          <span>Livello mostrato: nazionale</span>
+          <span>Filtro territoriale: non disponibile</span>
+          <span>Confronto statico: Italia / EU / OECD</span>
         </div>
       </div>
       <div class="chart-panel main-chart">
@@ -275,11 +275,11 @@
       <div class="section-head">
         <span class="eyebrow">Italia · livello nazionale</span>
         <h2>Student housing</h2>
-        <p>La domanda studentesca fuori sede e' una componente specifica della pressione abitativa nelle citta' universitarie. Quando i posti letto strutturati sono pochi, una parte rilevante della domanda finisce sul mercato privato dell'affitto.</p>
-        <div class="granularity-chips" aria-label="Granularità student housing">
-          <span>Granularità: nazionale</span>
-          <span>Unità: studenti / posti letto</span>
-          <span>Fonti: ANVUR, MUR/PNRR, CDP</span>
+        <p>La domanda studentesca fuori sede e' una componente specifica della pressione abitativa nelle citta' universitarie. Quando i posti letto strutturati sono pochi, una parte rilevante della domanda finisce sul mercato privato dell'affitto. Il grafico usa dati nazionali: in questa dashboard non c'e' un filtro territoriale per sede universitaria.</p>
+        <div class="granularity-chips" aria-label="Livello dati student housing">
+          <span>Livello mostrato: nazionale</span>
+          <span>Filtro territoriale: non disponibile</span>
+          <span>Grafico statico: studenti / posti letto</span>
         </div>
       </div>
       <div class="chart-panel main-chart">
@@ -296,11 +296,11 @@
       <div class="section-head">
         <span class="eyebrow">Italia · livello regionale</span>
         <h2>Affitti brevi e ricettivo</h2>
-        <p>Il registro CIN/BDSR non misura canoni o notti, ma consente di osservare la scala dell'offerta turistica registrata. Questo e' utile nelle aree dove turismo, studenti e affitto lungo competono sullo stesso stock abitativo.</p>
-        <div class="granularity-chips" aria-label="Granularità affitti brevi">
-          <span>Granularità grafico: regionale</span>
+        <p>Il registro CIN/BDSR non misura canoni o notti, ma consente di osservare la scala dell'offerta turistica registrata. Questo e' utile nelle aree dove turismo, studenti e affitto lungo competono sullo stesso stock abitativo. Il grafico mostrato e' una classifica regionale: non e' un drill-down provinciale o comunale.</p>
+        <div class="granularity-chips" aria-label="Livello dati affitti brevi">
+          <span>Livello mostrato: regionale</span>
+          <span>Filtro territoriale: non disponibile</span>
           <span>Base dati: registro nazionale</span>
-          <span>Unità: strutture registrate</span>
         </div>
       </div>
       <div class="chart-panel main-chart">
@@ -317,11 +317,11 @@
       <div class="section-head">
         <span class="eyebrow">Italia · livello nazionale</span>
         <h2>Rischio locazione e policy mix</h2>
-        <p>Gli sfratti aiutano a leggere una parte del rischio percepito dai proprietari e il funzionamento del mercato dell'affitto. Le card sotto il grafico riassumono le leve da tenere insieme: offerta, sicurezza dell'affitto, recupero stock, regole, trasporto e sostegni alla domanda.</p>
-        <div class="granularity-chips" aria-label="Granularità sfratti e policy">
-          <span>Granularità: nazionale</span>
-          <span>Unità: provvedimenti / richieste / esecuzioni</span>
-          <span>Fonte: Ministero dell'Interno</span>
+        <p>Gli sfratti aiutano a leggere una parte del rischio percepito dai proprietari e il funzionamento del mercato dell'affitto. Le card sotto il grafico riassumono le leve da tenere insieme: offerta, sicurezza dell'affitto, recupero stock, regole, trasporto e sostegni alla domanda. Il grafico e' nazionale e statico: non va letto come confronto territoriale interno.</p>
+        <div class="granularity-chips" aria-label="Livello dati sfratti e policy">
+          <span>Livello mostrato: nazionale</span>
+          <span>Filtro territoriale: non disponibile</span>
+          <span>Grafico statico: provvedimenti / richieste / esecuzioni</span>
         </div>
       </div>
       <div class="chart-panel main-chart">
@@ -340,9 +340,9 @@
         <span class="eyebrow">Italia locale · livelli regionale / comunale / provinciale</span>
         <h2>Dalla mappa Italia al dettaglio comunale</h2>
         <p>Le medie nazionali dicono poco su cosa succede davvero a Cagliari, Nuoro, Sassari o nei comuni interni. Per questo la lettura locale parte da una sintesi regionale su tutta Italia e poi scende alla singola regione e ai comuni. I dati usano export statici regionali con quotazioni OMI comunali e indicatori di reddito dove disponibili.</p>
-        <div class="granularity-chips" aria-label="Granularità focus locale">
+        <div class="granularity-chips" aria-label="Livello dati focus locale">
           <span>Vista Italia: regionale</span>
-          <span>Dettaglio: comunale</span>
+          <span>Filtro reale: regione / comune</span>
           <span>Provincia: attributo dei comuni</span>
         </div>
       </div>
