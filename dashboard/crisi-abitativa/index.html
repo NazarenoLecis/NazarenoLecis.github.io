@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-eurostat-filtri">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-checkbox-filtri">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
@@ -18,7 +18,7 @@
   <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-eurostat-filtri"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-checkbox-filtri"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js?v=20260721-1"></script>
 </head>
 <body>
@@ -138,10 +138,10 @@
             <span>Indicatore</span>
             <select id="europeIndicator"></select>
           </label>
-          <label>
+          <div class="filter-field">
             <span>Paesi da evidenziare</span>
             <select id="highlightCountries" multiple size="4"></select>
-          </label>
+          </div>
         </div>
         <div class="filter-actions">
           <button class="button compact" id="resetEuropeFilters" type="button">Reset confronto</button>
@@ -181,10 +181,10 @@
               <option value="stock_activation">Stock occupato/non occupato</option>
             </select>
           </label>
-          <label>
+          <div class="filter-field">
             <span>Paesi da mostrare</span>
             <select id="snapshotCountries" multiple size="6"></select>
-          </label>
+          </div>
         </div>
         <div class="filter-actions">
           <button class="button compact" id="resetSnapshotCountries" type="button">Reset Italia + EU27</button>
@@ -214,10 +214,10 @@
           <p>Seleziona o deseleziona i paesi da confrontare. Il grafico usa quote percentuali dello stock per evitare che i paesi piu' grandi schiaccino gli altri.</p>
         </div>
         <div class="filter-grid housing-filter-grid">
-          <label>
+          <div class="filter-field">
             <span>Paesi da mostrare</span>
             <select id="stockAgeCountries" multiple size="6"></select>
-          </label>
+          </div>
         </div>
         <div class="filter-actions">
           <button class="button compact" id="resetStockAgeCountries" type="button">Reset Italia + EU27</button>

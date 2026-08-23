@@ -284,12 +284,192 @@
     }) : [];
   }
 
+  function selectedLabels(select) {
+    return select ? Array.from(select.options || []).filter(function (option) {
+      return option.selected;
+    }).map(function (option) {
+      return option.textContent || option.value;
+    }) : [];
+  }
+
+  function dropdownSummary(select) {
+    var labels = selectedLabels(select);
+    if (!labels.length) return t("Nessun paese selezionato");
+    if (labels.length === 1) return labels[0];
+    if (labels.length === 2) return labels.join(", ");
+    return labels.length.toLocaleString(locale()) + " " + t("paesi selezionati");
+  }
+
+  function closeCheckboxDropdowns(exceptRoot) {
+    document.querySelectorAll(".checkbox-dropdown.is-open").forEach(function (root) {
+      if (root !== exceptRoot) {
+        root.classList.remove("is-open");
+        var button = root.querySelector(".checkbox-dropdown-button");
+        if (button) button.setAttribute("aria-expanded", "false");
+      }
+    });
+  }
+
+  function dispatchSelectChange(select) {
+    if (!select) return;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function setAllOptions(select, selected) {
+    Array.from((select && select.options) || []).forEach(function (option) {
+      option.selected = selected;
+    });
+  }
+
+  function ensureCheckboxDropdown(select) {
+    if (!select) return null;
+    if (select.housingCheckboxDropdown) return select.housingCheckboxDropdown;
+
+    select.classList.add("native-multiselect-hidden");
+    select.setAttribute("aria-hidden", "true");
+    select.tabIndex = -1;
+
+    var root = document.createElement("div");
+    root.className = "checkbox-dropdown";
+
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "checkbox-dropdown-button";
+    button.setAttribute("aria-haspopup", "true");
+    button.setAttribute("aria-expanded", "false");
+
+    var summary = document.createElement("span");
+    summary.className = "checkbox-dropdown-summary";
+    button.appendChild(summary);
+
+    var chevron = document.createElement("span");
+    chevron.className = "checkbox-dropdown-chevron";
+    chevron.setAttribute("aria-hidden", "true");
+    chevron.textContent = "▾";
+    button.appendChild(chevron);
+
+    var menu = document.createElement("div");
+    menu.className = "checkbox-dropdown-menu";
+    menu.setAttribute("role", "menu");
+
+    var actions = document.createElement("div");
+    actions.className = "checkbox-dropdown-actions";
+
+    var selectAll = document.createElement("button");
+    selectAll.type = "button";
+    selectAll.textContent = t("Tutti");
+    selectAll.addEventListener("click", function () {
+      setAllOptions(select, true);
+      renderCheckboxDropdown(select);
+      dispatchSelectChange(select);
+    });
+
+    var selectNone = document.createElement("button");
+    selectNone.type = "button";
+    selectNone.textContent = t("Nessuno");
+    selectNone.addEventListener("click", function () {
+      setAllOptions(select, false);
+      renderCheckboxDropdown(select);
+      dispatchSelectChange(select);
+    });
+
+    actions.appendChild(selectAll);
+    actions.appendChild(selectNone);
+
+    var list = document.createElement("div");
+    list.className = "checkbox-dropdown-list";
+
+    menu.appendChild(actions);
+    menu.appendChild(list);
+    root.appendChild(button);
+    root.appendChild(menu);
+    select.insertAdjacentElement("afterend", root);
+
+    button.addEventListener("click", function () {
+      var isOpen = root.classList.toggle("is-open");
+      closeCheckboxDropdowns(root);
+      button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
+
+    root.addEventListener("click", function (event) {
+      event.stopPropagation();
+    });
+
+    select.housingCheckboxDropdown = {
+      root: root,
+      button: button,
+      summary: summary,
+      menu: menu,
+      list: list,
+      selectAll: selectAll,
+      selectNone: selectNone
+    };
+
+    if (!document.housingCheckboxDropdownEvents) {
+      document.housingCheckboxDropdownEvents = true;
+      document.addEventListener("click", function () {
+        closeCheckboxDropdowns();
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") closeCheckboxDropdowns();
+      });
+    }
+
+    return select.housingCheckboxDropdown;
+  }
+
+  function renderCheckboxDropdown(select) {
+    var dropdown = ensureCheckboxDropdown(select);
+    if (!dropdown) return;
+    dropdown.summary.textContent = dropdownSummary(select);
+    dropdown.selectAll.textContent = t("Tutti");
+    dropdown.selectNone.textContent = t("Nessuno");
+    dropdown.list.innerHTML = "";
+
+    Array.from(select.options || []).forEach(function (option) {
+      var row = document.createElement("div");
+      row.className = "checkbox-dropdown-option";
+      row.setAttribute("role", "menuitemcheckbox");
+      row.setAttribute("aria-checked", option.selected ? "true" : "false");
+
+      var checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = option.selected;
+      checkbox.value = option.value;
+
+      var text = document.createElement("span");
+      text.textContent = option.textContent || option.value;
+
+      checkbox.addEventListener("change", function () {
+        option.selected = checkbox.checked;
+        row.setAttribute("aria-checked", option.selected ? "true" : "false");
+        dropdown.summary.textContent = dropdownSummary(select);
+        dispatchSelectChange(select);
+      });
+
+      row.addEventListener("click", function (event) {
+        if (event.target === checkbox) return;
+        checkbox.checked = !checkbox.checked;
+        checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      row.appendChild(checkbox);
+      row.appendChild(text);
+      dropdown.list.appendChild(row);
+    });
+  }
+
+  function syncCheckboxDropdown(id) {
+    renderCheckboxDropdown(byId(id));
+  }
+
   function applyDefaultComparableSelection(select, records) {
     if (!select) return;
     var defaults = new Set(defaultComparableCountries(records));
     Array.from(select.options || []).forEach(function (option) {
       option.selected = defaults.has(option.value);
     });
+    renderCheckboxDropdown(select);
   }
 
   function countryNameFor(records, code) {
@@ -319,12 +499,11 @@
       var selected = current.has(entry[0]) ? " selected" : "";
       return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(t(entry[1])) + "</option>";
     }).join("");
+    renderCheckboxDropdown(select);
   }
 
   function selectedHighlightCountries() {
-    return Array.from((byId("highlightCountries") && byId("highlightCountries").selectedOptions) || []).map(function (option) {
-      return option.value;
-    });
+    return selectedValues(byId("highlightCountries"));
   }
 
   function selectedStockAgeCountries() {
@@ -341,6 +520,7 @@
       var selected = current.has(entry[0]) || (isInitial && defaultComparableCountries(records).indexOf(entry[0]) >= 0) ? " selected" : "";
       return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(t(entry[1] || entry[0])) + "</option>";
     }).join("");
+    renderCheckboxDropdown(select);
   }
 
   function currentIndicator() {
@@ -838,6 +1018,7 @@
       var selected = current.has(entry[0]) || (isInitial && defaultComparableCountries(records).indexOf(entry[0]) >= 0) ? " selected" : "";
       return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(t(entry[1] || entry[0])) + "</option>";
     }).join("");
+    renderCheckboxDropdown(select);
   }
 
   function snapshotRowValue(module, row) {
@@ -1515,6 +1696,7 @@
     byId("highlightCountries").addEventListener("change", renderEurope);
     byId("resetEuropeFilters").addEventListener("click", function () {
       Array.from(byId("highlightCountries").options).forEach(function (option) { option.selected = false; });
+      syncCheckboxDropdown("highlightCountries");
       renderEurope();
     });
 
@@ -1535,6 +1717,7 @@
     byId("resetSnapshotCountries").addEventListener("click", function () {
       var module = currentSnapshotModule();
       applyDefaultComparableSelection(byId("snapshotCountries"), module ? chartRecords(module) : []);
+      syncCheckboxDropdown("snapshotCountries");
       renderEurostatSnapshot();
     });
 
@@ -1549,6 +1732,7 @@
     });
     byId("resetStockAgeCountries").addEventListener("click", function () {
       applyDefaultComparableSelection(byId("stockAgeCountries"), state.stockAgeData || []);
+      syncCheckboxDropdown("stockAgeCountries");
       rerenderStockAge();
     });
 
