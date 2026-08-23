@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-sezioni-incrementali">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-eurostat-filtri">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
@@ -18,7 +18,7 @@
   <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-sezioni-incrementali"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-eurostat-filtri"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js?v=20260721-1"></script>
 </head>
 <body>
@@ -49,7 +49,7 @@
         <span class="eyebrow">Crisi abitativa</span>
         <h1>Prezzi, affitti, redditi e accesso alla casa</h1>
         <p class="lead">
-          Dashboard costruita per leggere la crisi abitativa in modo progressivo: prima la struttura nazionale del mercato, poi il confronto europeo, quindi le sezioni specifiche su offerta pubblica, student housing, affitti brevi e rischio locazione, fino al dettaglio territoriale dei comuni.
+          Dashboard costruita per leggere la crisi abitativa in modo progressivo: prima le serie storiche Eurostat, poi gli snapshot europei confrontabili, quindi le sezioni specifiche su offerta pubblica, student housing, affitti brevi e rischio locazione, fino al dettaglio territoriale dei comuni.
         </p>
       </div>
       <div class="source-panel">
@@ -65,8 +65,8 @@
     <section class="workflow-grid" aria-label="Guida alla lettura">
       <div class="workflow-step">
         <span>1</span>
-        <h2>Parti dalla struttura</h2>
-        <p>Leggi prima proprieta', affitto e stock: la crisi abitativa non nasce da un solo prezzo, ma dall'incontro tra domanda concentrata, offerta rigida e abitazioni non sempre attivabili.</p>
+        <h2>Parti dal confronto europeo</h2>
+        <p>Leggi prima le serie Eurostat e gli snapshot comparabili: la crisi abitativa non nasce da un solo prezzo, ma dall'incontro tra domanda concentrata, offerta rigida e abitazioni non sempre attivabili.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
@@ -81,9 +81,8 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard crisi abitativa">
-      <a href="#marketStructureSection">Struttura mercato</a>
-      <a href="#stockAgeSection">Stock abitativo</a>
-      <a href="#europeSection">Confronto europeo</a>
+      <a href="#europeSection">Eurostat: serie e snapshot</a>
+      <a href="#stockAgeSection">Stock Eurostat</a>
       <a href="#publicHousingSection">ERP e social housing</a>
       <a href="#studentHousingSection">Student housing</a>
       <a href="#shortRentalsSection">Affitti brevi</a>
@@ -122,74 +121,11 @@
       </div>
     </section>
 
-    <section class="dashboard-section" id="marketStructureSection">
-      <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 1</span>
-        <h2>Struttura del mercato abitativo</h2>
-        <p>La prima domanda e' come e' fatto il mercato: quanta popolazione vive in affitto, quanto pesa la proprieta' e quanta parte dello stock fisico non risulta occupata. Questi dati aiutano a distinguere stock esistente, offerta effettiva e mercato dell'affitto.</p>
-      </div>
-      <div class="kpi-grid housing-kpis extra-kpis" id="extraKpis">
-        <div class="kpi"><span>Moduli extra</span><strong>-</strong></div>
-        <div class="kpi"><span>Dataset</span><strong>in caricamento</strong></div>
-        <div class="kpi"><span>Fonte</span><strong>R2</strong></div>
-      </div>
-      <div class="chart-panel main-chart">
-        <div class="panel-title">
-          <h2>Proprieta' e affitto</h2>
-          <span>Italia vs EU27</span>
-        </div>
-        <div id="tenureChart" class="chart extra-driver-chart"></div>
-        <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
-      </div>
-      <div class="chart-panel main-chart">
-        <div class="panel-title">
-          <h2>Stock attivabile</h2>
-          <span>occupate vs non occupate</span>
-        </div>
-        <div id="stockActivationChart" class="chart extra-driver-chart"></div>
-        <div class="chart-credit">Fonte: Eurostat Census 2021. Elaborazione di Nazareno Lecis.</div>
-      </div>
-      <div class="selection-comment" id="extraDriversComment"></div>
-    </section>
-
-    <section class="dashboard-section" id="stockAgeSection">
-      <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 2</span>
-        <h2>Eta' del patrimonio immobiliare</h2>
-        <p>I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione, usando un JSON statico gia' aggregato.</p>
-      </div>
-      <details class="chart-filter-panel" open aria-label="Filtri eta patrimonio immobiliare">
-        <summary>Filtri stock abitativo</summary>
-        <div class="filter-intro">
-          <h3>Paesi da confrontare</h3>
-          <p>Italia ed EU27 restano sempre visibili. Puoi aggiungere altri paesi dal menu: il grafico usa quote percentuali dello stock per evitare che i paesi piu' grandi schiaccino gli altri.</p>
-        </div>
-        <div class="filter-grid housing-filter-grid">
-          <label>
-            <span>Paesi da aggiungere</span>
-            <select id="stockAgeCountries" multiple size="4"></select>
-          </label>
-        </div>
-        <div class="filter-actions">
-          <button class="button compact" id="resetStockAgeCountries" type="button">Reset paesi</button>
-        </div>
-      </details>
-      <div class="chart-panel main-chart">
-        <div class="panel-title">
-          <h2 id="stockAgeTitle">Abitazioni per periodo di costruzione</h2>
-          <span>quota dello stock, 2021</span>
-        </div>
-        <div id="stockAgeChart" class="chart"></div>
-        <div class="chart-credit">Fonte: Eurostat Census Hub 2021. Elaborazione di Nazareno Lecis.</div>
-      </div>
-      <div class="selection-comment" id="stockAgeComment"></div>
-    </section>
-
     <section class="dashboard-section" id="europeSection">
       <div class="section-head">
-        <span class="eyebrow">Europa - passaggio 3</span>
-        <h2>Il confronto europeo: utile, ma non sufficiente</h2>
-          <p>Eurostat permette di confrontare paesi con definizioni armonizzate. I dati sono salvati come JSON statici per rendere la dashboard piu' veloce e non dipendere dall'API al caricamento della pagina. Il confronto aiuta a capire se l'Italia e' un caso isolato o parte di una dinamica piu' ampia, ma le medie nazionali nascondono differenze enormi tra territori.</p>
+        <span class="eyebrow">Eurostat - passaggio 1</span>
+        <h2>Serie storiche e snapshot confrontabili</h2>
+          <p>Eurostat permette di confrontare paesi con definizioni armonizzate. La sezione separa le serie storiche dagli snapshot: le prime mostrano dinamiche nel tempo, i secondi fotografano struttura del mercato, stock occupato/non occupato e altri dati censuari comparabili tra paesi.</p>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri confronto europeo">
         <summary>Filtri confronto europeo</summary>
@@ -225,11 +161,82 @@
         <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
       </div>
       <div class="selection-comment" id="europeComment"></div>
+
+      <div class="dashboard-subsection">
+        <span class="eyebrow">Eurostat - snapshot</span>
+        <h2>Struttura del mercato e stock attivabile</h2>
+        <p>Questi indicatori non sono piu' isolati in un blocco nazionale: proprieta'/affitto e stock occupato/non occupato sono confrontabili tra paesi, quindi restano dentro Eurostat e usano filtri paese.</p>
+      </div>
+      <details class="chart-filter-panel" open aria-label="Filtri snapshot Eurostat">
+        <summary>Filtri snapshot Eurostat</summary>
+        <div class="filter-intro">
+          <h3>Paesi da mostrare</h3>
+          <p>Scegli l'indicatore e seleziona i paesi da visualizzare. Il reset torna a Italia + EU27, ma puoi deselezionare o aggiungere paesi liberamente.</p>
+        </div>
+        <div class="filter-grid housing-filter-grid">
+          <label>
+            <span>Indicatore snapshot</span>
+            <select id="snapshotMetric">
+              <option value="tenure">Proprieta' e affitto</option>
+              <option value="stock_activation">Stock occupato/non occupato</option>
+            </select>
+          </label>
+          <label>
+            <span>Paesi da mostrare</span>
+            <select id="snapshotCountries" multiple size="6"></select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetSnapshotCountries" type="button">Reset Italia + EU27</button>
+        </div>
+      </details>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="snapshotTitle">Snapshot Eurostat</h2>
+          <span id="snapshotSubtitle">paesi selezionati</span>
+        </div>
+        <div id="eurostatSnapshotChart" class="chart extra-driver-chart"></div>
+        <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="selection-comment" id="eurostatSnapshotComment"></div>
+    </section>
+
+    <section class="dashboard-section" id="stockAgeSection">
+      <div class="section-head">
+        <span class="eyebrow">Eurostat - passaggio 2</span>
+        <h2>Eta' del patrimonio immobiliare</h2>
+        <p>I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione tra i paesi selezionati.</p>
+      </div>
+      <details class="chart-filter-panel" open aria-label="Filtri eta patrimonio immobiliare">
+        <summary>Filtri stock abitativo</summary>
+        <div class="filter-intro">
+          <h3>Paesi da mostrare</h3>
+          <p>Seleziona o deseleziona i paesi da confrontare. Il grafico usa quote percentuali dello stock per evitare che i paesi piu' grandi schiaccino gli altri.</p>
+        </div>
+        <div class="filter-grid housing-filter-grid">
+          <label>
+            <span>Paesi da mostrare</span>
+            <select id="stockAgeCountries" multiple size="6"></select>
+          </label>
+        </div>
+        <div class="filter-actions">
+          <button class="button compact" id="resetStockAgeCountries" type="button">Reset Italia + EU27</button>
+        </div>
+      </details>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2 id="stockAgeTitle">Abitazioni per periodo di costruzione</h2>
+          <span>quota dello stock, 2021</span>
+        </div>
+        <div id="stockAgeChart" class="chart"></div>
+        <div class="chart-credit">Fonte: Eurostat Census Hub 2021. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="selection-comment" id="stockAgeComment"></div>
     </section>
 
     <section class="dashboard-section" id="publicHousingSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 4</span>
+        <span class="eyebrow">Italia - passaggio 3</span>
         <h2>ERP e social housing</h2>
         <p>L'offerta pubblica e sociale misura la capacita' di dare una risposta fuori dal mercato libero. Il grafico confronta il peso del social rental housing, mentre i KPI mostrano il patrimonio ERP gestito e la quota che resta bloccata per manutenzione o irregolarita'.</p>
       </div>
@@ -245,7 +252,7 @@
 
     <section class="dashboard-section" id="studentHousingSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 5</span>
+        <span class="eyebrow">Italia - passaggio 4</span>
         <h2>Student housing</h2>
         <p>La domanda studentesca fuori sede e' una componente specifica della pressione abitativa nelle citta' universitarie. Quando i posti letto strutturati sono pochi, una parte rilevante della domanda finisce sul mercato privato dell'affitto.</p>
       </div>
@@ -261,7 +268,7 @@
 
     <section class="dashboard-section" id="shortRentalsSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 6</span>
+        <span class="eyebrow">Italia - passaggio 5</span>
         <h2>Affitti brevi e ricettivo</h2>
         <p>Il registro CIN/BDSR non misura canoni o notti, ma consente di osservare la scala dell'offerta turistica registrata. Questo e' utile nelle aree dove turismo, studenti e affitto lungo competono sullo stesso stock abitativo.</p>
       </div>
@@ -277,7 +284,7 @@
 
     <section class="dashboard-section" id="rentalRiskSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 7</span>
+        <span class="eyebrow">Italia - passaggio 6</span>
         <h2>Rischio locazione e policy mix</h2>
         <p>Gli sfratti aiutano a leggere una parte del rischio percepito dai proprietari e il funzionamento del mercato dell'affitto. Le card sotto il grafico riassumono le leve da tenere insieme: offerta, sicurezza dell'affitto, recupero stock, regole, trasporto e sostegni alla domanda.</p>
       </div>
@@ -294,7 +301,7 @@
 
     <section class="dashboard-section" id="localSection">
       <div class="section-head">
-        <span class="eyebrow">Italia locale - passaggio 8</span>
+        <span class="eyebrow">Italia locale - passaggio 7</span>
         <h2>Dalla mappa Italia al dettaglio comunale</h2>
         <p>Le medie nazionali dicono poco su cosa succede davvero a Cagliari, Nuoro, Sassari o nei comuni interni. Per questo la lettura locale parte da una sintesi regionale su tutta Italia e poi scende alla singola regione e ai comuni. I dati usano export statici regionali con quotazioni OMI comunali e indicatori di reddito dove disponibili.</p>
       </div>

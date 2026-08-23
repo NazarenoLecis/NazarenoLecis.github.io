@@ -5,7 +5,12 @@
   var EXTRA_DATA_URL = "https://data.nazarenolecis.com/crisi-abitativa/dashboard_extra.json";
   var LOCAL_INDEX_URL = "https://data.nazarenolecis.com/crisi-abitativa/local_index.json";
   var LOCAL_REGION_BASE = "https://data.nazarenolecis.com/crisi-abitativa/regions/";
-  var LOCAL_ITALY_GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
+  var LOCAL_ITALY_GEOJSON_URLS = [
+    "/data/crisi-abitativa/italy-regions.geojson",
+    "../../data/crisi-abitativa/italy-regions.geojson",
+    "https://nazarenolecis.com/data/crisi-abitativa/italy-regions.geojson",
+    "https://nazarenolecis.github.io/data/crisi-abitativa/italy-regions.geojson"
+  ];
   var ITALY = "IT";
   var EU27 = "EU27_2020";
   var COUNTRY_RE = /^[A-Z]{2}$/;
@@ -151,6 +156,15 @@
     });
   }
 
+  function fetchFirstJson(urls) {
+    urls = toArray(urls);
+    return urls.reduce(function (chain, url) {
+      return chain.catch(function () {
+        return fetchJson(url);
+      });
+    }, Promise.reject(new Error("nessun URL provato")));
+  }
+
   function decodeIndex(flatIndex, sizes) {
     var idx = Number(flatIndex);
     var coords = new Array(sizes.length);
@@ -238,6 +252,55 @@
     });
   }
 
+  function comparableCountryOptions(records) {
+    var countries = new Map();
+    toArray(records).forEach(function (record) {
+      if ((isCountry(record.geo) || record.geo === EU27) && record.geo) {
+        countries.set(record.geo, record.geo_label || record.scope || record.geo);
+      }
+    });
+    return Array.from(countries.entries()).sort(function (a, b) {
+      if (a[0] === ITALY) return -1;
+      if (b[0] === ITALY) return 1;
+      if (a[0] === EU27) return b[0] === ITALY ? 1 : -1;
+      if (b[0] === EU27) return a[0] === ITALY ? -1 : 1;
+      return String(a[1] || a[0]).localeCompare(String(b[1] || b[0]), locale().slice(0, 2));
+    });
+  }
+
+  function defaultComparableCountries(records) {
+    return [ITALY, EU27].filter(function (code) {
+      return toArray(records).some(function (record) {
+        return record.geo === code;
+      });
+    });
+  }
+
+  function selectedValues(select) {
+    return select ? Array.from(select.options || []).filter(function (option) {
+      return option.selected;
+    }).map(function (option) {
+      return option.value;
+    }) : [];
+  }
+
+  function applyDefaultComparableSelection(select, records) {
+    if (!select) return;
+    var defaults = new Set(defaultComparableCountries(records));
+    Array.from(select.options || []).forEach(function (option) {
+      option.selected = defaults.has(option.value);
+    });
+  }
+
+  function countryNameFor(records, code) {
+    var record = toArray(records).find(function (item) {
+      return item.geo === code;
+    });
+    if (code === ITALY) return t("Italia");
+    if (code === EU27) return "EU27";
+    return t((record && (record.geo_label || record.scope)) || code);
+  }
+
   function populateEuropeIndicatorControl() {
     var select = byId("europeIndicator");
     if (!select) return;
@@ -266,25 +329,16 @@
 
   function selectedStockAgeCountries() {
     var select = byId("stockAgeCountries");
-    return select ? Array.from(select.options || []).filter(function (option) {
-      return option.selected;
-    }).map(function (option) {
-      return option.value;
-    }) : [];
+    return selectedValues(select);
   }
 
   function populateStockAgeCountryControl(records) {
     var select = byId("stockAgeCountries");
     if (!select) return;
     var current = new Set(selectedStockAgeCountries());
-    var countries = new Map();
-    toArray(records).forEach(function (record) {
-      if (isCountry(record.geo) && record.geo !== ITALY && record.geo !== EU27) countries.set(record.geo, record.geo_label);
-    });
-    select.innerHTML = Array.from(countries.entries()).sort(function (a, b) {
-      return a[1].localeCompare(b[1], locale().slice(0, 2));
-    }).map(function (entry) {
-      var selected = current.has(entry[0]) ? " selected" : "";
+    var isInitial = select.options.length === 0;
+    select.innerHTML = comparableCountryOptions(records).map(function (entry) {
+      var selected = current.has(entry[0]) || (isInitial && defaultComparableCountries(records).indexOf(entry[0]) >= 0) ? " selected" : "";
       return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(t(entry[1] || entry[0])) + "</option>";
     }).join("");
   }
@@ -652,10 +706,10 @@
     records = records || [];
     if (!records.length) return renderMessage("stockAgeChart", "Nessun dato disponibile sull'eta' del patrimonio immobiliare.");
     var theme = plotTheme();
-    var selectedCodes = selectedStockAgeCountries();
-    var countryCodes = [ITALY, EU27].concat(selectedCodes).filter(function (code, index, array) {
+    var countryCodes = selectedStockAgeCountries().filter(function (code, index, array) {
       return array.indexOf(code) === index && records.some(function (record) { return record.geo === code; });
     });
+    if (!countryCodes.length) return renderMessage("stockAgeChart", "Seleziona almeno un paese per visualizzare lo stock abitativo.");
     var buckets = [];
     records.forEach(function (record) {
       if (!buckets.some(function (bucket) { return bucket.id === record.bucket; })) {
@@ -664,17 +718,15 @@
     });
     var colors = [theme.orange, theme.muted, "#4e79a7", "#59a14f", "#e15759", "#b07aa1", "#76b7b2", "#edc948"];
     var traces = countryCodes.map(function (code, index) {
-      var labelRecord = records.find(function (record) { return record.geo === code; });
-      var name = code === ITALY ? t("Italia") : (code === EU27 ? "EU27" : t((labelRecord && labelRecord.geo_label) || code));
       return {
         type: "bar",
-        name: name,
+        name: countryNameFor(records, code),
         x: buckets.map(function (bucket) { return bucket.label; }),
         y: buckets.map(function (bucket) {
           var row = records.find(function (record) { return record.geo === code && record.bucket === bucket.id; });
           return row ? Number(row.share_pct) : null;
         }),
-        marker: { color: colors[index % colors.length], opacity: code === ITALY ? 0.9 : 0.68 },
+        marker: { color: colors[index % colors.length], opacity: code === ITALY ? 0.9 : 0.7 },
         customdata: buckets.map(function (bucket) {
           var row = records.find(function (record) { return record.geo === code && record.bucket === bucket.id; });
           return row ? [row.value, row.geo_total] : [null, null];
@@ -693,7 +745,9 @@
       yaxis: { title: { text: t("Quota dello stock abitativo (%)") }, gridcolor: theme.line, fixedrange: true, rangemode: "tozero" },
       legend: { orientation: "h", x: 0, y: 1.12, xanchor: "left" }
     }, { responsive: true, displayModeBar: false });
-    byId("stockAgeComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " + escapeHtml(t("questo grafico usa un unico JSON statico gia' aggregato. Le barre mostrano la composizione percentuale dello stock abitativo 2021 per periodo di costruzione; il tooltip riporta anche il numero di abitazioni."));
+    byId("stockAgeComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " +
+      escapeHtml(t("questo grafico usa un unico JSON statico Eurostat gia' aggregato. Le barre mostrano la composizione percentuale dello stock abitativo 2021 per periodo di costruzione; il tooltip riporta anche il numero di abitazioni.")) + " " +
+      escapeHtml(t("Paesi selezionati:")) + " " + countryCodes.map(function (code) { return escapeHtml(countryNameFor(records, code)); }).join(", ") + ".";
   }
 
   function loadStockAge() {
@@ -747,42 +801,6 @@
     }) || null;
   }
 
-  function kpiByLabel(module, label) {
-    return ((module && module.kpis) || []).find(function (item) {
-      return item.label === label;
-    }) || null;
-  }
-
-  function formatMetricValue(value, unit) {
-    var number = toNumber(value);
-    if (number === null) return "ND";
-    var decimals = Math.abs(number) >= 1000 ? 0 : 1;
-    if (unit && unit.indexOf("milioni") >= 0) decimals = 0;
-    if (!unit && Math.abs(number) < 1000) decimals = 0;
-    return number.toLocaleString(locale(), { maximumFractionDigits: decimals }) + (unit ? " " + t(unit) : "");
-  }
-
-  function renderExtraKpis() {
-    var container = byId("extraKpis");
-    if (!container || !state.extraData) return;
-    var specs = [
-      { module: "tenure", label: "Persone in affitto" },
-      { module: "stock_activation", label: "Quota non occupata" },
-      { module: "evictions", label: "Provvedimenti" },
-      { module: "public_social_housing", label: "ERP sfitti da ristrutturare" },
-      { module: "student_housing", label: "Copertura posti/fuori sede" },
-      { module: "short_rentals", label: "Totale strutture BDSR" }
-    ];
-    container.innerHTML = specs.map(function (spec) {
-      var module = extraModule(spec.module);
-      var kpi = kpiByLabel(module, spec.label) || {};
-      return "<div class=\"kpi\">" +
-        "<span>" + escapeHtml(t(kpi.label || spec.label)) + (kpi.period ? "<small>" + escapeHtml(t(kpi.period)) + "</small>" : "") + "</span>" +
-        "<strong>" + escapeHtml(formatMetricValue(kpi.value, kpi.unit || "")) + "</strong>" +
-        "</div>";
-    }).join("");
-  }
-
   function extraLayout(margin) {
     var theme = plotTheme();
     return {
@@ -800,23 +818,104 @@
     });
   }
 
-  function renderExtraDonut(id, module) {
+  function currentSnapshotModule() {
+    var select = byId("snapshotMetric");
+    var selectedId = select ? select.value : "tenure";
+    return extraModule(selectedId) || extraModule("tenure") || extraModule("stock_activation");
+  }
+
+  function selectedSnapshotCountries() {
+    return selectedValues(byId("snapshotCountries"));
+  }
+
+  function populateSnapshotCountryControl(module) {
+    var select = byId("snapshotCountries");
+    if (!select || !module) return;
     var records = chartRecords(module);
-    if (!records.length) return renderMessage(id, "Nessun dato disponibile.");
+    var current = new Set(selectedSnapshotCountries());
+    var isInitial = select.options.length === 0;
+    select.innerHTML = comparableCountryOptions(records).map(function (entry) {
+      var selected = current.has(entry[0]) || (isInitial && defaultComparableCountries(records).indexOf(entry[0]) >= 0) ? " selected" : "";
+      return "<option value=\"" + entry[0] + "\"" + selected + ">" + escapeHtml(t(entry[1] || entry[0])) + "</option>";
+    }).join("");
+  }
+
+  function snapshotRowValue(module, row) {
+    if (!row) return null;
+    if (module && module.id === "stock_activation") return toNumber(row.share_pct);
+    return toNumber(row.value);
+  }
+
+  function renderEurostatSnapshot() {
+    var module = currentSnapshotModule();
+    if (!module) return renderMessage("eurostatSnapshotChart", "Nessun dato snapshot Eurostat disponibile.");
+    populateSnapshotCountryControl(module);
+    var records = chartRecords(module);
+    var countryCodes = selectedSnapshotCountries().filter(function (code, index, array) {
+      return array.indexOf(code) === index && records.some(function (record) { return record.geo === code; });
+    });
+    if (!countryCodes.length) {
+      byId("eurostatSnapshotComment").textContent = t("Seleziona almeno un paese per visualizzare lo snapshot Eurostat.");
+      return renderMessage("eurostatSnapshotChart", "Seleziona almeno un paese per visualizzare lo snapshot Eurostat.");
+    }
+
+    var categories = [];
+    records.forEach(function (record) {
+      if (!record.code || !countryCodes.includes(record.geo)) return;
+      if (!categories.some(function (category) { return category.code === record.code; })) {
+        categories.push({ code: record.code, label: record.category || record.code });
+      }
+    });
+    if (!categories.length) return renderMessage("eurostatSnapshotChart", "Nessun dato disponibile per i paesi selezionati.");
+
     var theme = plotTheme();
-    clearChartMessage(id);
-    window.Plotly.react(id, [{
-      type: "pie",
-      hole: 0.58,
-      labels: records.map(function (record) { return t(record.category); }),
-      values: records.map(function (record) { return toNumber(record.value); }),
-      marker: { colors: [theme.orange, "#4e79a7", "#59a14f", "#e15759"] },
-      textinfo: "percent",
-      hovertemplate: "<b>%{label}</b><br>%{value:,.0f}<br>%{percent}<extra></extra>"
-    }], Object.assign(extraLayout({ l: 8, r: 8, t: 8, b: 8 }), {
-      showlegend: true,
-      legend: { orientation: "h", x: 0, y: -0.05, xanchor: "left" }
+    var colors = [theme.orange, "#1f6b86", "#59a14f", "#00a862", "#b07aa1", "#edc948"];
+    var isStockActivation = module.id === "stock_activation";
+    var traces = categories.map(function (category, index) {
+      return {
+        type: "bar",
+        name: t(category.label),
+        x: countryCodes.map(function (code) { return countryNameFor(records, code); }),
+        y: countryCodes.map(function (code) {
+          var row = records.find(function (record) {
+            return record.geo === code && record.code === category.code;
+          });
+          return snapshotRowValue(module, row);
+        }),
+        marker: { color: colors[index % colors.length], opacity: 0.86 },
+        customdata: countryCodes.map(function (code) {
+          var row = records.find(function (record) {
+            return record.geo === code && record.code === category.code;
+          }) || {};
+          return [row.period || "", toNumber(row.value), toNumber(row.geo_total)];
+        }),
+        hovertemplate: "<b>%{fullData.name}</b><br>%{x}<br>" +
+          t("Quota") + ": %{y:.1f}%<br>" +
+          t("Periodo") + ": %{customdata[0]}" +
+          (isStockActivation ? "<br>" + t("Abitazioni") + ": %{customdata[1]:,.0f}<br>" + t("Stock totale") + ": %{customdata[2]:,.0f}" : "") +
+          "<extra></extra>"
+      };
+    });
+
+    byId("snapshotTitle").textContent = t(module.title || "Snapshot Eurostat");
+    byId("snapshotSubtitle").textContent = t(module.subtitle || "paesi selezionati");
+    clearChartMessage("eurostatSnapshotChart");
+    window.Plotly.react("eurostatSnapshotChart", traces, Object.assign(extraLayout({ l: 58, r: 22, t: 8, b: 72 }), {
+      barmode: "stack",
+      xaxis: { fixedrange: true, tickangle: countryCodes.length > 6 ? -28 : 0 },
+      yaxis: {
+        title: { text: isStockActivation ? t("Quota dello stock abitativo (%)") : t("Quota della popolazione (%)") },
+        gridcolor: theme.line,
+        fixedrange: true,
+        range: [0, 105]
+      },
+      legend: { orientation: "h", x: 0, y: -0.18, xanchor: "left" }
     }), { responsive: true, displayModeBar: false });
+
+    byId("eurostatSnapshotComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " +
+      escapeHtml(t(module.note || "")) + " " +
+      escapeHtml(t("Paesi selezionati:")) + " " +
+      countryCodes.map(function (code) { return escapeHtml(countryNameFor(records, code)); }).join(", ") + ".";
   }
 
   function renderExtraHorizontalBar(id, module, records, options) {
@@ -850,38 +949,6 @@
         rangemode: "tozero"
       },
       yaxis: { gridcolor: "rgba(0,0,0,0)", fixedrange: true }
-    }), { responsive: true, displayModeBar: false });
-  }
-
-  function renderTenureChart() {
-    var module = extraModule("tenure");
-    var records = chartRecords(module);
-    if (!records.length) return renderMessage("tenureChart", "Nessun dato disponibile su proprieta' e affitto.");
-    var scopes = Array.from(new Set(records.map(function (record) { return record.scope; })));
-    var categories = Array.from(new Set(records.map(function (record) { return record.category; })));
-    var theme = plotTheme();
-    var colors = [theme.orange, "#1f6b86", "#59a14f", "#00a862"];
-    var traces = categories.map(function (category, index) {
-      return {
-        type: "bar",
-        name: t(category),
-        x: scopes.map(t),
-        y: scopes.map(function (scope) {
-          var row = records.find(function (record) {
-            return record.scope === scope && record.category === category;
-          });
-          return row ? toNumber(row.value) : 0;
-        }),
-        marker: { color: colors[index % colors.length], opacity: 0.88 },
-        hovertemplate: "<b>%{fullData.name}</b><br>%{x}: %{y:.1f}%<extra></extra>"
-      };
-    });
-    clearChartMessage("tenureChart");
-    window.Plotly.react("tenureChart", traces, Object.assign(extraLayout({ l: 46, r: 12, t: 8, b: 46 }), {
-      barmode: "stack",
-      xaxis: { fixedrange: true },
-      yaxis: { title: { text: "%" }, gridcolor: theme.line, fixedrange: true, range: [0, 105] },
-      legend: { orientation: "h", x: 0, y: -0.18, xanchor: "left" }
     }), { responsive: true, displayModeBar: false });
   }
 
@@ -928,26 +995,9 @@
     }).join("");
   }
 
-  function renderExtraComment() {
-    var target = byId("extraDriversComment");
-    if (!target || !state.extraData) return;
-    var tags = toArray(state.extraData.coverage_tags).map(function (tag) {
-      return "<span class=\"coverage-chip\">" + escapeHtml(t(tag)) + "</span>";
-    }).join("");
-    var dateText = state.extraData.generated_at
-      ? new Date(state.extraData.generated_at).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })
-      : "";
-    target.innerHTML = "<strong>" + escapeHtml(t("Copertura tematica:")) + "</strong> " +
-      tags +
-      "<p>" + escapeHtml(t("I moduli extra non sostituiscono i grafici Eurostat/OMI/MEF: li completano per leggere insieme offerta, stock, affitto, rischio locazione, studentati, ERP e affitti brevi.")) + "</p>" +
-      (dateText ? "<p>" + escapeHtml(t("Payload aggiornato:")) + " " + escapeHtml(dateText) + ".</p>" : "");
-  }
-
   function renderExtraData() {
     if (!state.extraData) return;
-    renderExtraKpis();
-    renderTenureChart();
-    renderExtraDonut("stockActivationChart", extraModule("stock_activation"));
+    renderEurostatSnapshot();
     renderExtraHorizontalBar("evictionsChart", extraModule("evictions"), null, {
       xTitle: "atti / richieste / esecuzioni",
       color: "#e15759",
@@ -958,22 +1008,21 @@
     renderStudentHousingChart();
     renderShortRentalsChart();
     renderPolicyCards();
-    renderExtraComment();
     state.extraHasRendered = true;
   }
 
   function loadExtraData() {
-    ["tenureChart", "stockActivationChart", "evictionsChart", "socialHousingChart", "studentHousingChart", "shortRentalsChart"].forEach(function (id) {
+    ["eurostatSnapshotChart", "evictionsChart", "socialHousingChart", "studentHousingChart", "shortRentalsChart"].forEach(function (id) {
       renderMessage(id, "Caricamento...", true);
     });
     return fetchJson(EXTRA_DATA_URL).then(function (payload) {
       state.extraData = payload;
       renderExtraData();
     }).catch(function (error) {
-      ["tenureChart", "stockActivationChart", "evictionsChart", "socialHousingChart", "studentHousingChart", "shortRentalsChart"].forEach(function (id) {
+      ["eurostatSnapshotChart", "evictionsChart", "socialHousingChart", "studentHousingChart", "shortRentalsChart"].forEach(function (id) {
         renderMessage(id, "Non riesco a caricare il payload nazionale extra: " + error.message);
       });
-      var comment = byId("extraDriversComment");
+      var comment = byId("eurostatSnapshotComment");
       if (comment) comment.textContent = t("Verifica che dashboard_extra.json sia stato pubblicato su Cloudflare R2.");
     });
   }
@@ -1123,7 +1172,7 @@
   function loadItalyGeojson() {
     if (state.italyGeojson) return Promise.resolve(state.italyGeojson);
     if (!state.italyGeojsonPromise) {
-      state.italyGeojsonPromise = fetchJson(LOCAL_ITALY_GEOJSON_URL).then(function (payload) {
+      state.italyGeojsonPromise = fetchFirstJson(LOCAL_ITALY_GEOJSON_URLS).then(function (payload) {
         state.italyGeojson = payload;
         return payload;
       });
@@ -1171,7 +1220,7 @@
     }
     node.housingItalyClickHandler = function (eventData) {
       var point = eventData && eventData.points && eventData.points[0];
-      var regionFile = point && point.location;
+      var regionFile = point && (point.location || (point.customdata && point.customdata[0]));
       if (!regionFile) return;
       var select = byId("localRegion");
       if (!select) return;
@@ -1185,7 +1234,7 @@
   function renderItalyOverview() {
     var metric = byId("localMetric") ? byId("localMetric").value : "";
     var meta = localMetrics[metric];
-    if (!meta || !state.italyGeojson || !state.localAllPayloads) return;
+    if (!meta || !state.localAllPayloads) return;
     var rows = italySummaryRows(metric);
     if (!rows.length) {
       renderMessage("italyOverviewChart", "Nessun valore comunale disponibile per questa misura.");
@@ -1201,61 +1250,85 @@
     byId("italyOverviewTitle").textContent = t(meta.label) + " - " + t("Italia");
     byId("italyOverviewSubtitle").textContent = t("anteprima regionale della misura selezionata");
 
-    var traces = [{
-      type: "choropleth",
-      geojson: state.italyGeojson,
-      featureidkey: "properties.region_file",
-      locations: rows.map(function (row) { return row.file; }),
-      z: rows.map(function (row) { return row.value; }),
-      text: rows.map(function (row) { return row.label; }),
-      customdata: rows.map(function (row) { return [row.available, row.semester || ""]; }),
-      colorscale: [[0, "#fff2df"], [0.35, "#ffb15f"], [0.7, "#f26a21"], [1, "#7a1f0c"]],
-      zmin: minValue,
-      zmax: maxValue,
-      marker: { line: { color: "rgba(255,255,255,.55)", width: 0.9 } },
-      colorbar: { title: t(meta.unit), tickfont: { color: theme.text }, titlefont: { color: theme.text } },
-      hovertemplate: "<b>%{text}</b><br>" + t("Valore") + ": %{z:.1f}<br>" + t("Comuni con dato") + ": %{customdata[0]}<br>" + t("Semestre OMI") + ": %{customdata[1]}<extra></extra>"
-    }];
+    clearChartMessage("italyOverviewChart");
 
-    if (selectedRow) {
-      traces.push({
+    if (state.italyGeojson) {
+      var traces = [{
         type: "choropleth",
         geojson: state.italyGeojson,
         featureidkey: "properties.region_file",
-        locations: [selectedRow.file],
-        z: [selectedRow.value],
-        colorscale: [[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
-        zmin: selectedRow.value,
-        zmax: selectedRow.value,
-        showscale: false,
-        hoverinfo: "skip",
-        marker: { line: { color: theme.text, width: 2.1 } }
-      });
-    }
+        locations: rows.map(function (row) { return row.file; }),
+        z: rows.map(function (row) { return row.value; }),
+        text: rows.map(function (row) { return row.label; }),
+        customdata: rows.map(function (row) { return [row.file, row.available, row.semester || ""]; }),
+        colorscale: [[0, "#fff2df"], [0.35, "#ffb15f"], [0.7, "#f26a21"], [1, "#7a1f0c"]],
+        zmin: minValue,
+        zmax: maxValue,
+        marker: { line: { color: "rgba(255,255,255,.55)", width: 0.9 } },
+        colorbar: { title: t(meta.unit), tickfont: { color: theme.text }, titlefont: { color: theme.text } },
+        hovertemplate: "<b>%{text}</b><br>" + t("Valore") + ": %{z:.1f}<br>" + t("Comuni con dato") + ": %{customdata[1]}<br>" + t("Semestre OMI") + ": %{customdata[2]}<extra></extra>"
+      }];
 
-    clearChartMessage("italyOverviewChart");
-    window.Plotly.react("italyOverviewChart", traces, {
-      paper_bgcolor: "rgba(0,0,0,0)",
-      plot_bgcolor: "rgba(0,0,0,0)",
-      font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 13 },
-      margin: { l: 8, r: 8, t: 8, b: 8 },
-      geo: {
-        fitbounds: "locations",
-        visible: false,
-        showcountries: false,
-        showcoastlines: false,
-        showland: true,
-        landcolor: "rgba(255,255,255,0.02)",
-        bgcolor: "rgba(0,0,0,0)"
+      if (selectedRow) {
+        traces.push({
+          type: "choropleth",
+          geojson: state.italyGeojson,
+          featureidkey: "properties.region_file",
+          locations: [selectedRow.file],
+          z: [selectedRow.value],
+          colorscale: [[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
+          zmin: selectedRow.value,
+          zmax: selectedRow.value,
+          showscale: false,
+          hoverinfo: "skip",
+          marker: { line: { color: theme.text, width: 2.1 } }
+        });
       }
-    }, { responsive: true, displayModeBar: false });
+
+      window.Plotly.react("italyOverviewChart", traces, {
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 13 },
+        margin: { l: 8, r: 8, t: 8, b: 8 },
+        geo: {
+          fitbounds: "locations",
+          visible: false,
+          showcountries: false,
+          showcoastlines: false,
+          showland: true,
+          landcolor: "rgba(255,255,255,0.02)",
+          bgcolor: "rgba(0,0,0,0)"
+        }
+      }, { responsive: true, displayModeBar: false });
+    } else {
+      var sortedRows = rows.slice().sort(function (a, b) { return b.value - a.value; });
+      window.Plotly.react("italyOverviewChart", [{
+        type: "bar",
+        orientation: "h",
+        x: sortedRows.map(function (row) { return row.value; }).reverse(),
+        y: sortedRows.map(function (row) { return row.label; }).reverse(),
+        customdata: sortedRows.map(function (row) { return [row.file, row.available, row.semester || ""]; }).reverse(),
+        marker: {
+          color: sortedRows.map(function (row) { return row.file === selectedRegionFile ? theme.text : theme.orange; }).reverse(),
+          opacity: 0.84
+        },
+        hovertemplate: "<b>%{y}</b><br>" + t("Valore") + ": %{x:.1f}<br>" + t("Comuni con dato") + ": %{customdata[1]}<br>" + t("Semestre OMI") + ": %{customdata[2]}<extra></extra>"
+      }], {
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 13 },
+        margin: { l: 150, r: 34, t: 14, b: 62 },
+        xaxis: { title: { text: t(meta.unit) }, gridcolor: theme.line, fixedrange: true, rangemode: "tozero" },
+        yaxis: { gridcolor: "rgba(0,0,0,0)", fixedrange: true }
+      }, { responsive: true, displayModeBar: false });
+    }
     bindItalyOverviewClick();
 
     var selectedText = selectedRow
       ? " " + escapeHtml(t("Regione attiva:")) + " " + escapeHtml(t(selectedRow.label)) + "."
       : "";
     byId("italyOverviewComment").innerHTML = "<strong>" + escapeHtml(t("Come leggere:")) + "</strong> " +
-      escapeHtml(t("La mappa sintetizza ogni regione con la media semplice dei valori comunali disponibili per la misura selezionata.")) + " " +
+      escapeHtml(t(state.italyGeojson ? "La mappa sintetizza ogni regione con la media semplice dei valori comunali disponibili per la misura selezionata." : "Il grafico sintetizza ogni regione con la media semplice dei valori comunali disponibili per la misura selezionata.")) + " " +
       escapeHtml(t("Serve come anteprima territoriale: clicca una regione per aprire sotto il dettaglio comunale.")) + " " +
       escapeHtml(t("Le quotazioni OMI restano valori di riferimento territoriale e non prezzi effettivi di contratto o di rogito.")) +
       selectedText;
@@ -1264,12 +1337,17 @@
   function loadItalyOverview() {
     if (!state.localIndex || !(state.localIndex.regions || []).length) return Promise.resolve();
     if (!state.italyHasRendered) renderMessage("italyOverviewChart", "Caricamento...", true);
-    return Promise.all([loadAllLocalRegions(), loadItalyGeojson()]).then(function () {
+    return loadAllLocalRegions().then(function () {
+      return loadItalyGeojson().catch(function () {
+        state.italyGeojson = null;
+        return null;
+      });
+    }).then(function () {
       renderItalyOverview();
       state.italyHasRendered = true;
     }).catch(function (error) {
-      renderMessage("italyOverviewChart", "Non riesco a caricare la mappa Italia: " + error.message);
-      byId("italyOverviewComment").textContent = t("Controlla che il GeoJSON regionale e gli export locali siano pubblicati correttamente.");
+      renderMessage("italyOverviewChart", "Non riesco a caricare il riepilogo Italia: " + error.message);
+      byId("italyOverviewComment").textContent = t("Controlla che gli export locali siano pubblicati correttamente.");
     });
   }
 
@@ -1440,6 +1518,26 @@
       renderEurope();
     });
 
+    function rerenderSnapshot() {
+      if (!state.extraData) return;
+      renderEurostatSnapshot();
+    }
+
+    byId("snapshotMetric").addEventListener("change", function () {
+      populateSnapshotCountryControl(currentSnapshotModule());
+      renderEurostatSnapshot();
+    });
+    byId("snapshotCountries").addEventListener("change", rerenderSnapshot);
+    byId("snapshotCountries").addEventListener("input", rerenderSnapshot);
+    byId("snapshotCountries").addEventListener("click", function () {
+      setTimeout(rerenderSnapshot, 0);
+    });
+    byId("resetSnapshotCountries").addEventListener("click", function () {
+      var module = currentSnapshotModule();
+      applyDefaultComparableSelection(byId("snapshotCountries"), module ? chartRecords(module) : []);
+      renderEurostatSnapshot();
+    });
+
     function rerenderStockAge() {
       if (state.stockAgeData) renderStockAge(state.stockAgeData);
     }
@@ -1450,7 +1548,7 @@
       setTimeout(rerenderStockAge, 0);
     });
     byId("resetStockAgeCountries").addEventListener("click", function () {
-      Array.from(byId("stockAgeCountries").options).forEach(function (option) { option.selected = false; });
+      applyDefaultComparableSelection(byId("stockAgeCountries"), state.stockAgeData || []);
       rerenderStockAge();
     });
 
@@ -1502,8 +1600,7 @@
     if (!window.Plotly) {
       renderMessage("europeChart", "Plotly non e' disponibile.");
       renderMessage("stockAgeChart", "Plotly non e' disponibile.");
-      renderMessage("tenureChart", "Plotly non e' disponibile.");
-      renderMessage("stockActivationChart", "Plotly non e' disponibile.");
+      renderMessage("eurostatSnapshotChart", "Plotly non e' disponibile.");
       renderMessage("evictionsChart", "Plotly non e' disponibile.");
       renderMessage("socialHousingChart", "Plotly non e' disponibile.");
       renderMessage("studentHousingChart", "Plotly non e' disponibile.");
