@@ -937,7 +937,7 @@
     var dateText = state.extraData.generated_at
       ? new Date(state.extraData.generated_at).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" })
       : "";
-    target.innerHTML = "<strong>" + escapeHtml(t("Copertura live:")) + "</strong> " +
+    target.innerHTML = "<strong>" + escapeHtml(t("Copertura tematica:")) + "</strong> " +
       tags +
       "<p>" + escapeHtml(t("I moduli extra non sostituiscono i grafici Eurostat/OMI/MEF: li completano per leggere insieme offerta, stock, affitto, rischio locazione, studentati, ERP e affitti brevi.")) + "</p>" +
       (dateText ? "<p>" + escapeHtml(t("Payload aggiornato:")) + " " + escapeHtml(dateText) + ".</p>" : "");

@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-driver-nazionali">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-sezioni-incrementali">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
@@ -18,7 +18,7 @@
   <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-driver-nazionali"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-sezioni-incrementali"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js?v=20260721-1"></script>
 </head>
 <body>
@@ -49,14 +49,14 @@
         <span class="eyebrow">Crisi abitativa</span>
         <h1>Prezzi, affitti, redditi e accesso alla casa</h1>
         <p class="lead">
-          Dashboard costruita per leggere la crisi abitativa su due scale. La prima mostra dove si colloca l'Italia nel confronto europeo sugli indicatori armonizzati; la seconda scende al livello comunale, perche' il problema abitativo diventa concreto quando prezzi, affitti e redditi incontrano i mercati locali.
+          Dashboard costruita per leggere la crisi abitativa in modo progressivo: prima la struttura nazionale del mercato, poi il confronto europeo, quindi le sezioni specifiche su offerta pubblica, student housing, affitti brevi e rischio locazione, fino al dettaglio territoriale dei comuni.
         </p>
       </div>
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonte: Eurostat, OMI, MEF</strong>
-          <span id="sourceMeta">Grafico europeo da export statici Eurostat. Focus locale caricato da export statici regionali.</span>
+          <strong>Fonte: Eurostat, OMI, MEF, OECD, BDSR</strong>
+          <span id="sourceMeta">Dati nazionali ed europei da export statici e endpoint pubblici. Focus locale caricato da export statici regionali.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">Apri repository Crisi_abitativa</a>
         </div>
       </div>
@@ -65,13 +65,13 @@
     <section class="workflow-grid" aria-label="Guida alla lettura">
       <div class="workflow-step">
         <span>1</span>
-        <h2>Scegli l'indicatore</h2>
-        <p>Nel confronto europeo il primo menu cambia la variabile: costi abitativi, sovraffollamento, arretrati, offerta, giovani in casa con i genitori e altri proxy della crisi.</p>
+        <h2>Parti dalla struttura</h2>
+        <p>Leggi prima proprieta', affitto e stock: la crisi abitativa non nasce da un solo prezzo, ma dall'incontro tra domanda concentrata, offerta rigida e abitazioni non sempre attivabili.</p>
       </div>
       <div class="workflow-step">
         <span>2</span>
-        <h2>Leggi il range</h2>
-        <p>L'Italia resta sempre evidenziata. La banda arancione mostra minimo e massimo tra paesi disponibili: serve a capire il posizionamento, non e' una media europea.</p>
+        <h2>Aggiungi i blocchi specifici</h2>
+        <p>Student housing, ERP/social housing, affitti brevi e sfratti isolano canali diversi della pressione abitativa. Ogni sezione aggiunge un pezzo, senza sostituire gli altri.</p>
       </div>
       <div class="workflow-step">
         <span>3</span>
@@ -81,9 +81,13 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard crisi abitativa">
-      <a href="#extraDriversSection">Driver nazionali</a>
-      <a href="#europeSection">Confronto europeo</a>
+      <a href="#marketStructureSection">Struttura mercato</a>
       <a href="#stockAgeSection">Stock abitativo</a>
+      <a href="#europeSection">Confronto europeo</a>
+      <a href="#publicHousingSection">ERP e social housing</a>
+      <a href="#studentHousingSection">Student housing</a>
+      <a href="#shortRentalsSection">Affitti brevi</a>
+      <a href="#rentalRiskSection">Rischio e policy</a>
       <a href="#localSection">Focus locale</a>
       <a href="#methodologySection">Metodo e fonti</a>
     </nav>
@@ -118,74 +122,39 @@
       </div>
     </section>
 
-    <section class="dashboard-section" id="extraDriversSection">
+    <section class="dashboard-section" id="marketStructureSection">
       <div class="section-head">
-        <span class="eyebrow">Italia</span>
-        <h2>Driver nazionali da usare come cruscotto live</h2>
-        <p>Questi pannelli raccolgono i pezzi che servono per leggere la crisi abitativa come problema di offerta, domanda localizzata e regole di mercato: struttura proprieta-affitto, stock non occupato, sfratti, ERP/social housing, studentati e affitti brevi.</p>
+        <span class="eyebrow">Italia - passaggio 1</span>
+        <h2>Struttura del mercato abitativo</h2>
+        <p>La prima domanda e' come e' fatto il mercato: quanta popolazione vive in affitto, quanto pesa la proprieta' e quanta parte dello stock fisico non risulta occupata. Questi dati aiutano a distinguere stock esistente, offerta effettiva e mercato dell'affitto.</p>
       </div>
       <div class="kpi-grid housing-kpis extra-kpis" id="extraKpis">
         <div class="kpi"><span>Moduli extra</span><strong>-</strong></div>
         <div class="kpi"><span>Dataset</span><strong>in caricamento</strong></div>
         <div class="kpi"><span>Fonte</span><strong>R2</strong></div>
       </div>
-      <div class="extra-driver-grid">
-        <div class="chart-panel compact-chart-panel">
-          <div class="panel-title">
-            <h2>Proprieta' e affitto</h2>
-            <span>Italia vs EU27</span>
-          </div>
-          <div id="tenureChart" class="chart extra-driver-chart"></div>
-          <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2>Proprieta' e affitto</h2>
+          <span>Italia vs EU27</span>
         </div>
-        <div class="chart-panel compact-chart-panel">
-          <div class="panel-title">
-            <h2>Stock attivabile</h2>
-            <span>occupate vs non occupate</span>
-          </div>
-          <div id="stockActivationChart" class="chart extra-driver-chart"></div>
-          <div class="chart-credit">Fonte: Eurostat Census 2021. Elaborazione di Nazareno Lecis.</div>
-        </div>
-        <div class="chart-panel compact-chart-panel">
-          <div class="panel-title">
-            <h2>Sfratti</h2>
-            <span>rischio locazione</span>
-          </div>
-          <div id="evictionsChart" class="chart extra-driver-chart"></div>
-          <div class="chart-credit">Fonte: Ministero dell'Interno. Elaborazione di Nazareno Lecis.</div>
-        </div>
-        <div class="chart-panel compact-chart-panel">
-          <div class="panel-title">
-            <h2>ERP e social housing</h2>
-            <span>stock sociale e patrimonio bloccato</span>
-          </div>
-          <div id="socialHousingChart" class="chart extra-driver-chart"></div>
-          <div class="chart-credit">Fonte: OECD AHD, Federcasa-Nomisma. Elaborazione di Nazareno Lecis.</div>
-        </div>
-        <div class="chart-panel compact-chart-panel">
-          <div class="panel-title">
-            <h2>Student housing</h2>
-            <span>domanda fuori sede e posti letto</span>
-          </div>
-          <div id="studentHousingChart" class="chart extra-driver-chart"></div>
-          <div class="chart-credit">Fonte: ANVUR, MUR/PNRR, CDP. Elaborazione di Nazareno Lecis.</div>
-        </div>
-        <div class="chart-panel compact-chart-panel">
-          <div class="panel-title">
-            <h2>Affitti brevi</h2>
-            <span>registro CIN/BDSR</span>
-          </div>
-          <div id="shortRentalsChart" class="chart extra-driver-chart"></div>
-          <div class="chart-credit">Fonte: Ministero del Turismo, BDSR. Elaborazione di Nazareno Lecis.</div>
-        </div>
+        <div id="tenureChart" class="chart extra-driver-chart"></div>
+        <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
       </div>
-      <div class="policy-card-grid" id="policyMixCards"></div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2>Stock attivabile</h2>
+          <span>occupate vs non occupate</span>
+        </div>
+        <div id="stockActivationChart" class="chart extra-driver-chart"></div>
+        <div class="chart-credit">Fonte: Eurostat Census 2021. Elaborazione di Nazareno Lecis.</div>
+      </div>
       <div class="selection-comment" id="extraDriversComment"></div>
     </section>
 
     <section class="dashboard-section" id="stockAgeSection">
       <div class="section-head">
-        <span class="eyebrow">Stock abitativo</span>
+        <span class="eyebrow">Italia - passaggio 2</span>
         <h2>Eta' del patrimonio immobiliare</h2>
         <p>I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione, usando un JSON statico gia' aggregato.</p>
       </div>
@@ -218,7 +187,7 @@
 
     <section class="dashboard-section" id="europeSection">
       <div class="section-head">
-        <span class="eyebrow">Europa</span>
+        <span class="eyebrow">Europa - passaggio 3</span>
         <h2>Il confronto europeo: utile, ma non sufficiente</h2>
           <p>Eurostat permette di confrontare paesi con definizioni armonizzate. I dati sono salvati come JSON statici per rendere la dashboard piu' veloce e non dipendere dall'API al caricamento della pagina. Il confronto aiuta a capire se l'Italia e' un caso isolato o parte di una dinamica piu' ampia, ma le medie nazionali nascondono differenze enormi tra territori.</p>
       </div>
@@ -258,9 +227,74 @@
       <div class="selection-comment" id="europeComment"></div>
     </section>
 
+    <section class="dashboard-section" id="publicHousingSection">
+      <div class="section-head">
+        <span class="eyebrow">Italia - passaggio 4</span>
+        <h2>ERP e social housing</h2>
+        <p>L'offerta pubblica e sociale misura la capacita' di dare una risposta fuori dal mercato libero. Il grafico confronta il peso del social rental housing, mentre i KPI mostrano il patrimonio ERP gestito e la quota che resta bloccata per manutenzione o irregolarita'.</p>
+      </div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2>Stock sociale e patrimonio bloccato</h2>
+          <span>OECD AHD, Federcasa-Nomisma</span>
+        </div>
+        <div id="socialHousingChart" class="chart extra-driver-chart"></div>
+        <div class="chart-credit">Fonte: OECD AHD, Federcasa-Nomisma. Elaborazione di Nazareno Lecis.</div>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="studentHousingSection">
+      <div class="section-head">
+        <span class="eyebrow">Italia - passaggio 5</span>
+        <h2>Student housing</h2>
+        <p>La domanda studentesca fuori sede e' una componente specifica della pressione abitativa nelle citta' universitarie. Quando i posti letto strutturati sono pochi, una parte rilevante della domanda finisce sul mercato privato dell'affitto.</p>
+      </div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2>Domanda fuori sede e posti letto</h2>
+          <span>ANVUR, MUR/PNRR, CDP</span>
+        </div>
+        <div id="studentHousingChart" class="chart extra-driver-chart"></div>
+        <div class="chart-credit">Fonte: ANVUR, MUR/PNRR, CDP. Elaborazione di Nazareno Lecis.</div>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="shortRentalsSection">
+      <div class="section-head">
+        <span class="eyebrow">Italia - passaggio 6</span>
+        <h2>Affitti brevi e ricettivo</h2>
+        <p>Il registro CIN/BDSR non misura canoni o notti, ma consente di osservare la scala dell'offerta turistica registrata. Questo e' utile nelle aree dove turismo, studenti e affitto lungo competono sullo stesso stock abitativo.</p>
+      </div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2>Distribuzione territoriale delle strutture registrate</h2>
+          <span>prime regioni per totale strutture BDSR</span>
+        </div>
+        <div id="shortRentalsChart" class="chart extra-driver-chart"></div>
+        <div class="chart-credit">Fonte: Ministero del Turismo, BDSR. Elaborazione di Nazareno Lecis.</div>
+      </div>
+    </section>
+
+    <section class="dashboard-section" id="rentalRiskSection">
+      <div class="section-head">
+        <span class="eyebrow">Italia - passaggio 7</span>
+        <h2>Rischio locazione e policy mix</h2>
+        <p>Gli sfratti aiutano a leggere una parte del rischio percepito dai proprietari e il funzionamento del mercato dell'affitto. Le card sotto il grafico riassumono le leve da tenere insieme: offerta, sicurezza dell'affitto, recupero stock, regole, trasporto e sostegni alla domanda.</p>
+      </div>
+      <div class="chart-panel main-chart">
+        <div class="panel-title">
+          <h2>Sfratti e morosita'</h2>
+          <span>provvedimenti, richieste ed esecuzioni</span>
+        </div>
+        <div id="evictionsChart" class="chart extra-driver-chart"></div>
+        <div class="chart-credit">Fonte: Ministero dell'Interno. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="policy-card-grid" id="policyMixCards"></div>
+    </section>
+
     <section class="dashboard-section" id="localSection">
       <div class="section-head">
-        <span class="eyebrow">Italia locale</span>
+        <span class="eyebrow">Italia locale - passaggio 8</span>
         <h2>Dalla mappa Italia al dettaglio comunale</h2>
         <p>Le medie nazionali dicono poco su cosa succede davvero a Cagliari, Nuoro, Sassari o nei comuni interni. Per questo la lettura locale parte da una sintesi regionale su tutta Italia e poi scende alla singola regione e ai comuni. I dati usano export statici regionali con quotazioni OMI comunali e indicatori di reddito dove disponibili.</p>
       </div>
