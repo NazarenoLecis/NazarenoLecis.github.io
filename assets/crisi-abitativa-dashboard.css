@@ -7,6 +7,18 @@
   line-height: 1.4;
 }
 
+.housing-dashboard .chart-credit a,
+.housing-dashboard .source-panel a {
+  color: var(--orange);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.housing-dashboard .chart-credit a:hover,
+.housing-dashboard .source-panel a:hover {
+  text-decoration: underline;
+}
+
 .housing-dashboard .selection-comment {
   margin-top: 14px;
   padding: 16px 18px;
@@ -37,6 +49,27 @@
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
+}
+
+.granularity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.granularity-chips span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--orange) 32%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--orange) 8%, transparent);
+  color: var(--text);
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .02em;
 }
 
 .housing-filter-grid {

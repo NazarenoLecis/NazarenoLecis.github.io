@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-eurostat-layout">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-fonti-granularita">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
@@ -18,7 +18,7 @@
   <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-eurostat-layout"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-fonti-granularita"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js?v=20260721-1"></script>
 </head>
 <body>
@@ -55,7 +55,7 @@
       <div class="source-panel">
         <span class="logo"></span>
         <div>
-          <strong>Fonte: Eurostat, OMI, MEF, OECD, BDSR</strong>
+          <strong>Fonti: <a href="https://ec.europa.eu/eurostat/databrowser/" target="_blank" rel="noopener">Eurostat</a>, <a href="https://www.agenziaentrate.gov.it/portale/schede/fabbricatiterreni/omi/forniture-dati-omi" target="_blank" rel="noopener">OMI</a>, <a href="https://www.finanze.gov.it/it/statistiche-fiscali/opendata-dichiarazioni/" target="_blank" rel="noopener">MEF</a>, <a href="https://www.oecd.org/en/data/datasets/oecd-affordable-housing-database.html" target="_blank" rel="noopener">OECD</a>, <a href="https://bdsr.ministeroturismo.gov.it/" target="_blank" rel="noopener">BDSR</a></strong>
           <span id="sourceMeta">Dati nazionali ed europei da export statici e endpoint pubblici. Focus locale caricato da export statici regionali.</span>
           <a class="related-link" href="https://github.com/NazarenoLecis/Crisi_abitativa" target="_blank" rel="noopener">Apri repository Crisi_abitativa</a>
         </div>
@@ -123,9 +123,14 @@
 
     <section class="dashboard-section" id="europeSection">
       <div class="section-head">
-        <span class="eyebrow">Eurostat - passaggio 1</span>
+        <span class="eyebrow">Eurostat · livello paese / EU27</span>
         <h2>Serie storiche e snapshot confrontabili</h2>
           <p>Eurostat permette di confrontare paesi con definizioni armonizzate. La sezione separa le serie storiche dagli snapshot: le prime mostrano dinamiche nel tempo, i secondi fotografano struttura del mercato, stock occupato/non occupato e altri dati censuari comparabili tra paesi.</p>
+        <div class="granularity-chips" aria-label="Granularità confronto Eurostat">
+          <span>Granularità: paese</span>
+          <span>Aggregato: EU27</span>
+          <span>Tempo: serie storiche + snapshot</span>
+        </div>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri confronto europeo">
         <summary>Filtri confronto europeo</summary>
@@ -154,7 +159,7 @@
           <span id="europeSubtitle">range min-max, Italia sempre evidenziata</span>
         </div>
         <div id="europeChart" class="chart"></div>
-        <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/" target="_blank" rel="noopener">Eurostat Data Browser</a>. Elaborazione di Nazareno Lecis.</div>
       </div>
       <div class="kpi-grid housing-kpis europe-kpis">
         <div class="kpi"><span id="kpiItalyLabel">Italia ultimo dato</span><strong id="kpiItaly">-</strong></div>
@@ -164,9 +169,14 @@
       <div class="selection-comment" id="europeComment"></div>
 
       <div class="dashboard-subsection">
-        <span class="eyebrow">Eurostat - snapshot</span>
+        <span class="eyebrow">Eurostat · snapshot paese / EU27</span>
         <h2>Struttura del mercato e stock attivabile</h2>
         <p>Questi indicatori non sono piu' isolati in un blocco nazionale: proprieta'/affitto e stock occupato/non occupato sono confrontabili tra paesi, quindi restano dentro Eurostat e usano filtri paese.</p>
+        <div class="granularity-chips" aria-label="Granularità snapshot Eurostat">
+          <span>Granularità: paese</span>
+          <span>Aggregato: EU27</span>
+          <span>Dataset: Eurostat / Census 2021</span>
+        </div>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri snapshot Eurostat">
         <summary>Filtri snapshot Eurostat</summary>
@@ -197,16 +207,21 @@
           <span id="snapshotSubtitle">paesi selezionati</span>
         </div>
         <div id="eurostatSnapshotChart" class="chart extra-driver-chart"></div>
-        <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/databrowser/view/ilc_lvho02/default/table" target="_blank" rel="noopener">Eurostat ilc_lvho02</a> e <a href="https://ec.europa.eu/eurostat/databrowser/view/cens_21dwop_r3/default/table" target="_blank" rel="noopener">Eurostat Census 2021</a>. Elaborazione di Nazareno Lecis.</div>
       </div>
       <div class="selection-comment" id="eurostatSnapshotComment"></div>
     </section>
 
     <section class="dashboard-section" id="stockAgeSection">
       <div class="section-head">
-        <span class="eyebrow">Eurostat - passaggio 2</span>
+        <span class="eyebrow">Eurostat Census · livello paese / EU27</span>
         <h2>Eta' del patrimonio immobiliare</h2>
         <p>I dati Eurostat sul periodo di costruzione delle abitazioni sono una fotografia del 2021, non una serie storica. Per questo sono mostrati in un grafico separato: il bar chart confronta la quota dello stock abitativo per periodo di costruzione tra i paesi selezionati.</p>
+        <div class="granularity-chips" aria-label="Granularità stock abitativo">
+          <span>Granularità: paese</span>
+          <span>Aggregato: EU27</span>
+          <span>Tempo: censimento 2021</span>
+        </div>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri eta patrimonio immobiliare">
         <summary>Filtri stock abitativo</summary>
@@ -230,16 +245,21 @@
           <span>quota dello stock, 2021</span>
         </div>
         <div id="stockAgeChart" class="chart"></div>
-        <div class="chart-credit">Fonte: Eurostat Census Hub 2021. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonte: <a href="https://ec.europa.eu/eurostat/web/population-demography/population-housing-censuses/database" target="_blank" rel="noopener">Eurostat Census Hub 2021</a>. Elaborazione di Nazareno Lecis.</div>
       </div>
       <div class="selection-comment" id="stockAgeComment"></div>
     </section>
 
     <section class="dashboard-section" id="publicHousingSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 3</span>
+        <span class="eyebrow">Italia · livello nazionale</span>
         <h2>ERP e social housing</h2>
         <p>L'offerta pubblica e sociale misura la capacita' di dare una risposta fuori dal mercato libero. Il grafico confronta il peso del social rental housing, mentre i KPI mostrano il patrimonio ERP gestito e la quota che resta bloccata per manutenzione o irregolarita'.</p>
+        <div class="granularity-chips" aria-label="Granularità ERP e social housing">
+          <span>Granularità: nazionale</span>
+          <span>Confronto: Italia / EU / OECD</span>
+          <span>Fonti: OECD, Federcasa-Nomisma</span>
+        </div>
       </div>
       <div class="chart-panel main-chart">
         <div class="panel-title">
@@ -247,15 +267,20 @@
           <span>OECD AHD, Federcasa-Nomisma</span>
         </div>
         <div id="socialHousingChart" class="chart extra-driver-chart"></div>
-        <div class="chart-credit">Fonte: OECD AHD, Federcasa-Nomisma. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonti: <a href="https://www.oecd.org/en/data/datasets/oecd-affordable-housing-database.html" target="_blank" rel="noopener">OECD Affordable Housing Database</a>, <a href="https://www.federcasa.it/dms/file/open/?919609c0-42b5-4fd5-8d2b-2db540d57e38=" target="_blank" rel="noopener">Federcasa-Nomisma</a>. Elaborazione di Nazareno Lecis.</div>
       </div>
     </section>
 
     <section class="dashboard-section" id="studentHousingSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 4</span>
+        <span class="eyebrow">Italia · livello nazionale</span>
         <h2>Student housing</h2>
         <p>La domanda studentesca fuori sede e' una componente specifica della pressione abitativa nelle citta' universitarie. Quando i posti letto strutturati sono pochi, una parte rilevante della domanda finisce sul mercato privato dell'affitto.</p>
+        <div class="granularity-chips" aria-label="Granularità student housing">
+          <span>Granularità: nazionale</span>
+          <span>Unità: studenti / posti letto</span>
+          <span>Fonti: ANVUR, MUR/PNRR, CDP</span>
+        </div>
       </div>
       <div class="chart-panel main-chart">
         <div class="panel-title">
@@ -263,15 +288,20 @@
           <span>ANVUR, MUR/PNRR, CDP</span>
         </div>
         <div id="studentHousingChart" class="chart extra-driver-chart"></div>
-        <div class="chart-credit">Fonte: ANVUR, MUR/PNRR, CDP. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonti: <a href="https://www.anvur.it/it/dati-e-pubblicazioni/rapporto-anvur/rapporto-biennale-2023" target="_blank" rel="noopener">ANVUR</a>, <a href="https://www.mur.gov.it/it/pnrr" target="_blank" rel="noopener">MUR/PNRR</a>, <a href="https://www.cdp.it/sitointernet/it/nuovo_bando_studentati_pnrr.page" target="_blank" rel="noopener">CDP</a>. Elaborazione di Nazareno Lecis.</div>
       </div>
     </section>
 
     <section class="dashboard-section" id="shortRentalsSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 5</span>
+        <span class="eyebrow">Italia · livello regionale</span>
         <h2>Affitti brevi e ricettivo</h2>
         <p>Il registro CIN/BDSR non misura canoni o notti, ma consente di osservare la scala dell'offerta turistica registrata. Questo e' utile nelle aree dove turismo, studenti e affitto lungo competono sullo stesso stock abitativo.</p>
+        <div class="granularity-chips" aria-label="Granularità affitti brevi">
+          <span>Granularità grafico: regionale</span>
+          <span>Base dati: registro nazionale</span>
+          <span>Unità: strutture registrate</span>
+        </div>
       </div>
       <div class="chart-panel main-chart">
         <div class="panel-title">
@@ -279,15 +309,20 @@
           <span>prime regioni per totale strutture BDSR</span>
         </div>
         <div id="shortRentalsChart" class="chart extra-driver-chart"></div>
-        <div class="chart-credit">Fonte: Ministero del Turismo, BDSR. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonte: <a href="https://bdsr.ministeroturismo.gov.it/" target="_blank" rel="noopener">Ministero del Turismo, BDSR/CIN</a>. Elaborazione di Nazareno Lecis.</div>
       </div>
     </section>
 
     <section class="dashboard-section" id="rentalRiskSection">
       <div class="section-head">
-        <span class="eyebrow">Italia - passaggio 6</span>
+        <span class="eyebrow">Italia · livello nazionale</span>
         <h2>Rischio locazione e policy mix</h2>
         <p>Gli sfratti aiutano a leggere una parte del rischio percepito dai proprietari e il funzionamento del mercato dell'affitto. Le card sotto il grafico riassumono le leve da tenere insieme: offerta, sicurezza dell'affitto, recupero stock, regole, trasporto e sostegni alla domanda.</p>
+        <div class="granularity-chips" aria-label="Granularità sfratti e policy">
+          <span>Granularità: nazionale</span>
+          <span>Unità: provvedimenti / richieste / esecuzioni</span>
+          <span>Fonte: Ministero dell'Interno</span>
+        </div>
       </div>
       <div class="chart-panel main-chart">
         <div class="panel-title">
@@ -295,16 +330,21 @@
           <span>provvedimenti, richieste ed esecuzioni</span>
         </div>
         <div id="evictionsChart" class="chart extra-driver-chart"></div>
-        <div class="chart-credit">Fonte: Ministero dell'Interno. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonte: <a href="https://ucs.interno.gov.it/ucs/contenuti/Provvedimenti_esecutivi_di_sfratto_e_richieste_di_esecuzione_dati_2024-23323050.htm" target="_blank" rel="noopener">Ministero dell'Interno, sfratti 2024</a>. Elaborazione di Nazareno Lecis.</div>
       </div>
       <div class="policy-card-grid" id="policyMixCards"></div>
     </section>
 
     <section class="dashboard-section" id="localSection">
       <div class="section-head">
-        <span class="eyebrow">Italia locale - passaggio 7</span>
+        <span class="eyebrow">Italia locale · livelli regionale / comunale / provinciale</span>
         <h2>Dalla mappa Italia al dettaglio comunale</h2>
         <p>Le medie nazionali dicono poco su cosa succede davvero a Cagliari, Nuoro, Sassari o nei comuni interni. Per questo la lettura locale parte da una sintesi regionale su tutta Italia e poi scende alla singola regione e ai comuni. I dati usano export statici regionali con quotazioni OMI comunali e indicatori di reddito dove disponibili.</p>
+        <div class="granularity-chips" aria-label="Granularità focus locale">
+          <span>Vista Italia: regionale</span>
+          <span>Dettaglio: comunale</span>
+          <span>Provincia: attributo dei comuni</span>
+        </div>
       </div>
       <details class="chart-filter-panel" open aria-label="Filtri mappa Italia">
         <summary>Filtri mappa Italia</summary>
@@ -330,7 +370,7 @@
           <span id="italyOverviewSubtitle">anteprima regionale della misura selezionata</span>
         </div>
         <div id="italyOverviewChart" class="chart"></div>
-        <div class="chart-credit">Fonte: OMI Agenzia Entrate e MEF Dipartimento Finanze, dove disponibili. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonti: <a href="https://www.agenziaentrate.gov.it/portale/schede/fabbricatiterreni/omi/forniture-dati-omi" target="_blank" rel="noopener">OMI Agenzia Entrate</a> e <a href="https://www.finanze.gov.it/it/statistiche-fiscali/opendata-dichiarazioni/" target="_blank" rel="noopener">MEF Dipartimento Finanze</a>, dove disponibili. Elaborazione di Nazareno Lecis.</div>
       </div>
       <div class="selection-comment" id="italyOverviewComment"></div>
       <details class="chart-filter-panel" open aria-label="Dettaglio regionale">
@@ -357,7 +397,7 @@
           <span id="localSubtitle">dettaglio comunale</span>
         </div>
         <div id="localChart" class="chart"></div>
-        <div class="chart-credit">Fonte: OMI Agenzia Entrate e MEF Dipartimento Finanze, dove disponibili. Elaborazione di Nazareno Lecis.</div>
+        <div class="chart-credit">Fonti: <a href="https://www.agenziaentrate.gov.it/portale/schede/fabbricatiterreni/omi/forniture-dati-omi" target="_blank" rel="noopener">OMI Agenzia Entrate</a> e <a href="https://www.finanze.gov.it/it/statistiche-fiscali/opendata-dichiarazioni/" target="_blank" rel="noopener">MEF Dipartimento Finanze</a>, dove disponibili. Elaborazione di Nazareno Lecis.</div>
       </div>
       <div class="selection-comment" id="localComment"></div>
     </section>
