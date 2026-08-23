@@ -43,6 +43,10 @@
   grid-template-columns: minmax(240px, .8fr) minmax(260px, 1.2fr);
 }
 
+.filter-controls-mount {
+  margin-top: 14px;
+}
+
 .housing-filter-grid .filter-field {
   display: flex;
   flex-direction: column;
@@ -208,6 +212,10 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.europe-kpis {
+  margin-top: 16px;
+}
+
 .housing-dashboard code {
   padding: 2px 5px;
   border: 1px solid var(--line);
@@ -259,7 +267,7 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: end;
-  margin: 12px 0 14px;
+  margin: 0;
 }
 
 .housing-inline-controls label {

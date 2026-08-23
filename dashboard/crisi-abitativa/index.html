@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-checkbox-filtri">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-eurostat-layout">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
@@ -18,7 +18,7 @@
   <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-checkbox-filtri"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-eurostat-layout"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js?v=20260721-1"></script>
 </head>
 <body>
@@ -143,15 +143,11 @@
             <select id="highlightCountries" multiple size="4"></select>
           </div>
         </div>
+        <div id="europeSeriesControlsMount" class="filter-controls-mount"></div>
         <div class="filter-actions">
           <button class="button compact" id="resetEuropeFilters" type="button">Reset confronto</button>
         </div>
       </details>
-      <div class="kpi-grid housing-kpis">
-        <div class="kpi"><span id="kpiItalyLabel">Italia ultimo dato</span><strong id="kpiItaly">-</strong></div>
-        <div class="kpi"><span>Range paesi</span><strong id="kpiRange">-</strong></div>
-        <div class="kpi"><span>Anno</span><strong id="kpiYear">-</strong></div>
-      </div>
       <div class="chart-panel main-chart">
         <div class="panel-title">
           <h2 id="europeTitle">Confronto europeo</h2>
@@ -159,6 +155,11 @@
         </div>
         <div id="europeChart" class="chart"></div>
         <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
+      </div>
+      <div class="kpi-grid housing-kpis europe-kpis">
+        <div class="kpi"><span id="kpiItalyLabel">Italia ultimo dato</span><strong id="kpiItaly">-</strong></div>
+        <div class="kpi"><span>Range paesi</span><strong id="kpiRange">-</strong></div>
+        <div class="kpi"><span>Anno</span><strong id="kpiYear">-</strong></div>
       </div>
       <div class="selection-comment" id="europeComment"></div>
 

@@ -540,16 +540,16 @@
   }
 
   function ensureEuropeSeriesControls(allYears, baseYears) {
-    var chart = byId("europeChart");
-    if (!chart || !chart.closest) return;
-    var chartPanel = chart.closest(".chart-panel");
-    if (!chartPanel || !chartPanel.parentNode) return;
+    var mount = byId("europeSeriesControlsMount");
+    if (!mount) return;
     var controls = byId("europeSeriesControls");
     if (!controls) {
       controls = document.createElement("div");
       controls.id = "europeSeriesControls";
       controls.className = "housing-inline-controls";
-      chartPanel.parentNode.insertBefore(controls, chartPanel);
+      mount.appendChild(controls);
+    } else if (controls.parentNode !== mount) {
+      mount.appendChild(controls);
     }
 
     function ensureLabeledSelect(id, labelText, onChange) {
@@ -867,7 +867,7 @@
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: theme.text, family: "system-ui, -apple-system, Segoe UI, sans-serif", size: 14 },
-      margin: { l: 72, r: 180, t: 14, b: 64 },
+      margin: { l: 72, r: 32, t: 14, b: 112 },
       xaxis: { title: { text: t("Periodo") }, gridcolor: theme.line, fixedrange: true, dtick: 1 },
       yaxis: {
         title: {
@@ -878,7 +878,7 @@
         gridcolor: theme.line,
         fixedrange: true
       },
-      legend: { orientation: "v", x: 1.02, y: 1, xanchor: "left" }
+      legend: { orientation: "h", x: 0, y: -0.24, xanchor: "left", yanchor: "top" }
     }, { responsive: true, displayModeBar: false });
   }
 
