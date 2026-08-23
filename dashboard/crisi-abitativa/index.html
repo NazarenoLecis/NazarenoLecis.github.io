@@ -8,16 +8,17 @@
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
   <link rel="stylesheet" href="../../assets/almalaurea-dashboard.css">
-  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260705-crisi-mappa-base100">
+  <link rel="stylesheet" href="../../assets/crisi-abitativa-dashboard.css?v=20260823-driver-nazionali">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/index.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_housing_overburden_total_pc_a.json" as="fetch" crossorigin>
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/eurostat/estat_dwellings_by_construction_period_2021.json" as="fetch" crossorigin>
+  <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/dashboard_extra.json" as="fetch" crossorigin>
   <link rel="preload" href="../../data/crisi-abitativa/italy-regions.geojson" as="fetch">
   <link rel="preload" href="https://data.nazarenolecis.com/crisi-abitativa/regions/sardegna.json" as="fetch" crossorigin>
   <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script defer src="../../assets/almalaurea-disable-zoom.js"></script>
-  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260705-crisi-mappa-base100"></script>
+  <script defer src="../../assets/crisi-abitativa-dashboard.js?v=20260823-driver-nazionali"></script>
   <script defer src="../../assets/crisi-abitativa-mobile-fix.js?v=20260721-1"></script>
 </head>
 <body>
@@ -80,6 +81,7 @@
     </section>
 
     <nav class="dashboard-jump-nav" aria-label="Sezioni dashboard crisi abitativa">
+      <a href="#extraDriversSection">Driver nazionali</a>
       <a href="#europeSection">Confronto europeo</a>
       <a href="#stockAgeSection">Stock abitativo</a>
       <a href="#localSection">Focus locale</a>
@@ -114,6 +116,71 @@
           <p>Permessi edilizi e investimenti in abitazioni descrivono la capacita' del sistema di produrre o rinnovare offerta. Lo stock per periodo di costruzione e' una fotografia separata dell'eta' del patrimonio immobiliare.</p>
         </article>
       </div>
+    </section>
+
+    <section class="dashboard-section" id="extraDriversSection">
+      <div class="section-head">
+        <span class="eyebrow">Italia</span>
+        <h2>Driver nazionali da usare come cruscotto live</h2>
+        <p>Questi pannelli raccolgono i pezzi che servono per leggere la crisi abitativa come problema di offerta, domanda localizzata e regole di mercato: struttura proprieta-affitto, stock non occupato, sfratti, ERP/social housing, studentati e affitti brevi.</p>
+      </div>
+      <div class="kpi-grid housing-kpis extra-kpis" id="extraKpis">
+        <div class="kpi"><span>Moduli extra</span><strong>-</strong></div>
+        <div class="kpi"><span>Dataset</span><strong>in caricamento</strong></div>
+        <div class="kpi"><span>Fonte</span><strong>R2</strong></div>
+      </div>
+      <div class="extra-driver-grid">
+        <div class="chart-panel compact-chart-panel">
+          <div class="panel-title">
+            <h2>Proprieta' e affitto</h2>
+            <span>Italia vs EU27</span>
+          </div>
+          <div id="tenureChart" class="chart extra-driver-chart"></div>
+          <div class="chart-credit">Fonte: Eurostat. Elaborazione di Nazareno Lecis.</div>
+        </div>
+        <div class="chart-panel compact-chart-panel">
+          <div class="panel-title">
+            <h2>Stock attivabile</h2>
+            <span>occupate vs non occupate</span>
+          </div>
+          <div id="stockActivationChart" class="chart extra-driver-chart"></div>
+          <div class="chart-credit">Fonte: Eurostat Census 2021. Elaborazione di Nazareno Lecis.</div>
+        </div>
+        <div class="chart-panel compact-chart-panel">
+          <div class="panel-title">
+            <h2>Sfratti</h2>
+            <span>rischio locazione</span>
+          </div>
+          <div id="evictionsChart" class="chart extra-driver-chart"></div>
+          <div class="chart-credit">Fonte: Ministero dell'Interno. Elaborazione di Nazareno Lecis.</div>
+        </div>
+        <div class="chart-panel compact-chart-panel">
+          <div class="panel-title">
+            <h2>ERP e social housing</h2>
+            <span>stock sociale e patrimonio bloccato</span>
+          </div>
+          <div id="socialHousingChart" class="chart extra-driver-chart"></div>
+          <div class="chart-credit">Fonte: OECD AHD, Federcasa-Nomisma. Elaborazione di Nazareno Lecis.</div>
+        </div>
+        <div class="chart-panel compact-chart-panel">
+          <div class="panel-title">
+            <h2>Student housing</h2>
+            <span>domanda fuori sede e posti letto</span>
+          </div>
+          <div id="studentHousingChart" class="chart extra-driver-chart"></div>
+          <div class="chart-credit">Fonte: ANVUR, MUR/PNRR, CDP. Elaborazione di Nazareno Lecis.</div>
+        </div>
+        <div class="chart-panel compact-chart-panel">
+          <div class="panel-title">
+            <h2>Affitti brevi</h2>
+            <span>registro CIN/BDSR</span>
+          </div>
+          <div id="shortRentalsChart" class="chart extra-driver-chart"></div>
+          <div class="chart-credit">Fonte: Ministero del Turismo, BDSR. Elaborazione di Nazareno Lecis.</div>
+        </div>
+      </div>
+      <div class="policy-card-grid" id="policyMixCards"></div>
+      <div class="selection-comment" id="extraDriversComment"></div>
     </section>
 
     <section class="dashboard-section" id="stockAgeSection">
