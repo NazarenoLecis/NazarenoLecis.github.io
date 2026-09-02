@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260902-pne-volumes-2",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260902-pne-volumes-2",
+    "../../data/sanita-italia/dashboard.json?v=20260902-pne-facility-filter",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260902-pne-facility-filter",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
   var REGIONAL_GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
@@ -1772,8 +1772,8 @@
 
   function waitingStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
+      "../../data/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
@@ -3095,7 +3095,16 @@
   }
 
   function pneRows() {
-    return tableRows("pne_hospital_outcomes");
+    return tableRows("pne_hospital_outcomes").filter(isPneFacilityRow);
+  }
+
+  function isPneFacilityRow(row) {
+    if (!row) return false;
+    var region = asText(row.region);
+    var structure = asText(row.structure || row.published_structure);
+    if (!structure || !region || region === "Italia") return false;
+    if (structure.toLowerCase() === "italia") return false;
+    return !!asText(row.structure_id || row.structure_code || row.structure_agenas_code || structure);
   }
 
   function pneVolumeTrendRows() {
@@ -3190,8 +3199,8 @@
 
   function pneVolumeStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
+      "../../data/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
@@ -3216,7 +3225,7 @@
     PNE_VOLUME_STRUCTURE_LOADING[code] = fetchPneVolumeStructureSource(pneVolumeStructureDataSources(file.path), 0).then(function (payload) {
       var dataset = {
         meta: (payload && payload.meta) || {},
-        rows: toArray(payload && payload.rows),
+        rows: toArray(payload && payload.rows).filter(isPneFacilityRow),
         regionYearRows: toArray(payload && payload.region_year_rows)
       };
       PNE_VOLUME_STRUCTURE_CACHE[code] = dataset;
