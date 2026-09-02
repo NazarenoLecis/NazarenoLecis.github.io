@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260820-map-ratios-1">
-  <script defer src="../../assets/theme.js?v=20260821-media-fix-2"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260902-pne-volumes-2">
+  <script defer src="../../assets/theme.js?v=20260902-pne-volumes-2"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260820-map-ratios-1"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260902-pne-volumes-2"></script>
 </head>
 <body>
   <header class="site-header">
@@ -79,6 +79,7 @@
       <a href="#tumori-recenti">Tumori recenti</a>
       <a href="#mortalita">Mortalit&agrave;</a>
       <a href="#esiti-pne">Esiti PNE</a>
+      <a href="#volumi-pne">Volumi PNE</a>
       <a href="#pronto-soccorso">Pronto soccorso</a>
       <a href="#hiPsRegionBoxTitle">Boxplot PS</a>
       <a href="#liste-attesa">Liste d'attesa</a>
@@ -402,7 +403,7 @@
     <section id="esiti-pne" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Esiti ospedalieri PNE</span>
-        <div><h2>Qualit&agrave; e mortalit&agrave; post-intervento per struttura</h2><p>Indicatori AGENAS PNE attribuiti alla struttura che ha trattato il paziente: mortalit&agrave; grezza, mortalit&agrave; aggiustata, successo derivato e volumi/casi della coorte.</p></div>
+        <div><h2>Qualit&agrave; e mortalit&agrave; post-intervento per struttura</h2><p>Indicatori AGENAS PNE attribuiti alla struttura che ha trattato il paziente: mortalit&agrave; grezza, mortalit&agrave; aggiustata, successo derivato e casi/eventi della coorte.</p></div>
       </div>
       <article class="hi-card hi-chart-block">
         <div class="hi-card-title"><h3 id="hiPneOutcomeTitle">Esiti ospedalieri PNE</h3><span id="hiPneOutcomeTag">PNE</span></div>
@@ -501,12 +502,52 @@
         <p id="hiPneQualityNote" class="hi-chart-credit">Fonte: AGENAS PNE. Elaborazione di Nazareno Lecis.</p>
         <div id="hiPneQualityTable" class="hi-table-wrap"></div>
       </article>
+    </section>
+
+    <section id="volumi-pne" class="dashboard-section">
+      <div class="section-head">
+        <span class="eyebrow">Volumi ospedalieri PNE</span>
+        <div><h2>Quanta attivit&agrave; viene fatta e dove</h2><p>Volumi annui PNE per tipo di attivit&agrave;: interventi, ricoveri e procedure per regione e struttura erogante. Questa sezione misura quantit&agrave; trattata, non mortalit&agrave; o qualit&agrave; clinica.</p></div>
+      </div>
       <article class="hi-card hi-chart-block">
-        <div class="hi-card-title"><h3 id="hiPneVolumeTrendTitle">Storico PNE volumi pancreas</h3><span id="hiPneVolumeTrendTag">PNE</span></div>
-        <p id="hiPneVolumeTrendSubtitle" class="hi-card-subtitle">Serie annua dei ricoveri per resezione pancreatica per tumore maligno.</p>
+        <div class="hi-card-title"><h3 id="hiPneVolumeTitle">Volumi PNE per tipo di attivit&agrave;</h3><span id="hiPneVolumeTag">PNE</span></div>
+        <p id="hiPneVolumeSubtitle" class="hi-card-subtitle">Scegli l'attivit&agrave; per vedere quante prestazioni o interventi vengono effettuati in Italia, nelle regioni e nelle singole strutture.</p>
+        <div class="hi-chart-controls" aria-label="Filtri volumi PNE per attivita">
+          <label>Attivit&agrave;
+            <select id="hiPneVolumeIndicatorFilter"></select>
+          </label>
+          <label>Anno
+            <select id="hiPneVolumeYearFilter"></select>
+          </label>
+          <label>Regione strutture
+            <select id="hiPneVolumeRegionFilter"></select>
+          </label>
+          <label>Numero strutture
+            <select id="hiPneVolumeLimitFilter">
+              <option value="10">Top 10</option>
+              <option value="20" selected>Top 20</option>
+              <option value="40">Top 40</option>
+              <option value="all">Tutte</option>
+            </select>
+          </label>
+          <label>Struttura focus
+            <select id="hiPneVolumeFocusStructureFilter"></select>
+          </label>
+        </div>
+        <div id="hiPneVolumeSummary" class="hi-profile-grid"></div>
+        <div class="hi-card-title hi-subchart-title"><h4 id="hiPneVolumeRegionTitle">Volume annuo per regione</h4><span id="hiPneVolumeRegionTag">regioni</span></div>
+        <p id="hiPneVolumeRegionSubtitle" class="hi-card-subtitle">Ogni barra &egrave; una regione in cui si trovano le strutture che erogano l'attivit&agrave; selezionata.</p>
+        <div id="hiPneVolumeRegionChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiPneVolumeRegionNote" class="hi-chart-credit">Fonte: AGENAS PNE. Elaborazione di Nazareno Lecis.</p>
+        <div class="hi-card-title hi-subchart-title"><h4 id="hiPneVolumeStructureTitle">Volume annuo per struttura</h4><span id="hiPneVolumeStructureTag">strutture</span></div>
+        <p id="hiPneVolumeStructureSubtitle" class="hi-card-subtitle">Ranking delle strutture eroganti nella regione selezionata.</p>
+        <div id="hiPneVolumeStructureChart" class="hi-chart hi-chart-wide"></div>
+        <p id="hiPneVolumeStructureNote" class="hi-chart-credit">Fonte: AGENAS PNE. Elaborazione di Nazareno Lecis.</p>
+        <div class="hi-card-title hi-subchart-title"><h4 id="hiPneVolumeTrendTitle">Serie storica del volume</h4><span id="hiPneVolumeTrendTag">Italia e regione</span></div>
+        <p id="hiPneVolumeTrendSubtitle" class="hi-card-subtitle">Andamento nel tempo del volume nazionale e, se selezionata, della regione scelta.</p>
         <div id="hiPneVolumeTrendChart" class="hi-chart hi-chart-wide"></div>
         <p id="hiPneVolumeTrendNote" class="hi-chart-credit">Fonte: AGENAS PNE. Elaborazione di Nazareno Lecis.</p>
-        <div id="hiPneVolumeTrendTable" class="hi-table-wrap"></div>
+        <div id="hiPneVolumeTable" class="hi-table-wrap"></div>
       </article>
     </section>
 

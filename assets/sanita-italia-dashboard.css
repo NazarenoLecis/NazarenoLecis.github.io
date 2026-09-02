@@ -361,6 +361,13 @@
   letter-spacing: 0;
 }
 
+.hi-card-title h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: .98rem;
+  letter-spacing: 0;
+}
+
 .hi-card-title span {
   font-size: .78rem;
   font-weight: 850;
@@ -369,6 +376,12 @@
 }
 
 .hi-card-title-secondary {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.hi-subchart-title {
   margin-top: 24px;
   padding-top: 18px;
   border-top: 1px solid var(--line);

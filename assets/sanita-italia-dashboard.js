@@ -2,8 +2,8 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260820-map-ratios-1",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260820-map-ratios-1",
+    "../../data/sanita-italia/dashboard.json?v=20260902-pne-volumes-2",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260902-pne-volumes-2",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
   var REGIONAL_GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
@@ -155,6 +155,11 @@
     pneQualityMinCases: "50",
     pneQualityLimit: "20",
     pneQualityFocusStructure: "all",
+    pneVolumeIndicator: "728",
+    pneVolumeYear: "latest",
+    pneVolumeRegion: "Italia",
+    pneVolumeLimit: "20",
+    pneVolumeFocusStructure: "all",
     disciplineRegion: "Italia",
     disciplineProvince: "all",
     disciplineMetric: "rate",
@@ -198,6 +203,8 @@
 
   var WAITING_STRUCTURE_CACHE = {};
   var WAITING_STRUCTURE_LOADING = {};
+  var PNE_VOLUME_STRUCTURE_CACHE = {};
+  var PNE_VOLUME_STRUCTURE_LOADING = {};
   var REGIONAL_GEOJSON_CACHE = null;
   var REGIONAL_GEOJSON_LOADING = null;
   var TABLE_EXPANDED = {};
@@ -224,6 +231,7 @@
     "mortalityQualityLayout", "mortalityQualityGroup", "mortalityQualityCause", "mortalityQualityYear", "mortalityQualityFocus", "mortalityQualityLimit",
     "pneOutcomeIndicator", "pneOutcomeRegion", "pneOutcomeMetric", "pneOutcomeMinCases", "pneOutcomeLimit", "pneOutcomeFocusStructure",
     "pneQualityLayout", "pneQualityIndicator", "pneQualityRegion", "pneQualityMetric", "pneQualityMinCases", "pneQualityLimit", "pneQualityFocusStructure",
+    "pneVolumeIndicator", "pneVolumeYear", "pneVolumeRegion", "pneVolumeLimit", "pneVolumeFocusStructure",
     "disciplineRegion", "disciplineProvince", "disciplineMetric", "denominator",
     "costRegion", "costRatio", "costType", "costCompositionRegion", "bedsSeriesRegion", "bedsSeriesMetric", "bedsSeriesRatio", "pharmaRegion", "pharmaLabel",
     "hospitalRegion", "hospitalProvince", "hospitalDiscipline", "hospitalDepartmentRegion", "hospitalDepartmentProvince", "hospitalDepartmentStructure", "hospitalDepartmentMetric", "hospitalDepartmentLimit",
@@ -741,6 +749,30 @@
       ]
     },
     {
+      id: "pne_volume_indicators",
+      label: "Indicatori volumi PNE",
+      columns: [
+        ["indicator_code", "Codice"],
+        ["indicator_label", "Attivita"],
+        ["edition", "Edizione"],
+        ["source_url", "Scheda PNE"],
+        ["protocol_url", "Protocollo"],
+        ["rationale_url", "Razionale"]
+      ]
+    },
+    {
+      id: "pne_activity_volume_region_year",
+      label: "Volumi PNE per regione e anno",
+      columns: [
+        ["indicator_code", "Indicatore"],
+        ["indicator_short_label", "Attivita"],
+        ["region", "Regione"],
+        ["year", "Anno"],
+        ["annual_volume", "Ricoveri/interventi"],
+        ["structures", "Strutture"]
+      ]
+    },
+    {
       id: "pne_outcome_indicators",
       label: "Indicatori esiti PNE",
       columns: [
@@ -931,7 +963,7 @@
     if (column === "quality_score" || column === "z_score" || column === "national_sd") return formatSignedDecimal(value);
     if (column === "selected_value" || column === "value") return formatDecimal(value);
     if (/per_1000|avg_los|share|change|utilization/i.test(column)) return formatDecimal(value);
-    if (/population|beds|discharges|cases|prevalence|days|total|structures|deaths|transfers|masked|year/i.test(column)) return formatNumber(value);
+    if (/population|beds|discharges|cases|prevalence|days|total|structures|deaths|transfers|masked|volume|year/i.test(column)) return formatNumber(value);
     return asText(value);
   }
 
@@ -1740,8 +1772,8 @@
 
   function waitingStructureDataSources(path) {
     return [
-      "../../data/sanita-italia/" + path + "?v=20260820-map-ratios-1",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260820-map-ratios-1",
+      "../../data/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
       "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
     ];
   }
@@ -3070,8 +3102,144 @@
     return tableRows("pne_hospital_outcome_volume_trend");
   }
 
+  function pneActivityVolumeRegionRows() {
+    return tableRows("pne_activity_volume_region_year");
+  }
+
   function pneIndicators() {
     return tableRows("pne_outcome_indicators");
+  }
+
+  function pneVolumeIndicators() {
+    return tableRows("pne_volume_indicators");
+  }
+
+  function pneVolumeIndicatorByCode(code) {
+    return pneVolumeIndicators().find(function (row) {
+      return String(row.indicator_code) === String(code);
+    }) || null;
+  }
+
+  function pneVolumeIndicatorLabel(row) {
+    if (!row) return "attivita PNE";
+    return row.indicator_short_label || row.indicator_label || ("indicatore " + row.indicator_code);
+  }
+
+  function pneVolumeIndicatorOptions() {
+    var rows = pneVolumeIndicators().slice().sort(function (a, b) {
+      var av = toNumber(a.indicator_code);
+      var bv = toNumber(b.indicator_code);
+      if (av === null && bv === null) return 0;
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return av - bv;
+    });
+    return rows.map(function (row) {
+      return {
+        value: String(row.indicator_code),
+        label: row.indicator_code + " - " + compact(pneVolumeIndicatorLabel(row), 86)
+      };
+    });
+  }
+
+  function pneVolumeRegionYearRows(code) {
+    var datasetRows = pneVolumeDataset(code).regionYearRows;
+    if (datasetRows.length) return datasetRows;
+    return pneActivityVolumeRegionRows().filter(function (row) {
+      return String(row.indicator_code) === String(code);
+    });
+  }
+
+  function pneVolumeAvailableYears(code) {
+    return unique(pneVolumeRegionYearRows(code).map(function (row) {
+      var year = toNumber(row.year);
+      return year === null ? "" : String(year);
+    }).filter(Boolean)).sort(function (a, b) {
+      return Number(b) - Number(a);
+    });
+  }
+
+  function pneVolumeYearOptions(code) {
+    var years = pneVolumeAvailableYears(code);
+    var latestLabel = years.length ? "Ultimo anno (" + years[0] + ")" : "Ultimo anno";
+    return [{ value: "latest", label: latestLabel }].concat(years.map(function (year) {
+      return { value: year, label: year };
+    }));
+  }
+
+  function pneVolumeSelectedYear(code) {
+    if (STATE.pneVolumeYear && STATE.pneVolumeYear !== "latest") return toNumber(STATE.pneVolumeYear);
+    var years = pneVolumeAvailableYears(code);
+    return years.length ? toNumber(years[0]) : null;
+  }
+
+  function pneVolumeSource(indicator) {
+    var code = indicator && indicator.indicator_code ? indicator.indicator_code : STATE.pneVolumeIndicator;
+    return { id: "agenas_pne_indicator_" + code, label: "AGENAS PNE indicatore " + code };
+  }
+
+  function pneVolumeFiles() {
+    return toArray(STATE.payload && STATE.payload.filters && STATE.payload.filters.pne_volume_files);
+  }
+
+  function pneVolumeFile(code) {
+    return pneVolumeFiles().find(function (row) {
+      return String(row.indicator_code) === String(code);
+    }) || null;
+  }
+
+  function pneVolumeStructureDataSources(path) {
+    return [
+      "../../data/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
+      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-volumes-2",
+      "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
+    ];
+  }
+
+  function fetchPneVolumeStructureSource(sources, index) {
+    index = index || 0;
+    if (index >= sources.length) return Promise.reject(new Error("PNE volume file not available"));
+    return fetchJson(sources[index]).catch(function () {
+      return fetchPneVolumeStructureSource(sources, index + 1);
+    });
+  }
+
+  function loadPneVolumeStructureRows(code) {
+    if (!code) return Promise.resolve([]);
+    if (PNE_VOLUME_STRUCTURE_CACHE[code]) return Promise.resolve(pneVolumeDataset(code).rows);
+    if (PNE_VOLUME_STRUCTURE_LOADING[code]) return PNE_VOLUME_STRUCTURE_LOADING[code];
+    var file = pneVolumeFile(code);
+    if (!file || !file.path) {
+      PNE_VOLUME_STRUCTURE_CACHE[code] = { meta: {}, rows: [], regionYearRows: [] };
+      return Promise.resolve([]);
+    }
+    PNE_VOLUME_STRUCTURE_LOADING[code] = fetchPneVolumeStructureSource(pneVolumeStructureDataSources(file.path), 0).then(function (payload) {
+      var dataset = {
+        meta: (payload && payload.meta) || {},
+        rows: toArray(payload && payload.rows),
+        regionYearRows: toArray(payload && payload.region_year_rows)
+      };
+      PNE_VOLUME_STRUCTURE_CACHE[code] = dataset;
+      delete PNE_VOLUME_STRUCTURE_LOADING[code];
+      return dataset.rows;
+    }).catch(function () {
+      PNE_VOLUME_STRUCTURE_CACHE[code] = { meta: {}, rows: [], regionYearRows: [] };
+      delete PNE_VOLUME_STRUCTURE_LOADING[code];
+      return [];
+    });
+    return PNE_VOLUME_STRUCTURE_LOADING[code];
+  }
+
+  function pneVolumeDataset(code) {
+    var cached = PNE_VOLUME_STRUCTURE_CACHE[code];
+    if (Array.isArray(cached)) return { meta: {}, rows: cached, regionYearRows: [] };
+    return cached || { meta: {}, rows: [], regionYearRows: [] };
+  }
+
+  function loadPneVolumeDataset(code) {
+    return loadPneVolumeStructureRows(code).then(function () {
+      return pneVolumeDataset(code);
+    });
   }
 
   function pneIndicatorByCode(code) {
@@ -3217,12 +3385,39 @@
       STATE.pneQualityFocusStructure = "all";
     }
 
+    var volumeIndicatorOptions = pneVolumeIndicatorOptions();
+    if (!volumeIndicatorOptions.some(function (option) { return option.value === STATE.pneVolumeIndicator; })) {
+      var volumePancreas = volumeIndicatorOptions.find(function (option) { return option.value === "728"; });
+      STATE.pneVolumeIndicator = volumePancreas ? volumePancreas.value : (volumeIndicatorOptions[0] ? volumeIndicatorOptions[0].value : "");
+    }
+    if (!regionOptions.some(function (option) { return option.value === STATE.pneVolumeRegion; })) {
+      STATE.pneVolumeRegion = "Italia";
+    }
+    var volumeYearOptions = pneVolumeYearOptions(STATE.pneVolumeIndicator);
+    if (!volumeYearOptions.some(function (option) { return option.value === STATE.pneVolumeYear; })) {
+      STATE.pneVolumeYear = "latest";
+    }
+    var volumeSelectedYear = pneVolumeSelectedYear(STATE.pneVolumeIndicator);
+    var volumeStructureRows = pneVolumeDataset(STATE.pneVolumeIndicator).rows.filter(function (row) {
+      var year = toNumber(row.year);
+      return (volumeSelectedYear === null || year === volumeSelectedYear) &&
+        (STATE.pneVolumeRegion === "Italia" || row.region === STATE.pneVolumeRegion);
+    });
+    var volumeStructureOptions = pneStructureOptions(volumeStructureRows, true);
+    if (!volumeStructureOptions.some(function (option) { return option.value === STATE.pneVolumeFocusStructure; })) {
+      STATE.pneVolumeFocusStructure = "all";
+    }
+
     fillSelect("hiPneOutcomeIndicatorFilter", indicatorOptions, STATE.pneOutcomeIndicator);
     fillSelect("hiPneOutcomeRegionFilter", regionOptions, STATE.pneOutcomeRegion);
     fillSelect("hiPneOutcomeFocusStructureFilter", outcomeStructureOptions, STATE.pneOutcomeFocusStructure);
     fillSelect("hiPneQualityIndicatorFilter", indicatorOptionsWithAll, STATE.pneQualityIndicator);
     fillSelect("hiPneQualityRegionFilter", regionOptions, STATE.pneQualityRegion);
     fillSelect("hiPneQualityFocusStructureFilter", qualityStructureOptions, STATE.pneQualityFocusStructure);
+    fillSelect("hiPneVolumeIndicatorFilter", volumeIndicatorOptions, STATE.pneVolumeIndicator);
+    fillSelect("hiPneVolumeYearFilter", volumeYearOptions, STATE.pneVolumeYear);
+    fillSelect("hiPneVolumeRegionFilter", regionOptions, STATE.pneVolumeRegion);
+    fillSelect("hiPneVolumeFocusStructureFilter", volumeStructureOptions, STATE.pneVolumeFocusStructure);
     [
       ["hiPneOutcomeMetricFilter", "pneOutcomeMetric"],
       ["hiPneOutcomeMinCasesFilter", "pneOutcomeMinCases"],
@@ -3230,7 +3425,8 @@
       ["hiPneQualityLayoutFilter", "pneQualityLayout"],
       ["hiPneQualityMetricFilter", "pneQualityMetric"],
       ["hiPneQualityMinCasesFilter", "pneQualityMinCases"],
-      ["hiPneQualityLimitFilter", "pneQualityLimit"]
+      ["hiPneQualityLimitFilter", "pneQualityLimit"],
+      ["hiPneVolumeLimitFilter", "pneVolumeLimit"]
     ].forEach(function (item) {
       var node = byId(item[0]);
       if (node) node.value = STATE[item[1]];
@@ -3426,6 +3622,7 @@
       ["hiMobilitySeriesRatioFilter", "mobilitySeriesRatio"],
       ["hiMobilityHospitalLimitFilter", "mobilityHospitalLimit"],
       ["hiMobilitySankeyMinFilter", "mobilitySankeyMin"],
+      ["hiPneVolumeLimitFilter", "pneVolumeLimit"],
       ["hiAslMetricFilter", "aslMetric"],
       ["hiAslLimitFilter", "aslLimit"]
     ].forEach(function (item) {
@@ -3602,6 +3799,11 @@
       ["hiPneQualityMinCasesFilter", "pneQualityMinCases"],
       ["hiPneQualityLimitFilter", "pneQualityLimit"],
       ["hiPneQualityFocusStructureFilter", "pneQualityFocusStructure"],
+      ["hiPneVolumeIndicatorFilter", "pneVolumeIndicator"],
+      ["hiPneVolumeYearFilter", "pneVolumeYear"],
+      ["hiPneVolumeRegionFilter", "pneVolumeRegion"],
+      ["hiPneVolumeLimitFilter", "pneVolumeLimit"],
+      ["hiPneVolumeFocusStructureFilter", "pneVolumeFocusStructure"],
       ["hiDisciplineRegionFilter", "disciplineRegion"],
       ["hiDisciplineProvinceFilter", "disciplineProvince"],
       ["hiDisciplineMetricFilter", "disciplineMetric"],
@@ -7511,76 +7713,203 @@
     ], "Vista: " + spec.groupLabel + " / " + spec.pointLabel + ". Misura: " + config.label + ". L'indice e uno z-score descrittivo sui dati PNE disponibili: +1 DS o piu indica performance migliore della media dello stesso indicatore; -1 DS o meno performance peggiore. I confronti restano descrittivi e vanno letti con casi, eventi, intervalli di confidenza e protocollo PNE.");
   }
 
-  function renderPneVolumeTrendChart() {
-    var trendRows = pneVolumeTrendRows().filter(function (row) {
-      return String(row.indicator_code) === "728";
+  function renderPneVolumeSummary(regionRows, structureRows, indicator, year) {
+    var container = byId("hiPneVolumeSummary");
+    clear(container);
+    regionRows = toArray(regionRows);
+    structureRows = toArray(structureRows);
+    var selectedRegion = STATE.pneVolumeRegion || "Italia";
+    var totalRegion = regionRows.find(function (row) {
+      return row.region === selectedRegion;
     });
-    if (!trendRows.length) {
-      showEmptyChart("hiPneVolumeTrendChart", "Storico volumi PNE non disponibile nel dataset");
+    if (!totalRegion && selectedRegion !== "Italia") {
+      totalRegion = regionRows.find(function (row) { return row.region === "Italia"; });
+    }
+    var topRegion = sortDescending(regionRows.filter(function (row) {
+      return row.region !== "Italia";
+    }), "annual_volume")[0] || null;
+    var topStructure = structureRows[0] || null;
+    var focus = STATE.pneVolumeFocusStructure === "all" ? null : structureRows.find(function (row) {
+      return asText(row.structure_id) === asText(STATE.pneVolumeFocusStructure);
+    });
+    [
+      ["Attivita", compact(pneVolumeIndicatorLabel(indicator), 48), "indicatore PNE " + asText(indicator && indicator.indicator_code, STATE.pneVolumeIndicator)],
+      ["Anno", year || MISSING, "anno dei volumi annui disponibili"],
+      ["Volume selezionato", totalRegion ? formatNumber(totalRegion.annual_volume) : MISSING, selectedRegion + " - strutture eroganti"],
+      ["Prima regione", topRegion ? topRegion.region : MISSING, topRegion ? formatNumber(topRegion.annual_volume) + " ricoveri/interventi" : "nessun dato regionale"],
+      ["Prima struttura", topStructure ? compact(topStructure.structure, 42) : MISSING, topStructure ? formatNumber(topStructure.annual_volume) + " - " + topStructure.region : "carica o restringi la selezione"],
+      ["Focus struttura", focus ? compact(focus.structure, 42) : "nessuna", focus ? formatNumber(focus.annual_volume) + " ricoveri/interventi" : "seleziona una struttura da evidenziare"]
+    ].forEach(function (item) {
+      var card = create("div", "hi-profile-item");
+      card.appendChild(create("span", "", item[0]));
+      card.appendChild(create("strong", "", item[1]));
+      card.appendChild(create("small", "", item[2]));
+      container.appendChild(card);
+    });
+  }
+
+  function renderPneVolumeSection() {
+    var code = STATE.pneVolumeIndicator;
+    var indicator = pneVolumeIndicatorByCode(code);
+    var title = byId("hiPneVolumeTitle");
+    var indicatorLabel = pneVolumeIndicatorLabel(indicator);
+    if (title) title.textContent = "Volumi PNE per tipo di attivita - " + compact(indicatorLabel, 72);
+    setSubtitle("hiPneVolumeSubtitle", "La sezione risponde a due domande: quanta attivita viene fatta e dove viene erogata. I volumi sono ricoveri, interventi o procedure annue attribuite alla struttura erogante; non sono mortalita, qualita clinica o residenza dei pazienti.");
+    setTag("hiPneVolumeTag", "PNE " + asText(indicator && indicator.edition, "") + " - " + asText(code, "indicatore"));
+
+    if (!code) {
+      renderPneVolumeSummary([], [], indicator, null);
+      showEmptyChart("hiPneVolumeRegionChart", "Nessun indicatore volume PNE disponibile");
+      showEmptyChart("hiPneVolumeStructureChart", "Nessun indicatore volume PNE disponibile");
+      showEmptyChart("hiPneVolumeTrendChart", "Nessun indicatore volume PNE disponibile");
+      createTable("hiPneVolumeTable", [], [["structure", "Struttura"], ["annual_volume", "Volume annuo"]], 80);
       return;
     }
-    var national = {};
-    trendRows.forEach(function (row) {
-      var year = toNumber(row.year);
-      if (year === null) return;
-      if (!national[year]) national[year] = { year: year, annual_volume: 0 };
-      national[year].annual_volume += toNumber(row.annual_volume) || 0;
+
+    if (!PNE_VOLUME_STRUCTURE_CACHE[code]) {
+      renderPneVolumeSummary([], [], indicator, null);
+      showEmptyChart("hiPneVolumeRegionChart", "Caricamento volumi regionali PNE ...");
+      showEmptyChart("hiPneVolumeStructureChart", "Caricamento dettaglio strutture PNE ...");
+      showEmptyChart("hiPneVolumeTrendChart", "Caricamento storico PNE ...");
+      createTable("hiPneVolumeTable", [], [["structure", "Struttura"], ["annual_volume", "Volume annuo"]], 80);
+      setChartCredit("hiPneVolumeRegionNote", [pneVolumeSource(indicator)], "Dati caricati dal file dedicato dell'indicatore selezionato.");
+      setChartCredit("hiPneVolumeStructureNote", [pneVolumeSource(indicator)], "Dati caricati dal file dedicato dell'indicatore selezionato.");
+      setChartCredit("hiPneVolumeTrendNote", [pneVolumeSource(indicator)], "Dati caricati dal file dedicato dell'indicatore selezionato.");
+      loadPneVolumeDataset(code).then(function () {
+        refreshPneFilters();
+        renderPneVolumeSection();
+        refreshSiteLanguage();
+      });
+      return;
+    }
+
+    var dataset = pneVolumeDataset(code);
+    var year = pneVolumeSelectedYear(code);
+    if (year === null) {
+      var structureYears = unique(dataset.rows.map(function (row) {
+        var itemYear = toNumber(row.year);
+        return itemYear === null ? "" : String(itemYear);
+      }).filter(Boolean)).sort(function (a, b) { return Number(b) - Number(a); });
+      year = structureYears.length ? toNumber(structureYears[0]) : null;
+    }
+    var regionRows = pneVolumeRegionYearRows(code).filter(function (row) {
+      return year === null || toNumber(row.year) === year;
     });
-    var nationalRows = Object.keys(national).map(function (year) { return national[year]; }).sort(function (a, b) { return a.year - b.year; });
-    var focusRows = STATE.pneOutcomeFocusStructure === "all" ? [] : trendRows.filter(function (row) {
-      return asText(row.structure_id) === asText(STATE.pneOutcomeFocusStructure);
-    }).sort(function (a, b) { return a.year - b.year; });
-    var focusName = focusRows[0] ? focusRows[0].structure : "";
-    var traces = [{
-      type: "scatter",
-      mode: "lines+markers",
-      name: "Italia",
-      x: nationalRows.map(function (row) { return row.year; }),
-      y: nationalRows.map(function (row) { return toNumber(row.annual_volume); }),
-      text: nationalRows.map(function (row) { return formatNumber(row.annual_volume); }),
-      line: { color: COLORS[1], width: 3 },
-      marker: { size: 8 },
-      hovertemplate: "%{x}<br>Italia: %{text} ricoveri<extra></extra>"
-    }];
-    if (focusRows.length) {
+    var regionTitle = byId("hiPneVolumeRegionTitle");
+    var structureTitle = byId("hiPneVolumeStructureTitle");
+    var trendTitle = byId("hiPneVolumeTrendTitle");
+    if (regionTitle) regionTitle.textContent = "Volume annuo per regione - " + compact(indicatorLabel, 68);
+    if (structureTitle) structureTitle.textContent = "Volume annuo per struttura - " + compact(indicatorLabel, 68);
+    if (trendTitle) trendTitle.textContent = "Serie storica del volume - " + compact(indicatorLabel, 68);
+    setTag("hiPneVolumeRegionTag", "anno " + asText(year) + " - regioni");
+    setTag("hiPneVolumeStructureTag", "anno " + asText(year) + " - " + STATE.pneVolumeRegion);
+    setTag("hiPneVolumeTrendTag", STATE.pneVolumeRegion === "Italia" ? "Italia" : "Italia vs " + STATE.pneVolumeRegion);
+    setSubtitle("hiPneVolumeRegionSubtitle", "Ogni barra e una regione in cui si trovano le strutture che erogano " + indicatorLabel + ". Serve a capire dove si concentra il volume dell'attivita selezionata.");
+    setSubtitle("hiPneVolumeStructureSubtitle", "Ogni barra e una struttura erogante" + (STATE.pneVolumeRegion === "Italia" ? " in Italia" : " in " + STATE.pneVolumeRegion) + ". Il filtro regione riguarda la sede della struttura, non la provenienza dei pazienti.");
+    setSubtitle("hiPneVolumeTrendSubtitle", "La serie mostra l'andamento annuale di " + indicatorLabel + " per l'Italia e, se scegli una regione, il confronto con quella regione.");
+    var regionalBars = sortDescending(regionRows.filter(function (row) {
+      return row.region && row.region !== "Italia";
+    }), "annual_volume");
+    var structureRows = dataset.rows.filter(function (row) {
+      var rowYear = toNumber(row.year);
+      return (year === null || rowYear === year) &&
+        (STATE.pneVolumeRegion === "Italia" || row.region === STATE.pneVolumeRegion);
+    }).map(function (row) {
+      var copy = Object.assign({}, row);
+      copy.selected_value = toNumber(row.annual_volume);
+      copy.annual_volume_text = formatNumber(row.annual_volume);
+      return copy;
+    }).filter(function (row) {
+      return toNumber(row.annual_volume) !== null;
+    }).sort(function (a, b) {
+      return (toNumber(b.annual_volume) || 0) - (toNumber(a.annual_volume) || 0);
+    });
+    var limit = chartLimit(STATE.pneVolumeLimit, 20);
+    var structureChartRows = ensureFocusRow(structureRows, structureRows, STATE.pneVolumeFocusStructure, limit);
+    renderPneVolumeSummary(regionRows, structureRows, indicator, year);
+
+    horizontalBar("hiPneVolumeRegionChart", regionalBars, "region", "annual_volume", {
+      limit: 25,
+      leftMargin: 170,
+      labelLength: 42,
+      xTitle: "ricoveri/interventi annui",
+      format: formatNumber,
+      color: COLORS[1],
+      highlight: STATE.pneVolumeRegion === "Italia" ? "" : STATE.pneVolumeRegion,
+      hovertemplate: "%{y}<br>Volume: %{text}<extra></extra>"
+    });
+    setChartCredit("hiPneVolumeRegionNote", [pneVolumeSource(indicator)], "Anno " + asText(year) + ", indicatore " + asText(code) + ". Ogni barra e una regione in cui si trovano le strutture che erogano l'attivita; il valore non indica la residenza dei pazienti e non misura esiti clinici o mobilita sanitaria.");
+
+    horizontalBar("hiPneVolumeStructureChart", structureChartRows, "structure", "annual_volume", {
+      limit: limit,
+      leftMargin: 250,
+      labelLength: 58,
+      xTitle: "ricoveri/interventi annui",
+      format: formatNumber,
+      color: COLORS[2],
+      highlight: STATE.pneVolumeFocusStructure,
+      highlightField: "structure_id",
+      hovertemplate: "%{y}<br>Volume: %{text}<extra></extra>"
+    });
+    setChartCredit("hiPneVolumeStructureNote", [pneVolumeSource(indicator)], "Anno " + asText(year) + ", regione strutture: " + STATE.pneVolumeRegion + ". Il ranking mostra le strutture eroganti per volume dell'attivita selezionata; il filtro regione riguarda la sede della struttura, non la provenienza dei pazienti.");
+
+    var trendRows = pneVolumeRegionYearRows(code).filter(function (row) {
+      return row.region === "Italia" || row.region === STATE.pneVolumeRegion;
+    }).sort(function (a, b) {
+      return (toNumber(a.year) || 0) - (toNumber(b.year) || 0);
+    });
+    var nationalTrend = trendRows.filter(function (row) { return row.region === "Italia"; });
+    var selectedTrend = STATE.pneVolumeRegion === "Italia" ? [] : trendRows.filter(function (row) {
+      return row.region === STATE.pneVolumeRegion;
+    });
+    var traces = [];
+    if (nationalTrend.length) {
       traces.push({
         type: "scatter",
         mode: "lines+markers",
-        name: focusName,
-        x: focusRows.map(function (row) { return row.year; }),
-        y: focusRows.map(function (row) { return toNumber(row.annual_volume); }),
-        text: focusRows.map(function (row) { return formatNumber(row.annual_volume); }),
-        line: { color: COLORS[0], width: 3 },
+        name: "Italia",
+        x: nationalTrend.map(function (row) { return row.year; }),
+        y: nationalTrend.map(function (row) { return toNumber(row.annual_volume) || 0; }),
+        text: nationalTrend.map(function (row) { return formatNumber(row.annual_volume); }),
+        line: { color: COLORS[1], width: 3 },
         marker: { size: 8 },
-        hovertemplate: "%{x}<br>" + focusName + ": %{text} ricoveri<extra></extra>"
+        hovertemplate: "%{x}<br>Italia: %{text}<extra></extra>"
       });
     }
-    var years = nationalRows.map(function (row) { return row.year; });
-    var title = byId("hiPneVolumeTrendTitle");
-    if (title) title.textContent = "Storico PNE volumi pancreas" + (focusName ? " - " + focusName : "");
-    setSubtitle("hiPneVolumeTrendSubtitle", "Ricoveri annui dell'indicatore PNE 728 per resezione pancreatica per tumore maligno. Il confronto con la struttura evidenziata appare quando selezioni una struttura nel grafico sopra.");
-    setTag("hiPneVolumeTrendTag", years.length ? Math.min.apply(null, years) + "-" + Math.max.apply(null, years) : "PNE");
+    if (selectedTrend.length) {
+      traces.push({
+        type: "scatter",
+        mode: "lines+markers",
+        name: STATE.pneVolumeRegion,
+        x: selectedTrend.map(function (row) { return row.year; }),
+        y: selectedTrend.map(function (row) { return toNumber(row.annual_volume) || 0; }),
+        text: selectedTrend.map(function (row) { return formatNumber(row.annual_volume); }),
+        line: { color: COLORS[0], width: 3 },
+        marker: { size: 8 },
+        hovertemplate: "%{x}<br>" + STATE.pneVolumeRegion + ": %{text}<extra></extra>"
+      });
+    }
     lineChart("hiPneVolumeTrendChart", traces, {
-      yTitle: "ricoveri annui",
+      yTitle: "ricoveri/interventi annui",
       xAxis: { title: "anno", tickmode: "linear", dtick: 1 }
     });
-    setChartCredit("hiPneVolumeTrendNote", [
-      { id: "agenas_pne_indicator_728", label: "AGENAS PNE indicatore 728" }
-    ], "La serie storica e sui volumi annui di ricoveri per resezione pancreatica per tumore maligno; non misura direttamente mortalita, successo clinico o mobilita sanitaria origine-destinazione.");
-    var tableRowsValue = focusRows.length ? focusRows : nationalRows.map(function (row) {
-      return { year: row.year, structure: "Italia", annual_volume: row.annual_volume };
-    });
-    createTable("hiPneVolumeTrendTable", tableRowsValue, [
+    setChartCredit("hiPneVolumeTrendNote", [pneVolumeSource(indicator)], "Serie storica regionale e nazionale dell'indicatore " + asText(code) + ". Serve a vedere crescita, calo o concentrazione dell'attivita nel tempo; non sostituisce gli indicatori PNE di mortalita/successo, che sono nella sezione esiti.");
+
+    createTable("hiPneVolumeTable", structureRows, [
       ["year", "Anno"],
+      ["region", "Regione"],
+      ["province", "Provincia"],
+      ["city", "Comune"],
       ["structure", "Struttura"],
-      ["annual_volume", "Ricoveri"]
-    ], 80);
+      ["indicator_short_label", "Attivita"],
+      ["annual_volume", "Volume annuo"]
+    ], 120);
   }
 
   function renderPneOutcomes() {
     renderPneOutcomeChart();
     renderPneQualityChart();
-    renderPneVolumeTrendChart();
+    renderPneVolumeSection();
   }
 
   function ratioMode() {
@@ -8650,7 +8979,8 @@
       var generated = payload.meta && payload.meta.generated_at ? payload.meta.generated_at.replace("T", " ").replace("+00:00", " UTC") : "";
       setStatus("Dati caricati: " + generated);
       renderAll();
-    }).catch(function () {
+    }).catch(function (error) {
+      if (window.console && console.error) console.error("Dashboard payload failed", DATA_SOURCES[index], error);
       loadPayload(index + 1);
     });
   }
