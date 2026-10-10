@@ -2,11 +2,15 @@
   "use strict";
 
   var DATA_SOURCES = [
-    "../../data/sanita-italia/dashboard.json?v=20260902-pne-facility-filter",
-    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20260902-pne-facility-filter",
+    "https://data.nazarenolecis.com/sanita-italia/dashboard.json?v=20261010-audit",
+    "../../data/sanita-italia/dashboard.json?v=20261010-audit",
     "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/dashboard.json"
   ];
+  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+    DATA_SOURCES = [DATA_SOURCES[1], DATA_SOURCES[0], DATA_SOURCES[2]];
+  }
   var REGIONAL_GEOJSON_URL = "../../data/crisi-abitativa/italy-regions.geojson";
+  var SYSTEM_DATASET = null;
 
   var STATE = {
     payload: null,
@@ -1019,6 +1023,11 @@
   }
 
   function sourceById(id) {
+    if (id === "historical_denominators") return {url:"https://ec.europa.eu/eurostat/databrowser/view/demo_r_pjangrp3/default/table?lang=en",provider:"Eurostat / ISTAT"};
+    if (id.indexOf("health_system_") === 0 && SYSTEM_DATASET) {
+      var indicator = SYSTEM_DATASET.indicators.find(function (item) { return item.id === id.slice(14); });
+      if (indicator) return {url:indicator.source_url,provider:indicator.source};
+    }
     return tableRows("sources").find(function (row) {
       return row.id === id;
     }) || null;
@@ -1062,7 +1071,7 @@
 
   function denominatorSources(mode) {
     if (mode === "population_total" || mode === "population_65_plus" || mode === "population_75_plus" || mode === "auto" || mode === "clinical") {
-      return [{ id: "istat_posas_2026", label: "ISTAT denominatori demografici" }];
+      return [{ id: "historical_denominators", label: "Eurostat / ISTAT, popolazione nello stesso anno" }];
     }
     if (mode === "gdp") return [{ id: "eurostat_gdp_nuts2", label: "Eurostat PIL regionale" }];
     return [];
@@ -1128,10 +1137,13 @@
       { value: "mortality", label: "Mortalita" },
       { value: "pne", label: "Esiti PNE" },
       { value: "costs", label: "Spesa e mobilita" }
-    ];
+    ].concat(SYSTEM_DATASET ? [{value:"system",label:window.SiteLanguage && window.SiteLanguage.get() === "en" ? "Workforce, screening, care levels, community and EHR" : "Personale, screening, LEA, territorio e FSE"}] : []);
   }
 
   function regionalMapMetricOptions(topic) {
+    if (topic === "system" && SYSTEM_DATASET) return SYSTEM_DATASET.indicators.filter(function (item) {
+      return item.geographic_level && item.geographic_level.indexOf("region") === 0;
+    }).map(function (item) { return {value:"system_" + item.id,label:window.SanitaSystem ? window.SanitaSystem.label(item) : item.label}; });
     var metrics = {
       overview: [
         { value: "overview_discharges_per_1000", label: "Dimissioni per 1.000 residenti" },
@@ -1146,7 +1158,6 @@
         { value: "overview_cost_per_capita", label: "Costo SSN per abitante" },
         { value: "overview_cost_per_over65", label: "Costo SSN per residente 65+" },
         { value: "overview_cost_per_over75", label: "Costo SSN per residente 75+" },
-        { value: "overview_cost_per_discharge", label: "Costo SSN per dimissione" },
         { value: "overview_cost_percent_gdp", label: "Costo SSN / PIL regionale" },
         { value: "overview_mobility_per_capita", label: "Saldo mobilita per abitante" },
         { value: "overview_mobility_per_over65", label: "Saldo mobilita per residente 65+" },
@@ -1198,7 +1209,6 @@
         { value: "cost_per_capita", label: "Costo SSN per abitante" },
         { value: "cost_per_over65", label: "Costo SSN per residente 65+" },
         { value: "cost_per_over75", label: "Costo SSN per residente 75+" },
-        { value: "cost_per_discharge", label: "Costo SSN per dimissione" },
         { value: "cost_percent_gdp", label: "Costo SSN / PIL" },
         { value: "cost_change_percent", label: "Variazione costo SSN" },
         { value: "mobility_per_capita", label: "Saldo mobilita per abitante" },
@@ -1232,6 +1242,7 @@
   }
 
   function regionalMapYearOptions(metric) {
+    if (metric.indexOf("system_") === 0 && SYSTEM_DATASET) return [{value:"latest",label:"Ultimo anno disponibile"}].concat(unique(SYSTEM_DATASET.rows.filter(function (row) { return row.metric === metric.slice(7); }).map(function (row) { return String(row.year); })).sort().reverse().map(function (year) { return {value:year,label:year}; }));
     if (metric === "waiting_mean_first" || metric === "waiting_within_target" || metric === "waiting_bookings") {
       return waitingYearOptions();
     }
@@ -1415,6 +1426,20 @@
   }
 
   function regionalMapMetricConfig(metric) {
+    if (metric.indexOf("system_") === 0 && SYSTEM_DATASET) {
+      var indicator = SYSTEM_DATASET.indicators.find(function (item) { return item.id === metric.slice(7); });
+      return {label:window.SanitaSystem ? window.SanitaSystem.label(indicator) : indicator.label,tag:indicator.period.join("-"),format:formatDecimal,unit:window.SanitaSystem ? window.SanitaSystem.unit(indicator.unit) : indicator.unit,aggregate:indicator.domain === "community" ? "sum" : indicator.domain === "lea" ? "min" : undefined,
+        rows:function () {
+          var rows = SYSTEM_DATASET.rows.filter(function (row) { return row.metric === indicator.id; });
+          var year = STATE.regionalMapYear === "latest" ? Math.max.apply(null, rows.map(function (row) { return row.year; })) : Number(STATE.regionalMapYear);
+          rows = rows.filter(function (row) { return row.year === year && toArray(STATE.payload.filters.regions).indexOf(row.geo) !== -1; });
+          if (indicator.id === "fse_document_availability") {
+            var period = unique(rows.map(function (row) { return row.period; })).sort().pop();
+            rows = rows.filter(function (row) { return row.period === period; });
+          }
+          return rows.map(function (row) { return {region:row.geo,value:row.value,year:row.year,weight:row.denominator || 1,detail:row.period || indicator.definition}; });
+        },sources:[{id:"health_system_" + indicator.id,label:indicator.source}],note:(window.SanitaSystem ? window.SanitaSystem.note(indicator) : indicator.note) + (window.SiteLanguage && window.SiteLanguage.get() === "en" ? " Trento/Bolzano: counts are summed, LEA uses the minimum, rates use the available denominator as weight." : " Per Trento/Bolzano la mappa somma i conteggi, usa il minimo per i LEA e pondera le quote per il denominatore disponibile.")};
+    }
     var baseSources = [{ id: "ministero_attivita_reparti", label: "Ministero Salute" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }];
     var costSources = [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }];
     var costPopulationSources = [{ id: "openbdap_ssn", label: "OpenBDAP/RGS" }, { id: "istat_posas_2026", label: "ISTAT popolazione" }];
@@ -1499,6 +1524,8 @@
         item.sum += value;
       } else if (config.aggregate === "max") {
         item.max = item.max === undefined ? value : Math.max(item.max, value);
+      } else if (config.aggregate === "min") {
+        item.min = item.min === undefined ? value : Math.min(item.min, value);
       } else {
         var weight = toNumber(row.weight) || 1;
         item.weightedTotal += value * weight;
@@ -1514,6 +1541,8 @@
         value = item.sum;
       } else if (config.aggregate === "max") {
         value = item.max;
+      } else if (config.aggregate === "min") {
+        value = item.min;
       } else {
         value = item.weightTotal ? item.weightedTotal / item.weightTotal : item.values.reduce(function (total, point) { return total + point; }, 0) / item.values.length;
       }
@@ -1722,7 +1751,7 @@
   }
 
   function psStructureKey(row) {
-    return asText(row.structure_code || row.institute_code || (asText(row.region) + "|" + asText(row.structure)), "");
+    return asText(row.structure_key || (asText(row.year) + "|" + asText(row.structure_code) + "|" + asText(row.institute_code)), "");
   }
 
   function psStructureRows() {
@@ -1771,11 +1800,7 @@
   }
 
   function waitingStructureDataSources(path) {
-    return [
-      "../../data/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
-      "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
-    ];
+    return datasetDataSources(path);
   }
 
   function fetchWaitingStructureSource(sources, index) {
@@ -2528,7 +2553,13 @@
 
   function denominatorValueForRow(row, denominator) {
     if (!row) return null;
-    if (row[denominator] !== undefined && row[denominator] !== null) return toNumber(row[denominator]);
+    if (Object.prototype.hasOwnProperty.call(row, denominator)) return toNumber(row[denominator]);
+    if (row.year) {
+      var historical = tableRows(row.province ? "population_denominators_province_history" : "population_denominators_history").find(function (item) {
+        return item.year === Number(row.year) && item.region === (row.region || "Italia") && (!row.province || item.province === row.province);
+      });
+      return historical ? toNumber(historical[denominator]) : null;
+    }
     if (row.region) return toNumber((populationMap()[row.region] || {})[denominator]);
     return toNumber(nationalPopulation()[denominator]);
   }
@@ -2543,6 +2574,7 @@
 
   function normalizedValue(row, field, mode) {
     if (!mode || mode === "absolute") return toNumber(row[field]);
+    if (toNumber(row[field]) === null) return null;
     var denominator = mode === "auto" ? toNumber(row.relevant_population) : denominatorValueForRow(row, mode);
     if (!denominator) return null;
     return ((toNumber(row[field]) || 0) / denominator) * 1000;
@@ -3198,11 +3230,7 @@
   }
 
   function pneVolumeStructureDataSources(path) {
-    return [
-      "../../data/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
-      "https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20260902-pne-facility-filter",
-      "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path
-    ];
+    return datasetDataSources(path);
   }
 
   function fetchPneVolumeStructureSource(sources, index) {
@@ -4220,7 +4248,7 @@
     if (title) title.textContent = "Tipologia SDO e " + specialtyConfig.label + " per " + specialtyLabel + " - " + territory;
     setTag("hiDischargeTypeTag", "anno " + asText(row.year) + " - " + dischargeTypeScopeLabel() + " | sotto: " + specialtyLabel + " - " + specialtyConfig.label);
     var labels = ["A domicilio", "Trasferimenti", "Decessi"];
-    var values = [row.home_discharges, row.transfers, row.deaths].map(function (value) { return toNumber(value) || 0; });
+    var values = [row.home_discharges, row.transfers, row.deaths].map(function (value) { return toNumber(value); });
     plot("hiDischargeTypeChart", [{
       type: "bar",
       x: labels,
@@ -8110,6 +8138,7 @@
   }
 
   function costMetricConfig() {
+    if (STATE.costRatio === "discharges") STATE.costRatio = "population_total";
     var mode = STATE.costRatio || "population_total";
     if (mode === "population_65_plus") return { label: "per residente 65+", field: "amount_per_over65_eur", xTitle: "euro per residente 65+", format: formatEuroDecimal };
     if (mode === "population_75_plus") return { label: "per residente 75+", field: "amount_per_over75_eur", xTitle: "euro per residente 75+", format: formatEuroDecimal };
@@ -8218,7 +8247,7 @@
     setChartCredit("hiBedsSeriesNote", [
       { id: "ministero_posti_letto_2019", label: "Ministero della Salute 2010-2019" },
       { id: "ministero_posti_letto_2023", label: "Ministero della Salute 2020-2023" }
-    ], "Serie costruita sui CSV 2010-2019 e sui file annuali 2020, 2021, 2022 e 2023 normalizzati nella pipeline.");
+    ], "Serie costruita sui CSV 2010-2019 e sui file annuali 2020, 2021, 2022 e 2023. I rapporti usano la popolazione dello stesso anno: negli anni senza denominatore disponibile il valore resta mancante.");
     var valueFormat = STATE.bedsSeriesRatio === "absolute" ? "%{y:,.0f}" : "%{y:,.2f}";
     var years = rows.map(function (row) { return String(row.year); });
     lineChart("hiBedsSeriesChart", [{
@@ -8499,9 +8528,10 @@
     var target = rows.map(function (row) { return labels.indexOf(row.target); });
     var values = rows.map(function (row) { return toNumber(row.value_million_eur) || 0; });
     var linkColors = rows.map(function (row) {
+      if (row.source_type === "region") return "rgba(217, 102, 102, .48)";
       return row.target_type === "special" ? "rgba(93, 143, 215, .48)" : "rgba(58, 166, 161, .5)";
     });
-    var passiveRegions = unique(rows.map(function (row) { return row.source; }));
+    var passiveRegions = unique(rows.filter(function (row) { return row.source_type === "region"; }).map(function (row) { return row.source; }));
     var regionTargets = unique(rows.filter(function (row) { return row.target_type === "region"; }).map(function (row) { return row.target; }));
     var specialTargets = unique(rows.filter(function (row) { return row.target_type === "special"; }).map(function (row) { return row.target; }));
     plot("hiMobilitySankeyChart", [{
@@ -8537,59 +8567,19 @@
     var note = byId("hiMobilitySankeyNote");
     if (note) setChartCredit("hiMobilitySankeyNote", [
       { id: "corte_conti_mobilita_2024", label: "Corte dei conti, mobilita sanitaria" }
-    ], "Le compensazioni economiche derivano dai flussi di prestazioni/pazienti, ma il saldo netto non conserva la coppia origine-destinazione reale; il grafico abbina regioni con saldo passivo a regioni con saldo attivo e soggetti extraregionali per rappresentare i saldi netti 2024. Vaticano indica l'Ospedale Pediatrico Bambino Gesu.");
+    ], "Ogni importo e il saldo netto pubblicato per regione o ente nel 2024. Le regioni con saldo negativo contribuiscono al meccanismo di compensazione; quelle con saldo positivo ricevono. La fonte non contiene le coppie origine-destinazione dei pazienti: nessun collegamento diretto tra due regioni e ricostruito. Vaticano indica l'Ospedale Pediatrico Bambino Gesu.");
   }
 
   function mobilityRegionalNetLinks(minValue) {
-    var passive = [];
-    var active = [];
     var regionNames = toArray(STATE.payload.filters && STATE.payload.filters.regions);
-    tableRows("mobility_balance").forEach(function (row) {
-      if (row.year !== 2024) return;
-      var value = toNumber(row.balance_million_eur);
-      if (value === null || value === 0) return;
-      if (value < 0) passive.push({ label: row.region, remaining: Math.abs(value), type: "region" });
-      if (value > 0) active.push({ label: row.region, remaining: value, type: "region" });
+    return tableRows("mobility_sankey").filter(function (row) {
+      return row.year === 2024 && toNumber(row.value_million_eur) !== null && toNumber(row.value_million_eur) >= minValue;
+    }).map(function (row) {
+      var special = row.flow_type && row.flow_type.indexOf("extraregionale") !== -1;
+      return {source:row.source,target:special ? mobilityTargetLabel(row.target) : row.target,value_million_eur:row.value_million_eur,year:row.year,
+        source_type:regionNames.indexOf(row.source) !== -1 ? "region" : "mechanism",target_type:special ? "special" : regionNames.indexOf(row.target) !== -1 ? "region" : "mechanism",
+        target_detail:special ? mobilityTargetDetail(row.target) : "",flow_label:row.flow_type};
     });
-    tableRows("mobility_sankey").forEach(function (row) {
-      if (row.year !== 2024) return;
-      if (regionNames.indexOf(row.target) !== -1) return;
-      if (!row.flow_type || row.flow_type.indexOf("extraregionale") === -1) return;
-      var value = toNumber(row.value_million_eur);
-      if (value === null || value <= 0) return;
-      active.push({
-        label: mobilityTargetLabel(row.target),
-        detail: mobilityTargetDetail(row.target),
-        remaining: value,
-        type: "special"
-      });
-    });
-    passive.sort(function (a, b) { return b.remaining - a.remaining; });
-    active.sort(function (a, b) { return b.remaining - a.remaining; });
-    var links = [];
-    var i = 0;
-    var j = 0;
-    while (i < passive.length && j < active.length) {
-      var value = Math.min(passive[i].remaining, active[j].remaining);
-      if (value >= minValue) {
-        links.push({
-          source: passive[i].label,
-          target: active[j].label,
-          value_million_eur: roundDisplay(value),
-          year: 2024,
-          flow_type: "saldo netto regionale",
-          source_type: passive[i].type,
-          target_type: active[j].type,
-          target_detail: active[j].detail,
-          flow_label: active[j].type === "special" ? "saldo verso soggetto extraregionale" : "saldo netto verso regione attiva"
-        });
-      }
-      passive[i].remaining -= value;
-      active[j].remaining -= value;
-      if (passive[i].remaining <= 0.001) i += 1;
-      if (active[j].remaining <= 0.001) j += 1;
-    }
-    return links;
   }
 
   function roundDisplay(value) {
@@ -8969,10 +8959,20 @@
     renderMethod();
   }
 
+  function datasetDataSources(path) {
+    var sources = ["https://data.nazarenolecis.com/sanita-italia/" + path + "?v=20261010-audit", "../../data/sanita-italia/" + path + "?v=20261010-audit", "https://raw.githubusercontent.com/NazarenoLecis/nazarenolecis-data-pipeline/main/publish/sanita-italia/" + path];
+    if (location.hostname === "localhost" || location.hostname === "127.0.0.1") sources = [sources[1],sources[0],sources[2]];
+    return sources;
+  }
+
   function fetchJson(url) {
-    return fetch(url, { cache: "no-store" }).then(function (response) {
+    var controller = new AbortController();
+    var timeout = window.setTimeout(function () { controller.abort(); }, 45000);
+    return fetch(url, { cache: "no-store", signal:controller.signal }).then(function (response) {
       if (!response.ok) throw new Error("HTTP " + response.status);
       return response.json();
+    }).finally(function () {
+      window.clearTimeout(timeout);
     });
   }
 
@@ -8998,5 +8998,14 @@
     applyUrlFilters();
     bindControls();
     loadPayload(0);
+  });
+  window.addEventListener("sanita-extra-data-ready", function (event) {
+    SYSTEM_DATASET = event.detail;
+    if (!STATE.payload) return;
+    refreshRegionalMapFilters();
+    renderRegionalMap();
+  });
+  window.addEventListener("site-language-change", function () {
+    if (SYSTEM_DATASET && STATE.payload) { refreshRegionalMapFilters(); renderRegionalMap(); }
   });
 })();

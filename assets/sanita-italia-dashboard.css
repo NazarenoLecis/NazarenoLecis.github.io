@@ -10,6 +10,11 @@
   overflow-x: hidden;
 }
 
+.hs-filter-grid { grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); }
+.hi-system-card .hi-card-title h3 { font-size: 1.15rem; line-height: 1.4; overflow-wrap: anywhere; }
+.hi-system-card select { width: 100%; min-width: 0; }
+.hi-system-card .hi-chart { min-height: 360px; }
+
 .hi-dashboard .dash-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px;

@@ -924,7 +924,7 @@
     removeTopGithubLink();
     installDashboardPlotlyNoZoomHook();
     observeDashboardText();
-    loadScriptWhenIdle("/assets/lang.js?v=20260902-pne-facility-filter", "language");
+    loadScriptWhenIdle("/assets/lang.js?v=20261010-sanita-i18n", "language");
     loadScriptWhenIdle("/assets/professional-title.js", "professionalTitle");
 
     if (isAlmaArticle() && !isNativeEnglishPage()) {

@@ -9,10 +9,11 @@
   <link rel="stylesheet" href="../../assets/base.css">
   <link rel="stylesheet" href="../../assets/layout.css">
   <link rel="stylesheet" href="../../assets/components.css">
-  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20260902-pne-facility-filter">
-  <script defer src="../../assets/theme.js?v=20260902-pne-facility-filter"></script>
+  <link rel="stylesheet" href="../../assets/sanita-italia-dashboard.css?v=20261010-audit">
+  <script defer src="../../assets/theme.js?v=20261010-audit"></script>
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="../../assets/sanita-italia-dashboard.js?v=20260902-pne-facility-filter"></script>
+  <script defer src="../../assets/sanita-italia-dashboard.js?v=20261010-audit"></script>
+  <script defer src="../../assets/sanita-italia-system.js?v=20261010"></script>
 </head>
 <body>
   <header class="site-header">
@@ -80,6 +81,9 @@
       <a href="#mortalita">Mortalit&agrave;</a>
       <a href="#esiti-pne">Esiti PNE</a>
       <a href="#volumi-pne">Volumi PNE</a>
+      <a href="#personale">Personale</a>
+      <a href="#prevenzione">Screening e LEA</a>
+      <a href="#assistenza-territoriale">Territorio e FSE</a>
       <a href="#pronto-soccorso">Pronto soccorso</a>
       <a href="#hiPsRegionBoxTitle">Boxplot PS</a>
       <a href="#liste-attesa">Liste d'attesa</a>
@@ -551,6 +555,16 @@
       </article>
     </section>
 
+    <section id="personale" class="dashboard-section">
+      <div class="section-head"><span class="eyebrow">Personale sanitario</span><div><h2>Medici e infermieri</h2></div></div>
+    </section>
+    <section id="prevenzione" class="dashboard-section">
+      <div class="section-head"><span class="eyebrow">Prevenzione e assistenza</span><div><h2>Screening oncologici e livelli essenziali di assistenza</h2></div></div>
+    </section>
+    <section id="assistenza-territoriale" class="dashboard-section">
+      <div class="section-head"><span class="eyebrow">Assistenza territoriale e digitale</span><div><h2>Case della Comunit&agrave; e Fascicolo sanitario elettronico</h2></div></div>
+      <p id="hsLoadStatus" role="status"></p>
+    </section>
     <section id="pronto-soccorso" class="dashboard-section">
       <div class="section-head">
         <span class="eyebrow">Pronto soccorso</span>
@@ -1442,7 +1456,6 @@
               <option value="absolute">Valore assoluto</option>
               <option value="population_65_plus">Popolazione 65+</option>
               <option value="population_75_plus">Popolazione 75+</option>
-              <option value="discharges">Dimissioni ospedaliere</option>
               <option value="gdp">PIL regionale</option>
             </select>
           </label>

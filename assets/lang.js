@@ -3785,7 +3785,7 @@
 
   function shouldSkip(node) {
     var parent = node && node.parentElement;
-    return !parent || Boolean(parent.closest("script,style,noscript,.language-switch,svg,canvas,.js-plotly-plot,.plot-container,.svg-container"));
+    return !parent || Boolean(parent.closest("script,style,noscript,.language-switch,svg,canvas,.js-plotly-plot,.plot-container,.svg-container,[data-local-i18n]"));
   }
 
   function translateTextNode(node, language, force) {
@@ -3809,6 +3809,7 @@
 
   function translatePlotlyText(language) {
     document.querySelectorAll(".js-plotly-plot text").forEach(function (node) {
+      if (node.closest("[data-local-i18n]")) return;
       var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
       var child;
       while ((child = walker.nextNode())) translateTextNode(child, language, true);
